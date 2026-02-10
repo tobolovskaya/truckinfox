@@ -1,20 +1,28 @@
-import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View } from 'react-native';
+import { LanguageProvider } from '@/contexts/LanguageContext';
+import { AuthProvider, useAuth } from '@/contexts/AuthContext';
+import { AuthScreen } from '@/components/auth/AuthScreen';
+import { Dashboard } from '@/components/dashboard/Dashboard';
+import { Toaster } from '@/components/ui/sonner';
 
-export default function App() {
+function AppContent() {
+  const { currentUser } = useAuth();
+
+  if (!currentUser) {
+    return <AuthScreen />;
+  }
+
+  return <Dashboard />;
+}
+
+function App() {
   return (
-    <View style={styles.container}>
-      <Text>Open up App.tsx to start working on your app!</Text>
-      <StatusBar style="auto" />
-    </View>
+    <LanguageProvider>
+      <AuthProvider>
+        <AppContent />
+        <Toaster position="top-center" />
+      </AuthProvider>
+    </LanguageProvider>
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-});
+export default App;
