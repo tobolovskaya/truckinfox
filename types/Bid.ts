@@ -1,7 +1,12 @@
-export type Bid = {
+export interface Bid {
   id: string;
   orderId: string;
   carrierId: string;
+  carrierName: string;
+  carrierRating: number;
   amount: number;
-  message?: string;
-};
+  message: string;
+  estimatedPickupDate: Date;
+  status: 'pending' | 'accepted' | 'rejected';
+  createdAt: Date;
+}
