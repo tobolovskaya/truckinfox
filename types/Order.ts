@@ -1,3 +1,5 @@
+import type { Bid } from './Bid';
+
 export interface Order {
   id: string;
   customerId: string;
@@ -49,4 +51,24 @@ export interface Location {
     latitude: number;
     longitude: number;
   };
+}
+
+export interface PaymentInfo {
+  id: string;
+  provider: 'vipps' | 'card' | 'bank_transfer';
+  amount: number;
+  currency: string;
+  status: 'pending' | 'authorized' | 'captured' | 'refunded' | 'failed';
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface TrackingInfo {
+  currentLocation: Location;
+  lastUpdatedAt: Date;
+  status: 'idle' | 'en_route' | 'arrived';
+  history: Array<{
+    location: Location;
+    recordedAt: Date;
+  }>;
 }
