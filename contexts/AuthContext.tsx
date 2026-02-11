@@ -65,14 +65,25 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Check if auth is available
+    if (!auth) {
+      console.warn('Firebase Auth not initialized - running in demo mode');
+      setLoading(false);
+      return;
+    }
+
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       setUser(firebaseUser);
 
-      if (firebaseUser) {
+      if (firebaseUser && firestore) {
         // Fetch user profile from Firestore
-        const userDoc = await getDoc(doc(firestore, 'users', firebaseUser.uid));
-        if (userDoc.exists()) {
-          setUserProfile(userDoc.data() as UserProfile);
+        try {
+          const userDoc = await getDoc(doc(firestore, 'users', firebaseUser.uid));
+          if (userDoc.exists()) {
+            setUserProfile(userDoc.data() as UserProfile);
+          }
+        } catch (error) {
+          console.error('Error fetching user profile:', error);
         }
       } else {
         setUserProfile(null);
@@ -85,6 +96,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   }, []);
 
   const signIn = async (email: string, password: string) => {
+    if (!auth) {
+      throw new Error('Firebase Auth is not available');
+    }
     try {
       await signInWithEmailAndPassword(auth, email, password);
     } catch (error) {
@@ -99,6 +113,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     displayName: string,
     role: 'customer' | 'carrier'
   ) => {
+    if (!auth || !firestore) {
+      throw new Error('Firebase services are not available');
+    }
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const { user: newUser } = userCredential;
@@ -127,6 +144,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   const signOut = async () => {
+    if (!auth) {
+      throw new Error('Firebase Auth is not available');
+    }
     try {
       await firebaseSignOut(auth);
       setUserProfile(null);
@@ -138,6 +158,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const updateUserProfile = async (updates: Partial<UserProfile>) => {
     if (!user) throw new Error('No user logged in');
+    if (!firestore) throw new Error('Firebase Firestore is not available');
 
     try {
       const userRef = doc(firestore, 'users', user.uid);
@@ -151,6 +172,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   const resetPassword = async (email: string) => {
+    if (!auth) {
+      throw new Error('Firebase Auth is not available');
+    }
     try {
       await sendPasswordResetEmail(auth, email);
     } catch (error) {
