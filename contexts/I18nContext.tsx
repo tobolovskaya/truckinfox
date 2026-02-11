@@ -26,7 +26,7 @@ interface I18nProviderProps {
 export const I18nProvider: React.FC<I18nProviderProps> = ({ children }) => {
   const { i18n, t } = useTranslation();
   const [language, setLanguageState] = useState<Language>(
-    (i18n.language.split('-')[0] as Language) || 'en'
+    (i18n.language.split('-')[0] as Language) || 'no' // Default to Norwegian
   );
 
   const setLanguage = (lang: Language) => {

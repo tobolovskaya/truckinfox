@@ -19,8 +19,9 @@ i18n
   .use(initReactI18next)
   .init({
     resources,
-    lng: Localization.getLocales()[0]?.languageCode || 'en',
-    fallbackLng: 'en',
+    lng: 'no', // Norwegian (Bokmål) as primary language
+    fallbackLng: 'en', // English as fallback
+    supportedLngs: ['no', 'en'],
     compatibilityJSON: 'v3',
     interpolation: {
       escapeValue: false,
