@@ -5,7 +5,9 @@
     "jsx": "react-native",
     "target": "esnext",
     "module": "esnext",
-    "lib": ["esnext"],
+    "lib": [
+      "esnext"
+    ],
     "allowJs": true,
     "skipLibCheck": true,
     "esModuleInterop": true,
@@ -17,22 +19,38 @@
     "noEmit": true,
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./*"],
-      "@components/*": ["./components/*"],
-      "@contexts/*": ["./contexts/*"],
-      "@lib/*": ["./lib/*"],
-      "@hooks/*": ["./hooks/*"],
-      "@utils/*": ["./utils/*"],
-      "@constants/*": ["./constants/*"],
-      "@theme/*": ["./theme/*"],
-      "@locales/*": ["./locales/*"]
+      "@/*": [
+        "./*"
+      ],
+      "@components/*": [
+        "./components/*"
+      ],
+      "@contexts/*": [
+        "./contexts/*"
+      ],
+      "@lib/*": [
+        "./lib/*"
+      ],
+      "@hooks/*": [
+        "./hooks/*"
+      ],
+      "@utils/*": [
+        "./utils/*"
+      ],
+      "@constants/*": [
+        "./constants/*"
+      ],
+      "@theme/*": [
+        "./theme/*"
+      ],
+      "@locales/*": [
+        "./locales/*"
+      ]
     }
   },
   "include": [
     "**/*.ts",
-    "**/*.tsx",
-    ".expo/types/**/*.ts",
-    "expo-env.d.ts"
+    "**/*.tsx"
   ],
   "exclude": [
     "node_modules",
