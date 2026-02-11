@@ -26,9 +26,12 @@ export const AddressInput: React.FC<AddressInputProps> = ({
     try {
       setLoading(true);
       const { status } = await Location.requestForegroundPermissionsAsync();
-      
+
       if (status !== 'granted') {
-        Alert.alert('Permission Required', 'Please grant location permissions to use this feature.');
+        Alert.alert(
+          'Permission Required',
+          'Please grant location permissions to use this feature.'
+        );
         setLoading(false);
         return;
       }
@@ -38,20 +41,15 @@ export const AddressInput: React.FC<AddressInputProps> = ({
 
       // Reverse geocode to get address
       const addresses = await Location.reverseGeocodeAsync({ latitude, longitude });
-      
+
       if (addresses && addresses.length > 0) {
         const address = addresses[0];
-        const formattedAddress = [
-          address.street,
-          address.city,
-          address.postalCode,
-          address.country,
-        ]
+        const formattedAddress = [address.street, address.city, address.postalCode, address.country]
           .filter(Boolean)
           .join(', ');
 
         onChangeText(formattedAddress);
-        
+
         if (onLocationSelected) {
           onLocationSelected({
             latitude,
@@ -85,9 +83,7 @@ export const AddressInput: React.FC<AddressInputProps> = ({
           disabled={loading}
           style={styles.locationButton}
         >
-          <Text style={styles.locationButtonText}>
-            {loading ? '...' : '📍'}
-          </Text>
+          <Text style={styles.locationButtonText}>{loading ? '...' : '📍'}</Text>
         </TouchableOpacity>
       </View>
     </View>

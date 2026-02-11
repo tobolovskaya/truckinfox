@@ -56,16 +56,11 @@ export default function MessagesScreen() {
           <Text style={styles.participantName} numberOfLines={1}>
             {item.participantName}
           </Text>
-          <Text style={styles.time}>
-            {formatRelativeTime(item.lastMessageTime)}
-          </Text>
+          <Text style={styles.time}>{formatRelativeTime(item.lastMessageTime)}</Text>
         </View>
         <View style={styles.messageRow}>
           <Text
-            style={[
-              styles.lastMessage,
-              item.unreadCount > 0 && styles.unreadMessage,
-            ]}
+            style={[styles.lastMessage, item.unreadCount > 0 && styles.unreadMessage]}
             numberOfLines={1}
           >
             {item.lastMessage}
@@ -85,7 +80,7 @@ export default function MessagesScreen() {
       <FlatList
         data={mockChats}
         renderItem={renderChatItem}
-        keyExtractor={(item) => item.id}
+        keyExtractor={item => item.id}
         contentContainerStyle={styles.list}
         ItemSeparatorComponent={() => <View style={styles.separator} />}
         ListEmptyComponent={

@@ -39,18 +39,21 @@ export const onNewBid = functions.firestore
     }
 
     // Create notification document
-    await admin.firestore().collection('notifications').add({
-      userId: customerId,
-      type: 'new_bid',
-      title: 'New Bid Received',
-      body: `You have a new bid of ${bid.amount} NOK on your cargo request`,
-      data: {
-        bidId: snap.id,
-        requestId: bid.requestId,
-      },
-      read: false,
-      createdAt: admin.firestore.FieldValue.serverTimestamp(),
-    });
+    await admin
+      .firestore()
+      .collection('notifications')
+      .add({
+        userId: customerId,
+        type: 'new_bid',
+        title: 'New Bid Received',
+        body: `You have a new bid of ${bid.amount} NOK on your cargo request`,
+        data: {
+          bidId: snap.id,
+          requestId: bid.requestId,
+        },
+        read: false,
+        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      });
   });
 
 // Send notification when a bid is accepted
@@ -85,37 +88,34 @@ export const onBidAccepted = functions.firestore
       }
 
       // Create notification document
-      await admin.firestore().collection('notifications').add({
-        userId: carrierId,
-        type: 'bid_accepted',
-        title: 'Bid Accepted! 🎉',
-        body: 'Congratulations! Your bid has been accepted.',
-        data: {
-          bidId: context.params.bidId,
-          requestId: newData.requestId,
-        },
-        read: false,
-        createdAt: admin.firestore.FieldValue.serverTimestamp(),
-      });
+      await admin
+        .firestore()
+        .collection('notifications')
+        .add({
+          userId: carrierId,
+          type: 'bid_accepted',
+          title: 'Bid Accepted! 🎉',
+          body: 'Congratulations! Your bid has been accepted.',
+          data: {
+            bidId: context.params.bidId,
+            requestId: newData.requestId,
+          },
+          read: false,
+          createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        });
     }
   });
 
 // Verify carrier using Brønnøysundregistrene API
 export const verifyCarrier = functions.https.onCall(async (data, context) => {
   if (!context.auth) {
-    throw new functions.https.HttpsError(
-      'unauthenticated',
-      'User must be authenticated'
-    );
+    throw new functions.https.HttpsError('unauthenticated', 'User must be authenticated');
   }
 
   const { organizationNumber } = data;
 
   if (!organizationNumber) {
-    throw new functions.https.HttpsError(
-      'invalid-argument',
-      'Organization number is required'
-    );
+    throw new functions.https.HttpsError('invalid-argument', 'Organization number is required');
   }
 
   try {
@@ -125,24 +125,18 @@ export const verifyCarrier = functions.https.onCall(async (data, context) => {
     );
 
     if (!response.ok) {
-      throw new functions.https.HttpsError(
-        'not-found',
-        'Organization not found'
-      );
+      throw new functions.https.HttpsError('not-found', 'Organization not found');
     }
 
     const orgData = await response.json();
 
     // Update user profile with verification data
-    await admin
-      .firestore()
-      .doc(`users/${context.auth.uid}`)
-      .update({
-        organizationNumber,
-        companyName: orgData.navn,
-        verified: true,
-        verifiedAt: admin.firestore.FieldValue.serverTimestamp(),
-      });
+    await admin.firestore().doc(`users/${context.auth.uid}`).update({
+      organizationNumber,
+      companyName: orgData.navn,
+      verified: true,
+      verifiedAt: admin.firestore.FieldValue.serverTimestamp(),
+    });
 
     return {
       success: true,
@@ -157,10 +151,7 @@ export const verifyCarrier = functions.https.onCall(async (data, context) => {
 // Process Vipps payment (placeholder - actual implementation would use Vipps API)
 export const processVippsPayment = functions.https.onCall(async (data, context) => {
   if (!context.auth) {
-    throw new functions.https.HttpsError(
-      'unauthenticated',
-      'User must be authenticated'
-    );
+    throw new functions.https.HttpsError('unauthenticated', 'User must be authenticated');
   }
 
   const { orderId, amount } = data;

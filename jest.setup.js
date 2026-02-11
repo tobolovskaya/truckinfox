@@ -5,10 +5,10 @@ jest.mock('expo-constants', () => ({
   expoConfig: {
     extra: {
       eas: {
-        projectId: 'test-project-id'
-      }
-    }
-  }
+        projectId: 'test-project-id',
+      },
+    },
+  },
 }));
 
 jest.mock('expo-router', () => ({

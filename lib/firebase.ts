@@ -31,7 +31,7 @@ let storage: FirebaseStorage | undefined;
 
 try {
   auth = initializeAuth(app, {
-    persistence: getReactNativePersistence(AsyncStorage)
+    persistence: getReactNativePersistence(AsyncStorage),
   });
   console.log('Firebase Auth initialized successfully');
 } catch (error) {

@@ -42,10 +42,7 @@ export default function MarketplaceScreen() {
   };
 
   const renderItem = ({ item }: any) => (
-    <CargoRequestCard
-      {...item}
-      onPress={() => handleRequestPress(item.id)}
-    />
+    <CargoRequestCard {...item} onPress={() => handleRequestPress(item.id)} />
   );
 
   return (
@@ -62,7 +59,7 @@ export default function MarketplaceScreen() {
       <FlatList
         data={mockRequests}
         renderItem={renderItem}
-        keyExtractor={(item) => item.id}
+        keyExtractor={item => item.id}
         contentContainerStyle={styles.list}
         ListEmptyComponent={
           <View style={styles.emptyState}>

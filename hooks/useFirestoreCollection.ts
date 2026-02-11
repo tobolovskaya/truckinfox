@@ -19,8 +19,8 @@ export const useFirestoreCollection = <T>(
 
     const unsubscribe = onSnapshot(
       q,
-      (snapshot) => {
-        const items = snapshot.docs.map((doc) => ({
+      snapshot => {
+        const items = snapshot.docs.map(doc => ({
           id: doc.id,
           ...doc.data(),
         })) as T[];
@@ -29,7 +29,7 @@ export const useFirestoreCollection = <T>(
         setLoading(false);
         setError(null);
       },
-      (err) => {
+      err => {
         console.error(`Error listening to ${collectionName}:`, err);
         setError(err as Error);
         setLoading(false);

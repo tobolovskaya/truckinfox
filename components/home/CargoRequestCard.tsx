@@ -69,9 +69,7 @@ export const CargoRequestCard: React.FC<CargoRequestCardProps> = ({
         <Text style={styles.detail}>
           {weight} kg • {formatDate(pickupDate)}
         </Text>
-        {bidCount > 0 && (
-          <Text style={styles.bidCount}>{bidCount} bids</Text>
-        )}
+        {bidCount > 0 && <Text style={styles.bidCount}>{bidCount} bids</Text>}
       </View>
     </TouchableOpacity>
   );

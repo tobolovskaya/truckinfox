@@ -7,10 +7,7 @@ interface IOSRefreshControlProps {
   onRefresh: () => void;
 }
 
-export const IOSRefreshControl: React.FC<IOSRefreshControlProps> = ({
-  refreshing,
-  onRefresh,
-}) => {
+export const IOSRefreshControl: React.FC<IOSRefreshControlProps> = ({ refreshing, onRefresh }) => {
   return (
     <RNRefreshControl
       refreshing={refreshing}

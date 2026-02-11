@@ -45,12 +45,7 @@ export const NotificationBanner: React.FC = () => {
 
   return (
     <TouchableOpacity onPress={hideBanner} activeOpacity={0.9}>
-      <Animated.View
-        style={[
-          styles.container,
-          { transform: [{ translateY }], opacity },
-        ]}
-      >
+      <Animated.View style={[styles.container, { transform: [{ translateY }], opacity }]}>
         <View style={styles.content}>
           <Text style={styles.title} numberOfLines={1}>
             {banner.title}

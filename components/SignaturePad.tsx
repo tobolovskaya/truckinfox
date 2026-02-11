@@ -34,18 +34,8 @@ export const SignaturePad: React.FC<SignaturePadProps> = ({ onSave, onCancel }) 
           variant="outlined"
           style={styles.button}
         />
-        <IOSButton
-          title="Cancel"
-          onPress={onCancel}
-          variant="text"
-          style={styles.button}
-        />
-        <IOSButton
-          title="Save"
-          onPress={handleSave}
-          variant="primary"
-          style={styles.button}
-        />
+        <IOSButton title="Cancel" onPress={onCancel} variant="text" style={styles.button} />
+        <IOSButton title="Save" onPress={handleSave} variant="primary" style={styles.button} />
       </View>
     </View>
   );

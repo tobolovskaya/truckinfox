@@ -20,7 +20,7 @@ export const useFirestoreDocument = <T>(collectionName: string, documentId: stri
 
     const unsubscribe = onSnapshot(
       docRef,
-      (snapshot) => {
+      snapshot => {
         if (snapshot.exists()) {
           setData({ id: snapshot.id, ...snapshot.data() } as T);
         } else {
@@ -29,7 +29,7 @@ export const useFirestoreDocument = <T>(collectionName: string, documentId: stri
         setLoading(false);
         setError(null);
       },
-      (err) => {
+      err => {
         console.error(`Error listening to ${collectionName}/${documentId}:`, err);
         setError(err as Error);
         setLoading(false);

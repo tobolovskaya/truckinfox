@@ -15,25 +15,21 @@ export default function ProfileScreen() {
   const router = useRouter();
 
   const handleSignOut = async () => {
-    Alert.alert(
-      t('auth.logout'),
-      'Are you sure you want to log out?',
-      [
-        { text: t('common.cancel'), style: 'cancel' },
-        {
-          text: t('auth.logout'),
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await signOut();
-              router.replace('/auth/login');
-            } catch (error) {
-              Alert.alert('Error', 'Failed to log out');
-            }
-          },
+    Alert.alert(t('auth.logout'), 'Are you sure you want to log out?', [
+      { text: t('common.cancel'), style: 'cancel' },
+      {
+        text: t('auth.logout'),
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            await signOut();
+            router.replace('/auth/login');
+          } catch (error) {
+            Alert.alert('Error', 'Failed to log out');
+          }
         },
-      ]
-    );
+      },
+    ]);
   };
 
   const toggleLanguage = () => {
@@ -61,9 +57,7 @@ export default function ProfileScreen() {
       {userProfile?.rating !== undefined && (
         <View style={styles.statsContainer}>
           <View style={styles.statItem}>
-            <Text style={styles.statValue}>
-              {userProfile.rating?.toFixed(1) || '0.0'}
-            </Text>
+            <Text style={styles.statValue}>{userProfile.rating?.toFixed(1) || '0.0'}</Text>
             <Text style={styles.statLabel}>⭐ {t('profile.rating')}</Text>
           </View>
           <View style={styles.statDivider} />
@@ -76,11 +70,8 @@ export default function ProfileScreen() {
 
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Account</Text>
-        
-        <TouchableOpacity
-          style={styles.menuItem}
-          onPress={() => router.push('/profile/edit')}
-        >
+
+        <TouchableOpacity style={styles.menuItem} onPress={() => router.push('/profile/edit')}>
           <Text style={styles.menuItemText}>{t('profile.editProfile')}</Text>
           <Text style={styles.menuItemArrow}>›</Text>
         </TouchableOpacity>
@@ -105,7 +96,7 @@ export default function ProfileScreen() {
 
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>{t('profile.settings')}</Text>
-        
+
         <TouchableOpacity style={styles.menuItem}>
           <Text style={styles.menuItemText}>Notifications</Text>
           <Text style={styles.menuItemArrow}>›</Text>

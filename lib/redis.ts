@@ -53,7 +53,7 @@ export const getRedisClient = (): Redis => {
     }
 
     if (redis) {
-      redis.on('error', (err) => {
+      redis.on('error', err => {
         console.error('❌ Redis connection error:', err.message);
       });
 
@@ -78,7 +78,7 @@ export const cacheSet = async (
   expirationInSeconds: number = 3600
 ): Promise<void> => {
   const serializedValue = JSON.stringify(value);
-  
+
   if (useRestApi && upstashRedis) {
     await upstashRedis.set(key, serializedValue, { ex: expirationInSeconds });
   } else {
@@ -91,7 +91,7 @@ export const cacheSet = async (
 // Get cached value
 export const cacheGet = async <T = any>(key: string): Promise<T | null> => {
   let value: string | null = null;
-  
+
   if (useRestApi && upstashRedis) {
     value = await upstashRedis.get<string>(key);
   } else {
@@ -99,7 +99,7 @@ export const cacheGet = async <T = any>(key: string): Promise<T | null> => {
     await client.connect();
     value = await client.get(key);
   }
-  
+
   if (!value) return null;
   return JSON.parse(value) as T;
 };
@@ -146,10 +146,7 @@ export const cacheExists = async (key: string): Promise<boolean> => {
 };
 
 // Set expiration for existing key
-export const cacheExpire = async (
-  key: string,
-  expirationInSeconds: number
-): Promise<void> => {
+export const cacheExpire = async (key: string, expirationInSeconds: number): Promise<void> => {
   if (useRestApi && upstashRedis) {
     await upstashRedis.expire(key, expirationInSeconds);
   } else {

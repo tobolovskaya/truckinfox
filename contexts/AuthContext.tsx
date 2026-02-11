@@ -86,7 +86,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       return;
     }
 
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+    const unsubscribe = onAuthStateChanged(auth, async firebaseUser => {
       setUser(firebaseUser);
 
       if (firebaseUser && firestore) {
@@ -186,7 +186,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       const userRef = doc(firestore, 'users', user.uid);
       await updateDoc(userRef, updates);
 
-      setUserProfile((prev) => (prev ? { ...prev, ...updates } : null));
+      setUserProfile(prev => (prev ? { ...prev, ...updates } : null));
     } catch (error) {
       console.error('Update profile error:', error);
       throw error;

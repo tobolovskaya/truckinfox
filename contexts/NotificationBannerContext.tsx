@@ -72,7 +72,9 @@ export const NotificationBannerProvider: React.FC<NotificationBannerProviderProp
   };
 
   return (
-    <NotificationBannerContext.Provider value={value}>{children}</NotificationBannerContext.Provider>
+    <NotificationBannerContext.Provider value={value}>
+      {children}
+    </NotificationBannerContext.Provider>
   );
 };
 

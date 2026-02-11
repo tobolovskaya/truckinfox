@@ -103,7 +103,7 @@ export default function ChatScreen() {
       <FlatList
         data={messages}
         renderItem={renderMessage}
-        keyExtractor={(item) => item.id}
+        keyExtractor={item => item.id}
         contentContainerStyle={styles.messagesList}
         inverted={false}
       />

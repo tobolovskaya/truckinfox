@@ -92,9 +92,7 @@ export const formatWeight = (weightInKg: number, locale = 'no-NO'): string => {
     return locale === 'no-NO' ? `${weightInKg} kg` : `${weightInKg} kg`;
   }
   const weightInTons = weightInKg / 1000;
-  return locale === 'no-NO'
-    ? `${weightInTons.toFixed(2)} tonn`
-    : `${weightInTons.toFixed(2)} tons`;
+  return locale === 'no-NO' ? `${weightInTons.toFixed(2)} tonn` : `${weightInTons.toFixed(2)} tons`;
 };
 
 export default {

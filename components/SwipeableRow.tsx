@@ -1,11 +1,5 @@
 import React, { ReactNode } from 'react';
-import {
-  View,
-  TouchableOpacity,
-  StyleSheet,
-  Animated,
-  ViewStyle,
-} from 'react-native';
+import { View, TouchableOpacity, StyleSheet, Animated, ViewStyle } from 'react-native';
 import { Text } from 'react-native-paper';
 import { colors, spacing } from '../theme';
 

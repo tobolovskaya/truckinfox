@@ -6,7 +6,8 @@ export const APP_NAME = 'TruckinFox';
 export const APP_VERSION = '1.0.0';
 
 // API URLs
-export const BRREG_API_URL = process.env.BRREG_API_URL || 'https://data.brreg.no/enhetsregisteret/api';
+export const BRREG_API_URL =
+  process.env.BRREG_API_URL || 'https://data.brreg.no/enhetsregisteret/api';
 
 // Vipps configuration
 export const VIPPS_CONFIG = {

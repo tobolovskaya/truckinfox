@@ -23,11 +23,9 @@ export default function ForgotPasswordScreen() {
     try {
       setLoading(true);
       await resetPassword(email);
-      Alert.alert(
-        'Success',
-        'Password reset email sent. Please check your inbox.',
-        [{ text: 'OK', onPress: () => router.back() }]
-      );
+      Alert.alert('Success', 'Password reset email sent. Please check your inbox.', [
+        { text: 'OK', onPress: () => router.back() },
+      ]);
     } catch (error: any) {
       Alert.alert('Error', error.message || 'Failed to send reset email');
     } finally {
@@ -65,11 +63,7 @@ export default function ForgotPasswordScreen() {
           style={styles.button}
         />
 
-        <IOSButton
-          title="Back to Login"
-          onPress={() => router.back()}
-          variant="text"
-        />
+        <IOSButton title="Back to Login" onPress={() => router.back()} variant="text" />
       </View>
     </KeyboardAvoidingView>
   );

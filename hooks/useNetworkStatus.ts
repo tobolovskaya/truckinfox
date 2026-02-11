@@ -6,7 +6,7 @@ export const useNetworkStatus = () => {
   const [isInternetReachable, setIsInternetReachable] = useState<boolean | null>(true);
 
   useEffect(() => {
-    const unsubscribe = NetInfo.addEventListener((state) => {
+    const unsubscribe = NetInfo.addEventListener(state => {
       setIsConnected(state.isConnected);
       setIsInternetReachable(state.isInternetReachable);
     });

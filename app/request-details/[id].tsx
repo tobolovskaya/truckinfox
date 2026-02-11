@@ -20,7 +20,8 @@ export default function RequestDetailsScreen() {
     weight: 500,
     pickupDate: new Date('2024-03-15'),
     deliveryDate: new Date('2024-03-16'),
-    description: 'Moving furniture from apartment to new house. Includes sofa, dining table, and chairs.',
+    description:
+      'Moving furniture from apartment to new house. Includes sofa, dining table, and chairs.',
     status: 'open',
     customerId: 'user123',
     customerName: 'John Doe',

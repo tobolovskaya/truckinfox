@@ -1,11 +1,5 @@
 import React from 'react';
-import {
-  Modal,
-  View,
-  TouchableOpacity,
-  StyleSheet,
-  TouchableWithoutFeedback,
-} from 'react-native';
+import { Modal, View, TouchableOpacity, StyleSheet, TouchableWithoutFeedback } from 'react-native';
 import { Text } from 'react-native-paper';
 import { colors, spacing, borderRadius } from '../theme';
 
@@ -31,12 +25,7 @@ export const IOSActionSheet: React.FC<IOSActionSheetProps> = ({
   message,
 }) => {
   return (
-    <Modal
-      visible={visible}
-      transparent
-      animationType="slide"
-      onRequestClose={onClose}
-    >
+    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
       <TouchableWithoutFeedback onPress={onClose}>
         <View style={styles.overlay}>
           <TouchableWithoutFeedback>
@@ -61,12 +50,7 @@ export const IOSActionSheet: React.FC<IOSActionSheetProps> = ({
                       onClose();
                     }}
                   >
-                    <Text
-                      style={[
-                        styles.optionText,
-                        option.destructive && styles.destructiveText,
-                      ]}
-                    >
+                    <Text style={[styles.optionText, option.destructive && styles.destructiveText]}>
                       {option.label}
                     </Text>
                   </TouchableOpacity>

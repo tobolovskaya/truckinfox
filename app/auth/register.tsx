@@ -1,12 +1,5 @@
 import React, { useState } from 'react';
-import {
-  View,
-  StyleSheet,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
-  Alert,
-} from 'react-native';
+import { View, StyleSheet, KeyboardAvoidingView, Platform, ScrollView, Alert } from 'react-native';
 import { TextInput, Text, RadioButton } from 'react-native-paper';
 import { useRouter, Link } from 'expo-router';
 import { useAuth } from '../../contexts/AuthContext';
@@ -57,10 +50,7 @@ export default function RegisterScreen() {
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
-      <ScrollView
-        contentContainerStyle={styles.scrollContent}
-        keyboardShouldPersistTaps="handled"
-      >
+      <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
         <View style={styles.header}>
           <Text style={styles.logo}>🚚</Text>
           <Text style={styles.title}>{t('auth.register')}</Text>
@@ -114,7 +104,10 @@ export default function RegisterScreen() {
 
           <View style={styles.roleContainer}>
             <Text style={styles.roleLabel}>{t('auth.role')}</Text>
-            <RadioButton.Group onValueChange={(value) => setRole(value as 'customer' | 'carrier')} value={role}>
+            <RadioButton.Group
+              onValueChange={value => setRole(value as 'customer' | 'carrier')}
+              value={role}
+            >
               <View style={styles.radioItem}>
                 <RadioButton.Android value="customer" color={colors.primary} />
                 <Text>{t('auth.customer')}</Text>

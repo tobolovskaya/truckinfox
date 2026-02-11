@@ -18,7 +18,10 @@ export const AvatarUpload: React.FC<AvatarUploadProps> = ({ currentUri, onUpload
     try {
       const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (status !== 'granted') {
-        Alert.alert('Permission Required', 'Please grant camera roll permissions to upload an avatar.');
+        Alert.alert(
+          'Permission Required',
+          'Please grant camera roll permissions to upload an avatar.'
+        );
         return;
       }
 
@@ -46,7 +49,9 @@ export const AvatarUpload: React.FC<AvatarUploadProps> = ({ currentUri, onUpload
       <TouchableOpacity onPress={pickImage} disabled={uploading} style={styles.avatarButton}>
         <Avatar uri={currentUri} size={size} />
         {uploading && (
-          <View style={[styles.loadingOverlay, { width: size, height: size, borderRadius: size / 2 }]}>
+          <View
+            style={[styles.loadingOverlay, { width: size, height: size, borderRadius: size / 2 }]}
+          >
             <ActivityIndicator color={colors.background} size="large" />
           </View>
         )}

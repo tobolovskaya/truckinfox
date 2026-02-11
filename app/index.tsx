@@ -61,7 +61,14 @@ function Index() {
   }, [user, loading, router, isMounted, hasNavigated]);
 
   return (
-    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#FF7043' }}>
+    <View
+      style={{
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: '#FF7043',
+      }}
+    >
       <ActivityIndicator size="large" color="white" />
     </View>
   );

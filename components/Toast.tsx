@@ -47,17 +47,14 @@ export const Toast: React.FC = () => {
     toast.type === 'success'
       ? colors.success
       : toast.type === 'error'
-      ? colors.error
-      : toast.type === 'warning'
-      ? colors.warning
-      : colors.info;
+        ? colors.error
+        : toast.type === 'warning'
+          ? colors.warning
+          : colors.info;
 
   return (
     <Animated.View
-      style={[
-        styles.container,
-        { backgroundColor, transform: [{ translateY }], opacity },
-      ]}
+      style={[styles.container, { backgroundColor, transform: [{ translateY }], opacity }]}
     >
       <Text style={styles.message}>{toast.message}</Text>
     </Animated.View>
