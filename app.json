@@ -75,6 +75,10 @@
       "expo-localization",
       "expo-web-browser"
     ],
+    "updates": {
+      "enabled": false,
+      "fallbackToCacheTimeout": 0
+    },
     "extra": {
       "router": {
         "origin": false
