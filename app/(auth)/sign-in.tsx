@@ -22,17 +22,18 @@ export default function SignIn() {
     try {
       await signInWithEmailAndPassword(auth, email, password);
       router.replace('/(tabs)');
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const firebaseError = error as { code?: string; message?: string };
       if (
-        error.code === 'auth/user-not-found' ||
-        error.code === 'auth/wrong-password' ||
-        error.code === 'auth/invalid-credential'
+        firebaseError.code === 'auth/user-not-found' ||
+        firebaseError.code === 'auth/wrong-password' ||
+        firebaseError.code === 'auth/invalid-credential'
       ) {
         setShowRegisterModal(true);
-      } else if (error.code === 'auth/configuration-not-found') {
+      } else if (firebaseError.code === 'auth/configuration-not-found') {
         Alert.alert('Feil', 'Aktiver e-post/passord i Firebase Console.');
       } else {
-        Alert.alert('Innloggingsfeil', error.message);
+        Alert.alert('Innloggingsfeil', firebaseError.message || 'En feil oppstod');
       }
     } finally {
       setLoading(false);
@@ -80,7 +81,7 @@ export default function SignIn() {
         onRequestClose={() => setShowRegisterModal(false)}
       >
         <LinearGradient
-          colors={theme.gradients ? theme.gradients.primary : ['#fff', '#eee']}
+          colors={[theme.colors.primary, theme.colors.secondary]}
           style={styles.modalOverlay}
         >
           <View style={styles.modalContentStyled}>
