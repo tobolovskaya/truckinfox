@@ -71,7 +71,8 @@
           "icon": "./assets/notification-icon.png",
           "color": "#FF7043"
         }
-      ]
+      ],
+      "expo-localization"
     ],
     "extra": {
       "router": {
