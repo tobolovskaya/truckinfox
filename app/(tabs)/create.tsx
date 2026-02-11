@@ -5,8 +5,6 @@ import {
   StyleSheet,
   TouchableOpacity,
   TextInput,
-  Alert,
-  Image,
   LogBox,
 } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
@@ -19,7 +17,7 @@ import { useTranslation } from 'react-i18next';
 import { useToast } from '../../contexts/ToastContext';
 import { db, storage } from '../../lib/firebase';
 import { trackCargoRequestCreated } from '../../utils/analytics';
-import { sanitizeInput, sanitizeName, sanitizeNumber } from '../../utils/sanitization';
+import { sanitizeInput, sanitizeNumber } from '../../utils/sanitization';
 import { collection, addDoc, updateDoc, doc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { useRouter } from 'expo-router';
@@ -36,7 +34,6 @@ import {
   fontWeight,
   borderRadius,
   shadows,
-  gradients,
 } from '../../lib/sharedStyles';
 import { fetchWithTimeout } from '../../utils/fetchWithTimeout';
 import { LazyImage } from '../../components/LazyImage';
@@ -128,13 +125,14 @@ export default function CreateRequestScreen() {
         if (!value) return 'Lasttype er påkrevd';
         return '';
 
-      case 'weight':
+      case 'weight': {
         if (!value || value.toString().trim() === '') return 'Vekt er påkrevd';
         const weight = Number(value);
         if (isNaN(weight)) return 'Vekt må være et tall';
         if (weight <= 0) return 'Vekt må være større enn 0';
         if (weight > 50000) return 'Vekt kan ikke være større enn 50000 kg';
         return '';
+      }
 
       case 'dimensions':
         if (value && value.toString().trim().length > 50)
@@ -353,16 +351,6 @@ export default function CreateRequestScreen() {
         // Compress image
         const compressedUri = await compressImage(uri);
 
-        // Convert to arrayBuffer for React Native
-        const response = await fetchWithTimeout(
-          compressedUri,
-          {
-            method: 'GET',
-          },
-          15000
-        ); // 15 second timeout for image download
-        const arrayBuffer = await response.arrayBuffer();
-
         // Generate filename
         const ext = uri.split('.').pop() || 'jpg';
         const fileName = `request-images/${requestId}_${i}_${Date.now()}.${ext}`;
@@ -466,7 +454,7 @@ export default function CreateRequestScreen() {
       toast.success(t('requestCreated'));
 
       // Navigate after short delay to show toast
-      setTimeout(() => {
+      const navigationTimer = setTimeout(() => {
         try {
           router.replace('/(tabs)/home');
         } catch (error) {
@@ -474,6 +462,9 @@ export default function CreateRequestScreen() {
           router.push('/(tabs)/home');
         }
       }, 500);
+
+      // Cleanup timer on unmount
+      return () => clearTimeout(navigationTimer);
     } catch (error: any) {
       toast.error(error.message || t('error'));
     } finally {

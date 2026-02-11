@@ -26,7 +26,6 @@ import {
   gradients,
 } from '../../lib/sharedStyles';
 import * as WebBrowser from 'expo-web-browser';
-import * as AppleAuthentication from 'expo-apple-authentication';
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -83,7 +82,7 @@ export default function LoginScreen() {
     }
   };
 
-  const handleSocialLogin = async (provider: 'google' | 'facebook' | 'apple') => {
+  const handleSocialLogin = async (_provider: 'google' | 'facebook' | 'apple') => {
     try {
       setLoading(true);
       // TODO: Implement Firebase OAuth
