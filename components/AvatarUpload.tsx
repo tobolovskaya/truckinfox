@@ -3,7 +3,7 @@ import { View, TouchableOpacity, StyleSheet, Alert, ActivityIndicator } from 're
 import { Text } from 'react-native-paper';
 import * as ImagePicker from 'expo-image-picker';
 import { Avatar } from './Avatar';
-import { colors, spacing } from '../theme';
+import { colors, spacing } from '../theme/theme';
 
 interface AvatarUploadProps {
   currentUri?: string;

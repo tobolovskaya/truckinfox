@@ -1,51 +1,43 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useEffect, useState } from 'react';
 import { FirebaseError } from 'firebase/app';
 import {
   User,
-  onAuthStateChanged,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   signOut as firebaseSignOut,
+  onAuthStateChanged,
   updateProfile,
-  sendPasswordResetEmail,
 } from 'firebase/auth';
-import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
-import { auth, firestore } from '../lib/firebase';
+import { doc, setDoc, getDoc } from 'firebase/firestore';
+import { auth, db } from '../lib/firebase';
 
-export interface UserProfile {
-  uid: string;
+// Strict TypeScript interfaces for auth data
+export interface SignUpData {
   email: string;
-  displayName?: string;
-  photoURL?: string;
-  role: 'customer' | 'carrier';
-  phoneNumber?: string;
-  verified: boolean;
-  createdAt: Date;
-  rating?: number;
-  reviewCount?: number;
-  // Carrier-specific fields
+  password: string;
+  fullName: string;
+  phone: string;
+  userType: 'customer' | 'carrier';
   companyName?: string;
-  organizationNumber?: string;
-  // Customer-specific fields
-  address?: string;
+  orgNumber?: string;
+}
+
+export interface AuthResult<T = void> {
+  success: boolean;
+  data?: T;
+  error?: string;
 }
 
 interface AuthContextType {
   user: User | null;
-  userProfile: UserProfile | null;
   loading: boolean;
-  signIn: (email: string, password: string) => Promise<void>;
-  signUp: (
-    email: string,
-    password: string,
-    displayName: string,
-    role: 'customer' | 'carrier'
-  ) => Promise<void>;
-  signOut: () => Promise<void>;
-  updateUserProfile: (updates: Partial<UserProfile>) => Promise<void>;
-  resetPassword: (email: string) => Promise<void>;
+  signIn: (email: string, password: string) => Promise<AuthResult<User>>;
+  signUp: (userData: SignUpData) => Promise<AuthResult<User>>;
+  signOut: () => Promise<AuthResult>;
+  signOutAllDevices: () => Promise<AuthResult>;
 }
 
+// Input validation helpers
 const validateEmail = (email: string): string | null => {
   if (!email) return 'Email is required';
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -59,164 +51,195 @@ const validatePassword = (password: string): string | null => {
   return null;
 };
 
+const validateSignUpData = (userData: SignUpData): string | null => {
+  const emailError = validateEmail(userData.email);
+  if (emailError) return emailError;
+
+  const passwordError = validatePassword(userData.password);
+  if (passwordError) return passwordError;
+
+  if (!userData.fullName || userData.fullName.trim().length < 2) {
+    return 'Full name must be at least 2 characters';
+  }
+
+  if (!userData.phone || userData.phone.trim().length < 8) {
+    return 'Valid phone number is required';
+  }
+
+  if (!['customer', 'carrier'].includes(userData.userType)) {
+    return 'User type must be either customer or carrier';
+  }
+
+  return null;
+};
+
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export const useAuth = () => {
+const getAuthErrorMessage = (error: unknown): string => {
+  if (error instanceof FirebaseError) {
+    switch (error.code) {
+      case 'auth/user-not-found':
+        return 'Користувача не знайдено. Спочатку зареєструйтесь.';
+      case 'auth/invalid-credential':
+      case 'auth/wrong-password':
+        return 'Невірний email або пароль.';
+      case 'auth/invalid-email':
+        return 'Невірний формат email.';
+      case 'auth/user-disabled':
+        return 'Акаунт вимкнено. Зверніться до підтримки.';
+      case 'auth/too-many-requests':
+        return 'Забагато спроб. Спробуйте пізніше.';
+      case 'auth/configuration-not-found':
+        return 'Налаштування Firebase Auth не знайдено. Увімкніть Email/Password у Firebase Console.';
+      default:
+        return error.message;
+    }
+  }
+
+  return error instanceof Error ? error.message : 'An unexpected error occurred';
+};
+
+export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    // Listen for auth state changes
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setUser(user);
+      setLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  const signIn = async (email: string, password: string): Promise<AuthResult<User>> => {
+    try {
+      // Validate input before making API call
+      const emailError = validateEmail(email);
+      if (emailError) {
+        return { success: false, error: emailError };
+      }
+
+      const passwordError = validatePassword(password);
+      if (passwordError) {
+        return { success: false, error: passwordError };
+      }
+
+      // Attempt sign in
+      const userCredential = await signInWithEmailAndPassword(
+        auth,
+        email.trim().toLowerCase(),
+        password
+      );
+
+      return {
+        success: true,
+        data: userCredential.user,
+      };
+    } catch (error) {
+      console.error('Sign in error:', error);
+      return {
+        success: false,
+        error: getAuthErrorMessage(error),
+      };
+    }
+  };
+
+  const signUp = async (userData: SignUpData): Promise<AuthResult<User>> => {
+    try {
+      // Validate all input before making API call
+      const validationError = validateSignUpData(userData);
+      if (validationError) {
+        return { success: false, error: validationError };
+      }
+
+      // Attempt sign up
+      const userCredential = await createUserWithEmailAndPassword(
+        auth,
+        userData.email.trim().toLowerCase(),
+        userData.password
+      );
+
+      // Update user profile with display name
+      await updateProfile(userCredential.user, {
+        displayName: userData.fullName.trim(),
+      });
+
+      // Create user profile in Firestore
+      await setDoc(doc(db, 'users', userCredential.user.uid), {
+        email: userData.email.trim().toLowerCase(),
+        full_name: userData.fullName.trim(),
+        phone: userData.phone.trim(),
+        user_type: userData.userType,
+        company_name: userData.companyName?.trim() || null,
+        org_number: userData.orgNumber?.trim() || null,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      });
+
+      return {
+        success: true,
+        data: userCredential.user,
+      };
+    } catch (error) {
+      console.error('Sign up error:', error);
+      return {
+        success: false,
+        error: getAuthErrorMessage(error),
+      };
+    }
+  };
+
+  const signOut = async (): Promise<AuthResult> => {
+    try {
+      await firebaseSignOut(auth);
+      return { success: true };
+    } catch (error) {
+      console.error('Sign out failed:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'An unexpected error occurred',
+      };
+    }
+  };
+
+  const signOutAllDevices = async (): Promise<AuthResult> => {
+    try {
+      // Firebase doesn't have a direct "sign out all devices" method
+      // To implement this, you would need to:
+      // 1. Store session tokens in Firestore
+      // 2. Revoke all tokens on sign out
+      // For now, we'll just sign out the current device
+      await firebaseSignOut(auth);
+      return { success: true };
+    } catch (error) {
+      console.error('Sign out all devices failed:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'An unexpected error occurred',
+      };
+    }
+  };
+
+  return (
+    <AuthContext.Provider value={{
+      user,
+      loading,
+      signIn,
+      signUp,
+      signOut,
+      signOutAllDevices,
+    }}>
+      {children}
+    </AuthContext.Provider>
+  );
+}
+
+export function useAuth() {
   const context = useContext(AuthContext);
   if (context === undefined) {
     throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;
-};
-
-interface AuthProviderProps {
-  children: ReactNode;
 }
-
-export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(null);
-  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    // Check if auth is available
-    if (!auth) {
-      console.warn('Firebase Auth not initialized - running in demo mode');
-      setLoading(false);
-      return;
-    }
-
-    const unsubscribe = onAuthStateChanged(auth, async firebaseUser => {
-      setUser(firebaseUser);
-
-      if (firebaseUser && firestore) {
-        // Fetch user profile from Firestore
-        try {
-          const userDoc = await getDoc(doc(firestore, 'users', firebaseUser.uid));
-          if (userDoc.exists()) {
-            setUserProfile(userDoc.data() as UserProfile);
-          }
-        } catch (error) {
-          console.error('Error fetching user profile:', error);
-        }
-      } else {
-        setUserProfile(null);
-      }
-
-      setLoading(false);
-    });
-
-    return unsubscribe;
-  }, []);
-
-  const signIn = async (email: string, password: string) => {
-    if (!auth) {
-      throw new Error('Firebase Auth is not available');
-    }
-    const emailError = validateEmail(email);
-    if (emailError) {
-      throw new FirebaseError('auth/invalid-email', emailError);
-    }
-    const passwordError = validatePassword(password);
-    if (passwordError) {
-      throw new FirebaseError('auth/invalid-password', passwordError);
-    }
-    try {
-      await signInWithEmailAndPassword(auth, email, password);
-    } catch (error) {
-      console.error('Sign in error:', error);
-      throw error;
-    }
-  };
-
-  const signUp = async (
-    email: string,
-    password: string,
-    displayName: string,
-    role: 'customer' | 'carrier'
-  ) => {
-    if (!auth || !firestore) {
-      throw new Error('Firebase services are not available');
-    }
-    try {
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      const { user: newUser } = userCredential;
-
-      // Update display name
-      await updateProfile(newUser, { displayName });
-
-      // Create user profile in Firestore
-      const userProfileData: UserProfile = {
-        uid: newUser.uid,
-        email: newUser.email!,
-        displayName,
-        role,
-        verified: false,
-        createdAt: new Date(),
-        rating: 0,
-        reviewCount: 0,
-      };
-
-      await setDoc(doc(firestore, 'users', newUser.uid), userProfileData);
-      setUserProfile(userProfileData);
-    } catch (error) {
-      console.error('Sign up error:', error);
-      throw error;
-    }
-  };
-
-  const signOut = async () => {
-    if (!auth) {
-      throw new Error('Firebase Auth is not available');
-    }
-    try {
-      await firebaseSignOut(auth);
-      setUserProfile(null);
-    } catch (error) {
-      console.error('Sign out error:', error);
-      throw error;
-    }
-  };
-
-  const updateUserProfile = async (updates: Partial<UserProfile>) => {
-    if (!user) throw new Error('No user logged in');
-    if (!firestore) throw new Error('Firebase Firestore is not available');
-
-    try {
-      const userRef = doc(firestore, 'users', user.uid);
-      await updateDoc(userRef, updates);
-
-      setUserProfile(prev => (prev ? { ...prev, ...updates } : null));
-    } catch (error) {
-      console.error('Update profile error:', error);
-      throw error;
-    }
-  };
-
-  const resetPassword = async (email: string) => {
-    if (!auth) {
-      throw new Error('Firebase Auth is not available');
-    }
-    try {
-      await sendPasswordResetEmail(auth, email);
-    } catch (error) {
-      console.error('Password reset error:', error);
-      throw error;
-    }
-  };
-
-  const value: AuthContextType = {
-    user,
-    userProfile,
-    loading,
-    signIn,
-    signUp,
-    signOut,
-    updateUserProfile,
-    resetPassword,
-  };
-
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
-};
-
-export default AuthContext;

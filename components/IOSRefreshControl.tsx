@@ -1,6 +1,6 @@
 import React from 'react';
 import { RefreshControl as RNRefreshControl } from 'react-native';
-import { colors } from '../theme';
+import { colors } from '../theme/theme';
 
 interface IOSRefreshControlProps {
   refreshing: boolean;

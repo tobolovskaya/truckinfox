@@ -2,7 +2,7 @@ import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import { Text } from 'react-native-paper';
 import { useNetworkStatus } from '../hooks/useNetworkStatus';
-import { colors } from '../theme';
+import { colors } from '../theme/theme';
 
 export const NetworkStatusBar: React.FC = () => {
   const { isConnected } = useNetworkStatus();

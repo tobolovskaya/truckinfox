@@ -1,7 +1,7 @@
 import React from 'react';
 import { TouchableOpacity, StyleSheet, ViewStyle, TextStyle } from 'react-native';
 import { Text } from 'react-native-paper';
-import { colors, spacing, borderRadius } from '../theme';
+import { colors, spacing, borderRadius } from '../theme/theme';
 
 interface IOSButtonProps {
   title: string;

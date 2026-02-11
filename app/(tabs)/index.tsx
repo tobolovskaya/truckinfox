@@ -5,7 +5,7 @@ import { useRouter } from 'expo-router';
 import { useAuth } from '../../contexts/AuthContext';
 import { useI18n } from '../../contexts/I18nContext';
 import { QuickActionCard } from '../../components/home/QuickActionCard';
-import { colors, spacing } from '../../theme';
+import { colors, spacing } from '../../theme/theme';
 
 export default function HomeScreen() {
   const { userProfile } = useAuth();

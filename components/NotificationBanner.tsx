@@ -2,7 +2,7 @@ import React, { useEffect, useRef } from 'react';
 import { Animated, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { Text } from 'react-native-paper';
 import { useNotificationBanner } from '../contexts/NotificationBannerContext';
-import { colors, spacing } from '../theme';
+import { colors, spacing } from '../theme/theme';
 
 export const NotificationBanner: React.FC = () => {
   const { banner, hideBanner } = useNotificationBanner();

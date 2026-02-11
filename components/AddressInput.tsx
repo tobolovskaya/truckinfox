@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { View, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { Text } from 'react-native-paper';
 import * as Location from 'expo-location';
-import { colors, spacing, borderRadius } from '../theme';
+import { colors, spacing, borderRadius } from '../theme/theme';
 import { IOSButton } from './IOSButton';
 
 interface AddressInputProps {

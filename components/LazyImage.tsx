@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Image, View, StyleSheet, ActivityIndicator, ImageStyle } from 'react-native';
-import { colors } from '../theme';
+import { colors } from '../theme/theme';
 
 interface LazyImageProps {
   uri: string;

@@ -1,7 +1,7 @@
 import React, { useRef } from 'react';
 import { View, StyleSheet, Alert } from 'react-native';
 import { Text } from 'react-native-paper';
-import { colors, spacing, borderRadius } from '../theme';
+import { colors, spacing, borderRadius } from '../theme/theme';
 import { IOSButton } from './IOSButton';
 
 interface SignaturePadProps {

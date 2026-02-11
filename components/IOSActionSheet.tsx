@@ -1,7 +1,7 @@
 import React from 'react';
 import { Modal, View, TouchableOpacity, StyleSheet, TouchableWithoutFeedback } from 'react-native';
 import { Text } from 'react-native-paper';
-import { colors, spacing, borderRadius } from '../theme';
+import { colors, spacing, borderRadius } from '../theme/theme';
 
 interface ActionSheetOption {
   label: string;

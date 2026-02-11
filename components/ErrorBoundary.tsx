@@ -1,7 +1,7 @@
 import React, { Component, ReactNode, ErrorInfo } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { Text, Button } from 'react-native-paper';
-import { colors, spacing } from '../theme';
+import { colors, spacing } from '../theme/theme';
 
 interface Props {
   children: ReactNode;

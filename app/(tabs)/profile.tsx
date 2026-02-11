@@ -6,7 +6,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useI18n } from '../../contexts/I18nContext';
 import { Avatar } from '../../components/Avatar';
 import { IOSButton } from '../../components/IOSButton';
-import { colors, spacing, borderRadius } from '../../theme';
+import { colors, spacing, borderRadius } from '../../theme/theme';
 import { platformShadow } from '../../lib/platformShadow';
 
 export default function ProfileScreen() {

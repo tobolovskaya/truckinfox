@@ -2,7 +2,7 @@ import React from 'react';
 import { View, StyleSheet, ScrollView } from 'react-native';
 import { Text } from 'react-native-paper';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { colors, spacing, borderRadius } from '../../theme';
+import { colors, spacing, borderRadius } from '../../theme/theme';
 import { IOSButton } from '../../components/IOSButton';
 import { platformShadow } from '../../lib/platformShadow';
 import { formatCurrency, formatDate } from '../../utils/formatting';

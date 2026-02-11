@@ -12,7 +12,7 @@ import { Text } from 'react-native-paper';
 import { useLocalSearchParams } from 'expo-router';
 import { useAuth } from '../../contexts/AuthContext';
 import { Avatar } from '../../components/Avatar';
-import { colors, spacing, borderRadius } from '../../theme';
+import { colors, spacing, borderRadius } from '../../theme/theme';
 import { formatRelativeTime } from '../../utils/formatting';
 
 interface Message {

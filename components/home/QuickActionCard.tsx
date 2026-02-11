@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, TouchableOpacity, StyleSheet } from 'react-native';
 import { Text } from 'react-native-paper';
-import { colors, spacing, borderRadius } from '../../theme';
+import { colors, spacing, borderRadius } from '../../theme/theme';
 import { platformShadow } from '../../lib/platformShadow';
 
 interface QuickActionCardProps {

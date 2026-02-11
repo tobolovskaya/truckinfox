@@ -1,6 +1,6 @@
 import React from 'react';
 import { Text as RNText, TextProps, StyleSheet, TextStyle } from 'react-native';
-import { colors, typography } from '../theme';
+import { colors, typography } from '../theme/theme';
 
 interface IOSTypographyProps extends TextProps {
   variant?: 'h1' | 'h2' | 'h3' | 'body' | 'caption' | 'button';

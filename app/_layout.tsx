@@ -9,7 +9,7 @@ import { ToastProvider } from '../contexts/ToastContext';
 import { NotificationBannerProvider } from '../contexts/NotificationBannerContext';
 import { ErrorBoundary } from '../components/ErrorBoundary';
 import { NetworkStatusBar } from '../components/NetworkStatusBar';
-import { theme } from '../theme';
+import { theme } from '../theme/theme';
 import 'react-native-url-polyfill/auto';
 import 'react-native-gesture-handler';
 import 'react-native-get-random-values';

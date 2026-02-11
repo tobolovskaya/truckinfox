@@ -2,7 +2,7 @@ import React, { useEffect, useRef } from 'react';
 import { Animated, StyleSheet, View } from 'react-native';
 import { Text } from 'react-native-paper';
 import { useToast } from '../contexts/ToastContext';
-import { colors, spacing } from '../theme';
+import { colors, spacing } from '../theme/theme';
 
 export const Toast: React.FC = () => {
   const { toast, hideToast } = useToast();
