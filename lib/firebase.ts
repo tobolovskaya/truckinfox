@@ -1,10 +1,37 @@
 import { initializeApp, getApps, FirebaseApp } from 'firebase/app';
-import { Auth, initializeAuth } from 'firebase/auth';
-// @ts-ignore - getReactNativePersistence may not be in type definitions
-import { getReactNativePersistence } from 'firebase/auth/react-native';
+import { Auth, initializeAuth, getAuth } from 'firebase/auth';
 import { Firestore, getFirestore } from 'firebase/firestore';
 import { FirebaseStorage, getStorage } from 'firebase/storage';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+
+// Custom AsyncStorage persistence for Firebase Auth
+// Using 'any' type as Firebase's Persistence interface may not expose internal methods
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const AsyncStoragePersistence: any = {
+  type: 'LOCAL',
+  async _get(key: string) {
+    try {
+      const value = await AsyncStorage.getItem(key);
+      return value ? JSON.parse(value) : null;
+    } catch {
+      return null;
+    }
+  },
+  async _remove(key: string) {
+    try {
+      await AsyncStorage.removeItem(key);
+    } catch {
+      // Ignore errors
+    }
+  },
+  async _set(key: string, value: unknown) {
+    try {
+      await AsyncStorage.setItem(key, JSON.stringify(value));
+    } catch {
+      // Ignore errors
+    }
+  },
+};
 
 // Firebase configuration from environment variables
 const firebaseConfig = {
@@ -31,15 +58,23 @@ let auth: Auth;
 let firestore: Firestore;
 let storage: FirebaseStorage;
 
+// Initialize Firebase Auth with AsyncStorage persistence
+// Note: initializeAuth must be called before getAuth for persistence to work
 try {
-  // Initialize Firebase Auth with AsyncStorage persistence
   auth = initializeAuth(app, {
-    persistence: getReactNativePersistence(AsyncStorage),
+    persistence: AsyncStoragePersistence,
   });
-  console.log('Firebase Auth initialized successfully');
-} catch (error) {
-  console.error('Firebase Auth initialization failed:', error);
-  throw new Error('Firebase Auth is required for this application');
+  console.log('Firebase Auth initialized successfully with AsyncStorage persistence');
+} catch (error: unknown) {
+  // If auth is already initialized, get the existing instance
+  const firebaseError = error as { code?: string };
+  if (firebaseError?.code === 'auth/already-initialized') {
+    console.log('Firebase Auth: Using existing instance');
+    auth = getAuth(app);
+  } else {
+    console.error('Firebase Auth initialization failed:', error);
+    throw new Error('Firebase Auth is required for this application');
+  }
 }
 
 try {
