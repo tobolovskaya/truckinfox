@@ -1,5 +1,7 @@
 {
   "projects": {
-    "default": "truckinfox"
-  }
+    "default": "truckinfox-8d5b2"
+  },
+  "targets": {},
+  "etags": {}
 }
