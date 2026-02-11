@@ -1,68 +1,79 @@
-import React, { createContext, useContext, useState, useCallback, useRef, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useCallback } from 'react';
+import { Toast, ToastType } from '../components/Toast';
 
-export interface ToastConfig {
+interface ToastMessage {
+  id: string;
   message: string;
-  type: 'success' | 'error' | 'info' | 'warning';
+  type: ToastType;
   duration?: number;
 }
 
 interface ToastContextType {
-  showToast: (config: ToastConfig) => void;
-  hideToast: () => void;
-  toast: ToastConfig | null;
+  show: (message: string, type?: ToastType, duration?: number) => void;
+  success: (message: string, duration?: number) => void;
+  error: (message: string, duration?: number) => void;
+  info: (message: string, duration?: number) => void;
+  warning: (message: string, duration?: number) => void;
 }
 
 const ToastContext = createContext<ToastContextType | undefined>(undefined);
 
-export const useToast = () => {
+export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [toasts, setToasts] = useState<ToastMessage[]>([]);
+
+  const show = useCallback((message: string, type: ToastType = 'info', duration = 3000) => {
+    const id = Date.now().toString() + Math.random().toString(36);
+    const newToast: ToastMessage = { id, message, type, duration };
+    
+    setToasts((prev) => [...prev, newToast]);
+    
+    // Auto-remove toast after duration + animation time
+    setTimeout(() => {
+      setToasts((prev) => prev.filter((t) => t.id !== id));
+    }, duration + 500);
+  }, []);
+
+  const success = useCallback((message: string, duration?: number) => {
+    show(message, 'success', duration);
+  }, [show]);
+
+  const error = useCallback((message: string, duration?: number) => {
+    show(message, 'error', duration);
+  }, [show]);
+
+  const info = useCallback((message: string, duration?: number) => {
+    show(message, 'info', duration);
+  }, [show]);
+
+  const warning = useCallback((message: string, duration?: number) => {
+    show(message, 'warning', duration);
+  }, [show]);
+
+  const handleHide = useCallback((id: string) => {
+    setToasts((prev) => prev.filter((t) => t.id !== id));
+  }, []);
+
+  return (
+    <ToastContext.Provider value={{ show, success, error, info, warning }}>
+      {children}
+      {toasts.map((toast, index) => (
+        <Toast
+          key={toast.id}
+          visible={true}
+          message={toast.message}
+          type={toast.type}
+          duration={toast.duration}
+          onHide={() => handleHide(toast.id)}
+        />
+      ))}
+    </ToastContext.Provider>
+  );
+};
+
+export const useToast = (): ToastContextType => {
   const context = useContext(ToastContext);
-  if (context === undefined) {
+  if (!context) {
     throw new Error('useToast must be used within a ToastProvider');
   }
   return context;
 };
-
-interface ToastProviderProps {
-  children: ReactNode;
-}
-
-export const ToastProvider: React.FC<ToastProviderProps> = ({ children }) => {
-  const [toast, setToast] = useState<ToastConfig | null>(null);
-  const timeoutIdRef = useRef<NodeJS.Timeout | null>(null);
-
-  const hideToast = useCallback(() => {
-    setToast(null);
-    if (timeoutIdRef.current) {
-      clearTimeout(timeoutIdRef.current);
-      timeoutIdRef.current = null;
-    }
-  }, []);
-
-  const showToast = useCallback(
-    (config: ToastConfig) => {
-      // Clear existing timeout
-      if (timeoutIdRef.current) {
-        clearTimeout(timeoutIdRef.current);
-      }
-
-      setToast(config);
-
-      // Auto-hide after duration (default 3 seconds)
-      const duration = config.duration || 3000;
-      timeoutIdRef.current = setTimeout(() => {
-        hideToast();
-      }, duration);
-    },
-    [hideToast]
-  );
-
-  const value: ToastContextType = {
-    showToast,
-    hideToast,
-    toast,
-  };
-
-  return <ToastContext.Provider value={value}>{children}</ToastContext.Provider>;
-};
-
-export default ToastContext;
