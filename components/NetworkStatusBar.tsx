@@ -1,35 +1,39 @@
 import React from 'react';
-import { View, StyleSheet } from 'react-native';
-import { Text } from 'react-native-paper';
+import { View, Text, StyleSheet } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { colors, spacing, fontSize, fontWeight } from '../lib/sharedStyles';
 import { useNetworkStatus } from '../hooks/useNetworkStatus';
-import { colors } from '../theme/theme';
 
-export const NetworkStatusBar: React.FC = () => {
-  const { isConnected } = useNetworkStatus();
+export const NetworkStatusBar = () => {
+  const { isConnected, isInternetReachable } = useNetworkStatus();
 
-  if (isConnected === null || isConnected) {
+  if (isConnected && isInternetReachable) {
     return null;
   }
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.text}>No internet connection</Text>
+    <View style={styles.offlineBanner}>
+      <Ionicons name="cloud-offline-outline" size={16} color="white" />
+      <Text style={styles.offlineText}>
+        {!isConnected ? 'No internet connection' : 'Limited connectivity'}
+      </Text>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    backgroundColor: colors.error,
-    padding: 8,
+  offlineBanner: {
+    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
+    backgroundColor: colors.error,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.lg,
+    gap: spacing.sm,
   },
-  text: {
-    color: colors.background,
-    fontSize: 14,
-    fontWeight: '500',
+  offlineText: {
+    color: 'white',
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.semibold,
   },
 });
-
-export default NetworkStatusBar;

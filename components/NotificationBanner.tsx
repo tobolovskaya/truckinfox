@@ -1,95 +1,148 @@
-import React, { useEffect, useRef } from 'react';
-import { Animated, StyleSheet, TouchableOpacity, View } from 'react-native';
-import { Text } from 'react-native-paper';
-import { useNotificationBanner } from '../contexts/NotificationBannerContext';
-import { colors, spacing } from '../theme/theme';
+import React, { useEffect } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring,
+  withTiming,
+  runOnJS,
+} from 'react-native-reanimated';
+import { Ionicons } from '@expo/vector-icons';
+import { colors, spacing, fontSize, fontWeight, borderRadius, shadows } from '../lib/sharedStyles';
 
-export const NotificationBanner: React.FC = () => {
-  const { banner, hideBanner } = useNotificationBanner();
-  const translateY = useRef(new Animated.Value(-100)).current;
-  const opacity = useRef(new Animated.Value(0)).current;
+interface NotificationBannerProps {
+  message: string;
+  type?: 'success' | 'error' | 'info' | 'warning';
+  duration?: number;
+  action?: {
+    label: string;
+    onPress: () => void;
+  };
+  onDismiss: () => void;
+}
+
+export const NotificationBanner: React.FC<NotificationBannerProps> = ({
+  message,
+  type = 'info',
+  duration = 4000,
+  action,
+  onDismiss,
+}) => {
+  const translateY = useSharedValue(-100);
 
   useEffect(() => {
-    if (banner) {
-      // Show animation
-      Animated.parallel([
-        Animated.timing(translateY, {
-          toValue: 0,
-          duration: 300,
-          useNativeDriver: true,
-        }),
-        Animated.timing(opacity, {
-          toValue: 1,
-          duration: 300,
-          useNativeDriver: true,
-        }),
-      ]).start();
-    } else {
-      // Hide animation
-      Animated.parallel([
-        Animated.timing(translateY, {
-          toValue: -100,
-          duration: 300,
-          useNativeDriver: true,
-        }),
-        Animated.timing(opacity, {
-          toValue: 0,
-          duration: 300,
-          useNativeDriver: true,
-        }),
-      ]).start();
-    }
-  }, [banner]);
+    // Slide in
+    translateY.value = withSpring(0, {
+      damping: 20,
+      stiffness: 200,
+    });
 
-  if (!banner) return null;
+    // Auto dismiss
+    const timer = setTimeout(() => {
+      translateY.value = withTiming(-100, { duration: 300 }, () => {
+        runOnJS(onDismiss)();
+      });
+    }, duration);
+
+    return () => clearTimeout(timer);
+  }, []);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: translateY.value }],
+  }));
+
+  const getColor = () => {
+    switch (type) {
+      case 'success':
+        return colors.success;
+      case 'error':
+        return colors.error;
+      case 'warning':
+        return colors.status.warning;
+      default:
+        return colors.primary;
+    }
+  };
+
+  const getIcon = () => {
+    switch (type) {
+      case 'success':
+        return 'checkmark-circle';
+      case 'error':
+        return 'close-circle';
+      case 'warning':
+        return 'warning';
+      default:
+        return 'information-circle';
+    }
+  };
 
   return (
-    <TouchableOpacity onPress={hideBanner} activeOpacity={0.9}>
-      <Animated.View style={[styles.container, { transform: [{ translateY }], opacity }]}>
-        <View style={styles.content}>
-          <Text style={styles.title} numberOfLines={1}>
-            {banner.title}
-          </Text>
-          <Text style={styles.body} numberOfLines={2}>
-            {banner.body}
-          </Text>
-        </View>
-      </Animated.View>
-    </TouchableOpacity>
+    <Animated.View
+      style={[
+        styles.banner,
+        { backgroundColor: getColor() },
+        animatedStyle,
+      ]}
+    >
+      <View style={styles.bannerContent}>
+        <Ionicons name={getIcon()} size={20} color="white" />
+        <Text style={styles.bannerText} numberOfLines={2}>
+          {message}
+        </Text>
+      </View>
+      {action && (
+        <TouchableOpacity onPress={action.onPress} style={styles.bannerAction}>
+          <Text style={styles.bannerActionText}>{action.label}</Text>
+        </TouchableOpacity>
+      )}
+      <TouchableOpacity onPress={onDismiss} style={styles.dismissButton}>
+        <Ionicons name="close" size={20} color="white" />
+      </TouchableOpacity>
+    </Animated.View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
+  banner: {
     position: 'absolute',
     top: 60,
-    left: spacing.md,
-    right: spacing.md,
-    backgroundColor: colors.background,
-    padding: spacing.md,
-    borderRadius: 12,
-    zIndex: 1000,
-    elevation: 5,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    borderLeftWidth: 4,
-    borderLeftColor: colors.primary,
+    left: spacing.lg,
+    right: spacing.lg,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.lg,
+    borderRadius: borderRadius.lg,
+    zIndex: 9999,
+    ...shadows.lg,
   },
-  content: {
+  bannerContent: {
     flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
   },
-  title: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: colors.text,
-    marginBottom: spacing.xs,
+  bannerText: {
+    flex: 1,
+    color: 'white',
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.medium,
   },
-  body: {
-    fontSize: 14,
-    color: colors.textSecondary,
+  bannerAction: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    borderRadius: borderRadius.sm,
+    marginLeft: spacing.sm,
+  },
+  bannerActionText: {
+    color: 'white',
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.semibold,
+  },
+  dismissButton: {
+    marginLeft: spacing.sm,
+    padding: spacing.xs,
   },
 });
-
-export default NotificationBanner;

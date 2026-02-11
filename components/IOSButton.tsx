@@ -1,113 +1,239 @@
 import React from 'react';
-import { TouchableOpacity, StyleSheet, ViewStyle, TextStyle } from 'react-native';
-import { Text } from 'react-native-paper';
-import { colors, spacing, borderRadius } from '../theme/theme';
+import {
+  TouchableOpacity,
+  Text,
+  StyleSheet,
+  ViewStyle,
+  TextStyle,
+  ActivityIndicator,
+  Platform,
+} from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { triggerHapticFeedback } from '../utils/haptics';
+import { theme } from '../theme/theme';
+import { colors, spacing, fontSize, fontWeight, borderRadius, shadows } from '../lib/sharedStyles';
 
 interface IOSButtonProps {
   title: string;
   onPress: () => void;
-  variant?: 'primary' | 'secondary' | 'outlined' | 'text';
+  variant?: 'primary' | 'secondary' | 'destructive' | 'ghost' | 'link';
+  size?: 'small' | 'medium' | 'large';
   disabled?: boolean;
+  loading?: boolean;
+  icon?: keyof typeof Ionicons.glyphMap;
+  iconPosition?: 'left' | 'right';
   style?: ViewStyle;
   textStyle?: TextStyle;
+  fullWidth?: boolean;
+  hapticFeedback?: 'light' | 'medium' | 'heavy';
 }
 
-export const IOSButton: React.FC<IOSButtonProps> = ({
+export function IOSButton({
   title,
   onPress,
   variant = 'primary',
+  size = 'medium',
   disabled = false,
+  loading = false,
+  icon,
+  iconPosition = 'left',
   style,
   textStyle,
-}) => {
+  fullWidth = false,
+  hapticFeedback = 'light',
+}: IOSButtonProps) {
+  const handlePress = () => {
+    if (disabled || loading) return;
+
+    // Add haptic feedback on iOS
+    if (hapticFeedback) {
+      triggerHapticFeedback[hapticFeedback]?.();
+    }
+
+    onPress();
+  };
+
   const getButtonStyle = (): ViewStyle => {
     const baseStyle: ViewStyle = {
-      ...styles.button,
+      borderRadius: 10, // Updated to match ui.txt spec
+      justifyContent: 'center',
+      alignItems: 'center',
+      flexDirection: iconPosition === 'right' ? 'row-reverse' : 'row',
     };
 
-    if (disabled) {
-      return { ...baseStyle, ...styles.disabled };
-    }
+    // Size variants
+    const sizeStyles: Record<string, ViewStyle> = {
+      small: {
+        paddingVertical: 10,
+        paddingHorizontal: 16,
+        minHeight: 40,
+      },
+      medium: {
+        paddingVertical: 12,
+        paddingHorizontal: 20,
+        minHeight: 48, // Updated to match ui.txt spec
+      },
+      large: {
+        paddingVertical: 16,
+        paddingHorizontal: 24,
+        minHeight: 50,
+      },
+    };
 
-    switch (variant) {
-      case 'primary':
-        return { ...baseStyle, ...styles.primary };
-      case 'secondary':
-        return { ...baseStyle, ...styles.secondary };
-      case 'outlined':
-        return { ...baseStyle, ...styles.outlined };
-      case 'text':
-        return { ...baseStyle, ...styles.text };
-      default:
-        return baseStyle;
-    }
+    // Color variants
+    const variantStyles: Record<string, ViewStyle> = {
+      primary: {
+        backgroundColor: disabled ? theme.iconColors.ios.lightGray : theme.iconColors.primary,
+        ...sizeStyles[size],
+      },
+      secondary: {
+        backgroundColor: disabled ? '#FAFAFA' : '#FFFFFF', // Updated to match ui.txt spec
+        borderWidth: 1,
+        borderColor: disabled ? '#E0E0E0' : theme.iconColors.primary,
+        ...sizeStyles[size],
+      },
+      destructive: {
+        backgroundColor: disabled ? theme.iconColors.ios.lightGray : theme.iconColors.ios.red,
+        ...sizeStyles[size],
+      },
+      ghost: {
+        backgroundColor: 'transparent',
+        ...sizeStyles[size],
+      },
+      link: {
+        backgroundColor: 'transparent',
+        paddingVertical: 4,
+        paddingHorizontal: 0,
+        minHeight: 'auto' as any,
+      },
+    };
+
+    return {
+      ...baseStyle,
+      ...variantStyles[variant],
+      ...(fullWidth && { alignSelf: 'stretch' }),
+      ...(disabled && { opacity: 0.6 }),
+    };
   };
 
   const getTextStyle = (): TextStyle => {
-    const baseStyle: TextStyle = {
-      ...styles.buttonText,
+    const sizeTextStyles: Record<string, TextStyle> = {
+      small: {
+        fontSize: 14,
+        fontWeight: '600',
+      },
+      medium: {
+        fontSize: 17,
+        fontWeight: '600',
+      },
+      large: {
+        fontSize: 19,
+        fontWeight: '600',
+      },
     };
 
-    if (disabled) {
-      return { ...baseStyle, color: colors.textDisabled };
+    const variantTextStyles: Record<string, TextStyle> = {
+      primary: {
+        color: theme.iconColors.white,
+      },
+      secondary: {
+        color: disabled ? theme.iconColors.ios.gray : theme.iconColors.primary, // Updated to match ui.txt spec
+      },
+      destructive: {
+        color: theme.iconColors.white,
+      },
+      ghost: {
+        color: disabled ? theme.iconColors.ios.gray : theme.iconColors.primary,
+      },
+      link: {
+        color: disabled ? theme.iconColors.ios.gray : theme.iconColors.ios.blue,
+        fontSize: 17,
+        fontWeight: '400',
+      },
+    };
+
+    return {
+      ...sizeTextStyles[size],
+      ...variantTextStyles[variant],
+    };
+  };
+
+  const getIconSize = (): number => {
+    const sizeMap = {
+      small: 16,
+      medium: 18,
+      large: 20,
+    };
+    return sizeMap[size];
+  };
+
+  const renderIcon = () => {
+    if (!icon || loading) return null;
+
+    return (
+      <Ionicons
+        name={icon}
+        size={getIconSize()}
+        color={getTextStyle().color}
+        style={{
+          marginRight: iconPosition === 'left' ? 8 : 0,
+          marginLeft: iconPosition === 'right' ? 8 : 0,
+        }}
+      />
+    );
+  };
+
+  const renderContent = () => {
+    if (loading) {
+      return (
+        <ActivityIndicator
+          size="small"
+          color={getTextStyle().color}
+        />
+      );
     }
 
-    switch (variant) {
-      case 'primary':
-        return { ...baseStyle, color: colors.background };
-      case 'secondary':
-        return { ...baseStyle, color: colors.background };
-      case 'outlined':
-        return { ...baseStyle, color: colors.primary };
-      case 'text':
-        return { ...baseStyle, color: colors.primary };
-      default:
-        return baseStyle;
-    }
+    return (
+      <>
+        {renderIcon()}
+        <Text style={[getTextStyle(), textStyle]}>
+          {title}
+        </Text>
+      </>
+    );
   };
 
   return (
     <TouchableOpacity
       style={[getButtonStyle(), style]}
-      onPress={onPress}
-      disabled={disabled}
+      onPress={handlePress}
+      disabled={disabled || loading}
       activeOpacity={0.7}
     >
-      <Text style={[getTextStyle(), textStyle]}>{title}</Text>
+      {renderContent()}
     </TouchableOpacity>
   );
-};
+}
 
-const styles = StyleSheet.create({
-  button: {
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.lg,
-    borderRadius: borderRadius.lg,
-    alignItems: 'center',
-    justifyContent: 'center',
-    minHeight: 48,
-  },
-  primary: {
-    backgroundColor: colors.primary,
-  },
-  secondary: {
-    backgroundColor: colors.secondary,
-  },
-  outlined: {
-    backgroundColor: 'transparent',
-    borderWidth: 2,
-    borderColor: colors.primary,
-  },
-  text: {
-    backgroundColor: 'transparent',
-  },
-  disabled: {
-    backgroundColor: colors.divider,
-  },
-  buttonText: {
-    fontSize: 17,
-    fontWeight: '600',
-  },
-});
+// Pre-configured button variants for common use cases
+export const PrimaryButton = (props: Omit<IOSButtonProps, 'variant'>) => (
+  <IOSButton {...props} variant="primary" />
+);
 
-export default IOSButton;
+export const SecondaryButton = (props: Omit<IOSButtonProps, 'variant'>) => (
+  <IOSButton {...props} variant="secondary" />
+);
+
+export const DestructiveButton = (props: Omit<IOSButtonProps, 'variant'>) => (
+  <IOSButton {...props} variant="destructive" hapticFeedback="medium" />
+);
+
+export const GhostButton = (props: Omit<IOSButtonProps, 'variant'>) => (
+  <IOSButton {...props} variant="ghost" />
+);
+
+export const LinkButton = (props: Omit<IOSButtonProps, 'variant'>) => (
+  <IOSButton {...props} variant="link" />
+);
+
+const styles = StyleSheet.create({});

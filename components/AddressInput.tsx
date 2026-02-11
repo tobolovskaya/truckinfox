@@ -1,125 +1,241 @@
-import React, { useState } from 'react';
-import { View, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
-import { Text } from 'react-native-paper';
-import * as Location from 'expo-location';
-import { colors, spacing, borderRadius } from '../theme/theme';
-import { IOSButton } from './IOSButton';
+import React, { useState, useRef } from 'react';
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  FlatList,
+  StyleSheet,
+  Modal,
+  Dimensions,
+} from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { searchNorwegianPlaces, getPlaceDetails, formatNorwegianAddress } from '../utils/googlePlaces';
+import { theme } from '../theme/theme';
+import { getPlatformShadow } from '../lib/platformShadow';
+import { colors, spacing, fontSize, fontWeight, borderRadius, shadows } from '../lib/sharedStyles';
 
 interface AddressInputProps {
+  placeholder: string;
   value: string;
-  onChangeText: (text: string) => void;
-  onLocationSelected?: (location: { latitude: number; longitude: number; address: string }) => void;
-  placeholder?: string;
-  label?: string;
+  onAddressSelect: (address: string, coordinates?: { lat: number; lng: number }) => void;
+  onChangeText?: (text: string) => void;
+  style?: any;
 }
 
-export const AddressInput: React.FC<AddressInputProps> = ({
+interface Suggestion {
+  place_id: string;
+  description: string;
+  structured_formatting?: {
+    main_text: string;
+    secondary_text: string;
+  };
+  geometry?: {
+    location: {
+      lat: number;
+      lng: number;
+    };
+  };
+}
+
+const { height: SCREEN_HEIGHT } = Dimensions.get('window');
+
+export default function AddressInput({
+  placeholder,
   value,
+  onAddressSelect,
   onChangeText,
-  onLocationSelected,
-  placeholder = 'Enter address',
-  label,
-}) => {
+  style
+}: AddressInputProps) {
+  const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
   const [loading, setLoading] = useState(false);
+  const searchTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const getCurrentLocation = async () => {
-    try {
+  const handleInputChange = (text: string) => {
+    onChangeText?.(text);
+
+    // Clear previous timeout
+    if (searchTimeout.current) {
+      clearTimeout(searchTimeout.current);
+    }
+
+    if (text.length < 2) {
+      setSuggestions([]);
+      setShowSuggestions(false);
+      return;
+    }
+
+    // Debounce search
+    searchTimeout.current = setTimeout(async () => {
       setLoading(true);
-      const { status } = await Location.requestForegroundPermissionsAsync();
-
-      if (status !== 'granted') {
-        Alert.alert(
-          'Permission Required',
-          'Please grant location permissions to use this feature.'
-        );
+      try {
+        const results = await searchNorwegianPlaces(text);
+        setSuggestions(results);
+        setShowSuggestions(true);
+      } catch (error) {
+        console.error('Address search error:', error);
+      } finally {
         setLoading(false);
-        return;
       }
+    }, 300);
+  };
 
-      const currentLocation = await Location.getCurrentPositionAsync({});
-      const { latitude, longitude } = currentLocation.coords;
+  const handleSuggestionSelect = async (suggestion: Suggestion) => {
+    setShowSuggestions(false);
+    setSuggestions([]);
 
-      // Reverse geocode to get address
-      const addresses = await Location.reverseGeocodeAsync({ latitude, longitude });
+    // Format the address for Norwegian standards
+    const formattedAddress = formatNorwegianAddress(suggestion.description);
 
-      if (addresses && addresses.length > 0) {
-        const address = addresses[0];
-        const formattedAddress = [address.street, address.city, address.postalCode, address.country]
-          .filter(Boolean)
-          .join(', ');
+    // If it's an offline city, use stored coordinates
+    if (suggestion.geometry?.location) {
+      onAddressSelect(formattedAddress, suggestion.geometry.location);
+      return;
+    }
 
-        onChangeText(formattedAddress);
-
-        if (onLocationSelected) {
-          onLocationSelected({
-            latitude,
-            longitude,
-            address: formattedAddress,
-          });
-        }
+    // Get detailed place information with coordinates
+    try {
+      const details = await getPlaceDetails(suggestion.place_id);
+      if (details) {
+        onAddressSelect(
+          formatNorwegianAddress(details.formatted_address),
+          details.geometry.location
+        );
+      } else {
+        onAddressSelect(formattedAddress);
       }
-
-      setLoading(false);
     } catch (error) {
-      console.error('Error getting current location:', error);
-      Alert.alert('Error', 'Failed to get current location. Please try again.');
-      setLoading(false);
+      console.error('Error getting place details:', error);
+      onAddressSelect(formattedAddress);
     }
   };
 
-  return (
-    <View style={styles.container}>
-      {label && <Text style={styles.label}>{label}</Text>}
-      <View style={styles.inputContainer}>
-        <TextInput
-          style={styles.input}
-          value={value}
-          onChangeText={onChangeText}
-          placeholder={placeholder}
-          placeholderTextColor={colors.textDisabled}
-        />
-        <TouchableOpacity
-          onPress={getCurrentLocation}
-          disabled={loading}
-          style={styles.locationButton}
-        >
-          <Text style={styles.locationButtonText}>{loading ? '...' : '📍'}</Text>
-        </TouchableOpacity>
+  const renderSuggestion = ({ item }: { item: Suggestion }) => (
+    <TouchableOpacity
+      style={styles.suggestionItem}
+      onPress={() => handleSuggestionSelect(item)}
+    >
+      <Ionicons name="location-outline" size={20} color={theme.iconColors.primary} />
+      <View style={styles.suggestionText}>
+        <Text style={styles.suggestionMainText}>
+          {item.structured_formatting?.main_text || item.description}
+        </Text>
+        {item.structured_formatting?.secondary_text && (
+          <Text style={styles.suggestionSecondaryText}>
+            {item.structured_formatting.secondary_text}
+          </Text>
+        )}
       </View>
+    </TouchableOpacity>
+  );
+
+  return (
+    <View style={[styles.container, style]}>
+      <View style={styles.inputContainer}>
+        <Ionicons name="location" size={20} color={theme.iconColors.gray.primary} />
+        <TextInput
+          style={styles.textInput}
+          placeholder={placeholder}
+          value={value}
+          onChangeText={handleInputChange}
+          placeholderTextColor="#9CA3AF"
+          autoCorrect={false}
+          autoCapitalize="words"
+        />
+        {loading && (
+          <Ionicons name="refresh" size={20} color={theme.iconColors.primary} />
+        )}
+      </View>
+
+      <Modal
+        visible={showSuggestions && suggestions.length > 0}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowSuggestions(false)}
+      >
+        <TouchableOpacity
+          style={styles.modalOverlay}
+          activeOpacity={1}
+          onPress={() => setShowSuggestions(false)}
+        >
+          <View style={styles.suggestionsContainer}>
+            <FlatList
+              data={suggestions}
+              renderItem={renderSuggestion}
+              keyExtractor={(item) => item.place_id}
+              style={[styles.suggestionsList, { maxHeight: SCREEN_HEIGHT * 0.4 }]}
+              showsVerticalScrollIndicator={false}
+              keyboardShouldPersistTaps="handled"
+            />
+          </View>
+        </TouchableOpacity>
+      </Modal>
     </View>
   );
-};
+}
 
 const styles = StyleSheet.create({
   container: {
-    marginVertical: spacing.sm,
-  },
-  label: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: colors.text,
-    marginBottom: spacing.xs,
+    position: 'relative',
   },
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderWidth: 1,
-    borderColor: colors.border,
+    backgroundColor: colors.white,
     borderRadius: borderRadius.md,
-    backgroundColor: colors.background,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.lg,
+    borderWidth: 1,
+    borderColor: colors.border.light,
   },
-  input: {
+  textInput: {
     flex: 1,
-    padding: spacing.md,
-    fontSize: 16,
-    color: colors.text,
+    fontSize: fontSize.lg,
+    color: colors.text.primary,
+    marginLeft: spacing.md,
   },
-  locationButton: {
-    padding: spacing.md,
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.1)',
+    justifyContent: 'flex-start',
+    paddingTop: 100,
   },
-  locationButtonText: {
-    fontSize: 24,
+  suggestionsContainer: {
+    marginHorizontal: spacing.xl,
+    backgroundColor: colors.white,
+    borderRadius: borderRadius.md,
+    ...getPlatformShadow({
+      shadowColor: colors.black,
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.15,
+      shadowRadius: 12,
+      elevation: 8,
+    }),
+  },
+  suggestionsList: {
+    maxHeight: 300,
+  },
+  suggestionItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+    borderBottomWidth: 0.5,
+    borderBottomColor: colors.border.light,
+  },
+  suggestionText: {
+    flex: 1,
+    marginLeft: spacing.md,
+  },
+  suggestionMainText: {
+    fontSize: fontSize.lg,
+    fontWeight: fontWeight.semibold,
+    color: colors.text.primary,
+  },
+  suggestionSecondaryText: {
+    fontSize: fontSize.sm,
+    color: colors.text.secondary,
+    marginTop: 2,
   },
 });
-
-export default AddressInput;

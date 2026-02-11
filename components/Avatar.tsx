@@ -1,38 +1,43 @@
 import React from 'react';
-import { View, Image, StyleSheet, ViewStyle } from 'react-native';
-import { colors } from '../theme/theme';
+import { View, Image, StyleSheet } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 
 interface AvatarProps {
-  uri?: string;
+  photoURL?: string | null;
   size?: number;
-  style?: ViewStyle;
+  iconName?: 'person' | 'person-circle-outline' | 'business';
+  backgroundColor?: string;
+  iconColor?: string;
 }
 
-export const Avatar: React.FC<AvatarProps> = ({ uri, size = 50, style }) => {
-  return (
-    <View style={[styles.container, { width: size, height: size, borderRadius: size / 2 }, style]}>
-      {uri ? (
-        <Image
-          source={{ uri }}
-          style={[styles.image, { width: size, height: size, borderRadius: size / 2 }]}
-        />
-      ) : (
-        <View style={[styles.placeholder, { width: size, height: size, borderRadius: size / 2 }]} />
-      )}
+export default function Avatar({
+  photoURL,
+  size = 40,
+  iconName = 'person',
+  backgroundColor = '#FFD9CC',
+  iconColor = '#FF7043'
+}: AvatarProps) {
+  return photoURL ? (
+    <Image
+      source={{ uri: photoURL }}
+      style={{
+        width: size,
+        height: size,
+        borderRadius: size / 2,
+      }}
+    />
+  ) : (
+    <View
+      style={{
+        width: size,
+        height: size,
+        borderRadius: size / 2,
+        backgroundColor: backgroundColor,
+        justifyContent: 'center',
+        alignItems: 'center',
+      }}
+    >
+      <Ionicons name={iconName} size={size * 0.5} color={iconColor} />
     </View>
   );
-};
-
-const styles = StyleSheet.create({
-  container: {
-    overflow: 'hidden',
-  },
-  image: {
-    resizeMode: 'cover',
-  },
-  placeholder: {
-    backgroundColor: colors.primaryVeryLight,
-  },
-});
-
-export default Avatar;
+}

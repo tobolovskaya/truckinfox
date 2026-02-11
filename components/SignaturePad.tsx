@@ -1,79 +1,204 @@
 import React, { useRef } from 'react';
-import { View, StyleSheet, Alert } from 'react-native';
-import { Text } from 'react-native-paper';
-import { colors, spacing, borderRadius } from '../theme/theme';
-import { IOSButton } from './IOSButton';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  Modal,
+  Dimensions,
+} from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import SignatureCanvas from 'react-native-signature-canvas';
+import { colors, spacing, fontSize, fontWeight, borderRadius } from '../lib/sharedStyles';
 
 interface SignaturePadProps {
+  visible: boolean;
+  onClose: () => void;
   onSave: (signature: string) => void;
-  onCancel?: () => void;
+  title?: string;
 }
 
-/**
- * SignaturePad component for delivery confirmation
- * Note: This is a simplified version. In production, use a library like react-native-signature-canvas
- */
-export const SignaturePad: React.FC<SignaturePadProps> = ({ onSave, onCancel }) => {
-  const handleSave = () => {
-    // In a real implementation, this would capture the signature as a base64 image
-    // For now, we'll use a placeholder
-    const signatureData = 'data:image/png;base64,placeholder';
-    onSave(signatureData);
+const { width, height } = Dimensions.get('window');
+
+export default function SignaturePad({
+  visible,
+  onClose,
+  onSave,
+  title = 'Sign Here',
+}: SignaturePadProps) {
+  const signatureRef = useRef<any>(null);
+
+  const handleSignature = (signature: string) => {
+    onSave(signature);
+    onClose();
+  };
+
+  const handleClear = () => {
+    signatureRef.current?.clearSignature();
+  };
+
+  const handleConfirm = () => {
+    signatureRef.current?.readSignature();
   };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Sign Here</Text>
-      <View style={styles.signatureArea}>
-        <Text style={styles.placeholder}>Signature area (swipe to sign)</Text>
+    <Modal
+      visible={visible}
+      animationType="slide"
+      transparent={false}
+      onRequestClose={onClose}
+    >
+      <View style={styles.container}>
+        {/* Header */}
+        <View style={styles.header}>
+          <TouchableOpacity onPress={onClose} style={styles.closeButton}>
+            <Ionicons name="close" size={28} color={colors.text.primary} />
+          </TouchableOpacity>
+          <Text style={styles.title}>{title}</Text>
+          <View style={styles.placeholder} />
+        </View>
+
+        {/* Signature Canvas */}
+        <View style={styles.canvasContainer}>
+          <SignatureCanvas
+            ref={signatureRef}
+            onOK={handleSignature}
+            descriptionText=""
+            clearText="Clear"
+            confirmText="Done"
+            webStyle={`
+              .m-signature-pad {
+                box-shadow: none;
+                border: 2px solid ${colors.border};
+                border-radius: 8px;
+                margin: 0;
+              }
+              .m-signature-pad--body {
+                border: none;
+              }
+              .m-signature-pad--footer {
+                display: none;
+              }
+              body {
+                background-color: ${colors.background};
+              }
+            `}
+            style={styles.canvas}
+          />
+        </View>
+
+        {/* Instructions */}
+        <View style={styles.instructions}>
+          <Ionicons name="information-circle-outline" size={20} color={colors.text.secondary} />
+          <Text style={styles.instructionsText}>
+            Sign with your finger or stylus above
+          </Text>
+        </View>
+
+        {/* Action Buttons */}
+        <View style={styles.actions}>
+          <TouchableOpacity
+            style={[styles.button, styles.clearButton]}
+            onPress={handleClear}
+          >
+            <Ionicons name="refresh-outline" size={20} color={colors.text.primary} />
+            <Text style={styles.clearButtonText}>Clear</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.button, styles.confirmButton]}
+            onPress={handleConfirm}
+          >
+            <Ionicons name="checkmark-outline" size={20} color={colors.white} />
+            <Text style={styles.confirmButtonText}>Confirm</Text>
+          </TouchableOpacity>
+        </View>
       </View>
-      <View style={styles.buttonContainer}>
-        <IOSButton
-          title="Clear"
-          onPress={() => Alert.alert('Clear', 'Signature cleared')}
-          variant="outlined"
-          style={styles.button}
-        />
-        <IOSButton title="Cancel" onPress={onCancel} variant="text" style={styles.button} />
-        <IOSButton title="Save" onPress={handleSave} variant="primary" style={styles.button} />
-      </View>
-    </View>
+    </Modal>
   );
-};
+}
 
 const styles = StyleSheet.create({
   container: {
+    flex: 1,
     backgroundColor: colors.background,
-    padding: spacing.lg,
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: spacing.xl,
+    paddingVertical: spacing.lg,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border.default,
+    backgroundColor: colors.white,
+  },
+  closeButton: {
+    padding: spacing.sm,
   },
   title: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: colors.text,
-    marginBottom: spacing.md,
-  },
-  signatureArea: {
-    height: 200,
-    borderWidth: 2,
-    borderColor: colors.border,
-    borderRadius: borderRadius.md,
-    backgroundColor: colors.surface,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: spacing.lg,
+    fontSize: fontSize.xl,
+    fontWeight: fontWeight.bold,
+    color: colors.text.primary,
   },
   placeholder: {
-    color: colors.textDisabled,
-    fontSize: 16,
+    width: 44,
   },
-  buttonContainer: {
+  canvasContainer: {
+    flex: 1,
+    margin: spacing.xl,
+    backgroundColor: colors.white,
+    borderRadius: borderRadius.lg,
+    overflow: 'hidden',
+    borderWidth: 2,
+    borderColor: colors.border.default,
+  },
+  canvas: {
+    flex: 1,
+  },
+  instructions: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: spacing.xl,
+    paddingVertical: spacing.md,
+  },
+  instructionsText: {
+    fontSize: fontSize.sm,
+    color: colors.text.secondary,
+    marginLeft: spacing.sm,
+  },
+  actions: {
+    flexDirection: 'row',
+    paddingHorizontal: spacing.xl,
+    paddingBottom: spacing.xl,
+    gap: spacing.md,
   },
   button: {
     flex: 1,
-    marginHorizontal: spacing.xs,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: spacing.lg,
+    borderRadius: borderRadius.md,
+    gap: spacing.sm,
+  },
+  clearButton: {
+    backgroundColor: colors.white,
+    borderWidth: 2,
+    borderColor: colors.border.default,
+  },
+  clearButtonText: {
+    fontSize: fontSize.md,
+    fontWeight: fontWeight.semibold,
+    color: colors.text.primary,
+  },
+  confirmButton: {
+    backgroundColor: colors.primary,
+  },
+  confirmButtonText: {
+    fontSize: fontSize.md,
+    fontWeight: fontWeight.semibold,
+    color: colors.white,
   },
 });
-
-export default SignaturePad;

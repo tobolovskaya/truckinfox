@@ -1,53 +1,55 @@
 import React, { useState } from 'react';
-import { Image, View, StyleSheet, ActivityIndicator, ImageStyle } from 'react-native';
-import { colors } from '../theme/theme';
+import { View, ActivityIndicator, Image, StyleSheet, Text, ImageStyle, StyleProp, ViewStyle } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { colors } from '../lib/sharedStyles';
 
 interface LazyImageProps {
   uri: string;
-  style?: ImageStyle;
-  placeholder?: React.ReactNode;
+  style?: StyleProp<ImageStyle>;
+  containerStyle?: StyleProp<ViewStyle>;
+  resizeMode?: 'cover' | 'contain' | 'stretch' | 'center';
+  placeholderIcon?: keyof typeof Ionicons.glyphMap;
+  placeholderSize?: number;
+  showErrorText?: boolean;
 }
 
-export const LazyImage: React.FC<LazyImageProps> = ({ uri, style, placeholder }) => {
+export const LazyImage: React.FC<LazyImageProps> = ({
+  uri,
+  style,
+  containerStyle,
+  resizeMode = 'cover',
+  placeholderIcon = 'image-outline',
+  placeholderSize = 48,
+  showErrorText = true,
+}) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
 
-  const handleLoadStart = () => {
-    setLoading(true);
-    setError(false);
-  };
-
-  const handleLoadEnd = () => {
-    setLoading(false);
-  };
-
-  const handleError = () => {
-    setLoading(false);
-    setError(true);
-  };
-
-  if (error) {
-    return (
-      <View style={[styles.container, style]}>
-        <View style={styles.errorPlaceholder} />
-      </View>
-    );
-  }
-
   return (
-    <View style={[styles.container, style]}>
-      <Image
-        source={{ uri }}
-        style={[StyleSheet.absoluteFill, style]}
-        onLoadStart={handleLoadStart}
-        onLoadEnd={handleLoadEnd}
-        onError={handleError}
-        resizeMode="cover"
-      />
-      {loading && (
-        <View style={styles.loadingContainer}>
-          {placeholder || <ActivityIndicator size="large" color={colors.primary} />}
+    <View style={[styles.container, containerStyle]}>
+      {loading && !error && (
+        <View style={styles.placeholder}>
+          <ActivityIndicator size="small" color={colors.primary} />
         </View>
+      )}
+      
+      {error ? (
+        <View style={styles.errorPlaceholder}>
+          <Ionicons name={placeholderIcon} size={placeholderSize} color={colors.text.tertiary} />
+          {showErrorText && <Text style={styles.errorText}>Image unavailable</Text>}
+        </View>
+      ) : (
+        <Image
+          source={{ uri }}
+          style={[style, { opacity: loading ? 0 : 1 }]}
+          onLoad={() => setLoading(false)}
+          onError={() => {
+            console.log('LazyImage: Failed to load image:', uri);
+            setLoading(false);
+            setError(true);
+          }}
+          resizeMode={resizeMode}
+        />
       )}
     </View>
   );
@@ -56,18 +58,24 @@ export const LazyImage: React.FC<LazyImageProps> = ({ uri, style, placeholder })
 const styles = StyleSheet.create({
   container: {
     position: 'relative',
-    backgroundColor: colors.surface,
+    overflow: 'hidden',
   },
-  loadingContainer: {
+  placeholder: {
     ...StyleSheet.absoluteFillObject,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: colors.surface,
+    backgroundColor: '#F5F5F5',
   },
   errorPlaceholder: {
-    flex: 1,
-    backgroundColor: colors.divider,
+    ...StyleSheet.absoluteFillObject,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#F5F5F5',
+    gap: 8,
+  },
+  errorText: {
+    fontSize: 12,
+    color: colors.text.tertiary,
+    marginTop: 4,
   },
 });
-
-export default LazyImage;
