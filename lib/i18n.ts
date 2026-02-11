@@ -31,4 +31,18 @@ i18n
     },
   });
 
+// Supported languages
+export const SUPPORTED_LANGUAGES = ['no', 'en'] as const;
+export type SupportedLanguage = typeof SUPPORTED_LANGUAGES[number];
+
+// Get device language with fallback
+export const getDeviceLanguage = (): SupportedLanguage => {
+  const deviceLang = Localization.getLocales()[0]?.languageCode || 'no';
+  // Check if device language is supported
+  if (SUPPORTED_LANGUAGES.includes(deviceLang as SupportedLanguage)) {
+    return deviceLang as SupportedLanguage;
+  }
+  return 'no'; // Default fallback to Norwegian
+};
+
 export default i18n;
