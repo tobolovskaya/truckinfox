@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { FirebaseError } from 'firebase/app';
 import {
   User,
   onAuthStateChanged,
@@ -44,6 +45,19 @@ interface AuthContextType {
   updateUserProfile: (updates: Partial<UserProfile>) => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
 }
+
+const validateEmail = (email: string): string | null => {
+  if (!email) return 'Email is required';
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(email)) return 'Invalid email format';
+  return null;
+};
+
+const validatePassword = (password: string): string | null => {
+  if (!password) return 'Password is required';
+  if (password.length < 6) return 'Password must be at least 6 characters';
+  return null;
+};
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -98,6 +112,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const signIn = async (email: string, password: string) => {
     if (!auth) {
       throw new Error('Firebase Auth is not available');
+    }
+    const emailError = validateEmail(email);
+    if (emailError) {
+      throw new FirebaseError('auth/invalid-email', emailError);
+    }
+    const passwordError = validatePassword(password);
+    if (passwordError) {
+      throw new FirebaseError('auth/invalid-password', passwordError);
     }
     try {
       await signInWithEmailAndPassword(auth, email, password);
