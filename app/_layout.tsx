@@ -1,3 +1,4 @@
+import 'react-native-get-random-values';
 import React from 'react';
 import { LogBox, View } from 'react-native';
 import { Stack } from 'expo-router';
@@ -11,8 +12,6 @@ import { ErrorBoundary } from '../components/ErrorBoundary';
 import { NetworkStatusBar } from '../components/NetworkStatusBar';
 import { theme } from '../theme/theme';
 import 'react-native-url-polyfill/auto';
-import 'react-native-gesture-handler';
-import 'react-native-get-random-values';
 
 LogBox.ignoreLogs([
   'Animated: `useNativeDriver`',
