@@ -1,178 +1,448 @@
-import React from 'react';
-import { View, StyleSheet, FlatList, TouchableOpacity } from 'react-native';
-import { Text } from 'react-native-paper';
-import { useRouter } from 'expo-router';
+import React, { useEffect, useState } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  RefreshControl,
+  TextInput,
+} from 'react-native';
+import { SafeAreaView , useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../contexts/AuthContext';
-import { useI18n } from '../../contexts/I18nContext';
-import { Avatar } from '../../components/Avatar';
-import { colors, spacing, borderRadius } from '../../theme/theme';
-import { platformShadow } from '../../lib/platformShadow';
-import { formatRelativeTime } from '../../utils/formatting';
+import { useTranslation } from 'react-i18next';
+import { db } from '../../lib/firebase';
+import { useDebounce } from '../../hooks/useDebounce';
+import { collection, query, where, orderBy, getDocs, doc, getDoc } from 'firebase/firestore';
+import { useRouter } from 'expo-router';
+import { triggerHapticFeedback } from '../../utils/haptics';
+import { theme } from '../../theme/theme';
+import { colors, spacing, fontSize, fontWeight, borderRadius, shadows, gradients } from '../../lib/sharedStyles';
 
-interface ChatItem {
+interface Conversation {
   id: string;
-  participantName: string;
-  participantAvatar?: string;
-  lastMessage: string;
-  lastMessageTime: Date;
-  unreadCount: number;
+  request_id: string;
+  other_user: {
+    id: string;
+    full_name: string;
+    user_type: string;
+    rating: number;
+  };
+  last_message: {
+    content: string;
+    created_at: string;
+    sender_id: string;
+  };
+  unread_count: number;
+  cargo_request: {
+    title: string;
+    cargo_type: string;
+  };
 }
 
-export default function MessagesScreen() {
-  const { t } = useI18n();
+function MessagesScreen() {
+  const { user } = useAuth();
+  const { t } = useTranslation();
   const router = useRouter();
+  const insets = useSafeAreaInsets();
+  const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const debouncedSearchQuery = useDebounce(searchQuery, 500);
 
-  // Mock data - in production, this would come from Firestore
-  const mockChats: ChatItem[] = [
-    {
-      id: '1',
-      participantName: 'John Doe',
-      lastMessage: 'Thanks for your bid!',
-      lastMessageTime: new Date(Date.now() - 3600000),
-      unreadCount: 2,
-    },
-    {
-      id: '2',
-      participantName: 'Jane Smith',
-      lastMessage: 'When can you pick up?',
-      lastMessageTime: new Date(Date.now() - 86400000),
-      unreadCount: 0,
-    },
-  ];
+  const fetchConversations = async () => {
+    try {
+      if (!user?.uid) return;
 
-  const handleChatPress = (chatId: string) => {
-    router.push(`/chat/${chatId}`);
+      // Get messages where user is sender
+      const senderQuery = query(
+        collection(db, 'messages'),
+        where('sender_id', '==', user.uid),
+        orderBy('created_at', 'desc')
+      );
+
+      // Get messages where user is receiver
+      const receiverQuery = query(
+        collection(db, 'messages'),
+        where('receiver_id', '==', user.uid),
+        orderBy('created_at', 'desc')
+      );
+
+      const [senderSnap, receiverSnap] = await Promise.all([
+        getDocs(senderQuery),
+        getDocs(receiverQuery)
+      ]);
+      
+      // Combine all messages
+      const userMessages = [
+        ...senderSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })),
+        ...receiverSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }))
+      ];
+
+      // Group messages by conversation and get latest message
+      const conversationMap = new Map();
+      
+      for (const message of userMessages as any[]) {
+        const otherUserId = message.sender_id === user.uid ? message.receiver_id : message.sender_id;
+        const key = `${message.request_id}-${otherUserId}`;
+        
+        if (!conversationMap.has(key)) {
+          // Fetch other user data
+          let otherUser = null;
+          try {
+            const userRef = doc(db, 'users', otherUserId);
+            const userSnap = await getDoc(userRef);
+            if (userSnap.exists()) {
+              otherUser = { id: userSnap.id, ...userSnap.data() };
+            }
+          } catch (err) {
+            console.error('Error fetching user:', err);
+          }
+
+          // Fetch cargo request data
+          let cargoRequest = null;
+          try {
+            const requestRef = doc(db, 'cargo_requests', message.request_id);
+            const requestSnap = await getDoc(requestRef);
+            if (requestSnap.exists()) {
+              cargoRequest = requestSnap.data();
+            }
+          } catch (err) {
+            console.error('Error fetching request:', err);
+          }
+
+          conversationMap.set(key, {
+            id: key,
+            request_id: message.request_id,
+            other_user: otherUser || { id: otherUserId, full_name: 'Unknown User', user_type: 'customer', rating: 0 },
+            last_message: {
+              content: message.content,
+              created_at: message.created_at,
+              sender_id: message.sender_id,
+            },
+            unread_count: 0, // Would need separate query for this
+            cargo_request: cargoRequest || { title: 'Unknown Request', cargo_type: 'other' },
+          });
+        }
+      }
+
+      setConversations(Array.from(conversationMap.values()));
+    } catch (error) {
+      console.error('Error fetching conversations:', error);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
   };
 
-  const renderChatItem = ({ item }: { item: ChatItem }) => (
-    <TouchableOpacity
-      style={styles.chatItem}
-      onPress={() => handleChatPress(item.id)}
-      activeOpacity={0.7}
-    >
-      <Avatar uri={item.participantAvatar} size={50} />
-      <View style={styles.chatContent}>
-        <View style={styles.chatHeader}>
-          <Text style={styles.participantName} numberOfLines={1}>
-            {item.participantName}
-          </Text>
-          <Text style={styles.time}>{formatRelativeTime(item.lastMessageTime)}</Text>
-        </View>
-        <View style={styles.messageRow}>
-          <Text
-            style={[styles.lastMessage, item.unreadCount > 0 && styles.unreadMessage]}
-            numberOfLines={1}
-          >
-            {item.lastMessage}
-          </Text>
-          {item.unreadCount > 0 && (
-            <View style={styles.unreadBadge}>
-              <Text style={styles.unreadText}>{item.unreadCount}</Text>
-            </View>
-          )}
-        </View>
-      </View>
-    </TouchableOpacity>
+  useEffect(() => {
+    fetchConversations();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const onRefresh = () => {
+    setRefreshing(true);
+    fetchConversations();
+  };
+
+  const handleConversationPress = (conversation: Conversation) => {
+    router.push(`/chat/${conversation.request_id}/${conversation.other_user.id}` as any);
+  };
+
+  const formatTime = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffInHours = (now.getTime() - date.getTime()) / (1000 * 60 * 60);
+
+    if (diffInHours < 24) {
+      return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    } else if (diffInHours < 168) { // 7 days
+      return date.toLocaleDateString([], { weekday: 'short' });
+    } else {
+      return date.toLocaleDateString([], { month: 'short', day: 'numeric' });
+    }
+  };
+
+  const getUserInitials = (fullName: string) => {
+    return fullName.split(' ').map(name => name[0]).join('').toUpperCase().slice(0, 2);
+  };
+
+  const filteredConversations = conversations.filter(conv =>
+    conv.other_user.full_name.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
+    conv.last_message.content.toLowerCase().includes(debouncedSearchQuery.toLowerCase())
   );
 
   return (
     <View style={styles.container}>
-      <FlatList
-        data={mockChats}
-        renderItem={renderChatItem}
-        keyExtractor={item => item.id}
-        contentContainerStyle={styles.list}
-        ItemSeparatorComponent={() => <View style={styles.separator} />}
-        ListEmptyComponent={
-          <View style={styles.emptyState}>
-            <Text style={styles.emptyIcon}>💬</Text>
-            <Text style={styles.emptyText}>{t('messages.noMessages')}</Text>
-          </View>
+      {/* Header */}
+      <View style={[styles.header, { paddingTop: insets.top + 16 }]}>
+        <Text style={styles.headerTitle}>{t('messages')}</Text>
+      </View>
+
+      {/* Search Bar */}
+      <View style={styles.searchContainer}>
+        <View style={styles.searchBar}>
+          <Ionicons name="search-outline" size={20} color={theme.iconColors.gray.primary} />
+          <TextInput
+            style={styles.searchInput}
+            placeholder={t('searchMessages')}
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            placeholderTextColor="#9CA3AF"
+          />
+        </View>
+      </View>
+
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
-      />
+        showsVerticalScrollIndicator={false}
+      >
+        {loading ? (
+          <View style={styles.loadingContainer}>
+            <Text style={styles.loadingText}>{t('loading')}</Text>
+          </View>
+        ) : filteredConversations.length === 0 ? (
+          <View style={styles.emptyContainer}>
+            <Ionicons name="chatbubble-outline" size={64} color={theme.iconColors.gray.primary} />
+            <Text style={styles.emptyTitle}>{t('noMessages')}</Text>
+            <Text style={styles.emptySubtitle}>{t('startConversation')}</Text>
+          </View>
+        ) : (
+          <View style={styles.conversationsList}>
+            {filteredConversations.map((conversation) => (
+              <TouchableOpacity
+                key={conversation.id}
+                style={styles.conversationCard}
+                onPress={() => handleConversationPress(conversation)}
+              >
+                <View style={styles.avatarContainer}>
+                  <View style={styles.avatar}>
+                    <Text style={styles.avatarInitials}>
+                      {getUserInitials(conversation.other_user.full_name)}
+                    </Text>
+                  </View>
+                </View>
+
+                <View style={styles.conversationInfo}>
+                  <View style={styles.conversationHeader}>
+                    <Text style={styles.userName}>{conversation.other_user.full_name}</Text>
+                    <Text style={styles.timestamp}>
+                      {formatTime(conversation.last_message.created_at)}
+                    </Text>
+                  </View>
+
+                  {/* Request Preview */}
+                  {conversation.cargo_request && (
+                    <View style={styles.requestPreview}>
+                      <Ionicons
+                        name="cube-outline"
+                        size={12}
+                        color={theme.iconColors.primary}
+                        style={styles.requestIcon}
+                      />
+                      <Text style={styles.requestTitle} numberOfLines={1}>
+                        {conversation.cargo_request.title}
+                      </Text>
+                    </View>
+                  )}
+
+                  <View style={styles.lastMessageContainer}>
+                    <Text style={[
+                      styles.lastMessage,
+                      conversation.unread_count > 0 && styles.unreadMessage
+                    ]} numberOfLines={1}>
+                      {conversation.last_message.sender_id === user?.uid ? t('you') + ': ' : ''}
+                      {conversation.last_message.content}
+                    </Text>
+                    {conversation.unread_count > 0 && (
+                      <View style={styles.unreadBadge}>
+                        <Text style={styles.unreadCount}>{conversation.unread_count}</Text>
+                      </View>
+                    )}
+                  </View>
+                </View>
+              </TouchableOpacity>
+            ))}
+          </View>
+        )}
+        
+        {/* Bottom spacing for tab bar */}
+        <View style={{ height: insets.bottom + 80 }} />
+      </ScrollView>
     </View>
   );
 }
 
+export default MessagesScreen;
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,
   },
-  list: {
-    flexGrow: 1,
+  header: {
+    paddingHorizontal: spacing.xl,
+    paddingBottom: spacing.lg,
+    backgroundColor: colors.white,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border.light,
   },
-  chatItem: {
+  headerTitle: {
+    fontSize: fontSize.xl,
+    fontWeight: fontWeight.bold,
+    color: colors.text.primary,
+  },
+  searchContainer: {
+    paddingHorizontal: spacing.xl,
+    paddingVertical: spacing.lg,
+    backgroundColor: colors.white,
+  },
+  searchBar: {
     flexDirection: 'row',
-    padding: spacing.md,
-    backgroundColor: colors.background,
+    alignItems: 'center',
+    backgroundColor: colors.surfaceVariant,
+    borderRadius: spacing.md,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
   },
-  chatContent: {
+  searchInput: {
     flex: 1,
     marginLeft: spacing.md,
-    justifyContent: 'center',
+    fontSize: fontSize.lg,
+    color: colors.text.primary,
   },
-  chatHeader: {
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    flexGrow: 1,
+  },
+  loadingContainer: {
+    padding: spacing.xxxl,
+    alignItems: 'center',
+  },
+  loadingText: {
+    fontSize: fontSize.lg,
+    color: colors.text.secondary,
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 80,
+    paddingHorizontal: spacing.xxxl,
+  },
+  emptyTitle: {
+    fontSize: fontSize.xl,
+    fontWeight: fontWeight.bold,
+    color: colors.text.primary,
+    marginTop: spacing.lg,
+    marginBottom: spacing.sm,
+    textAlign: 'center',
+  },
+  emptySubtitle: {
+    fontSize: fontSize.lg,
+    color: colors.text.secondary,
+    textAlign: 'center',
+    lineHeight: 24,
+  },
+  conversationsList: {
+    backgroundColor: colors.white,
+  },
+  conversationCard: {
+    flexDirection: 'row',
+    backgroundColor: colors.white,
+    borderRadius: 0,
+    padding: spacing.lg,
+    borderBottomWidth: 0.5,
+    borderBottomColor: theme.colors.outline,
+  },
+  avatarContainer: {
+    position: 'relative',
+    marginRight: spacing.lg,
+  },
+  avatar: {
+    width: 52,
+    height: 52,
+    borderRadius: borderRadius.full,
+    backgroundColor: colors.primary,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  avatarInitials: {
+    fontSize: fontSize.lg,
+    fontWeight: fontWeight.bold,
+    color: colors.white,
+  },
+  conversationInfo: {
+    flex: 1,
+  },
+  conversationHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: spacing.xs,
   },
-  participantName: {
-    flex: 1,
-    fontSize: 16,
-    fontWeight: '600',
-    color: colors.text,
+  userName: {
+    fontSize: fontSize.lg,
+    fontWeight: fontWeight.semibold,
+    color: colors.black,
   },
-  time: {
-    fontSize: 12,
-    color: colors.textSecondary,
+  timestamp: {
+    fontSize: fontSize.xs,
+    color: colors.text.tertiary,
   },
-  messageRow: {
+  requestPreview: {
     flexDirection: 'row',
     alignItems: 'center',
+    backgroundColor: colors.primaryLight,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 4,
+    borderRadius: borderRadius.sm,
+    marginBottom: spacing.xs,
+    alignSelf: 'flex-start',
+  },
+  requestIcon: {
+    marginRight: 4,
+  },
+  requestTitle: {
+    fontSize: fontSize.xs,
+    color: colors.primary,
+    fontWeight: fontWeight.semibold,
+  },
+  lastMessageContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: spacing.sm,
   },
   lastMessage: {
     flex: 1,
-    fontSize: 14,
-    color: colors.textSecondary,
+    fontSize: fontSize.sm,
+    color: colors.text.secondary,
+    marginRight: spacing.sm,
   },
   unreadMessage: {
-    fontWeight: '600',
-    color: colors.text,
+    fontWeight: fontWeight.semibold,
+    color: colors.text.primary,
   },
   unreadBadge: {
     backgroundColor: colors.primary,
-    borderRadius: borderRadius.full,
-    minWidth: 20,
-    height: 20,
+    borderRadius: borderRadius.md,
+    minWidth: 24,
+    height: 24,
     justifyContent: 'center',
     alignItems: 'center',
-    marginLeft: spacing.xs,
+    paddingHorizontal: spacing.sm,
   },
-  unreadText: {
-    color: colors.background,
-    fontSize: 12,
-    fontWeight: 'bold',
-  },
-  separator: {
-    height: 1,
-    backgroundColor: colors.divider,
-    marginLeft: spacing.md + 50 + spacing.md,
-  },
-  emptyState: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: spacing.xl,
-  },
-  emptyIcon: {
-    fontSize: 60,
-    marginBottom: spacing.md,
-  },
-  emptyText: {
-    fontSize: 16,
-    color: colors.textSecondary,
-    textAlign: 'center',
+  unreadCount: {
+    fontSize: fontSize.sm,
+    color: colors.white,
+    fontWeight: fontWeight.semibold,
   },
 });
