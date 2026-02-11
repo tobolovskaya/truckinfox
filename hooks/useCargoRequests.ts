@@ -352,7 +352,8 @@ export function useCargoRequests({ activeTab, filters, sortBy, userId }: UseCarg
 
   useEffect(() => {
     fetchRequests();
-  }, [fetchRequests]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTab, filters, sortBy, userId]);
 
   return {
     requests,

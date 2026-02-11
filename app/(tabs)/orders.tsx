@@ -10,8 +10,8 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTranslation } from 'react-i18next';
-// TODO: Migrate to Firebase
-// import { supabase } from '../../lib/supabase';
+import { db } from '../../lib/firebase';
+import { collection, query, where, orderBy, getDocs, doc, updateDoc, deleteDoc, getDoc } from 'firebase/firestore';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { SwipeableRow, SwipeActions } from '../../components/SwipeableRow';
@@ -186,105 +186,147 @@ function OrdersScreen() {
 
       if (activeTab === 'customer') {
         // Orders where user is CUSTOMER - from cargo_requests with bids
-        const { data, error } = await supabase
-          .from('cargo_requests')
-          .select(`
-            id,
-            title,
-            from_address,
-            to_address,
-            cargo_type,
-            pickup_date,
-            status,
-            created_at,
-            user_id,
-            customer:users!cargo_requests_user_id_fkey (
-              id,
-              full_name,
-              avatar_url
-            ),
-            bids (
-              id,
-              price,
-              status,
-              carrier:users!bids_carrier_id_fkey (
-                id,
-                full_name,
-                avatar_url
-              )
-            )
-          `)
-          .eq('user_id', user.id)
-          .order('created_at', { ascending: false });
-
-        if (error) {
-          console.error('Error fetching customer orders:', error);
-          setOrders([]);
-        } else {
-          // Remove duplicates
-          const uniqueOrders = removeDuplicates(data || [], 'id');
+        try {
+          const requestsQuery = query(
+            collection(db, 'cargo_requests'),
+            where('user_id', '==', user.id),
+            orderBy('created_at', 'desc')
+          );
+          
+          const requestsSnapshot = await getDocs(requestsQuery);
+          const requestsData = await Promise.all(
+            requestsSnapshot.docs.map(async (docSnapshot) => {
+              const requestData = docSnapshot.data();
+              
+              // Fetch user data
+              let customerData = { id: user.id, full_name: 'Unknown', avatar_url: '' };
+              if (requestData.user_id) {
+                const userDoc = await getDoc(doc(db, 'users', requestData.user_id));
+                if (userDoc.exists()) {
+                  const userData = userDoc.data();
+                  customerData = {
+                    id: userDoc.id,
+                    full_name: userData.full_name || 'Unknown',
+                    avatar_url: userData.avatar_url || ''
+                  };
+                }
+              }
+              
+              // Fetch bids for this request
+              const bidsQuery = query(
+                collection(db, 'bids'),
+                where('cargo_request_id', '==', docSnapshot.id)
+              );
+              const bidsSnapshot = await getDocs(bidsQuery);
+              const bidsData = await Promise.all(
+                bidsSnapshot.docs.map(async (bidDoc) => {
+                  const bidData = bidDoc.data();
+                  
+                  // Fetch carrier data for each bid
+                  let carrierData = { id: '', full_name: 'Unknown', avatar_url: '' };
+                  if (bidData.carrier_id) {
+                    const carrierDoc = await getDoc(doc(db, 'users', bidData.carrier_id));
+                    if (carrierDoc.exists()) {
+                      const carrier = carrierDoc.data();
+                      carrierData = {
+                        id: carrierDoc.id,
+                        full_name: carrier.full_name || 'Unknown',
+                        avatar_url: carrier.avatar_url || ''
+                      };
+                    }
+                  }
+                  
+                  return {
+                    id: bidDoc.id,
+                    price: bidData.price,
+                    status: bidData.status,
+                    carrier: carrierData
+                  };
+                })
+              );
+              
+              return {
+                id: docSnapshot.id,
+                ...requestData,
+                customer: customerData,
+                bids: bidsData,
+                created_at: requestData.created_at?.toDate?.()?.toISOString() || requestData.created_at
+              };
+            })
+          );
+          
+          const uniqueOrders = removeDuplicates(requestsData || [], 'id');
           const filteredOrders = filterOrders(uniqueOrders);
           setOrders(filteredOrders);
+        } catch (error) {
+          console.error('Error fetching customer orders:', error);
+          setOrders([]);
         }
       } else {
         // Orders where user is CARRIER - query from bids table
-        const { data, error } = await supabase
-          .from('bids')
-          .select(`
-            id,
-            price,
-            request_id,
-            cargo_requests!inner (
-              id,
-              title,
-              from_address,
-              to_address,
-              cargo_type,
-              pickup_date,
-              status,
-              created_at,
-              user_id,
-              customer:users!cargo_requests_user_id_fkey (
-                id,
-                full_name,
-                avatar_url
-              )
-            )
-          `)
-          .eq('carrier_id', user.id)
-          .eq('status', 'accepted');
+        try {
+          const bidsQuery = query(
+            collection(db, 'bids'),
+            where('carrier_id', '==', user.id),
+            where('status', '==', 'accepted')
+          );
+          
+          const bidsSnapshot = await getDocs(bidsQuery);
+          
+          console.log('Carrier bids found:', bidsSnapshot.docs.length, { userId: user.id });
 
-        console.log('Carrier orders (from bids):', { data, error, userId: user.id });
+          if (bidsSnapshot.empty) {
+            console.log('No accepted bids found for carrier');
+            setOrders([]);
+          } else {
+            const formattedOrders = await Promise.all(
+              bidsSnapshot.docs.map(async (bidDoc) => {
+                const bidData = bidDoc.data();
+                
+                // Fetch cargo request
+                let requestData: any = {};
+                if (bidData.cargo_request_id) {
+                  const requestDoc = await getDoc(doc(db, 'cargo_requests', bidData.cargo_request_id));
+                  if (requestDoc.exists()) {
+                    requestData = { id: requestDoc.id, ...requestDoc.data() };
+                    
+                    // Fetch customer data
+                    if (requestData.user_id) {
+                      const customerDoc = await getDoc(doc(db, 'users', requestData.user_id));
+                      if (customerDoc.exists()) {
+                        const customerData = customerDoc.data();
+                        requestData.customer = {
+                          id: customerDoc.id,
+                          full_name: customerData.full_name || 'Unknown',
+                          avatar_url: customerData.avatar_url || ''
+                        };
+                      }
+                    }
+                  }
+                }
 
-        if (error) {
+                return {
+                  ...requestData,
+                  accepted_bid: {
+                    id: bidDoc.id,
+                    price: bidData.price,
+                    carrier: null,
+                  },
+                  created_at: requestData.created_at?.toDate?.()?.toISOString() || requestData.created_at
+                };
+              })
+            );
+
+            console.log('Formatted carrier orders:', formattedOrders.length);
+
+            // Remove duplicates
+            const uniqueOrders = removeDuplicates(formattedOrders, 'id');
+            const filteredOrders = filterOrders(uniqueOrders);
+            setOrders(filteredOrders);
+          }
+        } catch (error) {
           console.error('Error fetching carrier orders:', error);
           setOrders([]);
-        } else if (!data || data.length === 0) {
-          console.log('No accepted bids found for carrier');
-          setOrders([]);
-        } else {
-          // Format orders from bids
-          const formattedOrders = data.map(bid => {
-            const request = Array.isArray(bid.cargo_requests)
-              ? bid.cargo_requests[0]
-              : bid.cargo_requests;
-
-            return {
-              ...request,
-              accepted_bid: {
-                id: bid.id,
-                price: bid.price,
-                carrier: null,
-              }
-            };
-          });
-
-          console.log('Formatted carrier orders:', formattedOrders);
-
-          // Remove duplicates
-          const uniqueOrders = removeDuplicates(formattedOrders, 'id');
-          const filteredOrders = filterOrders(uniqueOrders);
-          setOrders(filteredOrders);
         }
       }
     } catch (error) {
@@ -414,21 +456,11 @@ function OrdersScreen() {
         updateData.cancelled_at = new Date().toISOString();
       }
 
-      const { error } = await supabase
-        .from('cargo_requests')
-        .update(updateData)
-        .eq('id', orderId);
-
-      if (error) throw error;
+      await updateDoc(doc(db, 'cargo_requests', orderId), updateData);
 
       // If customer cancels, delete immediately
       if (isCustomer) {
-        const { error: deleteError } = await supabase
-          .from('cargo_requests')
-          .delete()
-          .eq('id', orderId);
-
-        if (deleteError) throw deleteError;
+        await deleteDoc(doc(db, 'cargo_requests', orderId));
       }
 
       fetchOrders(); // refresh list
@@ -440,12 +472,7 @@ function OrdersScreen() {
 
   const handleDeleteOrder = async (orderId: string) => {
     try {
-      const { error } = await supabase
-        .from('cargo_requests')
-        .delete()
-        .eq('id', orderId);
-
-      if (error) throw error;
+      await deleteDoc(doc(db, 'cargo_requests', orderId));
       fetchOrders(); // refresh list
     } catch (error: any) {
       console.error('Error deleting order:', error);

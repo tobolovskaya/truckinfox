@@ -53,5 +53,7 @@ try {
   console.error('Firebase Storage initialization failed:', error);
 }
 
+// Export db as alias for firestore for backward compatibility
+export const db = firestore;
 export { app, auth, firestore, storage };
 export default app;
