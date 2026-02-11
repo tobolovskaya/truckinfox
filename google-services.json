@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "972027739699",
+    "project_id": "truckinfox-8d5b2",
+    "storage_bucket": "truckinfox-8d5b2.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:972027739699:android:036d9075a8f1e4d37b2d46",
+        "android_client_info": {
+          "package_name": "com.truckinfox.appname"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCh2geA8MzkqC_SFR_h5ymwQlB3_JQmafo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

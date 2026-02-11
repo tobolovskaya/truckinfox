@@ -186,6 +186,7 @@ firebase deploy --only functions
 4. **Run Development Server**
 ```bash
 npx expo start
+npx expo start --tunnel
 ```
 
 ## Deployment
