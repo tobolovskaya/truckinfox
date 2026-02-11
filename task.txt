@@ -1,0 +1,14 @@
+Category	Details
+Routing	Full Expo Router file-based routing with auth, tabs, chat, payment, order-status, review, and profile screens
+Authentication	Firebase Auth with dual profiles (Customer & Carrier), phone SMS verification
+Cargo System	Request creation, editing, detail views, and competitive bidding
+Payments	Vipps escrow payment integration with 10% platform fee calculation
+GPS Tracking	Real-time location tracking with react-native-maps
+Messaging	1-on-1 real-time chat with read receipts and unread badges
+Reviews	Two-way rating & review system (1-5 stars + text)
+i18n	Norwegian (Bokmål) and English via i18next
+Components	iOS-styled UI components, address input, avatars, toast notifications, signature pad, etc.
+Backend	Firebase Cloud Functions, Firestore rules, storage rules
+Infrastructure	Firebase config, ESLint, Prettier, Jest testing, EAS build config
+Documentation	Push notifications setup, deploy guide, Vipps integration report
+

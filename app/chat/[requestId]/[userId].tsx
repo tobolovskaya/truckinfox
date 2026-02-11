@@ -61,7 +61,7 @@ export default function ChatScreen() {
   const messageAnimations = useRef<{ [key: string]: Animated.Value }>({});
 
   useEffect(() => {
-    if (!requestId || !userId || !user?.id) {
+    if (!requestId || !userId || !user?.uid) {
       console.log('Missing required parameters for chat');
       setLoading(false);
       return;
@@ -199,7 +199,7 @@ export default function ChatScreen() {
   const sendMessage = async () => {
     if (!newMessage.trim() || sending) return;
     
-    if (!user?.id || !userId || !requestId) {
+    if (!user?.uid || !userId || !requestId) {
       Alert.alert(t('error'), 'Missing required information to send message');
       return;
     }
@@ -451,7 +451,7 @@ export default function ChatScreen() {
                     key={message.id}
                     style={[
                       styles.messageContainer,
-                      message.sender_id === user?.id
+                      message.sender_id === user?.uid
                         ? styles.sentMessageContainer
                         : styles.receivedMessageContainer,
                       {
@@ -467,7 +467,7 @@ export default function ChatScreen() {
                       },
                     ]}
                   >
-                    {message.sender_id === user?.id ? (
+                    {message.sender_id === user?.uid ? (
                       <LinearGradient
                         colors={['#F97316', '#FB923C']}
                         style={[styles.messageBubble, styles.sentMessage]}

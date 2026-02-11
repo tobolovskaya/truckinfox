@@ -178,7 +178,7 @@ function OrdersScreen() {
     try {
       setLoading(true);
 
-      if (!user?.id) {
+      if (!user?.uid) {
         setOrders([]);
         setLoading(false);
         return;
@@ -189,7 +189,7 @@ function OrdersScreen() {
         try {
           const requestsQuery = query(
             collection(db, 'cargo_requests'),
-            where('user_id', '==', user.id),
+            where('user_id', '==', user.uid),
             orderBy('created_at', 'desc')
           );
           
@@ -199,7 +199,7 @@ function OrdersScreen() {
               const requestData = docSnapshot.data();
               
               // Fetch user data
-              let customerData = { id: user.id, full_name: 'Unknown', avatar_url: '' };
+              let customerData = { id: user.uid, full_name: 'Unknown', avatar_url: '' };
               if (requestData.user_id) {
                 const userDoc = await getDoc(doc(db, 'users', requestData.user_id));
                 if (userDoc.exists()) {
@@ -267,13 +267,13 @@ function OrdersScreen() {
         try {
           const bidsQuery = query(
             collection(db, 'bids'),
-            where('carrier_id', '==', user.id),
+            where('carrier_id', '==', user.uid),
             where('status', '==', 'accepted')
           );
           
           const bidsSnapshot = await getDocs(bidsQuery);
           
-          console.log('Carrier bids found:', bidsSnapshot.docs.length, { userId: user.id });
+          console.log('Carrier bids found:', bidsSnapshot.docs.length, { userId: user.uid });
 
           if (bidsSnapshot.empty) {
             console.log('No accepted bids found for carrier');
@@ -996,7 +996,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
     borderRadius: borderRadius.xl,
-    backgroundColor: colors.background.secondary,
+    backgroundColor: colors.backgroundLight,
     borderWidth: 1,
     borderColor: colors.border.light,
     gap: spacing.xs,
@@ -1028,7 +1028,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
     borderRadius: borderRadius.lg,
-    backgroundColor: colors.background.secondary,
+    backgroundColor: colors.backgroundLight,
     borderWidth: 1,
     borderColor: colors.border.light,
     gap: 4,
