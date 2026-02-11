@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useCallback, useRef, ReactNode } from 'react';
 
 export interface ToastConfig {
   message: string;
@@ -28,34 +28,32 @@ interface ToastProviderProps {
 
 export const ToastProvider: React.FC<ToastProviderProps> = ({ children }) => {
   const [toast, setToast] = useState<ToastConfig | null>(null);
-  const [timeoutId, setTimeoutId] = useState<NodeJS.Timeout | null>(null);
+  const timeoutIdRef = useRef<NodeJS.Timeout | null>(null);
 
   const hideToast = useCallback(() => {
     setToast(null);
-    if (timeoutId) {
-      clearTimeout(timeoutId);
-      setTimeoutId(null);
+    if (timeoutIdRef.current) {
+      clearTimeout(timeoutIdRef.current);
+      timeoutIdRef.current = null;
     }
-  }, [timeoutId]);
+  }, []);
 
   const showToast = useCallback(
     (config: ToastConfig) => {
       // Clear existing timeout
-      if (timeoutId) {
-        clearTimeout(timeoutId);
+      if (timeoutIdRef.current) {
+        clearTimeout(timeoutIdRef.current);
       }
 
       setToast(config);
 
       // Auto-hide after duration (default 3 seconds)
       const duration = config.duration || 3000;
-      const newTimeoutId = setTimeout(() => {
+      timeoutIdRef.current = setTimeout(() => {
         hideToast();
       }, duration);
-
-      setTimeoutId(newTimeoutId);
     },
-    [timeoutId, hideToast]
+    [hideToast]
   );
 
   const value: ToastContextType = {

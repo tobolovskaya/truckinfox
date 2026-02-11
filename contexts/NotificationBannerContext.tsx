@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useCallback, useRef, ReactNode } from 'react';
 
 export interface NotificationBanner {
   id: string;
@@ -33,21 +33,21 @@ export const NotificationBannerProvider: React.FC<NotificationBannerProviderProp
   children,
 }) => {
   const [banner, setBanner] = useState<NotificationBanner | null>(null);
-  const [timeoutId, setTimeoutId] = useState<NodeJS.Timeout | null>(null);
+  const timeoutIdRef = useRef<NodeJS.Timeout | null>(null);
 
   const hideBanner = useCallback(() => {
     setBanner(null);
-    if (timeoutId) {
-      clearTimeout(timeoutId);
-      setTimeoutId(null);
+    if (timeoutIdRef.current) {
+      clearTimeout(timeoutIdRef.current);
+      timeoutIdRef.current = null;
     }
-  }, [timeoutId]);
+  }, []);
 
   const showBanner = useCallback(
     (bannerConfig: Omit<NotificationBanner, 'id'>) => {
       // Clear existing timeout
-      if (timeoutId) {
-        clearTimeout(timeoutId);
+      if (timeoutIdRef.current) {
+        clearTimeout(timeoutIdRef.current);
       }
 
       const newBanner: NotificationBanner = {
@@ -58,13 +58,11 @@ export const NotificationBannerProvider: React.FC<NotificationBannerProviderProp
       setBanner(newBanner);
 
       // Auto-hide after 5 seconds
-      const newTimeoutId = setTimeout(() => {
+      timeoutIdRef.current = setTimeout(() => {
         hideBanner();
       }, 5000);
-
-      setTimeoutId(newTimeoutId);
     },
-    [timeoutId, hideBanner]
+    [hideBanner]
   );
 
   const value: NotificationBannerContextType = {

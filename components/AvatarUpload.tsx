@@ -23,7 +23,7 @@ export const AvatarUpload: React.FC<AvatarUploadProps> = ({ currentUri, onUpload
       }
 
       const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: 'images' as any,
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
         allowsEditing: true,
         aspect: [1, 1],
         quality: 0.8,
