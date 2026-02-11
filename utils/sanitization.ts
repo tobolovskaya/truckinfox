@@ -32,6 +32,7 @@ export function sanitizeMessage(message: string, maxLength: number = 1000): stri
   sanitized = sanitized.replace(/on\w+\s*=\s*["'][^"']*["']/gi, '');
 
   // Remove control characters (except newlines and tabs)
+  // eslint-disable-next-line no-control-regex
   sanitized = sanitized.replace(/[\x00-\x08\x0B-\x0C\x0E-\x1F\x7F]/g, '');
 
   // Normalize whitespace (collapse multiple spaces)
@@ -206,6 +207,7 @@ export function sanitizeInput(input: string, maxLength: number = 500): string {
   let sanitized = input.replace(/<[^>]*>/g, '');
 
   // Remove control characters
+  // eslint-disable-next-line no-control-regex
   sanitized = sanitized.replace(/[\x00-\x1F\x7F]/g, '');
 
   // Trim
@@ -299,7 +301,7 @@ export function sanitizeFilename(filename: string): string {
   let sanitized = filename.replace(/\.\./g, '');
 
   // Remove path separators
-  sanitized = sanitized.replace(/[\/\\]/g, '');
+  sanitized = sanitized.replace(/[/\\]/g, '');
 
   // Remove special characters (allow letters, numbers, dots, hyphens, underscores)
   sanitized = sanitized.replace(/[^a-zA-Z0-9._-]/g, '_');

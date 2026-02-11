@@ -17,9 +17,6 @@ import Reanimated, {
   useSharedValue,
   useAnimatedStyle,
   withSpring,
-  withTiming,
-  withSequence,
-  Easing,
 } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../contexts/AuthContext';
@@ -47,7 +44,6 @@ import { useCurrentUser } from '../../hooks/useCurrentUser';
 import { useFavorites } from '../../hooks/useFavorites';
 import { useFilterState } from '../../hooks/useFilterState';
 import { useReduceMotion } from '../../hooks/useReduceMotion';
-import { RequestCard } from '../../components/home/RequestCard';
 import { SwipeableRequestCard } from '../../components/home/SwipeableRequestCard';
 import { SkeletonCard } from '../../components/home/SkeletonCard';
 
@@ -120,11 +116,8 @@ export default function HomeScreen() {
     setWeightRange,
     setPickupDate,
     setCitySearch,
-    openModal: setFilterModalVisible,
     closeModal,
-    applyFilters,
     resetFilters,
-    clearFilter,
   } = useFilterState();
 
   // Convert filterState to the format expected by useCargoRequests (memoized to prevent re-renders)
@@ -163,7 +156,7 @@ export default function HomeScreen() {
   });
 
   const { cities } = useCities();
-  const { currentUser, loading: userLoading } = useCurrentUser(user?.uid);
+  const { currentUser } = useCurrentUser(user?.uid);
   const { toggleFavorite: toggleFavoriteHook } = useFavorites(user?.uid);
 
   // Bottom Sheet snap points

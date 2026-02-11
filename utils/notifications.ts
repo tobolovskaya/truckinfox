@@ -62,7 +62,7 @@ export interface Notification {
  */
 export function subscribeToNotifications(
   userId: string,
-  onUpdate: (notifications: Notification[]) => void,
+  onUpdate: (_notifications: Notification[]) => void,
   maxNotifications: number = 50
 ): () => void {
   const notificationsQuery = query(
@@ -123,7 +123,7 @@ export async function getUnreadNotificationCount(userId: string): Promise<number
  */
 export function subscribeToUnreadCount(
   userId: string,
-  onUpdate: (count: number) => void
+  onUpdate: (_count: number) => void
 ): () => void {
   const unreadQuery = query(
     collection(db, 'notifications'),

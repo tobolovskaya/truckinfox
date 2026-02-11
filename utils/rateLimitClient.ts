@@ -74,7 +74,7 @@ export async function callFunction<T = any, R = any>(functionName: string, data:
 export async function safeFunctionCall<T = any, R = any>(
   functionName: string,
   data: T,
-  onRateLimit?: (error: RateLimitError) => void
+  onRateLimit?: (_error: RateLimitError) => void
 ): Promise<R | null> {
   try {
     return await callFunction<T, R>(functionName, data);

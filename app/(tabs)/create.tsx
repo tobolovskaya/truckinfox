@@ -1021,7 +1021,7 @@ export default function CreateRequestScreen() {
                 // Add haptic feedback
                 try {
                   triggerHapticFeedback.medium();
-                } catch (error) {
+                } catch (_error) {
                   console.log('Haptic feedback not available');
                 }
               }}
@@ -1243,7 +1243,9 @@ export default function CreateRequestScreen() {
                   setDateIn3Days('pickup');
                   try {
                     triggerHapticFeedback.light();
-                  } catch {}
+                  } catch {
+                    // Haptic feedback not available on all devices
+                  }
                 }}
                 activeOpacity={0.7}
               >
