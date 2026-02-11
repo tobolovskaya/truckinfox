@@ -2,16 +2,16 @@ import React, { useState } from 'react';
 import { View, StyleSheet, KeyboardAvoidingView, Platform, Alert } from 'react-native';
 import { TextInput, Text } from 'react-native-paper';
 import { useRouter } from 'expo-router';
-import { useAuth } from '../../contexts/AuthContext';
-import { useI18n } from '../../contexts/I18nContext';
+import { sendPasswordResetEmail } from 'firebase/auth';
+import { auth } from '../../lib/firebase';
+import { useTranslation } from 'react-i18next';
 import { IOSButton } from '../../components/IOSButton';
-import { colors, spacing } from '../../theme/theme';
+import { theme } from '../../theme/theme';
 
 export default function ForgotPasswordScreen() {
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
-  const { resetPassword } = useAuth();
-  const { t } = useI18n();
+  const { t } = useTranslation();
   const router = useRouter();
 
   const handleResetPassword = async () => {
@@ -22,12 +22,13 @@ export default function ForgotPasswordScreen() {
 
     try {
       setLoading(true);
-      await resetPassword(email);
+      await sendPasswordResetEmail(auth, email);
       Alert.alert('Success', 'Password reset email sent. Please check your inbox.', [
         { text: 'OK', onPress: () => router.back() },
       ]);
-    } catch (error: any) {
-      Alert.alert('Error', error.message || 'Failed to send reset email');
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to send reset email';
+      Alert.alert('Error', errorMessage);
     } finally {
       setLoading(false);
     }
@@ -52,8 +53,8 @@ export default function ForgotPasswordScreen() {
           autoCapitalize="none"
           mode="outlined"
           style={styles.input}
-          outlineColor={colors.border}
-          activeOutlineColor={colors.primary}
+          outlineColor={theme.colors.outline}
+          activeOutlineColor={theme.colors.primary}
         />
 
         <IOSButton
@@ -63,7 +64,7 @@ export default function ForgotPasswordScreen() {
           style={styles.button}
         />
 
-        <IOSButton title="Back to Login" onPress={() => router.back()} variant="text" />
+        <IOSButton title="Back to Login" onPress={() => router.back()} variant="secondary" />
       </View>
     </KeyboardAvoidingView>
   );
@@ -72,31 +73,31 @@ export default function ForgotPasswordScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: theme.colors.background,
   },
   content: {
     flex: 1,
     justifyContent: 'center',
-    padding: spacing.lg,
+    padding: theme.spacing.lg,
   },
   title: {
     fontSize: 32,
     fontWeight: 'bold',
-    color: colors.text,
-    marginBottom: spacing.md,
+    color: theme.colors.onSurface,
+    marginBottom: theme.spacing.md,
     textAlign: 'center',
   },
   description: {
     fontSize: 16,
-    color: colors.textSecondary,
-    marginBottom: spacing.xl,
+    color: theme.colors.onSurfaceVariant,
+    marginBottom: theme.spacing.xl,
     textAlign: 'center',
   },
   input: {
-    marginBottom: spacing.lg,
-    backgroundColor: colors.background,
+    marginBottom: theme.spacing.lg,
+    backgroundColor: theme.colors.background,
   },
   button: {
-    marginBottom: spacing.md,
+    marginBottom: theme.spacing.md,
   },
 });

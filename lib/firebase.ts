@@ -1,7 +1,10 @@
 import { initializeApp, getApps, FirebaseApp } from 'firebase/app';
-import { Auth, getAuth } from 'firebase/auth';
+import { Auth, initializeAuth } from 'firebase/auth';
+// @ts-ignore - getReactNativePersistence may not be in type definitions
+import { getReactNativePersistence } from 'firebase/auth/react-native';
 import { Firestore, getFirestore } from 'firebase/firestore';
 import { FirebaseStorage, getStorage } from 'firebase/storage';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Firebase configuration from environment variables
 const firebaseConfig = {
@@ -29,8 +32,10 @@ let firestore: Firestore;
 let storage: FirebaseStorage;
 
 try {
-  // Initialize Firebase Auth with default persistence
-  auth = getAuth(app);
+  // Initialize Firebase Auth with AsyncStorage persistence
+  auth = initializeAuth(app, {
+    persistence: getReactNativePersistence(AsyncStorage),
+  });
   console.log('Firebase Auth initialized successfully');
 } catch (error) {
   console.error('Firebase Auth initialization failed:', error);
