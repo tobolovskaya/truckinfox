@@ -1,12 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  TextInput,
-  LogBox,
-} from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, TextInput, LogBox } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -94,7 +87,9 @@ export default function CreateRequestScreen() {
     null
   );
   const [images, setImages] = useState<string[]>([]);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const fromAddressRef = useRef<any>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const toAddressRef = useRef<any>(null);
   const fromAddressTextRef = useRef<string>('');
   const toAddressTextRef = useRef<string>('');
@@ -106,7 +101,7 @@ export default function CreateRequestScreen() {
     }
   };
 
-  const validateField = (field: string, value: any): string => {
+  const validateField = (field: string, value: unknown): string => {
     switch (field) {
       case 'title':
         if (!value || !value.toString().trim()) return 'Tittel er påkrevd';
@@ -168,7 +163,7 @@ export default function CreateRequestScreen() {
     }
   };
 
-  const updateFormData = (field: string, value: any) => {
+  const updateFormData = (field: string, value: unknown) => {
     setFormData(prev => ({ ...prev, [field]: value }));
 
     // Validate field if it has been touched
@@ -462,8 +457,9 @@ export default function CreateRequestScreen() {
           router.push('/(tabs)/home');
         }
       }, 500);
-    } catch (error: any) {
-      toast.error(error.message || t('error'));
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : t('error');
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -631,6 +627,7 @@ export default function CreateRequestScreen() {
                 }}
               >
                 <View style={styles.cargoTypeListItemContent}>
+                  {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
                   <Ionicons
                     name={type.icon as any}
                     size={24}
@@ -1218,7 +1215,9 @@ export default function CreateRequestScreen() {
                   setDateToday('pickup');
                   try {
                     triggerHapticFeedback.light();
-                  } catch {}
+                  } catch {
+                    // Haptic feedback not available on all devices
+                  }
                 }}
                 activeOpacity={0.7}
               >
@@ -1230,7 +1229,9 @@ export default function CreateRequestScreen() {
                   setDateTomorrow('pickup');
                   try {
                     triggerHapticFeedback.light();
-                  } catch {}
+                  } catch {
+                    // Haptic feedback not available on all devices
+                  }
                 }}
                 activeOpacity={0.7}
               >
@@ -1291,7 +1292,9 @@ export default function CreateRequestScreen() {
                   setDateTomorrow('delivery');
                   try {
                     triggerHapticFeedback.light();
-                  } catch {}
+                  } catch {
+                    // Haptic feedback not available on all devices
+                  }
                 }}
                 activeOpacity={0.7}
               >
@@ -1303,7 +1306,9 @@ export default function CreateRequestScreen() {
                   setDateIn3Days('delivery');
                   try {
                     triggerHapticFeedback.light();
-                  } catch {}
+                  } catch {
+                    // Haptic feedback not available on all devices
+                  }
                 }}
                 activeOpacity={0.7}
               >
@@ -1315,7 +1320,9 @@ export default function CreateRequestScreen() {
                   setDateNextWeek('delivery');
                   try {
                     triggerHapticFeedback.light();
-                  } catch {}
+                  } catch {
+                    // Haptic feedback not available on all devices
+                  }
                 }}
                 activeOpacity={0.7}
               >
@@ -1369,6 +1376,7 @@ export default function CreateRequestScreen() {
                   }
                 }}
               >
+                {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
                 <Ionicons
                   name={type.icon as any}
                   size={20}
