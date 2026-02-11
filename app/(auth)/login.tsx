@@ -16,12 +16,19 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useTranslation } from 'react-i18next';
 import { theme } from '../../theme/theme';
 import { trackUserLogin } from '../../utils/analytics';
-import { colors, spacing, fontSize, fontWeight, borderRadius, shadows, gradients } from '../../lib/sharedStyles';
+import {
+  colors,
+  spacing,
+  fontSize,
+  fontWeight,
+  borderRadius,
+  shadows,
+  gradients,
+} from '../../lib/sharedStyles';
 import * as WebBrowser from 'expo-web-browser';
 import * as AppleAuthentication from 'expo-apple-authentication';
 
 WebBrowser.maybeCompleteAuthSession();
-
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
@@ -29,7 +36,7 @@ export default function LoginScreen() {
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const [loading, setLoading] = useState(false);
-  
+
   const { signIn } = useAuth();
   const router = useRouter();
   const { t } = useTranslation();
@@ -46,22 +53,19 @@ export default function LoginScreen() {
       if (!result.success) {
         // Check if error is user not found or invalid credentials
         const errorMessage = result.error || '';
-        const isUserNotFound = errorMessage.includes('user-not-found') || 
-                               errorMessage.includes('invalid-credential') ||
-                               errorMessage.includes('wrong-password');
-        
+        const isUserNotFound =
+          errorMessage.includes('user-not-found') ||
+          errorMessage.includes('invalid-credential') ||
+          errorMessage.includes('wrong-password');
+
         if (isUserNotFound) {
-          Alert.alert(
-            t('userNotFound'),
-            t('wouldYouLikeToRegister'),
-            [
-              { text: t('cancel'), style: 'cancel' },
-              { 
-                text: t('signUp'), 
-                onPress: () => router.push('/(auth)/register')
-              }
-            ]
-          );
+          Alert.alert(t('userNotFound'), t('wouldYouLikeToRegister'), [
+            { text: t('cancel'), style: 'cancel' },
+            {
+              text: t('signUp'),
+              onPress: () => router.push('/(auth)/register'),
+            },
+          ]);
         } else {
           Alert.alert(t('loginError'), errorMessage || t('somethingWentWrong'));
         }
@@ -112,10 +116,7 @@ export default function LoginScreen() {
   };
 
   return (
-    <LinearGradient
-      colors={gradients.primary}
-      style={styles.container}
-    >
+    <LinearGradient colors={gradients.primary} style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         {/* Logo and Header */}
         <View style={styles.header}>
@@ -137,7 +138,12 @@ export default function LoginScreen() {
           <View style={styles.inputContainer}>
             <Text style={styles.label}>{t('email')}</Text>
             <View style={styles.inputWrapper}>
-              <Ionicons name="mail-outline" size={20} color={theme.iconColors.gray.primary} style={styles.inputIcon} />
+              <Ionicons
+                name="mail-outline"
+                size={20}
+                color={theme.iconColors.gray.primary}
+                style={styles.inputIcon}
+              />
               <TextInput
                 style={styles.input}
                 placeholder="your@email.com"
@@ -154,7 +160,12 @@ export default function LoginScreen() {
           <View style={styles.inputContainer}>
             <Text style={styles.label}>{t('password')}</Text>
             <View style={styles.inputWrapper}>
-              <Ionicons name="lock-closed-outline" size={20} color={theme.iconColors.gray.primary} style={styles.inputIcon} />
+              <Ionicons
+                name="lock-closed-outline"
+                size={20}
+                color={theme.iconColors.gray.primary}
+                style={styles.inputIcon}
+              />
               <TextInput
                 style={[styles.input, { paddingRight: 50 }]}
                 placeholder={t('enterPassword')}
@@ -168,7 +179,7 @@ export default function LoginScreen() {
                 onPress={() => setShowPassword(!showPassword)}
               >
                 <Ionicons
-                  name={showPassword ? "eye-outline" : "eye-off-outline"}
+                  name={showPassword ? 'eye-outline' : 'eye-off-outline'}
                   size={20}
                   color={theme.iconColors.gray.primary}
                 />
@@ -178,12 +189,11 @@ export default function LoginScreen() {
 
           {/* Remember Me & Forgot Password */}
           <View style={styles.optionsRow}>
-            <TouchableOpacity
-              style={styles.rememberMe}
-              onPress={() => setRememberMe(!rememberMe)}
-            >
+            <TouchableOpacity style={styles.rememberMe} onPress={() => setRememberMe(!rememberMe)}>
               <View style={[styles.checkbox, rememberMe && styles.checkboxChecked]}>
-                {rememberMe && <Ionicons name="checkmark" size={16} color={theme.iconColors.white} />}
+                {rememberMe && (
+                  <Ionicons name="checkmark" size={16} color={theme.iconColors.white} />
+                )}
               </View>
               <Text style={styles.rememberText}>{t('rememberMe')}</Text>
             </TouchableOpacity>

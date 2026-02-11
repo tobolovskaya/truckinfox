@@ -70,16 +70,8 @@ export default function MapScreen() {
         constraints.push(where('status', '==', filterStatus));
       }
 
-      const customerQuery = query(
-        ordersRef,
-        where('customer_id', '==', user.uid),
-        ...constraints
-      );
-      const carrierQuery = query(
-        ordersRef,
-        where('carrier_id', '==', user.uid),
-        ...constraints
-      );
+      const customerQuery = query(ordersRef, where('customer_id', '==', user.uid), ...constraints);
+      const carrierQuery = query(ordersRef, where('carrier_id', '==', user.uid), ...constraints);
 
       const [customerSnap, carrierSnap] = await Promise.all([
         getDocs(customerQuery),
@@ -87,15 +79,15 @@ export default function MapScreen() {
       ]);
 
       const seenIds = new Set<string>();
-      const mergedDocs = [...customerSnap.docs, ...carrierSnap.docs].filter((doc) => {
+      const mergedDocs = [...customerSnap.docs, ...carrierSnap.docs].filter(doc => {
         if (seenIds.has(doc.id)) return false;
         seenIds.add(doc.id);
         return true;
       });
 
       const data = mergedDocs
-        .map((doc) => ({ ...(doc.data() as MapOrder), id: doc.id }))
-        .filter((order) => order.from_lat != null && order.from_lng != null);
+        .map(doc => ({ ...(doc.data() as MapOrder), id: doc.id }))
+        .filter(order => order.from_lat != null && order.from_lng != null);
 
       setOrders(data);
     } catch (error) {
@@ -110,10 +102,11 @@ export default function MapScreen() {
     router.push(`/order-status/${orderId}` as any);
   };
 
-  const filteredOrders = orders.filter(order =>
-    order.cargo_title.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
-    order.from_address.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
-    order.to_address.toLowerCase().includes(debouncedSearchQuery.toLowerCase())
+  const filteredOrders = orders.filter(
+    order =>
+      order.cargo_title.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
+      order.from_address.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
+      order.to_address.toLowerCase().includes(debouncedSearchQuery.toLowerCase())
   );
 
   const getStatusColor = (status: string) => {
@@ -140,13 +133,13 @@ export default function MapScreen() {
   };
 
   const panGesture = Gesture.Pan()
-    .onUpdate((event) => {
+    .onUpdate(event => {
       const newValue = screenHeight - event.absoluteY;
       if (newValue >= screenHeight * 0.3 && newValue <= screenHeight * 0.8) {
         bottomSheetHeight.setValue(newValue);
       }
     })
-    .onEnd((event) => {
+    .onEnd(event => {
       const velocity = event.velocityY;
       const currentHeight = screenHeight - event.absoluteY;
 
@@ -170,12 +163,8 @@ export default function MapScreen() {
   return (
     <View style={styles.container}>
       {/* Map */}
-      <MapView
-        style={styles.map}
-        showsUserLocation={true}
-        showsMyLocationButton={true}
-      >
-        {filteredOrders.map((order) => (
+      <MapView style={styles.map} showsUserLocation={true} showsMyLocationButton={true}>
+        {filteredOrders.map(order => (
           <React.Fragment key={order.id}>
             <Marker
               coordinate={{
@@ -236,19 +225,15 @@ export default function MapScreen() {
 
         {/* iOS-style segmented control */}
         <View style={styles.segmentedControl}>
-          {['all', 'active', 'delivered'].map((status) => (
+          {['all', 'active', 'delivered'].map(status => (
             <TouchableOpacity
               key={status}
-              style={[
-                styles.segmentButton,
-                filterStatus === status && styles.segmentButtonActive
-              ]}
+              style={[styles.segmentButton, filterStatus === status && styles.segmentButtonActive]}
               onPress={() => setFilterStatus(status)}
             >
-              <Text style={[
-                styles.segmentText,
-                filterStatus === status && styles.segmentTextActive
-              ]}>
+              <Text
+                style={[styles.segmentText, filterStatus === status && styles.segmentTextActive]}
+              >
                 {t(status)}
               </Text>
             </TouchableOpacity>
@@ -264,7 +249,9 @@ export default function MapScreen() {
 
           {/* Header */}
           <View style={styles.bottomSheetHeader}>
-            <Text style={styles.bottomSheetTitle}>{t('orders')} ({filteredOrders.length})</Text>
+            <Text style={styles.bottomSheetTitle}>
+              {t('orders')} ({filteredOrders.length})
+            </Text>
             <TouchableOpacity onPress={toggleBottomSheet}>
               <Ionicons
                 name={isExpanded ? 'chevron-down' : 'chevron-up'}
@@ -291,7 +278,7 @@ export default function MapScreen() {
                 <Text style={styles.emptySubtitle}>{t('tryDifferentSearch')}</Text>
               </View>
             ) : (
-              filteredOrders.map((order) => (
+              filteredOrders.map(order => (
                 <TouchableOpacity
                   key={order.id}
                   style={styles.orderCard}
@@ -306,7 +293,12 @@ export default function MapScreen() {
                     </View>
                     <View style={styles.orderAmount}>
                       <Text style={styles.amountText}>{order.total_amount} NOK</Text>
-                      <View style={[styles.statusIndicator, { backgroundColor: getStatusColor(order.status) }]} />
+                      <View
+                        style={[
+                          styles.statusIndicator,
+                          { backgroundColor: getStatusColor(order.status) },
+                        ]}
+                      />
                     </View>
                   </View>
 
@@ -317,7 +309,11 @@ export default function MapScreen() {
                         {order.from_address}
                       </Text>
                     </View>
-                    <Ionicons name="arrow-forward" size={12} color={theme.iconColors.gray.primary} />
+                    <Ionicons
+                      name="arrow-forward"
+                      size={12}
+                      color={theme.iconColors.gray.primary}
+                    />
                     <View style={styles.routePoint}>
                       <Ionicons name="location" size={14} color={theme.iconColors.error} />
                       <Text style={styles.routeText} numberOfLines={1}>

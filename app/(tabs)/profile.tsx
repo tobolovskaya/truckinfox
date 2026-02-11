@@ -10,17 +10,34 @@ import {
   Image,
   ActivityIndicator,
 } from 'react-native';
-import { SafeAreaView , useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTranslation } from 'react-i18next';
 import { useI18n } from '../../contexts/I18nContext';
 import { db, storage } from '../../lib/firebase';
-import { doc, updateDoc, getDoc, setDoc, collection, query, where, getDocs } from 'firebase/firestore';
+import {
+  doc,
+  updateDoc,
+  getDoc,
+  setDoc,
+  collection,
+  query,
+  where,
+  getDocs,
+} from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { theme } from '../../theme/theme';
-import { colors, spacing, fontSize, fontWeight, borderRadius, shadows, gradients } from '../../lib/sharedStyles';
+import {
+  colors,
+  spacing,
+  fontSize,
+  fontWeight,
+  borderRadius,
+  shadows,
+  gradients,
+} from '../../lib/sharedStyles';
 import * as ImagePicker from 'expo-image-picker';
 import { fetchWithTimeout } from '../../utils/fetchWithTimeout';
 
@@ -65,7 +82,7 @@ export default function ProfileScreen() {
     orders_as_customer: 0,
     orders_as_carrier: 0,
     total_transaction_amount: 0,
-    last_activity_at: null
+    last_activity_at: null,
   });
   const [notificationSettings, setNotificationSettings] = useState({
     notifications_enabled: true,
@@ -84,7 +101,7 @@ export default function ProfileScreen() {
   const fetchProfile = async () => {
     try {
       if (!user?.uid) return;
-      
+
       const userRef = doc(db, 'users', user.uid);
       const userSnap = await getDoc(userRef);
 
@@ -109,7 +126,7 @@ export default function ProfileScreen() {
           orders_as_customer: 0,
           orders_as_carrier: 0,
           total_transaction_amount: 0,
-          last_activity_at: null
+          last_activity_at: null,
         });
       } else {
         const data = { id: userSnap.id, ...userSnap.data() } as UserProfile;
@@ -119,7 +136,7 @@ export default function ProfileScreen() {
           orders_as_customer: data.orders_as_customer || 0,
           orders_as_carrier: data.orders_as_carrier || 0,
           total_transaction_amount: data.total_transaction_amount || 0,
-          last_activity_at: data.last_activity_at || null
+          last_activity_at: data.last_activity_at || null,
         });
       }
     } catch (error) {
@@ -132,7 +149,7 @@ export default function ProfileScreen() {
   const fetchNotificationSettings = async () => {
     try {
       if (!user?.uid) return;
-      
+
       const settingsRef = doc(db, 'user_notification_settings', user.uid);
       const settingsSnap = await getDoc(settingsRef);
 
@@ -154,13 +171,17 @@ export default function ProfileScreen() {
   const updateNotificationSetting = async (setting: string, value: boolean) => {
     try {
       if (!user?.uid) return;
-      
+
       const settingsRef = doc(db, 'user_notification_settings', user.uid);
-      await setDoc(settingsRef, {
-        user_id: user.uid,
-        [setting]: value,
-        updated_at: new Date().toISOString(),
-      }, { merge: true });
+      await setDoc(
+        settingsRef,
+        {
+          user_id: user.uid,
+          [setting]: value,
+          updated_at: new Date().toISOString(),
+        },
+        { merge: true }
+      );
 
       setNotificationSettings(prev => ({
         ...prev,
@@ -196,9 +217,13 @@ export default function ProfileScreen() {
       const photo = result.assets[0];
 
       // Convert to blob with timeout
-      const response = await fetchWithTimeout(photo.uri, {
-        method: 'GET',
-      }, 15000); // 15 second timeout for image download
+      const response = await fetchWithTimeout(
+        photo.uri,
+        {
+          method: 'GET',
+        },
+        15000
+      ); // 15 second timeout for image download
       const blob = await response.blob();
 
       const fileExt = photo.uri.split('.').pop();
@@ -232,46 +257,38 @@ export default function ProfileScreen() {
   };
 
   const handleSignOut = async () => {
-    Alert.alert(
-      t('signOut'),
-      t('confirmSignOut'),
-      [
-        { text: t('cancel'), style: 'cancel' },
-        {
-          text: t('signOut'),
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await signOut();
-              // Force navigation to login screen
-              router.replace('/(auth)/login');
-            } catch (error: any) {
-              console.error('Logout error:', error);
-              // Even if there's an error, navigate to login
-              router.replace('/(auth)/login');
-            }
-          },
+    Alert.alert(t('signOut'), t('confirmSignOut'), [
+      { text: t('cancel'), style: 'cancel' },
+      {
+        text: t('signOut'),
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            await signOut();
+            // Force navigation to login screen
+            router.replace('/(auth)/login');
+          } catch (error: any) {
+            console.error('Logout error:', error);
+            // Even if there's an error, navigate to login
+            router.replace('/(auth)/login');
+          }
         },
-      ]
-    );
+      },
+    ]);
   };
 
   const handleLanguageChange = () => {
-    Alert.alert(
-      t('selectLanguage'),
-      '',
-      [
-        { 
-          text: `🇳🇴 ${t('norwegian')}`, 
-          onPress: () => changeLanguage('no') 
-        },
-        { 
-          text: `🇺🇸 ${t('english')}`, 
-          onPress: () => changeLanguage('en') 
-        },
-        { text: t('cancel'), style: 'cancel' },
-      ]
-    );
+    Alert.alert(t('selectLanguage'), '', [
+      {
+        text: `🇳🇴 ${t('norwegian')}`,
+        onPress: () => changeLanguage('no'),
+      },
+      {
+        text: `🇺🇸 ${t('english')}`,
+        onPress: () => changeLanguage('en'),
+      },
+      { text: t('cancel'), style: 'cancel' },
+    ]);
   };
 
   if (loading) {
@@ -292,10 +309,7 @@ export default function ProfileScreen() {
           <View style={styles.profileHeaderRow}>
             <View style={styles.avatarContainer}>
               {avatarUrl ? (
-                <Image
-                  source={{ uri: avatarUrl }}
-                  style={styles.avatar}
-                />
+                <Image source={{ uri: avatarUrl }} style={styles.avatar} />
               ) : (
                 <View style={styles.avatarPlaceholder}>
                   <Ionicons
@@ -335,7 +349,9 @@ export default function ProfileScreen() {
         </View>
 
         {/* Stats - Hide if all zero */}
-        {(statistics.orders_as_customer > 0 || statistics.orders_as_carrier > 0 || statistics.total_transaction_amount > 0) && (
+        {(statistics.orders_as_customer > 0 ||
+          statistics.orders_as_carrier > 0 ||
+          statistics.total_transaction_amount > 0) && (
           <View style={styles.statsContainer}>
             <View style={styles.statCard}>
               <Ionicons name="person-outline" size={20} color={theme.iconColors.primary} />
@@ -349,7 +365,9 @@ export default function ProfileScreen() {
             </View>
             <View style={styles.statCard}>
               <Ionicons name="wallet-outline" size={20} color={theme.iconColors.info} />
-              <Text style={styles.statNumber}>{Math.round(statistics.total_transaction_amount)} NOK</Text>
+              <Text style={styles.statNumber}>
+                {Math.round(statistics.total_transaction_amount)} NOK
+              </Text>
               <Text style={styles.statLabel}>{t('totalTransactions')}</Text>
             </View>
           </View>
@@ -375,7 +393,11 @@ export default function ProfileScreen() {
 
           <View style={styles.settingRow}>
             <View style={styles.settingLeft}>
-              <Ionicons name="notifications-outline" size={20} color={theme.iconColors.gray.primary} />
+              <Ionicons
+                name="notifications-outline"
+                size={20}
+                color={theme.iconColors.gray.primary}
+              />
               <View style={styles.settingInfo}>
                 <Text style={styles.settingText}>{t('allNotifications')}</Text>
                 <Text style={styles.settingDescription}>{t('enableAllNotifications')}</Text>
@@ -383,89 +405,167 @@ export default function ProfileScreen() {
             </View>
             <Switch
               value={notificationSettings.notifications_enabled}
-              onValueChange={(value) => updateNotificationSetting('notifications_enabled', value)}
+              onValueChange={value => updateNotificationSetting('notifications_enabled', value)}
               trackColor={{ false: '#E5E7EB', true: '#FF7043' }}
               thumbColor={notificationSettings.notifications_enabled ? 'white' : '#F3F4F6'}
             />
           </View>
-          <View style={[styles.settingRow, !notificationSettings.notifications_enabled && styles.disabledSetting]}>
+          <View
+            style={[
+              styles.settingRow,
+              !notificationSettings.notifications_enabled && styles.disabledSetting,
+            ]}
+          >
             <View style={styles.settingLeft}>
-              <Ionicons name="cube-outline" size={20} color={!notificationSettings.notifications_enabled ? '#9CA3AF' : '#616161'} />
+              <Ionicons
+                name="cube-outline"
+                size={20}
+                color={!notificationSettings.notifications_enabled ? '#9CA3AF' : '#616161'}
+              />
               <View style={styles.settingInfo}>
-                <Text style={[styles.settingText, !notificationSettings.notifications_enabled && styles.disabledText]}>
+                <Text
+                  style={[
+                    styles.settingText,
+                    !notificationSettings.notifications_enabled && styles.disabledText,
+                  ]}
+                >
                   {t('newOrdersNotifications')}
                 </Text>
-                <Text style={[styles.settingDescription, !notificationSettings.notifications_enabled && styles.disabledText]}>
+                <Text
+                  style={[
+                    styles.settingDescription,
+                    !notificationSettings.notifications_enabled && styles.disabledText,
+                  ]}
+                >
                   {t('notifyNewOrders')}
                 </Text>
               </View>
             </View>
             <Switch
               value={notificationSettings.new_orders_notifications}
-              onValueChange={(value) => updateNotificationSetting('new_orders_notifications', value)}
+              onValueChange={value => updateNotificationSetting('new_orders_notifications', value)}
               disabled={!notificationSettings.notifications_enabled}
               trackColor={{ false: '#E5E7EB', true: '#FF7043' }}
               thumbColor={notificationSettings.new_orders_notifications ? 'white' : '#F3F4F6'}
             />
           </View>
 
-          <View style={[styles.settingRow, !notificationSettings.notifications_enabled && styles.disabledSetting]}>
+          <View
+            style={[
+              styles.settingRow,
+              !notificationSettings.notifications_enabled && styles.disabledSetting,
+            ]}
+          >
             <View style={styles.settingLeft}>
-              <Ionicons name="checkmark-circle-outline" size={20} color={!notificationSettings.notifications_enabled ? '#9CA3AF' : '#616161'} />
+              <Ionicons
+                name="checkmark-circle-outline"
+                size={20}
+                color={!notificationSettings.notifications_enabled ? '#9CA3AF' : '#616161'}
+              />
               <View style={styles.settingInfo}>
-                <Text style={[styles.settingText, !notificationSettings.notifications_enabled && styles.disabledText]}>
+                <Text
+                  style={[
+                    styles.settingText,
+                    !notificationSettings.notifications_enabled && styles.disabledText,
+                  ]}
+                >
                   {t('statusUpdatesNotifications')}
                 </Text>
-                <Text style={[styles.settingDescription, !notificationSettings.notifications_enabled && styles.disabledText]}>
+                <Text
+                  style={[
+                    styles.settingDescription,
+                    !notificationSettings.notifications_enabled && styles.disabledText,
+                  ]}
+                >
                   {t('notifyStatusUpdates')}
                 </Text>
               </View>
             </View>
             <Switch
               value={notificationSettings.status_updates_notifications}
-              onValueChange={(value) => updateNotificationSetting('status_updates_notifications', value)}
+              onValueChange={value =>
+                updateNotificationSetting('status_updates_notifications', value)
+              }
               disabled={!notificationSettings.notifications_enabled}
               trackColor={{ false: '#E5E7EB', true: '#FF7043' }}
               thumbColor={notificationSettings.status_updates_notifications ? 'white' : '#F3F4F6'}
             />
           </View>
 
-          <View style={[styles.settingRow, !notificationSettings.notifications_enabled && styles.disabledSetting]}>
+          <View
+            style={[
+              styles.settingRow,
+              !notificationSettings.notifications_enabled && styles.disabledSetting,
+            ]}
+          >
             <View style={styles.settingLeft}>
-              <Ionicons name="pricetag-outline" size={20} color={!notificationSettings.notifications_enabled ? '#9CA3AF' : '#616161'} />
+              <Ionicons
+                name="pricetag-outline"
+                size={20}
+                color={!notificationSettings.notifications_enabled ? '#9CA3AF' : '#616161'}
+              />
               <View style={styles.settingInfo}>
-                <Text style={[styles.settingText, !notificationSettings.notifications_enabled && styles.disabledText]}>
+                <Text
+                  style={[
+                    styles.settingText,
+                    !notificationSettings.notifications_enabled && styles.disabledText,
+                  ]}
+                >
                   {t('bidNotifications')}
                 </Text>
-                <Text style={[styles.settingDescription, !notificationSettings.notifications_enabled && styles.disabledText]}>
+                <Text
+                  style={[
+                    styles.settingDescription,
+                    !notificationSettings.notifications_enabled && styles.disabledText,
+                  ]}
+                >
                   {t('notifyNewBids')}
                 </Text>
               </View>
             </View>
             <Switch
               value={notificationSettings.bid_notifications}
-              onValueChange={(value) => updateNotificationSetting('bid_notifications', value)}
+              onValueChange={value => updateNotificationSetting('bid_notifications', value)}
               disabled={!notificationSettings.notifications_enabled}
               trackColor={{ false: '#E5E7EB', true: '#FF7043' }}
               thumbColor={notificationSettings.bid_notifications ? 'white' : '#F3F4F6'}
             />
           </View>
 
-          <View style={[styles.settingRow, !notificationSettings.notifications_enabled && styles.disabledSetting]}>
+          <View
+            style={[
+              styles.settingRow,
+              !notificationSettings.notifications_enabled && styles.disabledSetting,
+            ]}
+          >
             <View style={styles.settingLeft}>
-              <Ionicons name="chatbubble-outline" size={20} color={!notificationSettings.notifications_enabled ? '#9CA3AF' : '#616161'} />
+              <Ionicons
+                name="chatbubble-outline"
+                size={20}
+                color={!notificationSettings.notifications_enabled ? '#9CA3AF' : '#616161'}
+              />
               <View style={styles.settingInfo}>
-                <Text style={[styles.settingText, !notificationSettings.notifications_enabled && styles.disabledText]}>
+                <Text
+                  style={[
+                    styles.settingText,
+                    !notificationSettings.notifications_enabled && styles.disabledText,
+                  ]}
+                >
                   {t('messageNotifications')}
                 </Text>
-                <Text style={[styles.settingDescription, !notificationSettings.notifications_enabled && styles.disabledText]}>
+                <Text
+                  style={[
+                    styles.settingDescription,
+                    !notificationSettings.notifications_enabled && styles.disabledText,
+                  ]}
+                >
                   {t('notifyNewMessages')}
                 </Text>
               </View>
             </View>
             <Switch
               value={notificationSettings.message_notifications}
-              onValueChange={(value) => updateNotificationSetting('message_notifications', value)}
+              onValueChange={value => updateNotificationSetting('message_notifications', value)}
               disabled={!notificationSettings.notifications_enabled}
               trackColor={{ false: '#E5E7EB', true: '#FF7043' }}
               thumbColor={notificationSettings.message_notifications ? 'white' : '#F3F4F6'}
@@ -492,7 +592,8 @@ export default function ProfileScreen() {
             <View style={styles.infoRow}>
               <Ionicons name="location-outline" size={20} color={theme.iconColors.gray.primary} />
               <Text style={styles.infoText}>
-                {profile.city}{profile.region ? `, ${profile.region}` : ''}
+                {profile.city}
+                {profile.region ? `, ${profile.region}` : ''}
               </Text>
             </View>
           )}
@@ -528,7 +629,11 @@ export default function ProfileScreen() {
             )}
             {profile.org_number && (
               <View style={styles.infoRow}>
-                <Ionicons name="document-text-outline" size={20} color={theme.iconColors.gray.primary} />
+                <Ionicons
+                  name="document-text-outline"
+                  size={20}
+                  color={theme.iconColors.gray.primary}
+                />
                 <Text style={styles.infoText}>{profile.org_number}</Text>
               </View>
             )}
@@ -561,14 +666,10 @@ export default function ProfileScreen() {
                 )}
               </View>
               {profile.vehicle_capacity && (
-                <Text style={styles.vehicleCapacity}>
-                  Capacity: {profile.vehicle_capacity} kg
-                </Text>
+                <Text style={styles.vehicleCapacity}>Capacity: {profile.vehicle_capacity} kg</Text>
               )}
               {profile.vehicle_description && (
-                <Text style={styles.vehicleDescription}>
-                  {profile.vehicle_description}
-                </Text>
+                <Text style={styles.vehicleDescription}>{profile.vehicle_description}</Text>
               )}
             </View>
           </View>
@@ -576,7 +677,7 @@ export default function ProfileScreen() {
 
         {/* Actions */}
         <View style={styles.section}>
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.editButton}
             onPress={() => router.push('/profile/edit' as any)}
           >
@@ -584,7 +685,7 @@ export default function ProfileScreen() {
             <Text style={styles.editButtonText}>{t('editProfile')}</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.securityButton}
             onPress={() => router.push('/profile/security' as any)}
           >
@@ -603,9 +704,7 @@ export default function ProfileScreen() {
           <Text style={styles.footerText}>
             {t('memberSince')} {new Date(profile?.created_at || '').getFullYear()}
           </Text>
-          <Text style={styles.footerText}>
-            TruckinFox v1.0.0
-          </Text>
+          <Text style={styles.footerText}>TruckinFox v1.0.0</Text>
           {/* Bottom spacing for tab bar */}
           <View style={{ height: insets.bottom + 80 }} />
         </View>

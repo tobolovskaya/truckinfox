@@ -93,11 +93,7 @@ export const SwipeableRequestCard: React.FC<SwipeableRequestCardProps> = ({
       onPress={handleFavorite}
       activeOpacity={0.8}
     >
-      <Ionicons
-        name={request.is_favorite ? 'heart' : 'heart-outline'}
-        size={28}
-        color="white"
-      />
+      <Ionicons name={request.is_favorite ? 'heart' : 'heart-outline'} size={28} color="white" />
       <Text style={styles.swipeActionText}>
         {request.is_favorite ? t('unfavorite') || 'Unfavorite' : t('favorite') || 'Favorite'}
       </Text>
@@ -130,11 +126,7 @@ export const SwipeableRequestCard: React.FC<SwipeableRequestCardProps> = ({
       leftThreshold={80}
       rightThreshold={80}
     >
-      <RequestCard
-        request={request}
-        onPress={onPress}
-        onToggleFavorite={onToggleFavorite}
-      />
+      <RequestCard request={request} onPress={onPress} onToggleFavorite={onToggleFavorite} />
     </Swipeable>
   );
 };

@@ -30,43 +30,43 @@ export const AnalyticsEvents = {
   CARGO_REQUEST_VIEWED: 'cargo_request_viewed',
   CARGO_REQUEST_UPDATED: 'cargo_request_updated',
   CARGO_REQUEST_DELETED: 'cargo_request_deleted',
-  
+
   // Bid Events
   BID_SUBMITTED: 'bid_submitted',
   BID_ACCEPTED: 'bid_accepted',
   BID_REJECTED: 'bid_rejected',
   BID_WITHDRAWN: 'bid_withdrawn',
-  
+
   // Payment Events
   PAYMENT_INITIATED: 'payment_initiated',
   PAYMENT_COMPLETED: 'payment_completed',
   PAYMENT_FAILED: 'payment_failed',
   PAYMENT_CANCELLED: 'payment_cancelled',
-  
+
   // Order Events
   ORDER_CREATED: 'order_created',
   ORDER_STATUS_CHANGED: 'order_status_changed',
   DELIVERY_CONFIRMED: 'delivery_confirmed',
   DELIVERY_PROOF_SUBMITTED: 'delivery_proof_submitted',
-  
+
   // Chat Events
   CHAT_STARTED: 'chat_started',
   MESSAGE_SENT: 'message_sent',
-  
+
   // User Events
   USER_REGISTERED: 'user_registered',
   USER_LOGGED_IN: 'user_logged_in',
   USER_LOGGED_OUT: 'user_logged_out',
   PROFILE_UPDATED: 'profile_updated',
-  
+
   // Review Events
   REVIEW_SUBMITTED: 'review_submitted',
   REVIEW_VIEWED: 'review_viewed',
-  
+
   // Search/Filter Events
   SEARCH_PERFORMED: 'search_performed',
   FILTERS_APPLIED: 'filters_applied',
-  
+
   // Navigation Events
   SCREEN_VIEW: 'screen_view',
 } as const;
@@ -175,8 +175,6 @@ export const trackUserRegistered = (params: {
   logEvent(AnalyticsEvents.USER_REGISTERED, params);
 };
 
-export const trackUserLogin = (params: {
-  login_method?: string;
-}) => {
+export const trackUserLogin = (params: { login_method?: string }) => {
   logEvent(AnalyticsEvents.USER_LOGGED_IN, params);
 };

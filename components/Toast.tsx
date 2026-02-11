@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
-import Reanimated, { 
-  useSharedValue, 
+import Reanimated, {
+  useSharedValue,
   useAnimatedStyle,
   withSpring,
   runOnJS,
@@ -20,41 +20,41 @@ interface ToastProps {
   onHide?: () => void;
 }
 
-export const Toast: React.FC<ToastProps> = ({ 
-  visible, 
-  message, 
-  type, 
+export const Toast: React.FC<ToastProps> = ({
+  visible,
+  message,
+  type,
   duration = 3000,
-  onHide 
+  onHide,
 }) => {
   const insets = useSafeAreaInsets();
   const translateY = useSharedValue(-100);
   const opacity = useSharedValue(0);
-  
+
   useEffect(() => {
     if (visible) {
       // Show animation
-      translateY.value = withSpring(0, { 
+      translateY.value = withSpring(0, {
         damping: 15,
         stiffness: 150,
       });
       opacity.value = withTiming(1, { duration: 200 });
-      
+
       // Auto hide after duration
       const hideAnimation = () => {
-        translateY.value = withSpring(-100, { 
+        translateY.value = withSpring(-100, {
           damping: 20,
           stiffness: 200,
         });
-        opacity.value = withTiming(0, { duration: 200 }, (finished) => {
+        opacity.value = withTiming(0, { duration: 200 }, finished => {
           if (finished && onHide) {
             runOnJS(onHide)();
           }
         });
       };
-      
+
       const timer = setTimeout(hideAnimation, duration);
-      
+
       return () => clearTimeout(timer);
     } else {
       translateY.value = -100;
@@ -62,42 +62,44 @@ export const Toast: React.FC<ToastProps> = ({
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [visible, duration, onHide]);
-  
+
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [{ translateY: translateY.value }],
     opacity: opacity.value,
   }));
-  
+
   const icons: Record<ToastType, keyof typeof Ionicons.glyphMap> = {
     success: 'checkmark-circle',
     error: 'close-circle',
     info: 'information-circle',
     warning: 'warning',
   };
-  
+
   const toastColors: Record<ToastType, string> = {
     success: '#4CAF50',
     error: '#F44336',
     info: '#2196F3',
     warning: '#FF9800',
   };
-  
+
   if (!visible && translateY.value === -100) return null;
-  
+
   return (
-    <Reanimated.View 
+    <Reanimated.View
       style={[
-        styles.toast, 
-        animatedStyle, 
-        { 
+        styles.toast,
+        animatedStyle,
+        {
           backgroundColor: toastColors[type],
           top: insets.top + 10,
-        }
+        },
       ]}
     >
       <View style={styles.toastContent}>
         <Ionicons name={icons[type]} size={24} color="white" />
-        <Text style={styles.message} numberOfLines={2}>{message}</Text>
+        <Text style={styles.message} numberOfLines={2}>
+          {message}
+        </Text>
       </View>
       {onHide && (
         <Pressable onPress={onHide} hitSlop={8}>

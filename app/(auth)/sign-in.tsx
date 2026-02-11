@@ -63,14 +63,8 @@ export default function SignIn() {
         placeholder="••••••••"
       />
 
-      <TouchableOpacity
-        style={styles.button}
-        onPress={handleSignIn}
-        disabled={loading}
-      >
-        <Text style={styles.buttonText}>
-          {loading ? 'Laster...' : 'Logg inn'}
-        </Text>
+      <TouchableOpacity style={styles.button} onPress={handleSignIn} disabled={loading}>
+        <Text style={styles.buttonText}>{loading ? 'Laster...' : 'Logg inn'}</Text>
       </TouchableOpacity>
       <TouchableOpacity onPress={() => router.push('/(auth)/sign-up')}>
         <Text style={styles.registerText}>
@@ -91,22 +85,41 @@ export default function SignIn() {
         >
           <View style={styles.modalContentStyled}>
             <View style={{ alignItems: 'center', marginBottom: 12 }}>
-              <Ionicons name="person-add" size={40} color={theme.colors ? theme.colors.primary : '#8B4513'} />
+              <Ionicons
+                name="person-add"
+                size={40}
+                color={theme.colors ? theme.colors.primary : '#8B4513'}
+              />
             </View>
             <Text style={styles.modalTitleStyled}>Brukeren ble ikke funnet</Text>
             <Text style={styles.modalTextStyled}>Vil du registrere deg?</Text>
             <View style={{ flexDirection: 'row', justifyContent: 'flex-end', marginTop: 28 }}>
               <TouchableOpacity
                 onPress={() => setShowRegisterModal(false)}
-                style={[styles.modalButtonStyled, { backgroundColor: '#eee' }]}>
-                <Text style={[styles.modalButtonTextStyled, { color: theme.colors ? theme.colors.primary : '#8B4513' }]}>Avbryt</Text>
+                style={[styles.modalButtonStyled, { backgroundColor: '#eee' }]}
+              >
+                <Text
+                  style={[
+                    styles.modalButtonTextStyled,
+                    { color: theme.colors ? theme.colors.primary : '#8B4513' },
+                  ]}
+                >
+                  Avbryt
+                </Text>
               </TouchableOpacity>
               <TouchableOpacity
                 onPress={() => {
                   setShowRegisterModal(false);
                   router.push('/(auth)/sign-up');
                 }}
-                style={[styles.modalButtonStyled, { backgroundColor: theme.colors ? theme.colors.primary : '#8B4513', marginLeft: 14 }]}>
+                style={[
+                  styles.modalButtonStyled,
+                  {
+                    backgroundColor: theme.colors ? theme.colors.primary : '#8B4513',
+                    marginLeft: 14,
+                  },
+                ]}
+              >
                 <Text style={[styles.modalButtonTextStyled, { color: '#fff' }]}>Registrer deg</Text>
               </TouchableOpacity>
             </View>

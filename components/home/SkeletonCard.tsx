@@ -2,7 +2,15 @@ import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import { colors, spacing, borderRadius, shadows } from '../../lib/sharedStyles';
 
-const SkeletonBox = ({ width, height, style }: { width: number | string; height: number; style?: any }) => (
+const SkeletonBox = ({
+  width,
+  height,
+  style,
+}: {
+  width: number | string;
+  height: number;
+  style?: any;
+}) => (
   <View
     style={[
       {

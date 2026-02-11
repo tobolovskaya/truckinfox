@@ -1,6 +1,6 @@
 /**
  * Order Cleanup Utilities
- * 
+ *
  * These utilities help manage abandoned payment sessions and orphaned orders.
  * Use these functions in Cloud Functions or scheduled tasks to maintain database health.
  */
@@ -10,14 +10,14 @@ import { collection, query, where, getDocs, writeBatch, Timestamp } from 'fireba
 
 /**
  * Clean up orders that have been pending for more than the specified duration
- * 
+ *
  * @param maxAgeMinutes - Maximum age in minutes for a pending order (default: 30 minutes)
  * @returns Number of orders cleaned up
- * 
+ *
  * @example
  * // Clean up orders older than 30 minutes
  * const cleaned = await cleanupAbandonedOrders(30);
- * 
+ *
  * // Clean up orders older than 1 hour
  * const cleaned = await cleanupAbandonedOrders(60);
  */
@@ -36,7 +36,7 @@ export async function cleanupAbandonedOrders(maxAgeMinutes: number = 30): Promis
     );
 
     const abandonedOrdersSnap = await getDocs(abandonedOrdersQuery);
-    
+
     if (abandonedOrdersSnap.empty) {
       console.log('No abandoned orders found');
       return 0;
@@ -49,7 +49,7 @@ export async function cleanupAbandonedOrders(maxAgeMinutes: number = 30): Promis
     for (let i = 0; i < abandonedOrdersSnap.docs.length; i += batchSize) {
       const batch = writeBatch(db);
       const batchDocs = abandonedOrdersSnap.docs.slice(i, i + batchSize);
-      
+
       batchDocs.forEach(orderDoc => {
         batch.delete(orderDoc.ref);
       });
@@ -68,7 +68,7 @@ export async function cleanupAbandonedOrders(maxAgeMinutes: number = 30): Promis
 
 /**
  * Clean up pending orders for a specific request
- * 
+ *
  * @param requestId - The cargo request ID
  * @returns Number of orders cleaned up
  */
@@ -81,7 +81,7 @@ export async function cleanupRequestPendingOrders(requestId: string): Promise<nu
     );
 
     const pendingOrdersSnap = await getDocs(pendingOrdersQuery);
-    
+
     if (pendingOrdersSnap.empty) {
       return 0;
     }
@@ -102,7 +102,7 @@ export async function cleanupRequestPendingOrders(requestId: string): Promise<nu
 
 /**
  * Get statistics about pending orders
- * 
+ *
  * @returns Object with pending order statistics
  */
 export async function getPendingOrderStats(): Promise<{
@@ -128,7 +128,7 @@ export async function getPendingOrderStats(): Promise<{
     allPendingSnap.docs.forEach(doc => {
       const data = doc.data();
       const initiatedAt = data.payment_initiated_at?.toDate() || data.created_at?.toDate();
-      
+
       if (initiatedAt && initiatedAt < thirtyMinutesAgo) {
         oldCount++;
       } else {
@@ -149,12 +149,12 @@ export async function getPendingOrderStats(): Promise<{
 
 /**
  * Clean up unpaid orders older than 24 hours
- * 
+ *
  * This is more aggressive cleanup for truly abandoned orders.
  * Recommended to run daily as a background task.
- * 
+ *
  * @returns Number of orders cleaned up
- * 
+ *
  * @example
  * // Run daily cleanup
  * const cleaned = await cleanupUnpaidOrders();
@@ -177,7 +177,7 @@ export async function cleanupUnpaidOrders(): Promise<number> {
     );
 
     const unpaidSnap = await getDocs(unpaidQuery);
-    
+
     if (unpaidSnap.empty) {
       console.log('No unpaid orders to clean up');
       return 0;
@@ -192,7 +192,7 @@ export async function cleanupUnpaidOrders(): Promise<number> {
     for (let i = 0; i < unpaidSnap.docs.length; i += batchSize) {
       const batch = writeBatch(db);
       const batchDocs = unpaidSnap.docs.slice(i, i + batchSize);
-      
+
       batchDocs.forEach(orderDoc => {
         batch.delete(orderDoc.ref);
       });
@@ -211,16 +211,16 @@ export async function cleanupUnpaidOrders(): Promise<number> {
 
 /**
  * Clean up orders with configurable age
- * 
+ *
  * Generic cleanup function that can be used with any time period.
- * 
+ *
  * @param maxAgeHours - Maximum age in hours for a pending order
  * @returns Number of orders cleaned up
- * 
+ *
  * @example
  * // Clean up orders older than 48 hours
  * const cleaned = await cleanupOrdersByAge(48);
- * 
+ *
  * // Clean up orders older than 1 week
  * const cleaned = await cleanupOrdersByAge(168);
  */
@@ -237,7 +237,7 @@ export async function cleanupOrdersByAge(maxAgeHours: number): Promise<number> {
     );
 
     const ordersSnap = await getDocs(ordersQuery);
-    
+
     if (ordersSnap.empty) {
       return 0;
     }
@@ -248,7 +248,7 @@ export async function cleanupOrdersByAge(maxAgeHours: number): Promise<number> {
     for (let i = 0; i < ordersSnap.docs.length; i += batchSize) {
       const batch = writeBatch(db);
       const batchDocs = ordersSnap.docs.slice(i, i + batchSize);
-      
+
       batchDocs.forEach(doc => batch.delete(doc.ref));
       await batch.commit();
       totalDeleted += batchDocs.length;

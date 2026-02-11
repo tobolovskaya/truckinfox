@@ -1,6 +1,6 @@
 /**
  * Chat Management Utilities
- * 
+ *
  * Functions for creating and managing chats between customers and carriers.
  */
 
@@ -24,12 +24,12 @@ export interface Chat {
 
 /**
  * Create a chat between customer and carrier when bid is accepted
- * 
+ *
  * @param requestId - The cargo request ID
  * @param customerId - The customer's user ID
  * @param carrierId - The carrier's user ID
  * @returns The created chat ID
- * 
+ *
  * @example
  * const chatId = await createChat(requestId, customerId, carrierId);
  * router.push(`/chat/${requestId}/${carrierId}`);
@@ -82,10 +82,10 @@ export async function createChat(
 
 /**
  * Get or create chat (idempotent)
- * 
+ *
  * This function ensures a chat exists, creating it if necessary.
  * Safe to call multiple times with the same parameters.
- * 
+ *
  * @param requestId - The cargo request ID
  * @param customerId - The customer's user ID
  * @param carrierId - The carrier's user ID
@@ -97,7 +97,7 @@ export async function getOrCreateChat(
   carrierId: string
 ): Promise<string> {
   const chatId = `${requestId}_${customerId}_${carrierId}`;
-  
+
   try {
     const chatRef = doc(db, 'chats', chatId);
     const chatSnap = await getDoc(chatRef);
@@ -116,9 +116,9 @@ export async function getOrCreateChat(
 
 /**
  * Update chat's last message info
- * 
+ *
  * Called after sending a message to update the chat metadata.
- * 
+ *
  * @param chatId - The chat ID
  * @param lastMessage - The last message text
  * @param senderId - The sender's user ID
@@ -167,16 +167,13 @@ export async function updateChatLastMessage(
 
 /**
  * Mark chat as read for a user
- * 
+ *
  * Called when user opens the chat to reset their unread count.
- * 
+ *
  * @param chatId - The chat ID
  * @param userId - The user ID who is reading the chat
  */
-export async function markChatAsRead(
-  chatId: string,
-  userId: string
-): Promise<void> {
+export async function markChatAsRead(chatId: string, userId: string): Promise<void> {
   try {
     const chatRef = doc(db, 'chats', chatId);
     const chatSnap = await getDoc(chatRef);
@@ -208,7 +205,7 @@ export async function markChatAsRead(
 
 /**
  * Get chat by ID
- * 
+ *
  * @param chatId - The chat ID
  * @returns Chat data or null if not found
  */
@@ -230,7 +227,7 @@ export async function getChat(chatId: string): Promise<Chat | null> {
 
 /**
  * Check if chat exists for a request
- * 
+ *
  * @param requestId - The cargo request ID
  * @param customerId - The customer's user ID
  * @param carrierId - The carrier's user ID
@@ -255,16 +252,12 @@ export async function chatExists(
 
 /**
  * Generate chat ID from request and user IDs
- * 
+ *
  * @param requestId - The cargo request ID
  * @param customerId - The customer's user ID
  * @param carrierId - The carrier's user ID
  * @returns The chat ID
  */
-export function generateChatId(
-  requestId: string,
-  customerId: string,
-  carrierId: string
-): string {
+export function generateChatId(requestId: string, customerId: string, carrierId: string): string {
   return `${requestId}_${customerId}_${carrierId}`;
 }

@@ -185,20 +185,13 @@ export function IOSButton({
 
   const renderContent = () => {
     if (loading) {
-      return (
-        <ActivityIndicator
-          size="small"
-          color={getTextStyle().color}
-        />
-      );
+      return <ActivityIndicator size="small" color={getTextStyle().color} />;
     }
 
     return (
       <>
         {renderIcon()}
-        <Text style={[getTextStyle(), textStyle]}>
-          {title}
-        </Text>
+        <Text style={[getTextStyle(), textStyle]}>{title}</Text>
       </>
     );
   };

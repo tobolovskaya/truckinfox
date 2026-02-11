@@ -1,5 +1,14 @@
 import React, { useState } from 'react';
-import { View, ActivityIndicator, Image, StyleSheet, Text, ImageStyle, StyleProp, ViewStyle } from 'react-native';
+import {
+  View,
+  ActivityIndicator,
+  Image,
+  StyleSheet,
+  Text,
+  ImageStyle,
+  StyleProp,
+  ViewStyle,
+} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../lib/sharedStyles';
 
@@ -32,7 +41,7 @@ export const LazyImage: React.FC<LazyImageProps> = ({
           <ActivityIndicator size="small" color={colors.primary} />
         </View>
       )}
-      
+
       {error ? (
         <View style={styles.errorPlaceholder}>
           <Ionicons name={placeholderIcon} size={placeholderSize} color={colors.text.tertiary} />

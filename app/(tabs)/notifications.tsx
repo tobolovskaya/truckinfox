@@ -1,6 +1,6 @@
 /**
  * Notifications Screen
- * 
+ *
  * Displays all notifications for the current user with real-time updates.
  * Shows unread badge, allows marking as read, and navigates to related content.
  */
@@ -18,23 +18,16 @@ import {
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useNotifications } from '../../hooks/useNotifications';
-import { 
-  formatNotificationTime, 
+import {
+  formatNotificationTime,
   getNotificationNavigation,
   type Notification,
 } from '../../utils/notifications';
 import { theme } from '../../theme/theme';
 
 export default function NotificationsScreen() {
-  const {
-    notifications,
-    unreadCount,
-    loading,
-    error,
-    markAsRead,
-    markAllAsRead,
-    refresh,
-  } = useNotifications();
+  const { notifications, unreadCount, loading, error, markAsRead, markAllAsRead, refresh } =
+    useNotifications();
 
   const [refreshing, setRefreshing] = React.useState(false);
 
@@ -98,10 +91,7 @@ export default function NotificationsScreen() {
 
   const renderNotification = ({ item }: { item: Notification }) => (
     <TouchableOpacity
-      style={[
-        styles.notificationItem,
-        !item.read && styles.unreadNotification,
-      ]}
+      style={[styles.notificationItem, !item.read && styles.unreadNotification]}
       onPress={() => handleNotificationPress(item)}
       activeOpacity={0.7}
     >
@@ -115,32 +105,20 @@ export default function NotificationsScreen() {
       </View>
 
       <View style={styles.contentContainer}>
-        <Text style={[styles.title, !item.read && styles.unreadTitle]}>
-          {item.title}
-        </Text>
+        <Text style={[styles.title, !item.read && styles.unreadTitle]}>{item.title}</Text>
         <Text style={styles.body} numberOfLines={2}>
           {item.body}
         </Text>
-        <Text style={styles.time}>
-          {formatNotificationTime(item.created_at)}
-        </Text>
+        <Text style={styles.time}>{formatNotificationTime(item.created_at)}</Text>
       </View>
 
-      <Ionicons
-        name="chevron-forward"
-        size={20}
-        color={theme.colors.onSurfaceVariant}
-      />
+      <Ionicons name="chevron-forward" size={20} color={theme.colors.onSurfaceVariant} />
     </TouchableOpacity>
   );
 
   const renderEmpty = () => (
     <View style={styles.emptyContainer}>
-      <Ionicons
-        name="notifications-off-outline"
-        size={64}
-        color={theme.colors.onSurfaceVariant}
-      />
+      <Ionicons name="notifications-off-outline" size={64} color={theme.colors.onSurfaceVariant} />
       <Text style={styles.emptyTitle}>No Notifications</Text>
       <Text style={styles.emptyText}>
         You're all caught up! We'll notify you when something important happens.
@@ -152,10 +130,7 @@ export default function NotificationsScreen() {
     <View style={styles.header}>
       <Text style={styles.headerTitle}>Notifications</Text>
       {unreadCount > 0 && (
-        <TouchableOpacity
-          style={styles.markAllButton}
-          onPress={handleMarkAllRead}
-        >
+        <TouchableOpacity style={styles.markAllButton} onPress={handleMarkAllRead}>
           <Text style={styles.markAllText}>Mark all read</Text>
         </TouchableOpacity>
       )}
@@ -185,7 +160,7 @@ export default function NotificationsScreen() {
   return (
     <View style={styles.container}>
       {renderHeader()}
-      
+
       {unreadCount > 0 && (
         <View style={styles.unreadBanner}>
           <Text style={styles.unreadBannerText}>
@@ -197,7 +172,7 @@ export default function NotificationsScreen() {
       <FlatList
         data={notifications}
         renderItem={renderNotification}
-        keyExtractor={(item) => item.id}
+        keyExtractor={item => item.id}
         contentContainerStyle={styles.listContent}
         ListEmptyComponent={renderEmpty}
         refreshControl={

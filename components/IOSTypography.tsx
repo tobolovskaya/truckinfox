@@ -30,11 +30,12 @@ export function IOSText({
   ...props
 }: IOSTextProps) {
   const getTypographyStyle = () => {
-    const typography = theme.typography?.[variant] || theme.typography?.body || {
-      fontSize: 17,
-      lineHeight: 22,
-      fontWeight: '400',
-    };
+    const typography = theme.typography?.[variant] ||
+      theme.typography?.body || {
+        fontSize: 17,
+        lineHeight: 22,
+        fontWeight: '400',
+      };
 
     const baseStyle = {
       fontSize: typography.fontSize,
@@ -44,9 +45,13 @@ export function IOSText({
 
     const colorStyles = {
       primary: { color: theme.colors.label || theme.colors.onBackground || '#000000' },
-      secondary: { color: theme.colors.secondaryLabel || theme.colors.onSurfaceVariant || '#8E8E93' },
+      secondary: {
+        color: theme.colors.secondaryLabel || theme.colors.onSurfaceVariant || '#8E8E93',
+      },
       tertiary: { color: theme.colors.tertiaryLabel || theme.colors.onSurfaceVariant || '#8E8E93' },
-      quaternary: { color: theme.colors.quaternaryLabel || theme.colors.onSurfaceVariant || '#8E8E93' },
+      quaternary: {
+        color: theme.colors.quaternaryLabel || theme.colors.onSurfaceVariant || '#8E8E93',
+      },
       system: { color: theme.colors.onBackground || '#000000' },
       accent: { color: theme.colors.primary || '#FF7043' },
       destructive: { color: theme.colors.error || '#FF3B30' },
@@ -83,9 +88,7 @@ export const Headline = (props: Omit<IOSTextProps, 'variant'>) => (
   <IOSText {...props} variant="headline" />
 );
 
-export const Body = (props: Omit<IOSTextProps, 'variant'>) => (
-  <IOSText {...props} variant="body" />
-);
+export const Body = (props: Omit<IOSTextProps, 'variant'>) => <IOSText {...props} variant="body" />;
 
 export const Callout = (props: Omit<IOSTextProps, 'variant'>) => (
   <IOSText {...props} variant="callout" />

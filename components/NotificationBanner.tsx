@@ -78,13 +78,7 @@ export const NotificationBanner: React.FC<NotificationBannerProps> = ({
   };
 
   return (
-    <Animated.View
-      style={[
-        styles.banner,
-        { backgroundColor: getColor() },
-        animatedStyle,
-      ]}
-    >
+    <Animated.View style={[styles.banner, { backgroundColor: getColor() }, animatedStyle]}>
       <View style={styles.bannerContent}>
         <Ionicons name={getIcon()} size={20} color="white" />
         <Text style={styles.bannerText} numberOfLines={2}>

@@ -16,15 +16,26 @@ import { useRouter } from 'expo-router';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTranslation } from 'react-i18next';
 import { auth } from '../../lib/firebase';
-import { signInWithEmailAndPassword, updatePassword, signOut as firebaseSignOut } from 'firebase/auth';
+import {
+  signInWithEmailAndPassword,
+  updatePassword,
+  signOut as firebaseSignOut,
+} from 'firebase/auth';
 import { theme } from '../../theme/theme';
-import { colors, spacing, fontSize, fontWeight, borderRadius, shadows } from '../../lib/sharedStyles';
+import {
+  colors,
+  spacing,
+  fontSize,
+  fontWeight,
+  borderRadius,
+  shadows,
+} from '../../lib/sharedStyles';
 
 export default function SecurityScreen() {
   const { user, signOut } = useAuth();
   const { t } = useTranslation();
   const router = useRouter();
-  
+
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -38,17 +49,17 @@ export default function SecurityScreen() {
       Alert.alert(t('error'), 'Please fill in all password fields');
       return false;
     }
-    
+
     if (newPassword.length < 6) {
       Alert.alert(t('error'), 'New password must be at least 6 characters');
       return false;
     }
-    
+
     if (newPassword !== confirmPassword) {
       Alert.alert(t('error'), 'New passwords do not match');
       return false;
     }
-    
+
     return true;
   };
 
@@ -67,20 +78,16 @@ export default function SecurityScreen() {
       // Update password
       await updatePassword(auth.currentUser, newPassword);
 
-      Alert.alert(
-        t('success'),
-        'Password changed successfully',
-        [
-          {
-            text: t('ok'),
-            onPress: () => {
-              setCurrentPassword('');
-              setNewPassword('');
-              setConfirmPassword('');
-            },
+      Alert.alert(t('success'), 'Password changed successfully', [
+        {
+          text: t('ok'),
+          onPress: () => {
+            setCurrentPassword('');
+            setNewPassword('');
+            setConfirmPassword('');
           },
-        ]
-      );
+        },
+      ]);
     } catch (error: any) {
       Alert.alert(t('error'), error.message);
     } finally {
@@ -90,11 +97,9 @@ export default function SecurityScreen() {
 
   const handleToggleTwoFactor = async () => {
     // Firebase MFA is more complex, showing placeholder for now
-    Alert.alert(
-      'Coming Soon',
-      'Two-factor authentication will be available in a future update.',
-      [{ text: t('ok') }]
-    );
+    Alert.alert('Coming Soon', 'Two-factor authentication will be available in a future update.', [
+      { text: t('ok') },
+    ]);
   };
 
   const handleSignOutAllDevices = async () => {
@@ -112,17 +117,13 @@ export default function SecurityScreen() {
               // Firebase doesn't support global sign out via client SDK
               // For now, just sign out current session
               await firebaseSignOut(auth);
-              
-              Alert.alert(
-                t('success'),
-                'Signed out from all devices',
-                [
-                  {
-                    text: t('ok'),
-                    onPress: () => router.replace('/(auth)/login'),
-                  },
-                ]
-              );
+
+              Alert.alert(t('success'), 'Signed out from all devices', [
+                {
+                  text: t('ok'),
+                  onPress: () => router.replace('/(auth)/login'),
+                },
+              ]);
             } catch (error: any) {
               Alert.alert(t('error'), error.message);
             } finally {
@@ -138,10 +139,7 @@ export default function SecurityScreen() {
     <SafeAreaView style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => router.back()}
-        >
+        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
           <Ionicons name="arrow-back" size={24} color={theme.iconColors.dark} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Security Settings</Text>
@@ -151,7 +149,7 @@ export default function SecurityScreen() {
         {/* Change Password */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Change Password</Text>
-          
+
           <View style={styles.inputContainer}>
             <Text style={styles.label}>Current Password</Text>
             <TextInput
@@ -189,10 +187,7 @@ export default function SecurityScreen() {
           </View>
 
           <TouchableOpacity
-            style={[
-              styles.changePasswordButton,
-              changingPassword && styles.buttonDisabled
-            ]}
+            style={[styles.changePasswordButton, changingPassword && styles.buttonDisabled]}
             onPress={handleChangePassword}
             disabled={changingPassword}
           >
@@ -210,10 +205,14 @@ export default function SecurityScreen() {
           <Text style={styles.sectionDescription}>
             Add an extra layer of security to your account with 2FA
           </Text>
-          
+
           <View style={styles.settingRow}>
             <View style={styles.settingLeft}>
-              <Ionicons name="shield-checkmark-outline" size={24} color={theme.iconColors.success} />
+              <Ionicons
+                name="shield-checkmark-outline"
+                size={24}
+                color={theme.iconColors.success}
+              />
               <View style={styles.settingInfo}>
                 <Text style={styles.settingTitle}>Enable 2FA</Text>
                 <Text style={styles.settingSubtitle}>
@@ -239,23 +238,24 @@ export default function SecurityScreen() {
         {/* Session Management */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Session Management</Text>
-          
+
           <TouchableOpacity
-            style={[
-              styles.signOutAllButton,
-              signingOutAll && styles.buttonDisabled
-            ]}
+            style={[styles.signOutAllButton, signingOutAll && styles.buttonDisabled]}
             onPress={handleSignOutAllDevices}
             disabled={signingOutAll}
           >
             <Ionicons name="log-out-outline" size={20} color={theme.iconColors.error} />
             {signingOutAll ? (
-              <ActivityIndicator size="small" color={theme.iconColors.error} style={styles.buttonIcon} />
+              <ActivityIndicator
+                size="small"
+                color={theme.iconColors.error}
+                style={styles.buttonIcon}
+              />
             ) : (
               <Text style={styles.signOutAllText}>Sign Out All Devices</Text>
             )}
           </TouchableOpacity>
-          
+
           <Text style={styles.helperText}>
             This will sign you out from all devices and browsers. You&apos;ll need to sign in again.
           </Text>
@@ -264,22 +264,22 @@ export default function SecurityScreen() {
         {/* Security Tips */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Security Tips</Text>
-          
+
           <View style={styles.tipItem}>
             <Ionicons name="checkmark-circle" size={20} color={theme.iconColors.success} />
             <Text style={styles.tipText}>Use a strong, unique password</Text>
           </View>
-          
+
           <View style={styles.tipItem}>
             <Ionicons name="checkmark-circle" size={20} color={theme.iconColors.success} />
             <Text style={styles.tipText}>Enable two-factor authentication</Text>
           </View>
-          
+
           <View style={styles.tipItem}>
             <Ionicons name="checkmark-circle" size={20} color={theme.iconColors.success} />
             <Text style={styles.tipText}>Don&apos;t share your login credentials</Text>
           </View>
-          
+
           <View style={styles.tipItem}>
             <Ionicons name="checkmark-circle" size={20} color={theme.iconColors.success} />
             <Text style={styles.tipText}>Sign out from public devices</Text>

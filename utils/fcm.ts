@@ -1,8 +1,8 @@
 /**
  * Firebase Cloud Messaging (FCM) Utilities - Expo Version
- * 
+ *
  * This file contains all FCM-related functionality for push notifications using Expo.
- * 
+ *
  * Prerequisites:
  * - expo-notifications (already installed in package.json)
  * - Configure push notifications in app.json
@@ -25,19 +25,19 @@ Notifications.setNotificationHandler({
 
 /**
  * Request notification permissions from user
- * 
+ *
  * @returns Authorization status
  */
 export async function requestNotificationPermission(): Promise<boolean> {
   try {
     const { status: existingStatus } = await Notifications.getPermissionsAsync();
     let finalStatus = existingStatus;
-    
+
     if (existingStatus !== 'granted') {
       const { status } = await Notifications.requestPermissionsAsync();
       finalStatus = status;
     }
-    
+
     if (finalStatus !== 'granted') {
       console.log('❌ Notification permission denied');
       return false;
@@ -53,7 +53,7 @@ export async function requestNotificationPermission(): Promise<boolean> {
 
 /**
  * Get Expo Push Token and save it to user document
- * 
+ *
  * @param userId - User's ID
  * @returns Expo Push Token or null
  */
@@ -70,9 +70,9 @@ export async function getFCMTokenAndSave(userId: string): Promise<string | null>
     const tokenData = await Notifications.getExpoPushTokenAsync({
       projectId: 'your-expo-project-id', // Replace with your actual project ID
     });
-    
+
     const token = tokenData.data;
-    
+
     if (!token) {
       console.error('Failed to get push token');
       return null;
@@ -100,26 +100,26 @@ export async function getFCMTokenAndSave(userId: string): Promise<string | null>
 
 /**
  * Listen for push token updates
- * 
+ *
  * Expo Push Tokens can change, so we monitor for updates.
- * 
+ *
  * @param userId - User's ID
  * @returns Cleanup function
  */
 export function subscribeToTokenRefresh(userId: string): () => void {
   let isActive = true;
-  
+
   const checkTokenPeriodically = async () => {
     if (!isActive) return;
-    
+
     try {
       const tokenData = await Notifications.getExpoPushTokenAsync({
         projectId: 'your-expo-project-id', // Replace with your actual project ID
       });
-      
+
       const token = tokenData.data;
       console.log('🔄 Checked push token:', token.substring(0, 30) + '...');
-      
+
       if (userId && token) {
         const userRef = doc(db, 'users', userId);
         await updateDoc(userRef, {
@@ -130,16 +130,16 @@ export function subscribeToTokenRefresh(userId: string): () => void {
     } catch (error) {
       console.error('❌ Error checking push token:', error);
     }
-    
+
     // Check again in 24 hours
     if (isActive) {
       setTimeout(checkTokenPeriodically, 24 * 60 * 60 * 1000);
     }
   };
-  
+
   // Start checking
   checkTokenPeriodically();
-  
+
   // Return cleanup function
   return () => {
     isActive = false;
@@ -148,47 +148,51 @@ export function subscribeToTokenRefresh(userId: string): () => void {
 
 /**
  * Handle foreground notifications
- * 
+ *
  * When the app is open and active, notifications are handled here.
- * 
+ *
  * @param callback - Function to call when notification is received
  * @returns Cleanup function
  */
 export function onForegroundMessage(
   callback: (notification: Notifications.Notification) => void
 ): () => void {
-  const subscription = Notifications.addNotificationReceivedListener((notification: Notifications.Notification) => {
-    console.log('📬 Foreground notification received:', notification);
-    callback(notification);
-  });
-  
+  const subscription = Notifications.addNotificationReceivedListener(
+    (notification: Notifications.Notification) => {
+      console.log('📬 Foreground notification received:', notification);
+      callback(notification);
+    }
+  );
+
   return () => subscription.remove();
 }
 
 /**
  * Handle notification taps
- * 
+ *
  * Called when user taps on a notification.
- * 
+ *
  * @param callback - Function to call when notification is tapped
  * @returns Cleanup function
  */
 export function onNotificationTap(
   callback: (response: Notifications.NotificationResponse) => void
 ): () => void {
-  const subscription = Notifications.addNotificationResponseReceivedListener((response: Notifications.NotificationResponse) => {
-    console.log('👆 Notification tapped:', response);
-    callback(response);
-  });
-  
+  const subscription = Notifications.addNotificationResponseReceivedListener(
+    (response: Notifications.NotificationResponse) => {
+      console.log('👆 Notification tapped:', response);
+      callback(response);
+    }
+  );
+
   return () => subscription.remove();
 }
 
 /**
  * Handle notification tap when app was opened from notification
- * 
+ *
  * This checks if the app was opened by tapping a notification.
- * 
+ *
  * @param callback - Function to call with notification data
  */
 export async function getInitialNotification(
@@ -196,7 +200,7 @@ export async function getInitialNotification(
 ): Promise<void> {
   try {
     const response = await Notifications.getLastNotificationResponseAsync();
-    
+
     if (response) {
       console.log('📬 App opened from notification:', response);
       callback(response);
@@ -211,7 +215,7 @@ export async function getInitialNotification(
 
 /**
  * Clear FCM token (e.g., on logout)
- * 
+ *
  * @param userId - User's ID
  */
 export async function clearFCMToken(userId: string): Promise<void> {
@@ -231,7 +235,7 @@ export async function clearFCMToken(userId: string): Promise<void> {
 
 /**
  * Check if notifications are enabled
- * 
+ *
  * @returns true if notifications are authorized
  */
 export async function isNotificationEnabled(): Promise<boolean> {
@@ -246,7 +250,7 @@ export async function isNotificationEnabled(): Promise<boolean> {
 
 /**
  * Get notification badge count
- * 
+ *
  * @returns Current badge count
  */
 export async function getBadgeCount(): Promise<number> {
@@ -261,7 +265,7 @@ export async function getBadgeCount(): Promise<number> {
 
 /**
  * Set notification badge count
- * 
+ *
  * @param count - Badge count to set
  */
 export async function setBadgeCount(count: number): Promise<void> {
@@ -275,7 +279,7 @@ export async function setBadgeCount(count: number): Promise<void> {
 
 /**
  * Schedule a local notification
- * 
+ *
  * @param title - Notification title
  * @param body - Notification body
  * @param data - Additional data
@@ -297,7 +301,7 @@ export async function scheduleLocalNotification(
       },
       trigger: trigger || null,
     });
-    
+
     console.log('✅ Local notification scheduled:', id);
     return id;
   } catch (error) {
@@ -308,7 +312,7 @@ export async function scheduleLocalNotification(
 
 /**
  * Cancel a scheduled notification
- * 
+ *
  * @param notificationId - ID of notification to cancel
  */
 export async function cancelNotification(notificationId: string): Promise<void> {
@@ -322,10 +326,10 @@ export async function cancelNotification(notificationId: string): Promise<void> 
 
 /**
  * Handle navigation from notification tap
- * 
+ *
  * Helper function to navigate to the appropriate screen based on
  * notification data.
- * 
+ *
  * @param data - Notification data object
  * @param navigate - Navigation function
  */
@@ -358,13 +362,13 @@ export function handleNotificationNavigation(
 
 /**
  * Complete FCM setup for a user
- * 
+ *
  * This is a convenience function that handles the complete setup:
  * 1. Request permission
  * 2. Get and save token
  * 3. Subscribe to token refresh
  * 4. Set up notification handlers
- * 
+ *
  * @param userId - User's ID
  * @param onForeground - Callback for foreground notifications
  * @param onNavigate - Callback for navigation
@@ -379,7 +383,7 @@ export async function setupFCM(
 
   // Request permission and get token
   const hasPermission = await requestNotificationPermission();
-  
+
   if (hasPermission) {
     await getFCMTokenAndSave(userId);
   }
@@ -409,7 +413,7 @@ export async function setupFCM(
 
 /**
  * Cleanup FCM when user logs out
- * 
+ *
  * @param userId - User's ID
  */
 export async function cleanupFCM(userId: string): Promise<void> {

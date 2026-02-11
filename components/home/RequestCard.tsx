@@ -10,7 +10,14 @@ import Reanimated, {
 } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
-import { colors, spacing, fontSize, fontWeight, borderRadius, shadows } from '../../lib/sharedStyles';
+import {
+  colors,
+  spacing,
+  fontSize,
+  fontWeight,
+  borderRadius,
+  shadows,
+} from '../../lib/sharedStyles';
 import { useReduceMotion } from '../../hooks/useReduceMotion';
 import { LazyImage } from '../LazyImage';
 
@@ -80,163 +87,161 @@ const formatPrice = (price: number, priceType: string, t: any) => {
   return `${price} NOK`;
 };
 
-export const RequestCard = React.memo<RequestCardProps>(({ request, onPress, onToggleFavorite }) => {
-  const { t } = useTranslation();
-  const reduceMotion = useReduceMotion();
-  const heartScale = useSharedValue(1);
-  const heartOpacity = useSharedValue(request.is_favorite ? 1 : 0);
+export const RequestCard = React.memo<RequestCardProps>(
+  ({ request, onPress, onToggleFavorite }) => {
+    const { t } = useTranslation();
+    const reduceMotion = useReduceMotion();
+    const heartScale = useSharedValue(1);
+    const heartOpacity = useSharedValue(request.is_favorite ? 1 : 0);
 
-  const animatedHeartStyle = useAnimatedStyle(() => {
-    return {
-      transform: [{ scale: heartScale.value }],
+    const animatedHeartStyle = useAnimatedStyle(() => {
+      return {
+        transform: [{ scale: heartScale.value }],
+      };
+    });
+
+    const animatedHeartFillStyle = useAnimatedStyle(() => {
+      return {
+        opacity: heartOpacity.value,
+      };
+    });
+
+    const animateHeart = () => {
+      if (reduceMotion) {
+        // Instant transition for accessibility
+        heartOpacity.value = request.is_favorite ? 0 : 1;
+        return;
+      }
+
+      // Smooth color fill animation
+      if (!request.is_favorite) {
+        heartOpacity.value = withTiming(1, {
+          duration: 300,
+          easing: Easing.out(Easing.quad),
+        });
+      } else {
+        heartOpacity.value = withTiming(0, {
+          duration: 200,
+          easing: Easing.in(Easing.quad),
+        });
+      }
+
+      // Scale animation - more subtle
+      heartScale.value = withSequence(
+        withTiming(0.8, { duration: 100 }),
+        withSpring(1.1, {
+          damping: 20,
+          stiffness: 400,
+          mass: 0.8,
+        }),
+        withSpring(1, {
+          damping: 15,
+          stiffness: 300,
+        })
+      );
     };
-  });
 
-  const animatedHeartFillStyle = useAnimatedStyle(() => {
-    return {
-      opacity: heartOpacity.value,
+    const handleFavoritePress = (e: any) => {
+      e.stopPropagation();
+      animateHeart();
+      onToggleFavorite(request.id);
     };
-  });
 
-  const animateHeart = () => {
-    if (reduceMotion) {
-      // Instant transition for accessibility
-      heartOpacity.value = request.is_favorite ? 0 : 1;
-      return;
-    }
-
-    // Smooth color fill animation
-    if (!request.is_favorite) {
-      heartOpacity.value = withTiming(1, {
-        duration: 300,
-        easing: Easing.out(Easing.quad),
-      });
-    } else {
-      heartOpacity.value = withTiming(0, {
-        duration: 200,
-        easing: Easing.in(Easing.quad),
-      });
-    }
-
-    // Scale animation - more subtle
-    heartScale.value = withSequence(
-      withTiming(0.8, { duration: 100 }),
-      withSpring(1.1, {
-        damping: 20,
-        stiffness: 400,
-        mass: 0.8
-      }),
-      withSpring(1, {
-        damping: 15,
-        stiffness: 300,
-      })
-    );
-  };
-
-  const handleFavoritePress = (e: any) => {
-    e.stopPropagation();
-    animateHeart();
-    onToggleFavorite(request.id);
-  };
-
-  return (
-    <TouchableOpacity
-      onPress={() => onPress(request)}
-      activeOpacity={0.7}
-      style={styles.finnStyleCard}
-    >
-      {/* Photo Section with Overlays */}
-      <View style={styles.photoSection}>
-        {request.images && request.images.length > 0 ? (
-          <LazyImage
-            uri={request.images[0]}
-            style={styles.cardPhoto}
-            containerStyle={styles.cardPhoto}
-            resizeMode="cover"
-            placeholderIcon={getCategoryIcon(request.cargo_type) as any}
-            placeholderSize={48}
-            showErrorText={false}
-          />
-        ) : (
-          <View style={styles.photoPlaceholder}>
-            <View style={styles.placeholderIconContainer}>
-              <Ionicons
-                name={getCategoryIcon(request.cargo_type) as any}
-                size={36}
-                color="#9E9E9E"
-              />
-            </View>
-          </View>
-        )}
-
-        {/* Heart Button - Top Right */}
-        <TouchableOpacity
-          onPress={handleFavoritePress}
-          activeOpacity={0.7}
-          style={styles.heartButtonOverlay}
-        >
-          <Reanimated.View style={animatedHeartStyle}>
-            <Ionicons
-              name="heart-outline"
-              size={20}
-              color="#374151"
+    return (
+      <TouchableOpacity
+        onPress={() => onPress(request)}
+        activeOpacity={0.7}
+        style={styles.finnStyleCard}
+      >
+        {/* Photo Section with Overlays */}
+        <View style={styles.photoSection}>
+          {request.images && request.images.length > 0 ? (
+            <LazyImage
+              uri={request.images[0]}
+              style={styles.cardPhoto}
+              containerStyle={styles.cardPhoto}
+              resizeMode="cover"
+              placeholderIcon={getCategoryIcon(request.cargo_type) as any}
+              placeholderSize={48}
+              showErrorText={false}
             />
-            <Reanimated.View style={[{ position: 'absolute' }, animatedHeartFillStyle]}>
-              <Ionicons
-                name="heart"
-                size={20}
-                color="#EF4444"
-              />
-            </Reanimated.View>
-          </Reanimated.View>
-        </TouchableOpacity>
-
-        {/* Price Badge - Bottom Left */}
-        <View style={styles.priceBadgeOverlay}>
-          <Text style={styles.priceBadgeText}>
-            {formatPrice(request.price, request.price_type, t)}
-          </Text>
-        </View>
-      </View>
-
-      {/* Content Below Photo */}
-      <View style={styles.cardContentBelow}>
-        {/* Title */}
-        <Text style={styles.finnTitle} numberOfLines={2}>
-          {request.title}
-        </Text>
-
-        {/* Category */}
-        <View style={styles.categoryRow}>
-          <Ionicons
-            name={getCategoryIcon(request.cargo_type) as any}
-            size={14}
-            color={colors.text.secondary}
-          />
-          <Text style={styles.categoryText}>{t(request.cargo_type) || request.cargo_type}</Text>
-        </View>
-
-        {/* Route */}
-        <View style={styles.routeFinn}>
-          <Ionicons name="location" size={14} color="#616161" />
-          <Text style={styles.routeTextFinn} numberOfLines={1}>
-            {request.from_address.split(',')[0]} → {request.to_address.split(',')[0]}
-          </Text>
-          {request.distance && (
-            <Text style={styles.distanceTextFinn}>({Math.round(request.distance)} km)</Text>
+          ) : (
+            <View style={styles.photoPlaceholder}>
+              <View style={styles.placeholderIconContainer}>
+                <Ionicons
+                  name={getCategoryIcon(request.cargo_type) as any}
+                  size={36}
+                  color="#9E9E9E"
+                />
+              </View>
+            </View>
           )}
+
+          {/* Heart Button - Top Right */}
+          <TouchableOpacity
+            onPress={handleFavoritePress}
+            activeOpacity={0.7}
+            style={styles.heartButtonOverlay}
+          >
+            <Reanimated.View style={animatedHeartStyle}>
+              <Ionicons name="heart-outline" size={20} color="#374151" />
+              <Reanimated.View style={[{ position: 'absolute' }, animatedHeartFillStyle]}>
+                <Ionicons name="heart" size={20} color="#EF4444" />
+              </Reanimated.View>
+            </Reanimated.View>
+          </TouchableOpacity>
+
+          {/* Price Badge - Bottom Left */}
+          <View style={styles.priceBadgeOverlay}>
+            <Text style={styles.priceBadgeText}>
+              {formatPrice(request.price, request.price_type, t)}
+            </Text>
+          </View>
         </View>
 
-        {/* Meta Info */}
-        <View style={styles.metaFinn}>
-          <Text style={styles.metaTextFinn}>
-            {request.weight} kg • {new Date(request.pickup_date).toLocaleDateString('no-NO', { day: 'numeric', month: 'short' })}
+        {/* Content Below Photo */}
+        <View style={styles.cardContentBelow}>
+          {/* Title */}
+          <Text style={styles.finnTitle} numberOfLines={2}>
+            {request.title}
           </Text>
+
+          {/* Category */}
+          <View style={styles.categoryRow}>
+            <Ionicons
+              name={getCategoryIcon(request.cargo_type) as any}
+              size={14}
+              color={colors.text.secondary}
+            />
+            <Text style={styles.categoryText}>{t(request.cargo_type) || request.cargo_type}</Text>
+          </View>
+
+          {/* Route */}
+          <View style={styles.routeFinn}>
+            <Ionicons name="location" size={14} color="#616161" />
+            <Text style={styles.routeTextFinn} numberOfLines={1}>
+              {request.from_address.split(',')[0]} → {request.to_address.split(',')[0]}
+            </Text>
+            {request.distance && (
+              <Text style={styles.distanceTextFinn}>({Math.round(request.distance)} km)</Text>
+            )}
+          </View>
+
+          {/* Meta Info */}
+          <View style={styles.metaFinn}>
+            <Text style={styles.metaTextFinn}>
+              {request.weight} kg •{' '}
+              {new Date(request.pickup_date).toLocaleDateString('no-NO', {
+                day: 'numeric',
+                month: 'short',
+              })}
+            </Text>
+          </View>
         </View>
-      </View>
-    </TouchableOpacity>
-  );
-});
+      </TouchableOpacity>
+    );
+  }
+);
 
 RequestCard.displayName = 'RequestCard';
 

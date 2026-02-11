@@ -1,24 +1,34 @@
 import React, { useEffect, useState } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-  Alert,
-} from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTranslation } from 'react-i18next';
 import { db } from '../../lib/firebase';
-import { collection, query, where, orderBy, getDocs, doc, updateDoc, deleteDoc, getDoc } from 'firebase/firestore';
+import {
+  collection,
+  query,
+  where,
+  orderBy,
+  getDocs,
+  doc,
+  updateDoc,
+  deleteDoc,
+  getDoc,
+} from 'firebase/firestore';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { SwipeableRow, SwipeActions } from '../../components/SwipeableRow';
 import { IOSActionSheet, IOSActionSheetOption } from '../../components/IOSActionSheet';
 import { IOSRefreshControl } from '../../components/IOSRefreshControl';
 import { theme } from '../../theme/theme';
-import { colors, spacing, fontSize, fontWeight, borderRadius, shadows } from '../../lib/sharedStyles';
+import {
+  colors,
+  spacing,
+  fontSize,
+  fontWeight,
+  borderRadius,
+  shadows,
+} from '../../lib/sharedStyles';
 
 interface Order {
   id: string;
@@ -143,12 +153,12 @@ function OrdersScreen() {
 
         case 'status':
           const statusOrder: { [key: string]: number } = {
-            'pending': 1,
-            'active': 2,
-            'in_transit': 3,
-            'delivered': 4,
-            'completed': 5,
-            'cancelled': 6,
+            pending: 1,
+            active: 2,
+            in_transit: 3,
+            delivered: 4,
+            completed: 5,
+            cancelled: 6,
           };
           comparison = (statusOrder[a.status] || 99) - (statusOrder[b.status] || 99);
           break;
@@ -192,12 +202,12 @@ function OrdersScreen() {
             where('user_id', '==', user.uid),
             orderBy('created_at', 'desc')
           );
-          
+
           const requestsSnapshot = await getDocs(requestsQuery);
           const requestsData = await Promise.all(
-            requestsSnapshot.docs.map(async (docSnapshot) => {
+            requestsSnapshot.docs.map(async docSnapshot => {
               const requestData = docSnapshot.data();
-              
+
               // Fetch user data
               let customerData = { id: user.uid, full_name: 'Unknown', avatar_url: '' };
               if (requestData.user_id) {
@@ -207,11 +217,11 @@ function OrdersScreen() {
                   customerData = {
                     id: userDoc.id,
                     full_name: userData.full_name || 'Unknown',
-                    avatar_url: userData.avatar_url || ''
+                    avatar_url: userData.avatar_url || '',
                   };
                 }
               }
-              
+
               // Fetch bids for this request
               const bidsQuery = query(
                 collection(db, 'bids'),
@@ -219,9 +229,9 @@ function OrdersScreen() {
               );
               const bidsSnapshot = await getDocs(bidsQuery);
               const bidsData = await Promise.all(
-                bidsSnapshot.docs.map(async (bidDoc) => {
+                bidsSnapshot.docs.map(async bidDoc => {
                   const bidData = bidDoc.data();
-                  
+
                   // Fetch carrier data for each bid
                   let carrierData = { id: '', full_name: 'Unknown', avatar_url: '' };
                   if (bidData.carrier_id) {
@@ -231,30 +241,31 @@ function OrdersScreen() {
                       carrierData = {
                         id: carrierDoc.id,
                         full_name: carrier.full_name || 'Unknown',
-                        avatar_url: carrier.avatar_url || ''
+                        avatar_url: carrier.avatar_url || '',
                       };
                     }
                   }
-                  
+
                   return {
                     id: bidDoc.id,
                     price: bidData.price,
                     status: bidData.status,
-                    carrier: carrierData
+                    carrier: carrierData,
                   };
                 })
               );
-              
+
               return {
                 id: docSnapshot.id,
                 ...requestData,
                 customer: customerData,
                 bids: bidsData,
-                created_at: requestData.created_at?.toDate?.()?.toISOString() || requestData.created_at
+                created_at:
+                  requestData.created_at?.toDate?.()?.toISOString() || requestData.created_at,
               };
             })
           );
-          
+
           const uniqueOrders = removeDuplicates(requestsData || [], 'id');
           const filteredOrders = filterOrders(uniqueOrders);
           setOrders(filteredOrders);
@@ -270,9 +281,9 @@ function OrdersScreen() {
             where('carrier_id', '==', user.uid),
             where('status', '==', 'accepted')
           );
-          
+
           const bidsSnapshot = await getDocs(bidsQuery);
-          
+
           console.log('Carrier bids found:', bidsSnapshot.docs.length, { userId: user.uid });
 
           if (bidsSnapshot.empty) {
@@ -280,16 +291,18 @@ function OrdersScreen() {
             setOrders([]);
           } else {
             const formattedOrders = await Promise.all(
-              bidsSnapshot.docs.map(async (bidDoc) => {
+              bidsSnapshot.docs.map(async bidDoc => {
                 const bidData = bidDoc.data();
-                
+
                 // Fetch cargo request
                 let requestData: any = {};
                 if (bidData.cargo_request_id) {
-                  const requestDoc = await getDoc(doc(db, 'cargo_requests', bidData.cargo_request_id));
+                  const requestDoc = await getDoc(
+                    doc(db, 'cargo_requests', bidData.cargo_request_id)
+                  );
                   if (requestDoc.exists()) {
                     requestData = { id: requestDoc.id, ...requestDoc.data() };
-                    
+
                     // Fetch customer data
                     if (requestData.user_id) {
                       const customerDoc = await getDoc(doc(db, 'users', requestData.user_id));
@@ -298,7 +311,7 @@ function OrdersScreen() {
                         requestData.customer = {
                           id: customerDoc.id,
                           full_name: customerData.full_name || 'Unknown',
-                          avatar_url: customerData.avatar_url || ''
+                          avatar_url: customerData.avatar_url || '',
                         };
                       }
                     }
@@ -312,7 +325,8 @@ function OrdersScreen() {
                     price: bidData.price,
                     carrier: null,
                   },
-                  created_at: requestData.created_at?.toDate?.()?.toISOString() || requestData.created_at
+                  created_at:
+                    requestData.created_at?.toDate?.()?.toISOString() || requestData.created_at,
                 };
               })
             );
@@ -408,9 +422,7 @@ function OrdersScreen() {
   const getTransporterName = (order: any) => {
     if (activeTab === 'customer') {
       // For customer, show carrier from accepted bid (status = 'accepted')
-      const acceptedBid = order.bids?.find((bid: any) =>
-        bid.status === 'accepted'
-      );
+      const acceptedBid = order.bids?.find((bid: any) => bid.status === 'accepted');
       return acceptedBid?.carrier?.full_name || t('waiting');
     }
     return t('you') || 'Deg'; // For carrier - it's yourself
@@ -536,18 +548,12 @@ function OrdersScreen() {
       {/* Tab Navigation */}
       <View style={styles.tabNavigationContainer}>
         <View style={styles.tabNavigation}>
-          <TouchableOpacity
-            style={styles.tabButton}
-            onPress={() => setActiveTab('customer')}
-          >
+          <TouchableOpacity style={styles.tabButton} onPress={() => setActiveTab('customer')}>
             <Text style={[styles.tabText, activeTab === 'customer' && styles.activeTabText]}>
               {t('asCustomer')}
             </Text>
           </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.tabButton}
-            onPress={() => setActiveTab('carrier')}
-          >
+          <TouchableOpacity style={styles.tabButton} onPress={() => setActiveTab('carrier')}>
             <Text style={[styles.tabText, activeTab === 'carrier' && styles.activeTabText]}>
               {t('asCarrier')}
             </Text>
@@ -559,8 +565,8 @@ function OrdersScreen() {
       {orders.length > 0 && (
         <View style={styles.filtersContainer}>
           {/* Status Filters */}
-          <ScrollView 
-            horizontal 
+          <ScrollView
+            horizontal
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={styles.filtersScroll}
           >
@@ -568,67 +574,92 @@ function OrdersScreen() {
               style={[styles.filterChip, filterStatus === 'all' && styles.filterChipActive]}
               onPress={() => setFilterStatus('all')}
             >
-              <Text style={[styles.filterChipText, filterStatus === 'all' && styles.filterChipTextActive]}>
+              <Text
+                style={[
+                  styles.filterChipText,
+                  filterStatus === 'all' && styles.filterChipTextActive,
+                ]}
+              >
                 {t('all') || 'Alle'}
               </Text>
             </TouchableOpacity>
-            
+
             <TouchableOpacity
               style={[styles.filterChip, filterStatus === 'active' && styles.filterChipActive]}
               onPress={() => setFilterStatus('active')}
             >
-              <Ionicons 
-                name="pulse" 
-                size={14} 
-                color={filterStatus === 'active' ? colors.white : colors.primary} 
+              <Ionicons
+                name="pulse"
+                size={14}
+                color={filterStatus === 'active' ? colors.white : colors.primary}
                 style={styles.filterChipIcon}
               />
-              <Text style={[styles.filterChipText, filterStatus === 'active' && styles.filterChipTextActive]}>
+              <Text
+                style={[
+                  styles.filterChipText,
+                  filterStatus === 'active' && styles.filterChipTextActive,
+                ]}
+              >
                 {t('active') || 'Aktive'}
               </Text>
             </TouchableOpacity>
-            
+
             <TouchableOpacity
               style={[styles.filterChip, filterStatus === 'delivered' && styles.filterChipActive]}
               onPress={() => setFilterStatus('delivered')}
             >
-              <Ionicons 
-                name="checkmark-circle" 
-                size={14} 
-                color={filterStatus === 'delivered' ? colors.white : colors.success} 
+              <Ionicons
+                name="checkmark-circle"
+                size={14}
+                color={filterStatus === 'delivered' ? colors.white : colors.success}
                 style={styles.filterChipIcon}
               />
-              <Text style={[styles.filterChipText, filterStatus === 'delivered' && styles.filterChipTextActive]}>
+              <Text
+                style={[
+                  styles.filterChipText,
+                  filterStatus === 'delivered' && styles.filterChipTextActive,
+                ]}
+              >
                 {t('delivered') || 'Levert'}
               </Text>
             </TouchableOpacity>
-            
+
             <TouchableOpacity
               style={[styles.filterChip, filterStatus === 'completed' && styles.filterChipActive]}
               onPress={() => setFilterStatus('completed')}
             >
-              <Ionicons 
-                name="checkmark-done" 
-                size={14} 
-                color={filterStatus === 'completed' ? colors.white : colors.success} 
+              <Ionicons
+                name="checkmark-done"
+                size={14}
+                color={filterStatus === 'completed' ? colors.white : colors.success}
                 style={styles.filterChipIcon}
               />
-              <Text style={[styles.filterChipText, filterStatus === 'completed' && styles.filterChipTextActive]}>
+              <Text
+                style={[
+                  styles.filterChipText,
+                  filterStatus === 'completed' && styles.filterChipTextActive,
+                ]}
+              >
                 {t('completed') || 'Fullført'}
               </Text>
             </TouchableOpacity>
-            
+
             <TouchableOpacity
               style={[styles.filterChip, filterStatus === 'cancelled' && styles.filterChipActive]}
               onPress={() => setFilterStatus('cancelled')}
             >
-              <Ionicons 
-                name="close-circle" 
-                size={14} 
-                color={filterStatus === 'cancelled' ? colors.white : colors.error} 
+              <Ionicons
+                name="close-circle"
+                size={14}
+                color={filterStatus === 'cancelled' ? colors.white : colors.error}
                 style={styles.filterChipIcon}
               />
-              <Text style={[styles.filterChipText, filterStatus === 'cancelled' && styles.filterChipTextActive]}>
+              <Text
+                style={[
+                  styles.filterChipText,
+                  filterStatus === 'cancelled' && styles.filterChipTextActive,
+                ]}
+              >
                 {t('cancelled') || 'Avbrutt'}
               </Text>
             </TouchableOpacity>
@@ -647,20 +678,20 @@ function OrdersScreen() {
                 }
               }}
             >
-              <Ionicons 
-                name="calendar-outline" 
-                size={16} 
-                color={sortBy === 'date' ? colors.primary : colors.text.secondary} 
+              <Ionicons
+                name="calendar-outline"
+                size={16}
+                color={sortBy === 'date' ? colors.primary : colors.text.secondary}
               />
               {sortBy === 'date' && (
-                <Ionicons 
-                  name={sortOrder === 'asc' ? 'arrow-up' : 'arrow-down'} 
-                  size={12} 
-                  color={colors.primary} 
+                <Ionicons
+                  name={sortOrder === 'asc' ? 'arrow-up' : 'arrow-down'}
+                  size={12}
+                  color={colors.primary}
                 />
               )}
             </TouchableOpacity>
-            
+
             <TouchableOpacity
               style={styles.sortButton}
               onPress={() => {
@@ -672,20 +703,20 @@ function OrdersScreen() {
                 }
               }}
             >
-              <Ionicons 
-                name="list-outline" 
-                size={16} 
-                color={sortBy === 'status' ? colors.primary : colors.text.secondary} 
+              <Ionicons
+                name="list-outline"
+                size={16}
+                color={sortBy === 'status' ? colors.primary : colors.text.secondary}
               />
               {sortBy === 'status' && (
-                <Ionicons 
-                  name={sortOrder === 'asc' ? 'arrow-up' : 'arrow-down'} 
-                  size={12} 
-                  color={colors.primary} 
+                <Ionicons
+                  name={sortOrder === 'asc' ? 'arrow-up' : 'arrow-down'}
+                  size={12}
+                  color={colors.primary}
                 />
               )}
             </TouchableOpacity>
-            
+
             <TouchableOpacity
               style={styles.sortButton}
               onPress={() => {
@@ -697,16 +728,16 @@ function OrdersScreen() {
                 }
               }}
             >
-              <Ionicons 
-                name="cash-outline" 
-                size={16} 
-                color={sortBy === 'amount' ? colors.primary : colors.text.secondary} 
+              <Ionicons
+                name="cash-outline"
+                size={16}
+                color={sortBy === 'amount' ? colors.primary : colors.text.secondary}
               />
               {sortBy === 'amount' && (
-                <Ionicons 
-                  name={sortOrder === 'asc' ? 'arrow-up' : 'arrow-down'} 
-                  size={12} 
-                  color={colors.primary} 
+                <Ionicons
+                  name={sortOrder === 'asc' ? 'arrow-up' : 'arrow-down'}
+                  size={12}
+                  color={colors.primary}
                 />
               )}
             </TouchableOpacity>
@@ -717,9 +748,7 @@ function OrdersScreen() {
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
-        refreshControl={
-          <IOSRefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-        }
+        refreshControl={<IOSRefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
         showsVerticalScrollIndicator={false}
       >
         {loading ? (
@@ -735,10 +764,7 @@ function OrdersScreen() {
               {isCustomer ? t('noCustomerOrders') : t('noCarrierOrders')}
             </Text>
             <Text style={styles.emptySubtitle}>
-              {isCustomer
-                ? t('createRequestToSeeOrders')
-                : t('acceptBidsToSeeOrders')
-              }
+              {isCustomer ? t('createRequestToSeeOrders') : t('acceptBidsToSeeOrders')}
             </Text>
             <TouchableOpacity
               style={styles.emptyActionButton}
@@ -746,13 +772,15 @@ function OrdersScreen() {
             >
               <Ionicons name="add-circle-outline" size={20} color={colors.white} />
               <Text style={styles.emptyActionText}>
-                {isCustomer ? t('createRequest') || 'Opprett forespørsel' : t('viewRequests') || 'Se forespørsler'}
+                {isCustomer
+                  ? t('createRequest') || 'Opprett forespørsel'
+                  : t('viewRequests') || 'Se forespørsler'}
               </Text>
             </TouchableOpacity>
           </View>
         ) : (
           <View style={styles.ordersList}>
-            {getFilteredAndSortedOrders(orders).map((order) => {
+            {getFilteredAndSortedOrders(orders).map(order => {
               const swipeActions = [];
 
               // Right swipe actions
@@ -773,135 +801,141 @@ function OrdersScreen() {
               const bidsCount = getBidsCount(order);
 
               return (
-                <SwipeableRow
-                  key={order.id}
-                  rightActions={swipeActions}
-                >
+                <SwipeableRow key={order.id} rightActions={swipeActions}>
                   <TouchableOpacity
                     style={styles.orderCard}
                     onPress={() => handleOrderPress(order)}
                     onLongPress={() => showOrderActions(order)}
                   >
-                {/* Status Badge at Top */}
-                <View style={[styles.statusBadgeTop, { backgroundColor: statusColor.bg }]}>
-                  <Ionicons
-                    name={statusColor.icon as any}
-                    size={16}
-                    color={statusColor.text}
-                  />
-                  <Text style={[styles.statusTextTop, { color: statusColor.text }]}>
-                    {t(order.status)}
-                  </Text>
-                </View>
+                    {/* Status Badge at Top */}
+                    <View style={[styles.statusBadgeTop, { backgroundColor: statusColor.bg }]}>
+                      <Ionicons name={statusColor.icon as any} size={16} color={statusColor.text} />
+                      <Text style={[styles.statusTextTop, { color: statusColor.text }]}>
+                        {t(order.status)}
+                      </Text>
+                    </View>
 
-                {/* Order Header */}
-                <View style={styles.orderHeader}>
-                  <View style={styles.orderInfo}>
-                    <View style={styles.cargoTypeContainer}>
-                      <View style={styles.cargoIconCircle}>
+                    {/* Order Header */}
+                    <View style={styles.orderHeader}>
+                      <View style={styles.orderInfo}>
+                        <View style={styles.cargoTypeContainer}>
+                          <View style={styles.cargoIconCircle}>
+                            <Ionicons
+                              name={getCargoTypeIcon(getCargoType(order)) as any}
+                              size={24}
+                              color={colors.text.secondary}
+                            />
+                          </View>
+                          <View style={styles.cargoDetails}>
+                            <Text style={styles.orderTitle}>{getCargoTitle(order)}</Text>
+                            <Text style={styles.cargoType}>
+                              {t(order.cargo_type || order.cargo_requests?.cargo_type || 'other')}
+                            </Text>
+                          </View>
+                        </View>
+                      </View>
+                      <View style={styles.amountContainer}>
+                        {orderPrice ? (
+                          <Text style={styles.amount}>{orderPrice} NOK</Text>
+                        ) : (
+                          <View style={styles.noPriceContainer}>
+                            <Text style={styles.noPriceText}>
+                              {t('noBidsYet') || 'Ingen bud ennå'}
+                            </Text>
+                          </View>
+                        )}
+                        {activeTab === 'customer' && bidsCount > 0 && (
+                          <View style={styles.bidsCountBadge}>
+                            <Ionicons name="pricetag" size={12} color={colors.primary} />
+                            <Text style={styles.bidsCountText}>
+                              {bidsCount} {bidsCount === 1 ? 'bud' : 'bud'}
+                            </Text>
+                          </View>
+                        )}
+                      </View>
+                    </View>
+
+                    {/* Route */}
+                    <View style={styles.routeContainer}>
+                      <View style={styles.routeRow}>
+                        <View style={styles.locationDot} />
+                        <View style={styles.routeInfo}>
+                          <Text style={styles.routeLabel}>{t('from') || 'Fra'}</Text>
+                          <Text style={styles.routeText} numberOfLines={1}>
+                            {getFromAddress(order)}
+                          </Text>
+                        </View>
+                      </View>
+                      <View style={styles.routeLine} />
+                      <View style={styles.routeRow}>
+                        <View style={[styles.locationDot, styles.locationDotEnd]} />
+                        <View style={styles.routeInfo}>
+                          <Text style={styles.routeLabel}>{t('to') || 'Til'}</Text>
+                          <Text style={styles.routeText} numberOfLines={1}>
+                            {getToAddress(order)}
+                          </Text>
+                        </View>
+                      </View>
+                    </View>
+
+                    {/* Participants */}
+                    <View style={styles.participantsContainer}>
+                      <View style={styles.participant}>
+                        <View style={styles.participantIconCircle}>
+                          <Ionicons name="person-outline" size={16} color={colors.text.secondary} />
+                        </View>
+                        <View style={styles.participantInfo}>
+                          <Text style={styles.participantLabel}>{t('customer')}</Text>
+                          <Text style={styles.participantName}>
+                            {order.customer?.full_name || 'N/A'}
+                          </Text>
+                        </View>
+                      </View>
+                      <View style={styles.participant}>
+                        <View style={styles.participantIconCircle}>
+                          <Ionicons name="car-outline" size={16} color={colors.text.secondary} />
+                        </View>
+                        <View style={styles.participantInfo}>
+                          <Text style={styles.participantLabel}>{t('carrier')}</Text>
+                          <Text
+                            style={[
+                              styles.participantName,
+                              getTransporterName(order) === t('waiting') &&
+                                styles.participantNameWaiting,
+                            ]}
+                          >
+                            {getTransporterName(order)}
+                          </Text>
+                        </View>
+                      </View>
+                    </View>
+
+                    {/* Order Footer */}
+                    <View style={styles.orderFooter}>
+                      <Text style={styles.orderDate}>
+                        {t('created')}: {formatDate(order.created_at)}
+                      </Text>
+                      <Text style={styles.pickupDate}>
+                        {t('pickup')}:{' '}
+                        {order.pickup_date
+                          ? formatDate(order.pickup_date)
+                          : t('requestNotAvailable')}
+                      </Text>
+                    </View>
+
+                    {/* Escrow Status */}
+                    {order.escrow_payments && order.escrow_payments.length > 0 && (
+                      <View style={styles.escrowContainer}>
                         <Ionicons
-                          name={getCargoTypeIcon(getCargoType(order)) as any}
-                          size={24}
-                          color={colors.text.secondary}
+                          name="shield-checkmark"
+                          size={16}
+                          color={theme.iconColors.success}
                         />
-                      </View>
-                      <View style={styles.cargoDetails}>
-                        <Text style={styles.orderTitle}>{getCargoTitle(order)}</Text>
-                        <Text style={styles.cargoType}>
-                          {t(order.cargo_type || order.cargo_requests?.cargo_type || 'other')}
-                        </Text>
-                      </View>
-                    </View>
-                  </View>
-                  <View style={styles.amountContainer}>
-                    {orderPrice ? (
-                      <Text style={styles.amount}>{orderPrice} NOK</Text>
-                    ) : (
-                      <View style={styles.noPriceContainer}>
-                        <Text style={styles.noPriceText}>{t('noBidsYet') || 'Ingen bud ennå'}</Text>
-                      </View>
-                    )}
-                    {activeTab === 'customer' && bidsCount > 0 && (
-                      <View style={styles.bidsCountBadge}>
-                        <Ionicons name="pricetag" size={12} color={colors.primary} />
-                        <Text style={styles.bidsCountText}>
-                          {bidsCount} {bidsCount === 1 ? 'bud' : 'bud'}
+                        <Text style={styles.escrowText}>
+                          {t('escrowStatus')}: {t(order.escrow_payments[0].status)}
                         </Text>
                       </View>
                     )}
-                  </View>
-                </View>
-
-                {/* Route */}
-                <View style={styles.routeContainer}>
-                  <View style={styles.routeRow}>
-                    <View style={styles.locationDot} />
-                    <View style={styles.routeInfo}>
-                      <Text style={styles.routeLabel}>{t('from') || 'Fra'}</Text>
-                      <Text style={styles.routeText} numberOfLines={1}>
-                        {getFromAddress(order)}
-                      </Text>
-                    </View>
-                  </View>
-                  <View style={styles.routeLine} />
-                  <View style={styles.routeRow}>
-                    <View style={[styles.locationDot, styles.locationDotEnd]} />
-                    <View style={styles.routeInfo}>
-                      <Text style={styles.routeLabel}>{t('to') || 'Til'}</Text>
-                      <Text style={styles.routeText} numberOfLines={1}>
-                        {getToAddress(order)}
-                      </Text>
-                    </View>
-                  </View>
-                </View>
-
-                {/* Participants */}
-                <View style={styles.participantsContainer}>
-                  <View style={styles.participant}>
-                    <View style={styles.participantIconCircle}>
-                      <Ionicons name="person-outline" size={16} color={colors.text.secondary} />
-                    </View>
-                    <View style={styles.participantInfo}>
-                      <Text style={styles.participantLabel}>{t('customer')}</Text>
-                      <Text style={styles.participantName}>{order.customer?.full_name || 'N/A'}</Text>
-                    </View>
-                  </View>
-                  <View style={styles.participant}>
-                    <View style={styles.participantIconCircle}>
-                      <Ionicons name="car-outline" size={16} color={colors.text.secondary} />
-                    </View>
-                    <View style={styles.participantInfo}>
-                      <Text style={styles.participantLabel}>{t('carrier')}</Text>
-                      <Text style={[
-                        styles.participantName,
-                        getTransporterName(order) === t('waiting') && styles.participantNameWaiting
-                      ]}>
-                        {getTransporterName(order)}
-                      </Text>
-                    </View>
-                  </View>
-                </View>
-
-                {/* Order Footer */}
-                <View style={styles.orderFooter}>
-                  <Text style={styles.orderDate}>
-                    {t('created')}: {formatDate(order.created_at)}
-                  </Text>
-                  <Text style={styles.pickupDate}>
-                    {t('pickup')}: {order.pickup_date ? formatDate(order.pickup_date) : t('requestNotAvailable')}
-                  </Text>
-                </View>
-
-                {/* Escrow Status */}
-                {order.escrow_payments && order.escrow_payments.length > 0 && (
-                  <View style={styles.escrowContainer}>
-                    <Ionicons name="shield-checkmark" size={16} color={theme.iconColors.success} />
-                    <Text style={styles.escrowText}>
-                      {t('escrowStatus')}: {t(order.escrow_payments[0].status)}
-                    </Text>
-                  </View>
-                )}
-
                   </TouchableOpacity>
                 </SwipeableRow>
               );

@@ -10,7 +10,7 @@ export function useCities() {
     try {
       setLoading(true);
       const querySnapshot = await getDocs(collection(db, 'cargo_requests'));
-      const data = querySnapshot.docs.map((doc) => doc.data());
+      const data = querySnapshot.docs.map(doc => doc.data());
 
       const citySet = new Set<string>();
       data.forEach(item => {

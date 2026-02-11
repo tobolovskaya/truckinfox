@@ -15,8 +15,15 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useTranslation } from 'react-i18next';
 import { theme } from '../../theme/theme';
 import { trackUserRegistered } from '../../utils/analytics';
-import { colors, spacing, fontSize, fontWeight, borderRadius, shadows, gradients } from '../../lib/sharedStyles';
-
+import {
+  colors,
+  spacing,
+  fontSize,
+  fontWeight,
+  borderRadius,
+  shadows,
+  gradients,
+} from '../../lib/sharedStyles';
 
 export default function RegisterScreen() {
   const [formData, setFormData] = useState({
@@ -33,7 +40,7 @@ export default function RegisterScreen() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [acceptTerms, setAcceptTerms] = useState(false);
   const [loading, setLoading] = useState(false);
-  
+
   const { signUp } = useAuth();
   const router = useRouter();
   const { t } = useTranslation();
@@ -62,15 +69,15 @@ export default function RegisterScreen() {
     setLoading(true);
     try {
       await signUp(formData);
-      
+
       // Track user registration
       trackUserRegistered({
         account_type: formData.userType === 'carrier' ? 'business' : 'private',
         registration_method: 'email',
       });
-      
+
       Alert.alert(t('success'), t('accountCreated'), [
-        { text: t('ok'), onPress: () => router.replace('/(tabs)') }
+        { text: t('ok'), onPress: () => router.replace('/(tabs)') },
       ]);
     } catch (error: any) {
       Alert.alert(t('error'), error.message);
@@ -84,17 +91,11 @@ export default function RegisterScreen() {
   };
 
   return (
-    <LinearGradient
-      colors={gradients.primary}
-      style={styles.container}
-    >
+    <LinearGradient colors={gradients.primary} style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         {/* Header with Back Button */}
         <View style={styles.header}>
-          <TouchableOpacity
-            style={styles.backButton}
-            onPress={() => router.back()}
-          >
+          <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
             <Ionicons name="arrow-back" size={24} color={theme.iconColors.primary} />
           </TouchableOpacity>
           <View style={styles.logoContainer}>
@@ -118,7 +119,7 @@ export default function RegisterScreen() {
               <TouchableOpacity
                 style={[
                   styles.userTypeCard,
-                  formData.userType === 'customer' && styles.userTypeCardActive
+                  formData.userType === 'customer' && styles.userTypeCardActive,
                 ]}
                 onPress={() => updateFormData('userType', 'customer')}
               >
@@ -127,17 +128,19 @@ export default function RegisterScreen() {
                   size={24}
                   color={formData.userType === 'customer' ? colors.primary : colors.text.secondary}
                 />
-                <Text style={[
-                  styles.userTypeText,
-                  formData.userType === 'customer' && styles.userTypeTextActive
-                ]}>
+                <Text
+                  style={[
+                    styles.userTypeText,
+                    formData.userType === 'customer' && styles.userTypeTextActive,
+                  ]}
+                >
                   {t('private')}
                 </Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={[
                   styles.userTypeCard,
-                  formData.userType === 'carrier' && styles.userTypeCardActive
+                  formData.userType === 'carrier' && styles.userTypeCardActive,
                 ]}
                 onPress={() => updateFormData('userType', 'carrier')}
               >
@@ -146,10 +149,12 @@ export default function RegisterScreen() {
                   size={24}
                   color={formData.userType === 'carrier' ? colors.primary : colors.text.secondary}
                 />
-                <Text style={[
-                  styles.userTypeText,
-                  formData.userType === 'carrier' && styles.userTypeTextActive
-                ]}>
+                <Text
+                  style={[
+                    styles.userTypeText,
+                    formData.userType === 'carrier' && styles.userTypeTextActive,
+                  ]}
+                >
                   {t('business')}
                 </Text>
               </TouchableOpacity>
@@ -160,12 +165,17 @@ export default function RegisterScreen() {
           <View style={styles.inputContainer}>
             <Text style={styles.label}>{t('fullName')}</Text>
             <View style={styles.inputWrapper}>
-              <Ionicons name="person-outline" size={20} color={theme.iconColors.gray.primary} style={styles.inputIcon} />
+              <Ionicons
+                name="person-outline"
+                size={20}
+                color={theme.iconColors.gray.primary}
+                style={styles.inputIcon}
+              />
               <TextInput
                 style={styles.input}
                 placeholder={t('enterFullName')}
                 value={formData.fullName}
-                onChangeText={(value) => updateFormData('fullName', value)}
+                onChangeText={value => updateFormData('fullName', value)}
                 placeholderTextColor={colors.text.tertiary}
               />
             </View>
@@ -175,12 +185,17 @@ export default function RegisterScreen() {
           <View style={styles.inputContainer}>
             <Text style={styles.label}>{t('email')}</Text>
             <View style={styles.inputWrapper}>
-              <Ionicons name="mail-outline" size={20} color={theme.iconColors.gray.primary} style={styles.inputIcon} />
+              <Ionicons
+                name="mail-outline"
+                size={20}
+                color={theme.iconColors.gray.primary}
+                style={styles.inputIcon}
+              />
               <TextInput
                 style={styles.input}
                 placeholder="your@email.com"
                 value={formData.email}
-                onChangeText={(value) => updateFormData('email', value)}
+                onChangeText={value => updateFormData('email', value)}
                 keyboardType="email-address"
                 autoCapitalize="none"
                 placeholderTextColor={colors.text.tertiary}
@@ -192,12 +207,17 @@ export default function RegisterScreen() {
           <View style={styles.inputContainer}>
             <Text style={styles.label}>{t('phone')}</Text>
             <View style={styles.inputWrapper}>
-              <Ionicons name="call-outline" size={20} color={theme.iconColors.gray.primary} style={styles.inputIcon} />
+              <Ionicons
+                name="call-outline"
+                size={20}
+                color={theme.iconColors.gray.primary}
+                style={styles.inputIcon}
+              />
               <TextInput
                 style={styles.input}
                 placeholder="+47 123 45 678"
                 value={formData.phone}
-                onChangeText={(value) => updateFormData('phone', value)}
+                onChangeText={value => updateFormData('phone', value)}
                 keyboardType="phone-pad"
                 placeholderTextColor={colors.text.tertiary}
               />
@@ -208,16 +228,21 @@ export default function RegisterScreen() {
           {formData.userType === 'carrier' && (
             <View style={styles.businessSection}>
               <Text style={styles.businessTitle}>{t('businessInformation')}</Text>
-              
+
               <View style={styles.inputContainer}>
                 <Text style={styles.label}>{t('companyName')}</Text>
                 <View style={styles.inputWrapper}>
-                  <Ionicons name="business-outline" size={20} color={theme.iconColors.gray.primary} style={styles.inputIcon} />
+                  <Ionicons
+                    name="business-outline"
+                    size={20}
+                    color={theme.iconColors.gray.primary}
+                    style={styles.inputIcon}
+                  />
                   <TextInput
                     style={styles.input}
                     placeholder={t('enterCompanyName')}
                     value={formData.companyName}
-                    onChangeText={(value) => updateFormData('companyName', value)}
+                    onChangeText={value => updateFormData('companyName', value)}
                     placeholderTextColor={colors.text.tertiary}
                   />
                 </View>
@@ -226,12 +251,17 @@ export default function RegisterScreen() {
               <View style={styles.inputContainer}>
                 <Text style={styles.label}>{t('orgNumber')}</Text>
                 <View style={styles.inputWrapper}>
-                  <Ionicons name="document-text-outline" size={20} color={theme.iconColors.gray.primary} style={styles.inputIcon} />
+                  <Ionicons
+                    name="document-text-outline"
+                    size={20}
+                    color={theme.iconColors.gray.primary}
+                    style={styles.inputIcon}
+                  />
                   <TextInput
                     style={styles.input}
                     placeholder="123 456 789"
                     value={formData.orgNumber}
-                    onChangeText={(value) => updateFormData('orgNumber', value)}
+                    onChangeText={value => updateFormData('orgNumber', value)}
                     keyboardType="numeric"
                     placeholderTextColor={colors.text.tertiary}
                   />
@@ -244,12 +274,17 @@ export default function RegisterScreen() {
           <View style={styles.inputContainer}>
             <Text style={styles.label}>{t('password')}</Text>
             <View style={styles.inputWrapper}>
-              <Ionicons name="lock-closed-outline" size={20} color={theme.iconColors.gray.primary} style={styles.inputIcon} />
+              <Ionicons
+                name="lock-closed-outline"
+                size={20}
+                color={theme.iconColors.gray.primary}
+                style={styles.inputIcon}
+              />
               <TextInput
                 style={[styles.input, { paddingRight: 50 }]}
                 placeholder={t('enterPassword')}
                 value={formData.password}
-                onChangeText={(value) => updateFormData('password', value)}
+                onChangeText={value => updateFormData('password', value)}
                 secureTextEntry={!showPassword}
                 placeholderTextColor={colors.text.tertiary}
               />
@@ -258,7 +293,7 @@ export default function RegisterScreen() {
                 onPress={() => setShowPassword(!showPassword)}
               >
                 <Ionicons
-                  name={showPassword ? "eye-outline" : "eye-off-outline"}
+                  name={showPassword ? 'eye-outline' : 'eye-off-outline'}
                   size={20}
                   color={theme.iconColors.gray.primary}
                 />
@@ -270,12 +305,17 @@ export default function RegisterScreen() {
           <View style={styles.inputContainer}>
             <Text style={styles.label}>{t('confirmPassword')}</Text>
             <View style={styles.inputWrapper}>
-              <Ionicons name="lock-closed-outline" size={20} color={theme.iconColors.gray.primary} style={styles.inputIcon} />
+              <Ionicons
+                name="lock-closed-outline"
+                size={20}
+                color={theme.iconColors.gray.primary}
+                style={styles.inputIcon}
+              />
               <TextInput
                 style={[styles.input, { paddingRight: 50 }]}
                 placeholder={t('confirmPassword')}
                 value={formData.confirmPassword}
-                onChangeText={(value) => updateFormData('confirmPassword', value)}
+                onChangeText={value => updateFormData('confirmPassword', value)}
                 secureTextEntry={!showConfirmPassword}
                 placeholderTextColor={colors.text.tertiary}
               />
@@ -284,7 +324,7 @@ export default function RegisterScreen() {
                 onPress={() => setShowConfirmPassword(!showConfirmPassword)}
               >
                 <Ionicons
-                  name={showConfirmPassword ? "eye-outline" : "eye-off-outline"}
+                  name={showConfirmPassword ? 'eye-outline' : 'eye-off-outline'}
                   size={20}
                   color={theme.iconColors.gray.primary}
                 />
@@ -299,10 +339,13 @@ export default function RegisterScreen() {
               onPress={() => setAcceptTerms(!acceptTerms)}
             >
               <View style={[styles.checkbox, acceptTerms && styles.checkboxChecked]}>
-                {acceptTerms && <Ionicons name="checkmark" size={16} color={theme.iconColors.white} />}
+                {acceptTerms && (
+                  <Ionicons name="checkmark" size={16} color={theme.iconColors.white} />
+                )}
               </View>
               <Text style={styles.termsText}>
-                {t('iAgreeToThe')} <Text style={styles.termsLink}>{t('termsOfService')}</Text> {t('and')} <Text style={styles.termsLink}>{t('privacyPolicy')}</Text>
+                {t('iAgreeToThe')} <Text style={styles.termsLink}>{t('termsOfService')}</Text>{' '}
+                {t('and')} <Text style={styles.termsLink}>{t('privacyPolicy')}</Text>
               </Text>
             </TouchableOpacity>
           </View>

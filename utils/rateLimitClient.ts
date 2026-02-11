@@ -8,7 +8,7 @@ import { httpsCallable } from 'firebase/functions';
 export class RateLimitError extends Error {
   retryAfter: number; // milliseconds
   resetAt: number; // timestamp
-  
+
   constructor(message: string, retryAfter: number, resetAt: number) {
     super(message);
     this.name = 'RateLimitError';
@@ -22,32 +22,29 @@ export class RateLimitError extends Error {
  */
 export function formatRetryTime(milliseconds: number): string {
   const seconds = Math.ceil(milliseconds / 1000);
-  
+
   if (seconds < 60) {
     return `${seconds} sekund${seconds !== 1 ? 'er' : ''}`;
   }
-  
+
   const minutes = Math.ceil(seconds / 60);
   if (minutes < 60) {
     return `${minutes} minutt${minutes !== 1 ? 'er' : ''}`;
   }
-  
+
   const hours = Math.ceil(minutes / 60);
   return `${hours} time${hours !== 1 ? 'r' : ''}`;
 }
 
 /**
  * Call a Cloud Function with rate limit handling
- * 
+ *
  * @param functionName Name of the Cloud Function
  * @param data Data to pass to the function
  * @returns Function result
  * @throws RateLimitError if rate limit exceeded
  */
-export async function callFunction<T = any, R = any>(
-  functionName: string,
-  data: T
-): Promise<R> {
+export async function callFunction<T = any, R = any>(functionName: string, data: T): Promise<R> {
   try {
     const callable = httpsCallable(functions, functionName);
     const result = await callable(data);
@@ -57,14 +54,10 @@ export async function callFunction<T = any, R = any>(
     if (error.code === 'functions/resource-exhausted') {
       const retryAfter = error.details?.retryAfter || 60000;
       const resetAt = error.details?.resetAt || Date.now() + retryAfter;
-      
-      throw new RateLimitError(
-        error.message,
-        retryAfter,
-        resetAt
-      );
+
+      throw new RateLimitError(error.message, retryAfter, resetAt);
     }
-    
+
     // Re-throw other errors
     throw error;
   }
@@ -72,7 +65,7 @@ export async function callFunction<T = any, R = any>(
 
 /**
  * Safe function call with rate limit handling and user-friendly error messages
- * 
+ *
  * @param functionName Name of the Cloud Function
  * @param data Data to pass to the function
  * @param onRateLimit Optional callback when rate limit is hit
@@ -98,7 +91,7 @@ export async function safeFunctionCall<T = any, R = any>(
 
 /**
  * Example usage in components:
- * 
+ *
  * // Basic usage
  * try {
  *   const result = await callFunction('createCargoRequest', { title: 'Test' });
@@ -110,7 +103,7 @@ export async function safeFunctionCall<T = any, R = any>(
  *     );
  *   }
  * }
- * 
+ *
  * // With safe call
  * const result = await safeFunctionCall(
  *   'submitBid',
@@ -130,7 +123,7 @@ class ClientRateLimiter {
 
   /**
    * Check if an action can be performed
-   * 
+   *
    * @param action Action name
    * @param maxCount Maximum allowed count
    * @param windowMs Time window in milliseconds
@@ -157,7 +150,7 @@ class ClientRateLimiter {
 
   /**
    * Get time until rate limit resets
-   * 
+   *
    * @param action Action name
    * @returns Milliseconds until reset, or 0 if not rate limited
    */
@@ -190,10 +183,10 @@ export const clientRateLimiter = new ClientRateLimiter();
 
 /**
  * React Hook for rate limiting
- * 
+ *
  * Usage:
  * const { canSubmit, timeUntilReset } = useRateLimit('submitBid', 10, 3600000);
- * 
+ *
  * if (!canSubmit) {
  *   Alert.alert('Please wait', `You can submit again in ${formatRetryTime(timeUntilReset)}`);
  *   return;

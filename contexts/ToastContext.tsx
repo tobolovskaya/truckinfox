@@ -24,33 +24,45 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const show = useCallback((message: string, type: ToastType = 'info', duration = 3000) => {
     const id = Date.now().toString() + Math.random().toString(36);
     const newToast: ToastMessage = { id, message, type, duration };
-    
-    setToasts((prev) => [...prev, newToast]);
-    
+
+    setToasts(prev => [...prev, newToast]);
+
     // Auto-remove toast after duration + animation time
     setTimeout(() => {
-      setToasts((prev) => prev.filter((t) => t.id !== id));
+      setToasts(prev => prev.filter(t => t.id !== id));
     }, duration + 500);
   }, []);
 
-  const success = useCallback((message: string, duration?: number) => {
-    show(message, 'success', duration);
-  }, [show]);
+  const success = useCallback(
+    (message: string, duration?: number) => {
+      show(message, 'success', duration);
+    },
+    [show]
+  );
 
-  const error = useCallback((message: string, duration?: number) => {
-    show(message, 'error', duration);
-  }, [show]);
+  const error = useCallback(
+    (message: string, duration?: number) => {
+      show(message, 'error', duration);
+    },
+    [show]
+  );
 
-  const info = useCallback((message: string, duration?: number) => {
-    show(message, 'info', duration);
-  }, [show]);
+  const info = useCallback(
+    (message: string, duration?: number) => {
+      show(message, 'info', duration);
+    },
+    [show]
+  );
 
-  const warning = useCallback((message: string, duration?: number) => {
-    show(message, 'warning', duration);
-  }, [show]);
+  const warning = useCallback(
+    (message: string, duration?: number) => {
+      show(message, 'warning', duration);
+    },
+    [show]
+  );
 
   const handleHide = useCallback((id: string) => {
-    setToasts((prev) => prev.filter((t) => t.id !== id));
+    setToasts(prev => prev.filter(t => t.id !== id));
   }, []);
 
   return (

@@ -96,9 +96,10 @@ function filterReducer(state: TempFilterState, action: FilterAction): TempFilter
     case 'CLEAR_FILTER':
       return {
         ...state,
-        [action.payload]: action.payload === 'priceRange' || action.payload === 'weightRange'
-          ? { min: '', max: '' }
-          : '',
+        [action.payload]:
+          action.payload === 'priceRange' || action.payload === 'weightRange'
+            ? { min: '', max: '' }
+            : '',
       };
 
     default:
@@ -118,13 +119,16 @@ export function useFilterState() {
     setPriceMin: (price: string) => dispatch({ type: 'SET_PRICE_MIN', payload: price }),
     setPriceMax: (price: string) => dispatch({ type: 'SET_PRICE_MAX', payload: price }),
     setPriceType: (priceType: string) => dispatch({ type: 'SET_PRICE_TYPE', payload: priceType }),
-    setPriceRange: (range: { min: string; max: string }) => dispatch({ type: 'SET_PRICE_RANGE', payload: range }),
-    setWeightRange: (range: { min: string; max: string }) => dispatch({ type: 'SET_WEIGHT_RANGE', payload: range }),
+    setPriceRange: (range: { min: string; max: string }) =>
+      dispatch({ type: 'SET_PRICE_RANGE', payload: range }),
+    setWeightRange: (range: { min: string; max: string }) =>
+      dispatch({ type: 'SET_WEIGHT_RANGE', payload: range }),
     setPickupDate: (date: string) => dispatch({ type: 'SET_PICKUP_DATE', payload: date }),
     setCitySearch: (search: string) => dispatch({ type: 'SET_CITY_SEARCH', payload: search }),
     openModal: () => dispatch({ type: 'OPEN_MODAL' }),
     closeModal: () => dispatch({ type: 'CLOSE_MODAL' }),
-    applyFilters: (filters: Partial<FilterState>) => dispatch({ type: 'APPLY_FILTERS', payload: filters }),
+    applyFilters: (filters: Partial<FilterState>) =>
+      dispatch({ type: 'APPLY_FILTERS', payload: filters }),
     resetFilters: () => dispatch({ type: 'RESET_FILTERS' }),
     clearFilter: (key: keyof FilterState) => dispatch({ type: 'CLEAR_FILTER', payload: key }),
   };

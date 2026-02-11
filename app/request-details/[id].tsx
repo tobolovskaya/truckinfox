@@ -20,10 +20,32 @@ import { useTranslation } from 'react-i18next';
 import { db } from '../../lib/firebase';
 import { trackBidSubmitted, trackBidAccepted } from '../../utils/analytics';
 import { fetchWithTimeout } from '../../utils/fetchWithTimeout';
-import { doc, getDoc, collection, query, where, orderBy, limit, getDocs, addDoc, updateDoc, deleteDoc, serverTimestamp, writeBatch, runTransaction } from 'firebase/firestore';
+import {
+  doc,
+  getDoc,
+  collection,
+  query,
+  where,
+  orderBy,
+  limit,
+  getDocs,
+  addDoc,
+  updateDoc,
+  deleteDoc,
+  serverTimestamp,
+  writeBatch,
+  runTransaction,
+} from 'firebase/firestore';
 import MapView, { Marker, Polyline } from 'react-native-maps';
 import { theme } from '../../theme/theme';
-import { colors, spacing, fontSize, fontWeight, borderRadius, shadows } from '../../lib/sharedStyles';
+import {
+  colors,
+  spacing,
+  fontSize,
+  fontWeight,
+  borderRadius,
+  shadows,
+} from '../../lib/sharedStyles';
 import Avatar from '../../components/Avatar';
 import { createChat, generateChatId } from '../../utils/chatManagement';
 import { LazyImage } from '../../components/LazyImage';
@@ -92,7 +114,7 @@ export default function RequestDetailsScreen() {
   const { user } = useAuth();
   const { t } = useTranslation();
   const router = useRouter();
-  
+
   const [request, setRequest] = useState<CargoRequest | null>(null);
   const [bids, setBids] = useState<Bid[]>([]);
   const [loading, setLoading] = useState(true);
@@ -101,7 +123,9 @@ export default function RequestDetailsScreen() {
   const [acceptingBid, setAcceptingBid] = useState<string | null>(null);
   const [mapExpanded, setMapExpanded] = useState(false);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
-  const [routeCoordinates, setRouteCoordinates] = useState<Array<{latitude: number, longitude: number}>>([]);
+  const [routeCoordinates, setRouteCoordinates] = useState<
+    Array<{ latitude: number; longitude: number }>
+  >([]);
   const mapRef = useRef<MapView>(null);
   const [reviews, setReviews] = useState<Review[]>([]);
   const [userRating, setUserRating] = useState(0);
@@ -166,7 +190,7 @@ export default function RequestDetailsScreen() {
 
       const bidsSnap = await getDocs(bidsQuery);
       const bidsData = await Promise.all(
-        bidsSnap.docs.map(async (bidDoc) => {
+        bidsSnap.docs.map(async bidDoc => {
           const bidData = { id: bidDoc.id, ...bidDoc.data() } as any;
 
           // Fetch carrier user data
@@ -201,7 +225,7 @@ export default function RequestDetailsScreen() {
 
       const reviewsSnap = await getDocs(reviewsQuery);
       const reviewsData = await Promise.all(
-        reviewsSnap.docs.map(async (reviewDoc) => {
+        reviewsSnap.docs.map(async reviewDoc => {
           const reviewData = { id: reviewDoc.id, ...reviewDoc.data() } as any;
 
           // Fetch reviewer data
@@ -236,12 +260,17 @@ export default function RequestDetailsScreen() {
       const toLng = request.to_lng;
 
       // Using Mapbox Directions API
-      const accessToken = 'pk.eyJ1IjoidG9ib2xvdnNrYXlhIiwiYSI6ImNtZzhhbG9obDA1NjMyanF3bXFvZW1sM20ifQ.SVl_KFz1bmhR405gUx6FrQ';
+      const accessToken =
+        'pk.eyJ1IjoidG9ib2xvdnNrYXlhIiwiYSI6ImNtZzhhbG9obDA1NjMyanF3bXFvZW1sM20ifQ.SVl_KFz1bmhR405gUx6FrQ';
       const url = `https://api.mapbox.com/directions/v5/mapbox/driving/${fromLng},${fromLat};${toLng},${toLat}?geometries=geojson&access_token=${accessToken}`;
 
-      const response = await fetchWithTimeout(url, {
-        method: 'GET',
-      }, 10000); // 10 second timeout for Mapbox API
+      const response = await fetchWithTimeout(
+        url,
+        {
+          method: 'GET',
+        },
+        10000
+      ); // 10 second timeout for Mapbox API
       const data = await response.json();
 
       if (data.routes && data.routes.length > 0) {
@@ -322,9 +351,9 @@ export default function RequestDetailsScreen() {
   const acceptBid = async (bid: Bid) => {
     Alert.alert(
       t('acceptBid'),
-      t('acceptBidConfirmation', { 
-        amount: bid.price, 
-        carrier: bid.users.full_name 
+      t('acceptBidConfirmation', {
+        amount: bid.price,
+        carrier: bid.users.full_name,
       }),
       [
         { text: t('cancel'), style: 'cancel' },
@@ -340,47 +369,47 @@ export default function RequestDetailsScreen() {
     setAcceptingBid(bid.id);
     try {
       // 🔐 Use transaction for atomic operations to prevent race conditions
-      await runTransaction(db, async (transaction) => {
+      await runTransaction(db, async transaction => {
         // 1. Verify bid is still pending
         const bidRef = doc(db, 'bids', bid.id);
         const bidDoc = await transaction.get(bidRef);
-        
+
         if (!bidDoc.exists()) {
           throw new Error(t('bidNotFound') || 'Bid not found');
         }
-        
+
         const bidData = bidDoc.data();
         if (bidData?.status !== 'pending') {
           throw new Error(t('bidNoLongerAvailable') || 'Bid is no longer available');
         }
-        
+
         // 2. Verify request is still active
         const requestRef = doc(db, 'cargo_requests', id as string);
         const requestDoc = await transaction.get(requestRef);
-        
+
         if (!requestDoc.exists()) {
           throw new Error(t('requestNotFound') || 'Request not found');
         }
-        
+
         const requestData = requestDoc.data();
         if (requestData?.status !== 'active') {
           throw new Error(t('requestNoLongerActive') || 'Request is no longer active');
         }
-        
+
         // 3. Atomic update: Accept this bid
-        transaction.update(bidRef, { 
+        transaction.update(bidRef, {
           status: 'accepted',
           accepted_at: serverTimestamp(),
-          updated_at: serverTimestamp()
+          updated_at: serverTimestamp(),
         });
-        
+
         // 4. Atomic update: Update request status
         transaction.update(requestRef, {
           status: 'assigned',
           accepted_bid_id: bid.id,
-          updated_at: serverTimestamp()
+          updated_at: serverTimestamp(),
         });
-        
+
         // 5. Fetch and reject all other pending bids
         const otherBidsQuery = query(
           collection(db, 'bids'),
@@ -388,14 +417,14 @@ export default function RequestDetailsScreen() {
           where('status', '==', 'pending')
         );
         const otherBidsSnap = await getDocs(otherBidsQuery);
-        
+
         otherBidsSnap.docs.forEach(otherBidDoc => {
           if (otherBidDoc.id !== bid.id) {
-            transaction.update(otherBidDoc.ref, { 
+            transaction.update(otherBidDoc.ref, {
               status: 'rejected',
               rejected_at: serverTimestamp(),
               rejected_reason: 'Another bid was accepted',
-              updated_at: serverTimestamp()
+              updated_at: serverTimestamp(),
             });
           }
         });
@@ -426,17 +455,13 @@ export default function RequestDetailsScreen() {
 
       // Refresh bids to show updated status
       fetchBids();
-      
-      Alert.alert(
-        t('success'), 
-        t('bidAcceptedSuccess'),
-        [
-          {
-            text: t('proceedToPayment'),
-            onPress: () => navigateToPayment(bid),
-          },
-        ]
-      );
+
+      Alert.alert(t('success'), t('bidAcceptedSuccess'), [
+        {
+          text: t('proceedToPayment'),
+          onPress: () => navigateToPayment(bid),
+        },
+      ]);
     } catch (error: any) {
       Alert.alert(t('error'), error.message);
     } finally {
@@ -459,11 +484,11 @@ export default function RequestDetailsScreen() {
       // Get cargo request data for copying to order
       const cargoRef = doc(db, 'cargo_requests', id as string);
       const cargoSnap = await getDoc(cargoRef);
-      
+
       if (!cargoSnap.exists()) {
         throw new Error('Cargo request not found');
       }
-      
+
       const cargoData = cargoSnap.data();
 
       // Clean up any existing unpaid orders for this request
@@ -474,12 +499,12 @@ export default function RequestDetailsScreen() {
         where('payment_status', '==', 'pending')
       );
       const existingOrdersSnap = await getDocs(existingOrdersQuery);
-      
+
       const batch = writeBatch(db);
       existingOrdersSnap.docs.forEach(orderDoc => {
         batch.delete(orderDoc.ref);
       });
-      
+
       // If there were unpaid orders, commit the cleanup
       if (!existingOrdersSnap.empty) {
         await batch.commit();
@@ -509,7 +534,7 @@ export default function RequestDetailsScreen() {
       const requestRef = doc(db, 'cargo_requests', id as string);
       await updateDoc(requestRef, {
         status: 'in_progress',
-        updated_at: serverTimestamp()
+        updated_at: serverTimestamp(),
       });
 
       // Navigate to payment screen
@@ -574,9 +599,9 @@ export default function RequestDetailsScreen() {
         where('status', '==', 'delivered'),
         limit(1)
       );
-      
+
       const ordersSnap = await getDocs(ordersQuery);
-      
+
       if (ordersSnap.empty) {
         Alert.alert('Feil', 'Ingen fullført ordre funnet for denne forespørselen');
         return;
@@ -606,7 +631,8 @@ export default function RequestDetailsScreen() {
   const isRequestOwner = request?.user_id === user?.uid;
   const canBid = !isRequestOwner && request?.status === 'active';
   // Note: Review form will check for delivered order when displaying
-  const canLeaveReview = !isRequestOwner && (request?.status === 'completed' || request?.status === 'in_progress');
+  const canLeaveReview =
+    !isRequestOwner && (request?.status === 'completed' || request?.status === 'in_progress');
 
   const handleDeleteRequest = () => {
     Alert.alert(
@@ -668,10 +694,7 @@ export default function RequestDetailsScreen() {
     <SafeAreaView style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => router.back()}
-        >
+        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
           <Ionicons name="arrow-back" size={24} color={theme.iconColors.dark} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>{t('requestDetails')}</Text>
@@ -684,7 +707,7 @@ export default function RequestDetailsScreen() {
           <Text style={styles.sectionTitle}>
             {t('bids')} ({bids.length})
           </Text>
-          
+
           {bids.length === 0 ? (
             <View style={styles.emptyBids}>
               <View style={styles.emptyBidsIconContainer}>
@@ -709,7 +732,7 @@ export default function RequestDetailsScreen() {
             </View>
           ) : (
             <View style={styles.bidsList}>
-              {bids.map((bid) => (
+              {bids.map(bid => (
                 <View key={bid.id} style={styles.bidCard}>
                   <View style={styles.bidHeader}>
                     <View style={styles.bidCarrier}>
@@ -733,12 +756,12 @@ export default function RequestDetailsScreen() {
                   </View>
 
                   <Text style={styles.bidMessage}>{bid.message}</Text>
-                  
+
                   {isRequestOwner && bid.status === 'pending' && request.status === 'active' && (
                     <TouchableOpacity
                       style={[
                         styles.acceptButton,
-                        acceptingBid === bid.id && styles.acceptButtonDisabled
+                        acceptingBid === bid.id && styles.acceptButtonDisabled,
                       ]}
                       onPress={() => acceptBid(bid)}
                       disabled={acceptingBid === bid.id}
@@ -760,16 +783,26 @@ export default function RequestDetailsScreen() {
                         <Ionicons name="card-outline" size={20} color={theme.iconColors.white} />
                         <Text style={styles.paymentButtonText}>{t('proceedToPayment')}</Text>
                       </TouchableOpacity>
-                      
+
                       <TouchableOpacity
                         style={styles.messageButton}
                         onPress={() => {
-                          const chatId = generateChatId(id as string, user?.uid || '', bid.carrier_id);
+                          const chatId = generateChatId(
+                            id as string,
+                            user?.uid || '',
+                            bid.carrier_id
+                          );
                           router.push(`/chat/${id}/${bid.carrier_id}` as any);
                         }}
                       >
-                        <Ionicons name="chatbubble-outline" size={20} color={theme.iconColors.primary} />
-                        <Text style={styles.messageButtonText}>{t('messageCarrier') || 'Meld transportør'}</Text>
+                        <Ionicons
+                          name="chatbubble-outline"
+                          size={20}
+                          color={theme.iconColors.primary}
+                        />
+                        <Text style={styles.messageButtonText}>
+                          {t('messageCarrier') || 'Meld transportør'}
+                        </Text>
                       </TouchableOpacity>
                     </>
                   )}
@@ -777,19 +810,33 @@ export default function RequestDetailsScreen() {
                   {bid.status === 'accepted' && !isRequestOwner && (
                     <>
                       <View style={styles.acceptedBadge}>
-                        <Ionicons name="checkmark-circle" size={20} color={theme.iconColors.success} />
+                        <Ionicons
+                          name="checkmark-circle"
+                          size={20}
+                          color={theme.iconColors.success}
+                        />
                         <Text style={styles.acceptedText}>{t('bidAccepted')}</Text>
                       </View>
-                      
+
                       <TouchableOpacity
                         style={styles.messageButton}
                         onPress={() => {
-                          const chatId = generateChatId(id as string, request?.user_id || '', user?.uid || '');
+                          const chatId = generateChatId(
+                            id as string,
+                            request?.user_id || '',
+                            user?.uid || ''
+                          );
                           router.push(`/chat/${id}/${request?.user_id}` as any);
                         }}
                       >
-                        <Ionicons name="chatbubble-outline" size={20} color={theme.iconColors.primary} />
-                        <Text style={styles.messageButtonText}>{t('messageCustomer') || 'Meld kunde'}</Text>
+                        <Ionicons
+                          name="chatbubble-outline"
+                          size={20}
+                          color={theme.iconColors.primary}
+                        />
+                        <Text style={styles.messageButtonText}>
+                          {t('messageCustomer') || 'Meld kunde'}
+                        </Text>
                       </TouchableOpacity>
                     </>
                   )}
@@ -818,10 +865,7 @@ export default function RequestDetailsScreen() {
               </View>
 
               <TouchableOpacity
-                style={[
-                  styles.submitBidButton,
-                  submittingBid && styles.submitBidButtonDisabled
-                ]}
+                style={[styles.submitBidButton, submittingBid && styles.submitBidButtonDisabled]}
                 onPress={submitBid}
                 disabled={submittingBid}
               >
@@ -840,10 +884,9 @@ export default function RequestDetailsScreen() {
           {/* Title + Status */}
           <View style={styles.detailsHeaderRow}>
             <Text style={styles.requestTitle}>{request.title}</Text>
-            <View style={[
-              styles.statusBadge,
-              request.status === 'active' && styles.statusBadgeActive
-            ]}>
+            <View
+              style={[styles.statusBadge, request.status === 'active' && styles.statusBadgeActive]}
+            >
               <Text style={styles.statusText}>
                 {request.status === 'active' ? 'Aktiv forespørsel' : t(request.status)}
               </Text>
@@ -857,7 +900,7 @@ export default function RequestDetailsScreen() {
                 horizontal
                 pagingEnabled
                 showsHorizontalScrollIndicator={false}
-                onScroll={(e) => {
+                onScroll={e => {
                   const index = Math.round(
                     e.nativeEvent.contentOffset.x / e.nativeEvent.layoutMeasurement.width
                   );
@@ -900,7 +943,9 @@ export default function RequestDetailsScreen() {
                 <Ionicons name="camera-outline" size={48} color="#9CA3AF" />
               </View>
               <Text style={styles.noImagesTitle}>Last opp bilde av lasten</Text>
-              <Text style={styles.noImagesSubtitle}>Bilder hjelper transportører å forstå oppdraget bedre</Text>
+              <Text style={styles.noImagesSubtitle}>
+                Bilder hjelper transportører å forstå oppdraget bedre
+              </Text>
             </View>
           )}
 
@@ -930,7 +975,11 @@ export default function RequestDetailsScreen() {
               {request.dimensions && (
                 <>
                   <View style={styles.metaItem}>
-                    <Ionicons name="resize-outline" size={16} color={theme.iconColors.gray.primary} />
+                    <Ionicons
+                      name="resize-outline"
+                      size={16}
+                      color={theme.iconColors.gray.primary}
+                    />
                     <Text style={styles.metaText}>{request.dimensions}</Text>
                   </View>
                   <View style={styles.metaDivider} />
@@ -975,7 +1024,7 @@ export default function RequestDetailsScreen() {
             {reviews.length > 0 && (
               <View style={styles.reviewsSection}>
                 <Text style={styles.reviewsSectionTitle}>📝 Vurderinger:</Text>
-                {reviews.map((review) => (
+                {reviews.map(review => (
                   <View key={review.id} style={styles.reviewItem}>
                     <View style={styles.reviewHeader}>
                       <View style={styles.reviewStars}>
@@ -1005,7 +1054,7 @@ export default function RequestDetailsScreen() {
 
                 {/* Star rating */}
                 <View style={styles.starRatingContainer}>
-                  {[1, 2, 3, 4, 5].map((star) => (
+                  {[1, 2, 3, 4, 5].map(star => (
                     <TouchableOpacity
                       key={star}
                       onPress={() => setUserRating(star)}
@@ -1033,10 +1082,7 @@ export default function RequestDetailsScreen() {
                 />
 
                 {/* Submit button */}
-                <TouchableOpacity
-                  style={styles.submitReviewButton}
-                  onPress={submitReview}
-                >
+                <TouchableOpacity style={styles.submitReviewButton} onPress={submitReview}>
                   <Text style={styles.submitReviewButtonText}>Send vurdering</Text>
                 </TouchableOpacity>
               </View>
@@ -1149,10 +1195,7 @@ export default function RequestDetailsScreen() {
             <Text style={styles.editButtonText}>Rediger forespørsel</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity
-            style={styles.deleteButton}
-            onPress={handleDeleteRequest}
-          >
+          <TouchableOpacity style={styles.deleteButton} onPress={handleDeleteRequest}>
             <Ionicons name="trash-outline" size={20} color="#FFFFFF" />
           </TouchableOpacity>
         </View>
@@ -1923,4 +1966,3 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
 });
-

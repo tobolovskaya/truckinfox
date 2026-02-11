@@ -15,10 +15,26 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTranslation } from 'react-i18next';
 import { db } from '../../lib/firebase';
-import { doc, getDoc, updateDoc, collection, query, where, getDocs, serverTimestamp } from 'firebase/firestore';
+import {
+  doc,
+  getDoc,
+  updateDoc,
+  collection,
+  query,
+  where,
+  getDocs,
+  serverTimestamp,
+} from 'firebase/firestore';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { theme } from '../../theme/theme';
-import { colors, spacing, fontSize, fontWeight, borderRadius, shadows } from '../../lib/sharedStyles';
+import {
+  colors,
+  spacing,
+  fontSize,
+  fontWeight,
+  borderRadius,
+  shadows,
+} from '../../lib/sharedStyles';
 
 const CARGO_TYPES = [
   { id: 'furniture', icon: 'bed-outline' },
@@ -60,13 +76,13 @@ export default function EditRequestScreen() {
   const { user } = useAuth();
   const { t } = useTranslation();
   const router = useRouter();
-  
+
   const [request, setRequest] = useState<CargoRequest | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [showPickupDate, setShowPickupDate] = useState(false);
   const [showDeliveryDate, setShowDeliveryDate] = useState(false);
-  
+
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -96,14 +112,14 @@ export default function EditRequestScreen() {
       }
 
       const data = { id: requestSnap.id, ...requestSnap.data() } as any;
-      
+
       // Check if user owns this request
       if (data.user_id !== user?.uid) {
         Alert.alert(t('error'), 'You can only edit your own requests');
         router.back();
         return;
       }
-      
+
       // Check if request has accepted bids
       const bidsQuery = query(
         collection(db, 'bids'),
@@ -111,13 +127,13 @@ export default function EditRequestScreen() {
         where('status', '==', 'accepted')
       );
       const bidsSnap = await getDocs(bidsQuery);
-      
+
       if (!bidsSnap.empty) {
         Alert.alert(t('error'), 'Cannot edit request with accepted bids');
         router.back();
         return;
       }
-      
+
       setRequest(data);
       setFormData({
         title: data.title,
@@ -202,16 +218,12 @@ export default function EditRequestScreen() {
         updated_at: serverTimestamp(),
       });
 
-      Alert.alert(
-        t('success'),
-        'Request updated successfully',
-        [
-          {
-            text: t('ok'),
-            onPress: () => router.back(),
-          },
-        ]
-      );
+      Alert.alert(t('success'), 'Request updated successfully', [
+        {
+          text: t('ok'),
+          onPress: () => router.back(),
+        },
+      ]);
     } catch (error: any) {
       Alert.alert(t('error'), error.message);
     } finally {
@@ -234,10 +246,7 @@ export default function EditRequestScreen() {
     <SafeAreaView style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => router.back()}
-        >
+        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
           <Ionicons name="arrow-back" size={24} color={theme.iconColors.dark} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Edit Request</Text>
@@ -258,14 +267,14 @@ export default function EditRequestScreen() {
         {/* Basic Information */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>{t('basicInformation')}</Text>
-          
+
           <View style={styles.inputContainer}>
             <Text style={styles.label}>{t('title')} *</Text>
             <TextInput
               style={styles.input}
               placeholder={t('enterTitle')}
               value={formData.title}
-              onChangeText={(value) => updateFormData('title', value)}
+              onChangeText={value => updateFormData('title', value)}
               placeholderTextColor="#9CA3AF"
             />
           </View>
@@ -276,7 +285,7 @@ export default function EditRequestScreen() {
               style={[styles.input, styles.textArea]}
               placeholder={t('enterDescription')}
               value={formData.description}
-              onChangeText={(value) => updateFormData('description', value)}
+              onChangeText={value => updateFormData('description', value)}
               multiline
               numberOfLines={4}
               textAlignVertical="top"
@@ -289,12 +298,12 @@ export default function EditRequestScreen() {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>{t('cargoType')} *</Text>
           <View style={styles.cargoTypeGrid}>
-            {CARGO_TYPES.map((type) => (
+            {CARGO_TYPES.map(type => (
               <TouchableOpacity
                 key={type.id}
                 style={[
                   styles.cargoTypeCard,
-                  formData.cargo_type === type.id && styles.cargoTypeCardActive
+                  formData.cargo_type === type.id && styles.cargoTypeCardActive,
                 ]}
                 onPress={() => updateFormData('cargo_type', type.id)}
               >
@@ -303,10 +312,12 @@ export default function EditRequestScreen() {
                   size={24}
                   color={formData.cargo_type === type.id ? '#FF7043' : '#616161'}
                 />
-                <Text style={[
-                  styles.cargoTypeText,
-                  formData.cargo_type === type.id && styles.cargoTypeTextActive
-                ]}>
+                <Text
+                  style={[
+                    styles.cargoTypeText,
+                    formData.cargo_type === type.id && styles.cargoTypeTextActive,
+                  ]}
+                >
                   {t(type.id)}
                 </Text>
               </TouchableOpacity>
@@ -317,7 +328,7 @@ export default function EditRequestScreen() {
         {/* Cargo Details */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>{t('cargoDetails')}</Text>
-          
+
           <View style={styles.row}>
             <View style={[styles.inputContainer, { flex: 1, marginRight: 8 }]}>
               <Text style={styles.label}>{t('weight')} (kg) *</Text>
@@ -325,7 +336,7 @@ export default function EditRequestScreen() {
                 style={styles.input}
                 placeholder="0"
                 value={formData.weight}
-                onChangeText={(value) => updateFormData('weight', value)}
+                onChangeText={value => updateFormData('weight', value)}
                 keyboardType="numeric"
                 placeholderTextColor="#9CA3AF"
               />
@@ -336,7 +347,7 @@ export default function EditRequestScreen() {
                 style={styles.input}
                 placeholder="L x W x H"
                 value={formData.dimensions}
-                onChangeText={(value) => updateFormData('dimensions', value)}
+                onChangeText={value => updateFormData('dimensions', value)}
                 placeholderTextColor="#9CA3AF"
               />
             </View>
@@ -346,16 +357,21 @@ export default function EditRequestScreen() {
         {/* Route */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>{t('route')}</Text>
-          
+
           <View style={styles.inputContainer}>
             <Text style={styles.label}>{t('fromAddress')} *</Text>
             <View style={styles.addressInputContainer}>
-              <Ionicons name="location-outline" size={20} color={theme.iconColors.success} style={styles.addressIcon} />
+              <Ionicons
+                name="location-outline"
+                size={20}
+                color={theme.iconColors.success}
+                style={styles.addressIcon}
+              />
               <TextInput
                 style={styles.addressInput}
                 placeholder={t('enterFromAddress')}
                 value={formData.from_address}
-                onChangeText={(value) => updateFormData('from_address', value)}
+                onChangeText={value => updateFormData('from_address', value)}
                 placeholderTextColor="#9CA3AF"
               />
             </View>
@@ -364,12 +380,17 @@ export default function EditRequestScreen() {
           <View style={styles.inputContainer}>
             <Text style={styles.label}>{t('toAddress')} *</Text>
             <View style={styles.addressInputContainer}>
-              <Ionicons name="location-outline" size={20} color={theme.iconColors.error} style={styles.addressIcon} />
+              <Ionicons
+                name="location-outline"
+                size={20}
+                color={theme.iconColors.error}
+                style={styles.addressIcon}
+              />
               <TextInput
                 style={styles.addressInput}
                 placeholder={t('enterToAddress')}
                 value={formData.to_address}
-                onChangeText={(value) => updateFormData('to_address', value)}
+                onChangeText={value => updateFormData('to_address', value)}
                 placeholderTextColor="#9CA3AF"
               />
             </View>
@@ -379,31 +400,21 @@ export default function EditRequestScreen() {
         {/* Dates */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>{t('dates')}</Text>
-          
+
           <View style={styles.row}>
             <View style={[styles.inputContainer, { flex: 1, marginRight: 8 }]}>
               <Text style={styles.label}>{t('pickupDate')} *</Text>
-              <TouchableOpacity
-                style={styles.dateButton}
-                onPress={() => setShowPickupDate(true)}
-              >
+              <TouchableOpacity style={styles.dateButton} onPress={() => setShowPickupDate(true)}>
                 <Ionicons name="calendar-outline" size={20} color={theme.iconColors.gray.primary} />
-                <Text style={styles.dateText}>
-                  {formData.pickup_date.toLocaleDateString()}
-                </Text>
+                <Text style={styles.dateText}>{formData.pickup_date.toLocaleDateString()}</Text>
               </TouchableOpacity>
             </View>
-            
+
             <View style={[styles.inputContainer, { flex: 1, marginLeft: 8 }]}>
               <Text style={styles.label}>{t('deliveryDate')}</Text>
-              <TouchableOpacity
-                style={styles.dateButton}
-                onPress={() => setShowDeliveryDate(true)}
-              >
+              <TouchableOpacity style={styles.dateButton} onPress={() => setShowDeliveryDate(true)}>
                 <Ionicons name="calendar-outline" size={20} color={theme.iconColors.gray.primary} />
-                <Text style={styles.dateText}>
-                  {formData.delivery_date.toLocaleDateString()}
-                </Text>
+                <Text style={styles.dateText}>{formData.delivery_date.toLocaleDateString()}</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -412,14 +423,14 @@ export default function EditRequestScreen() {
         {/* Pricing */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>{t('pricing')} *</Text>
-          
+
           <View style={styles.priceTypeContainer}>
-            {PRICE_TYPES.map((type) => (
+            {PRICE_TYPES.map(type => (
               <TouchableOpacity
                 key={type.id}
                 style={[
                   styles.priceTypeCard,
-                  formData.price_type === type.id && styles.priceTypeCardActive
+                  formData.price_type === type.id && styles.priceTypeCardActive,
                 ]}
                 onPress={() => updateFormData('price_type', type.id)}
               >
@@ -428,10 +439,12 @@ export default function EditRequestScreen() {
                   size={20}
                   color={formData.price_type === type.id ? '#FF7043' : '#616161'}
                 />
-                <Text style={[
-                  styles.priceTypeText,
-                  formData.price_type === type.id && styles.priceTypeTextActive
-                ]}>
+                <Text
+                  style={[
+                    styles.priceTypeText,
+                    formData.price_type === type.id && styles.priceTypeTextActive,
+                  ]}
+                >
                   {t(type.id)}
                 </Text>
               </TouchableOpacity>
@@ -445,7 +458,7 @@ export default function EditRequestScreen() {
                 style={styles.input}
                 placeholder="0"
                 value={formData.price}
-                onChangeText={(value) => updateFormData('price', value)}
+                onChangeText={value => updateFormData('price', value)}
                 keyboardType="numeric"
                 placeholderTextColor="#9CA3AF"
               />

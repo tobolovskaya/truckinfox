@@ -10,7 +10,11 @@ import {
   Dimensions,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { searchNorwegianPlaces, getPlaceDetails, formatNorwegianAddress } from '../utils/googlePlaces';
+import {
+  searchNorwegianPlaces,
+  getPlaceDetails,
+  formatNorwegianAddress,
+} from '../utils/googlePlaces';
 import { theme } from '../theme/theme';
 import { getPlatformShadow } from '../lib/platformShadow';
 import { colors, spacing, fontSize, fontWeight, borderRadius, shadows } from '../lib/sharedStyles';
@@ -45,7 +49,7 @@ export default function AddressInput({
   value,
   onAddressSelect,
   onChangeText,
-  style
+  style,
 }: AddressInputProps) {
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -112,10 +116,7 @@ export default function AddressInput({
   };
 
   const renderSuggestion = ({ item }: { item: Suggestion }) => (
-    <TouchableOpacity
-      style={styles.suggestionItem}
-      onPress={() => handleSuggestionSelect(item)}
-    >
+    <TouchableOpacity style={styles.suggestionItem} onPress={() => handleSuggestionSelect(item)}>
       <Ionicons name="location-outline" size={20} color={theme.iconColors.primary} />
       <View style={styles.suggestionText}>
         <Text style={styles.suggestionMainText}>
@@ -143,9 +144,7 @@ export default function AddressInput({
           autoCorrect={false}
           autoCapitalize="words"
         />
-        {loading && (
-          <Ionicons name="refresh" size={20} color={theme.iconColors.primary} />
-        )}
+        {loading && <Ionicons name="refresh" size={20} color={theme.iconColors.primary} />}
       </View>
 
       <Modal
@@ -163,7 +162,7 @@ export default function AddressInput({
             <FlatList
               data={suggestions}
               renderItem={renderSuggestion}
-              keyExtractor={(item) => item.place_id}
+              keyExtractor={item => item.place_id}
               style={[styles.suggestionsList, { maxHeight: SCREEN_HEIGHT * 0.4 }]}
               showsVerticalScrollIndicator={false}
               keyboardShouldPersistTaps="handled"

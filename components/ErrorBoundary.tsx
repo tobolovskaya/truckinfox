@@ -40,12 +40,10 @@ export class ErrorBoundary extends React.Component<Props, State> {
             <View style={styles.iconContainer}>
               <Ionicons name="alert-circle-outline" size={80} color={colors.error} />
             </View>
-            
+
             <Text style={styles.title}>Noe gikk galt</Text>
-            
-            <Text style={styles.message}>
-              En uventet feil oppstod. Vennligst prøv igjen.
-            </Text>
+
+            <Text style={styles.message}>En uventet feil oppstod. Vennligst prøv igjen.</Text>
 
             {__DEV__ && this.state.error && (
               <View style={styles.errorDetails}>
@@ -59,10 +57,7 @@ export class ErrorBoundary extends React.Component<Props, State> {
               </View>
             )}
 
-            <TouchableOpacity
-              style={styles.button}
-              onPress={this.handleReset}
-            >
+            <TouchableOpacity style={styles.button} onPress={this.handleReset}>
               <Ionicons name="refresh-outline" size={20} color={colors.white} />
               <Text style={styles.buttonText}>Prøv igjen</Text>
             </TouchableOpacity>

@@ -1,12 +1,12 @@
 /**
  * React hook for managing notifications
- * 
+ *
  * Provides real-time notifications and unread count for the current user.
  */
 
 import { useState, useEffect } from 'react';
-import { 
-  subscribeToNotifications, 
+import {
+  subscribeToNotifications,
   subscribeToUnreadCount,
   markNotificationAsRead,
   markAllNotificationsAsRead,
@@ -26,19 +26,19 @@ interface UseNotificationsResult {
 
 /**
  * Hook to manage user notifications with real-time updates
- * 
+ *
  * @param maxNotifications - Maximum number of notifications to retrieve
  * @returns Notifications state and actions
- * 
+ *
  * @example
  * function NotificationsScreen() {
  *   const { notifications, unreadCount, markAsRead } = useNotifications();
- *   
+ *
  *   return (
  *     <View>
  *       <Text>Unread: {unreadCount}</Text>
  *       {notifications.map(notif => (
- *         <TouchableOpacity 
+ *         <TouchableOpacity
  *           key={notif.id}
  *           onPress={() => markAsRead(notif.id)}
  *         >
@@ -71,7 +71,7 @@ export function useNotifications(maxNotifications: number = 50): UseNotification
     // Subscribe to notifications
     const unsubscribeNotifications = subscribeToNotifications(
       user.uid,
-      (newNotifications) => {
+      newNotifications => {
         setNotifications(newNotifications);
         setLoading(false);
       },
@@ -79,12 +79,9 @@ export function useNotifications(maxNotifications: number = 50): UseNotification
     );
 
     // Subscribe to unread count
-    const unsubscribeUnreadCount = subscribeToUnreadCount(
-      user.uid,
-      (count) => {
-        setUnreadCount(count);
-      }
-    );
+    const unsubscribeUnreadCount = subscribeToUnreadCount(user.uid, count => {
+      setUnreadCount(count);
+    });
 
     // Cleanup subscriptions
     return () => {
@@ -128,15 +125,15 @@ export function useNotifications(maxNotifications: number = 50): UseNotification
 
 /**
  * Hook to only track unread count (lighter weight than full notifications)
- * 
+ *
  * @returns Unread count and loading state
- * 
+ *
  * @example
  * function TabBar() {
  *   const { unreadCount } = useUnreadCount();
- *   
+ *
  *   return (
- *     <Tab.Screen 
+ *     <Tab.Screen
  *       name="Notifications"
  *       options={{ tabBarBadge: unreadCount > 0 ? unreadCount : undefined }}
  *     />
@@ -157,7 +154,7 @@ export function useUnreadCount(): { unreadCount: number; loading: boolean } {
 
     setLoading(true);
 
-    const unsubscribe = subscribeToUnreadCount(user.uid, (count) => {
+    const unsubscribe = subscribeToUnreadCount(user.uid, count => {
       setUnreadCount(count);
       setLoading(false);
     });

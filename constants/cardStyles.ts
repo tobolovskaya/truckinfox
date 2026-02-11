@@ -3,8 +3,6 @@
  * Used in home.tsx (requests) and orders.tsx (orders)
  */
 
-import { theme } from '../theme/theme';
-
 // Card dimensions and spacing
 export const CARD_STYLES = {
   borderRadius: 12, // Updated to match ui.txt spec
@@ -31,38 +29,38 @@ export const BADGE_STYLES = {
 export const STATUS_COLORS = {
   active: {
     background: '#DCFCE7', // Very light green
-    text: '#166534',       // Dark green
-    icon: '#10B981',       // Medium green
+    text: '#166534', // Dark green
+    icon: '#10B981', // Medium green
   },
   in_progress: {
     background: '#FEF3C7', // Light amber
-    text: '#92400E',       // Dark amber
-    icon: '#F59E0B',       // Medium amber
+    text: '#92400E', // Dark amber
+    icon: '#F59E0B', // Medium amber
   },
   in_transit: {
     background: '#FFE0D9', // Light orange (secondary)
-    text: '#D84315',       // Dark orange
-    icon: '#FF8A65',       // Medium orange (secondary)
+    text: '#D84315', // Dark orange
+    icon: '#FF8A65', // Medium orange (secondary)
   },
   delivered: {
     background: '#E8F5E9', // Light green
-    text: '#2E7D32',       // Dark green
-    icon: '#4CAF50',       // Medium green (success)
+    text: '#2E7D32', // Dark green
+    icon: '#4CAF50', // Medium green (success)
   },
   completed: {
     background: '#E8F5E9', // Light green
-    text: '#2E7D32',       // Dark green
-    icon: '#4CAF50',       // Medium green (success)
+    text: '#2E7D32', // Dark green
+    icon: '#4CAF50', // Medium green (success)
   },
   cancelled: {
     background: '#FFEBEE', // Light red
-    text: '#C62828',       // Dark red
-    icon: '#F44336',       // Medium red (error)
+    text: '#C62828', // Dark red
+    icon: '#F44336', // Medium red (error)
   },
   default: {
     background: '#FAFAFA', // Light gray
-    text: '#616161',       // Medium gray (text secondary)
-    icon: '#9CA3AF',       // Light gray
+    text: '#616161', // Medium gray (text secondary)
+    icon: '#9CA3AF', // Light gray
   },
 };
 
@@ -70,39 +68,39 @@ export const STATUS_COLORS = {
 export const CARGO_TYPE_COLORS = {
   furniture: {
     background: '#F3E8FF', // Very light purple
-    text: '#7C3AED',       // Medium purple
+    text: '#7C3AED', // Medium purple
   },
   electronics: {
     background: '#FFE0D9', // Very light orange
-    text: '#FF8A65',       // Medium orange (secondary)
+    text: '#FF8A65', // Medium orange (secondary)
   },
   construction: {
     background: '#FFF3E0', // Very light orange/amber
-    text: '#FB8C00',       // Medium orange
+    text: '#FB8C00', // Medium orange
   },
   automotive: {
     background: '#F9FAFB', // Very light gray
-    text: '#6B7280',       // Medium gray
+    text: '#6B7280', // Medium gray
   },
   boats: {
     background: '#E0F2FE', // Very light sky blue
-    text: '#0284C7',       // Medium sky blue
+    text: '#0284C7', // Medium sky blue
   },
   campingvogn: {
     background: '#FEF3C7', // Very light amber
-    text: '#D97706',       // Medium amber
+    text: '#D97706', // Medium amber
   },
   machinery: {
     background: '#F5F3FF', // Very light violet
-    text: '#7C3AED',       // Medium violet
+    text: '#7C3AED', // Medium violet
   },
   transport: {
     background: '#F0F9FF', // Very light sky blue
-    text: '#06B6D4',       // Medium cyan
+    text: '#06B6D4', // Medium cyan
   },
   other: {
     background: '#F9FAFB', // Very light gray
-    text: '#6B7280',       // Medium gray
+    text: '#6B7280', // Medium gray
   },
 };
 

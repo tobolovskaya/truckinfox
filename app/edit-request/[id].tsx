@@ -26,7 +26,15 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import { GooglePlacesAutocomplete } from 'react-native-google-places-autocomplete';
 import { calculateDistance } from '../../utils/googlePlaces';
 import { theme } from '../../theme/theme';
-import { colors, spacing, fontSize, fontWeight, borderRadius, shadows, gradients } from '../../lib/sharedStyles';
+import {
+  colors,
+  spacing,
+  fontSize,
+  fontWeight,
+  borderRadius,
+  shadows,
+  gradients,
+} from '../../lib/sharedStyles';
 import { fetchWithTimeout } from '../../utils/fetchWithTimeout';
 
 const CARGO_TYPES = [
@@ -51,7 +59,7 @@ export default function EditRequestScreen() {
   const { t } = useTranslation();
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  
+
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -69,14 +77,16 @@ export default function EditRequestScreen() {
     price_type: '',
     price: '',
   });
-  
+
   const [showPickupDate, setShowPickupDate] = useState(false);
   const [showDeliveryDate, setShowDeliveryDate] = useState(false);
   const [loading, setLoading] = useState(false);
   const [loadingRequest, setLoadingRequest] = useState(true);
-  const [fieldErrors, setFieldErrors] = useState<{[key: string]: string}>({});
-  const [touchedFields, setTouchedFields] = useState<{[key: string]: boolean}>({});
-  const [distanceInfo, setDistanceInfo] = useState<{distance: string, duration: string} | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<{ [key: string]: string }>({});
+  const [touchedFields, setTouchedFields] = useState<{ [key: string]: boolean }>({});
+  const [distanceInfo, setDistanceInfo] = useState<{ distance: string; duration: string } | null>(
+    null
+  );
   const [images, setImages] = useState<string[]>([]);
   const [existingImages, setExistingImages] = useState<string[]>([]);
   const [imagesToDelete, setImagesToDelete] = useState<string[]>([]);
@@ -98,7 +108,8 @@ export default function EditRequestScreen() {
       case 'description':
         if (!value || !value.toString().trim()) return 'Beskrivelse er påkrevd';
         if (value.toString().trim().length < 10) return 'Beskrivelse må være minst 10 tegn';
-        if (value.toString().trim().length > 500) return 'Beskrivelse kan ikke være lengre enn 500 tegn';
+        if (value.toString().trim().length > 500)
+          return 'Beskrivelse kan ikke være lengre enn 500 tegn';
         return '';
 
       case 'cargo_type':
@@ -114,7 +125,8 @@ export default function EditRequestScreen() {
         return '';
 
       case 'dimensions':
-        if (value && value.toString().trim().length > 50) return 'Dimensjoner kan ikke være lengre enn 50 tegn';
+        if (value && value.toString().trim().length > 50)
+          return 'Dimensjoner kan ikke være lengre enn 50 tegn';
         return '';
 
       case 'from_address':
@@ -286,9 +298,18 @@ export default function EditRequestScreen() {
 
   const validateForm = () => {
     // Validate all fields and mark them as touched
-    const fieldsToValidate = ['title', 'description', 'cargo_type', 'weight', 'from_address', 'to_address', 'price_type', 'price'];
-    const newErrors: {[key: string]: string} = {};
-    const newTouched: {[key: string]: boolean} = {};
+    const fieldsToValidate = [
+      'title',
+      'description',
+      'cargo_type',
+      'weight',
+      'from_address',
+      'to_address',
+      'price_type',
+      'price',
+    ];
+    const newErrors: { [key: string]: string } = {};
+    const newTouched: { [key: string]: boolean } = {};
 
     fieldsToValidate.forEach(field => {
       newTouched[field] = true;
@@ -314,11 +335,10 @@ export default function EditRequestScreen() {
   // Image compression function
   const compressImage = async (uri: string) => {
     try {
-      const manipResult = await manipulateAsync(
-        uri,
-        [{ resize: { width: 1200 } }],
-        { compress: 0.7, format: SaveFormat.JPEG }
-      );
+      const manipResult = await manipulateAsync(uri, [{ resize: { width: 1200 } }], {
+        compress: 0.7,
+        format: SaveFormat.JPEG,
+      });
       return manipResult.uri;
     } catch (error) {
       console.error('Error compressing image:', error);
@@ -332,7 +352,10 @@ export default function EditRequestScreen() {
       const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
 
       if (!permissionResult.granted) {
-        Alert.alert('Tillatelse nødvendig', 'Vi trenger tilgang til bildene dine for å laste opp bilder');
+        Alert.alert(
+          'Tillatelse nødvendig',
+          'Vi trenger tilgang til bildene dine for å laste opp bilder'
+        );
         return;
       }
 
@@ -390,9 +413,13 @@ export default function EditRequestScreen() {
         const compressedUri = await compressImage(uri);
 
         // Convert to blob for upload with timeout
-        const response = await fetchWithTimeout(compressedUri, {
-          method: 'GET',
-        }, 15000); // 15 second timeout for image download
+        const response = await fetchWithTimeout(
+          compressedUri,
+          {
+            method: 'GET',
+          },
+          15000
+        ); // 15 second timeout for image download
         const blob = await response.blob();
 
         // Generate filename
@@ -472,25 +499,21 @@ export default function EditRequestScreen() {
       // Update request with final image list
       await updateDoc(requestRef, { images: finalImages });
 
-      Alert.alert(
-        t('success'),
-        'Forespørselen er oppdatert',
-        [
-          {
-            text: t('ok'),
-            onPress: () => {
-              try {
-                router.back();
-              } catch (error) {
-                console.warn('Navigation error:', error);
-                setTimeout(() => {
-                  router.push(`/request-details/${id}`);
-                }, 100);
-              }
-            },
+      Alert.alert(t('success'), 'Forespørselen er oppdatert', [
+        {
+          text: t('ok'),
+          onPress: () => {
+            try {
+              router.back();
+            } catch (error) {
+              console.warn('Navigation error:', error);
+              setTimeout(() => {
+                router.push(`/request-details/${id}`);
+              }, 100);
+            }
           },
-        ]
-      );
+        },
+      ]);
     } catch (error: any) {
       Alert.alert(t('error'), error.message);
     } finally {
@@ -517,58 +540,75 @@ export default function EditRequestScreen() {
         extraScrollHeight={100}
         enableResetScrollToCoords={false}
       >
-      {/* Header */}
-      <View style={[styles.header, { paddingTop: insets.top + 16 }]}>
-        <Text style={styles.headerTitle}>Rediger forespørsel</Text>
-        <View style={styles.headerButtons}>
-          <TouchableOpacity
-            style={[
-              styles.submitButton,
-              (hasErrors() || loading) && styles.submitButtonDisabled
-            ]}
-            onPress={handleSubmit}
-            disabled={loading || hasErrors()}
-          >
-            {loading ? (
-              <Text style={styles.submitButtonText}>Oppdaterer...</Text>
-            ) : hasErrors() ? (
-              <>
-                <Ionicons name="alert-circle-outline" size={18} color={colors.white} style={{ marginRight: 6 }} />
-                <Text style={styles.submitButtonText}>Rett opp feil</Text>
-              </>
-            ) : (
-              <>
-                <Text style={styles.submitButtonText}>Oppdater</Text>
-                <Ionicons name="checkmark-circle" size={18} color={colors.white} style={{ marginLeft: 6 }} />
-              </>
-            )}
-          </TouchableOpacity>
+        {/* Header */}
+        <View style={[styles.header, { paddingTop: insets.top + 16 }]}>
+          <Text style={styles.headerTitle}>Rediger forespørsel</Text>
+          <View style={styles.headerButtons}>
+            <TouchableOpacity
+              style={[styles.submitButton, (hasErrors() || loading) && styles.submitButtonDisabled]}
+              onPress={handleSubmit}
+              disabled={loading || hasErrors()}
+            >
+              {loading ? (
+                <Text style={styles.submitButtonText}>Oppdaterer...</Text>
+              ) : hasErrors() ? (
+                <>
+                  <Ionicons
+                    name="alert-circle-outline"
+                    size={18}
+                    color={colors.white}
+                    style={{ marginRight: 6 }}
+                  />
+                  <Text style={styles.submitButtonText}>Rett opp feil</Text>
+                </>
+              ) : (
+                <>
+                  <Text style={styles.submitButtonText}>Oppdater</Text>
+                  <Ionicons
+                    name="checkmark-circle"
+                    size={18}
+                    color={colors.white}
+                    style={{ marginLeft: 6 }}
+                  />
+                </>
+              )}
+            </TouchableOpacity>
+          </View>
         </View>
-      </View>
         {/* Basic Information */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>{t('basicInformation')}</Text>
           </View>
-          
+
           <View style={styles.inputContainer}>
             <Text style={styles.label}>{t('title')} *</Text>
             <View style={styles.inputWithIcon}>
               <Ionicons
                 name="document-text-outline"
                 size={20}
-                color={getFieldError('title') ? theme.iconColors.error : isFieldValid('title') ? theme.iconColors.success : theme.iconColors.gray.primary}
+                color={
+                  getFieldError('title')
+                    ? theme.iconColors.error
+                    : isFieldValid('title')
+                      ? theme.iconColors.success
+                      : theme.iconColors.gray.primary
+                }
                 style={styles.inputIcon}
               />
               <TextInput
                 style={[
                   styles.input,
                   styles.inputWithPadding,
-                  getFieldError('title') ? styles.inputError : isFieldValid('title') ? styles.inputValid : null
+                  getFieldError('title')
+                    ? styles.inputError
+                    : isFieldValid('title')
+                      ? styles.inputValid
+                      : null,
                 ]}
                 placeholder={t('enterTitle')}
                 value={formData.title}
-                onChangeText={(value) => updateFormData('title', value)}
+                onChangeText={value => updateFormData('title', value)}
                 onBlur={() => handleFieldBlur('title')}
                 placeholderTextColor={colors.text.tertiary}
               />
@@ -576,9 +616,7 @@ export default function EditRequestScreen() {
             {getFieldError('title') && (
               <Text style={styles.errorText}>{getFieldError('title')}</Text>
             )}
-            {isFieldValid('title') && (
-              <Text style={styles.successText}>OK</Text>
-            )}
+            {isFieldValid('title') && <Text style={styles.successText}>OK</Text>}
           </View>
 
           <View style={styles.inputContainer}>
@@ -587,7 +625,13 @@ export default function EditRequestScreen() {
               <Ionicons
                 name="text-outline"
                 size={20}
-                color={getFieldError('description') ? theme.iconColors.error : isFieldValid('description') ? theme.iconColors.success : theme.iconColors.gray.primary}
+                color={
+                  getFieldError('description')
+                    ? theme.iconColors.error
+                    : isFieldValid('description')
+                      ? theme.iconColors.success
+                      : theme.iconColors.gray.primary
+                }
                 style={[styles.inputIcon, styles.textAreaIcon]}
               />
               <TextInput
@@ -595,11 +639,15 @@ export default function EditRequestScreen() {
                   styles.input,
                   styles.textArea,
                   styles.inputWithPadding,
-                  getFieldError('description') ? styles.inputError : isFieldValid('description') ? styles.inputValid : null
+                  getFieldError('description')
+                    ? styles.inputError
+                    : isFieldValid('description')
+                      ? styles.inputValid
+                      : null,
                 ]}
                 placeholder={t('enterDescription')}
                 value={formData.description}
-                onChangeText={(value) => updateFormData('description', value)}
+                onChangeText={value => updateFormData('description', value)}
                 onBlur={() => handleFieldBlur('description')}
                 multiline
                 numberOfLines={4}
@@ -610,9 +658,7 @@ export default function EditRequestScreen() {
             {getFieldError('description') && (
               <Text style={styles.errorText}>{getFieldError('description')}</Text>
             )}
-            {isFieldValid('description') && (
-              <Text style={styles.successText}>OK</Text>
-            )}
+            {isFieldValid('description') && <Text style={styles.successText}>OK</Text>}
           </View>
         </View>
 
@@ -626,12 +672,12 @@ export default function EditRequestScreen() {
             <Text style={styles.errorText}>{getFieldError('cargo_type')}</Text>
           )}
           <View style={styles.cargoTypeList}>
-            {CARGO_TYPES.map((type) => (
+            {CARGO_TYPES.map(type => (
               <TouchableOpacity
                 key={type.id}
                 style={[
                   styles.cargoTypeListItem,
-                  formData.cargo_type === type.id && styles.cargoTypeListItemSelected
+                  formData.cargo_type === type.id && styles.cargoTypeListItemSelected,
                 ]}
                 onPress={() => {
                   updateFormData('cargo_type', type.id);
@@ -649,12 +695,16 @@ export default function EditRequestScreen() {
                   <Ionicons
                     name={type.icon as any}
                     size={24}
-                    color={formData.cargo_type === type.id ? colors.white : theme.iconColors.gray.primary}
+                    color={
+                      formData.cargo_type === type.id ? colors.white : theme.iconColors.gray.primary
+                    }
                   />
-                  <Text style={[
-                    styles.cargoTypeListLabel,
-                    formData.cargo_type === type.id && styles.cargoTypeListLabelActive
-                  ]}>
+                  <Text
+                    style={[
+                      styles.cargoTypeListLabel,
+                      formData.cargo_type === type.id && styles.cargoTypeListLabelActive,
+                    ]}
+                  >
                     {type.label}
                   </Text>
                 </View>
@@ -671,7 +721,7 @@ export default function EditRequestScreen() {
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>{t('cargoDetails')}</Text>
           </View>
-          
+
           <View style={styles.row}>
             <View style={[styles.inputContainer, { flex: 1, marginRight: 8 }]}>
               <Text style={styles.label}>{t('weight')} (kg) *</Text>
@@ -679,27 +729,47 @@ export default function EditRequestScreen() {
                 <Ionicons
                   name="barbell-outline"
                   size={20}
-                  color={getFieldError('weight') ? theme.iconColors.error : isFieldValid('weight') ? theme.iconColors.success : theme.iconColors.gray.primary}
+                  color={
+                    getFieldError('weight')
+                      ? theme.iconColors.error
+                      : isFieldValid('weight')
+                        ? theme.iconColors.success
+                        : theme.iconColors.gray.primary
+                  }
                   style={styles.inputIcon}
                 />
                 <TextInput
                   style={[
                     styles.input,
                     styles.inputWithPadding,
-                    getFieldError('weight') ? styles.inputError : isFieldValid('weight') ? styles.inputValid : null
+                    getFieldError('weight')
+                      ? styles.inputError
+                      : isFieldValid('weight')
+                        ? styles.inputValid
+                        : null,
                   ]}
                   placeholder="0"
                   value={formData.weight}
-                  onChangeText={(value) => updateFormData('weight', value)}
+                  onChangeText={value => updateFormData('weight', value)}
                   onBlur={() => handleFieldBlur('weight')}
                   keyboardType="numeric"
                   placeholderTextColor={colors.text.tertiary}
                 />
                 {isFieldValid('weight') && (
-                  <Ionicons name="checkmark-circle" size={20} color={theme.iconColors.success} style={styles.validationIcon} />
+                  <Ionicons
+                    name="checkmark-circle"
+                    size={20}
+                    color={theme.iconColors.success}
+                    style={styles.validationIcon}
+                  />
                 )}
                 {getFieldError('weight') && (
-                  <Ionicons name="close-circle" size={20} color={theme.iconColors.error} style={styles.validationIcon} />
+                  <Ionicons
+                    name="close-circle"
+                    size={20}
+                    color={theme.iconColors.error}
+                    style={styles.validationIcon}
+                  />
                 )}
               </View>
               {getFieldError('weight') && (
@@ -712,26 +782,46 @@ export default function EditRequestScreen() {
                 <Ionicons
                   name="resize-outline"
                   size={20}
-                  color={getFieldError('dimensions') ? theme.iconColors.error : isFieldValid('dimensions') ? theme.iconColors.success : theme.iconColors.gray.primary}
+                  color={
+                    getFieldError('dimensions')
+                      ? theme.iconColors.error
+                      : isFieldValid('dimensions')
+                        ? theme.iconColors.success
+                        : theme.iconColors.gray.primary
+                  }
                   style={styles.inputIcon}
                 />
                 <TextInput
                   style={[
                     styles.input,
                     styles.inputWithPadding,
-                    getFieldError('dimensions') ? styles.inputError : isFieldValid('dimensions') ? styles.inputValid : null
+                    getFieldError('dimensions')
+                      ? styles.inputError
+                      : isFieldValid('dimensions')
+                        ? styles.inputValid
+                        : null,
                   ]}
                   placeholder="L x W x H"
                   value={formData.dimensions}
-                  onChangeText={(value) => updateFormData('dimensions', value)}
+                  onChangeText={value => updateFormData('dimensions', value)}
                   onBlur={() => handleFieldBlur('dimensions')}
                   placeholderTextColor={colors.text.tertiary}
                 />
                 {isFieldValid('dimensions') && (
-                  <Ionicons name="checkmark-circle" size={20} color={theme.iconColors.success} style={styles.validationIcon} />
+                  <Ionicons
+                    name="checkmark-circle"
+                    size={20}
+                    color={theme.iconColors.success}
+                    style={styles.validationIcon}
+                  />
                 )}
                 {getFieldError('dimensions') && (
-                  <Ionicons name="close-circle" size={20} color={theme.iconColors.error} style={styles.validationIcon} />
+                  <Ionicons
+                    name="close-circle"
+                    size={20}
+                    color={theme.iconColors.error}
+                    style={styles.validationIcon}
+                  />
                 )}
               </View>
               {getFieldError('dimensions') && (
@@ -750,20 +840,30 @@ export default function EditRequestScreen() {
 
           <View style={styles.photoGrid}>
             {/* Existing images */}
-            {existingImages.filter(img => !imagesToDelete.includes(img)).map((uri, index) => (
-              <TouchableOpacity key={`existing-${index}`} style={styles.photoGridItem} onPress={() => {
-                setImagesToDelete(prev => [...prev, uri]);
-              }}>
-                <Image source={{ uri }} style={styles.photoGridImage} />
-                <View style={styles.removePhotoButton}>
-                  <Ionicons name="close-circle" size={24} color="#EF4444" />
-                </View>
-              </TouchableOpacity>
-            ))}
+            {existingImages
+              .filter(img => !imagesToDelete.includes(img))
+              .map((uri, index) => (
+                <TouchableOpacity
+                  key={`existing-${index}`}
+                  style={styles.photoGridItem}
+                  onPress={() => {
+                    setImagesToDelete(prev => [...prev, uri]);
+                  }}
+                >
+                  <Image source={{ uri }} style={styles.photoGridImage} />
+                  <View style={styles.removePhotoButton}>
+                    <Ionicons name="close-circle" size={24} color="#EF4444" />
+                  </View>
+                </TouchableOpacity>
+              ))}
 
             {/* New images */}
             {images.map((uri, index) => (
-              <TouchableOpacity key={`new-${index}`} style={styles.photoGridItem} onPress={() => removeImage(index)}>
+              <TouchableOpacity
+                key={`new-${index}`}
+                style={styles.photoGridItem}
+                onPress={() => removeImage(index)}
+              >
                 <Image source={{ uri }} style={styles.photoGridImage} />
                 <View style={styles.removePhotoButton}>
                   <Ionicons name="close-circle" size={24} color="#EF4444" />
@@ -771,11 +871,9 @@ export default function EditRequestScreen() {
               </TouchableOpacity>
             ))}
 
-            {(existingImages.filter(img => !imagesToDelete.includes(img)).length + images.length) < 5 && (
-              <TouchableOpacity
-                style={styles.addPhotoGrid}
-                onPress={pickImages}
-              >
+            {existingImages.filter(img => !imagesToDelete.includes(img)).length + images.length <
+              5 && (
+              <TouchableOpacity style={styles.addPhotoGrid} onPress={pickImages}>
                 <Ionicons name="camera-outline" size={32} color={theme.iconColors.gray.primary} />
                 <Text style={styles.addPhotoTextGrid}>Legg til bilde</Text>
                 <Text style={styles.maxPhotosText}>Maks 5 bilder</Text>
@@ -789,25 +887,36 @@ export default function EditRequestScreen() {
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>{t('route')}</Text>
           </View>
-          
+
           <View style={styles.inputContainer}>
             <View style={styles.labelWithValidation}>
               <Text style={styles.label}>{t('fromAddress')} *</Text>
               {touchedFields.from_address && (
                 <Ionicons
-                  name={getFieldError('from_address') ? "close-circle" : "checkmark-circle"}
+                  name={getFieldError('from_address') ? 'close-circle' : 'checkmark-circle'}
                   size={20}
-                  color={getFieldError('from_address') ? theme.iconColors.error : theme.iconColors.success}
+                  color={
+                    getFieldError('from_address')
+                      ? theme.iconColors.error
+                      : theme.iconColors.success
+                  }
                 />
               )}
             </View>
-            <View style={[
-              styles.googlePlacesContainer,
-              touchedFields.from_address && getFieldError('from_address') && styles.inputError,
-              touchedFields.from_address && !getFieldError('from_address') && styles.inputValid
-            ]}>
+            <View
+              style={[
+                styles.googlePlacesContainer,
+                touchedFields.from_address && getFieldError('from_address') && styles.inputError,
+                touchedFields.from_address && !getFieldError('from_address') && styles.inputValid,
+              ]}
+            >
               <View style={styles.addressInputWrapper}>
-                <Ionicons name="play-outline" size={20} color={theme.iconColors.success} style={styles.addressIcon} />
+                <Ionicons
+                  name="play-outline"
+                  size={20}
+                  color={theme.iconColors.success}
+                  style={styles.addressIcon}
+                />
                 <GooglePlacesAutocomplete
                   placeholder={t('enterFromAddress')}
                   onPress={async (data, details) => {
@@ -822,14 +931,14 @@ export default function EditRequestScreen() {
                       // Calculate distance if to_address has coordinates
                       if (formData.to_lat && formData.to_lng) {
                         try {
-                          const distance = await calculateDistance(
-                            coordinates,
-                            { lat: formData.to_lat, lng: formData.to_lng }
-                          );
+                          const distance = await calculateDistance(coordinates, {
+                            lat: formData.to_lat,
+                            lng: formData.to_lng,
+                          });
                           if (distance) {
                             setDistanceInfo({
                               distance: distance.distance.text,
-                              duration: distance.duration.text
+                              duration: distance.duration.text,
                             });
                           }
                         } catch (error) {
@@ -867,15 +976,36 @@ export default function EditRequestScreen() {
                   predefinedPlaces={[
                     {
                       description: 'Oslo, Norge',
-                      geometry: { location: { lat: 59.9139, lng: 10.7522, latitude: 59.9139, longitude: 10.7522 } },
+                      geometry: {
+                        location: {
+                          lat: 59.9139,
+                          lng: 10.7522,
+                          latitude: 59.9139,
+                          longitude: 10.7522,
+                        },
+                      },
                     },
                     {
                       description: 'Bergen, Norge',
-                      geometry: { location: { lat: 60.3913, lng: 5.3221, latitude: 60.3913, longitude: 5.3221 } },
+                      geometry: {
+                        location: {
+                          lat: 60.3913,
+                          lng: 5.3221,
+                          latitude: 60.3913,
+                          longitude: 5.3221,
+                        },
+                      },
                     },
                     {
                       description: 'Trondheim, Norge',
-                      geometry: { location: { lat: 63.4305, lng: 10.3951, latitude: 63.4305, longitude: 10.3951 } },
+                      geometry: {
+                        location: {
+                          lat: 63.4305,
+                          lng: 10.3951,
+                          latitude: 63.4305,
+                          longitude: 10.3951,
+                        },
+                      },
                     },
                   ]}
                 />
@@ -909,19 +1039,18 @@ export default function EditRequestScreen() {
                 // Recalculate distance if both addresses exist
                 if (fromAddress && toAddress && toLat && toLng && fromLat && fromLng) {
                   try {
-                    calculateDistance(
-                      { lat: toLat, lng: toLng },
-                      { lat: fromLat, lng: fromLng }
-                    ).then(distance => {
-                      if (distance) {
-                        setDistanceInfo({
-                          distance: distance.distance.text,
-                          duration: distance.duration.text
-                        });
-                      }
-                    }).catch(error => {
-                      console.error('Distance calculation failed:', error);
-                    });
+                    calculateDistance({ lat: toLat, lng: toLng }, { lat: fromLat, lng: fromLng })
+                      .then(distance => {
+                        if (distance) {
+                          setDistanceInfo({
+                            distance: distance.distance.text,
+                            duration: distance.duration.text,
+                          });
+                        }
+                      })
+                      .catch(error => {
+                        console.error('Distance calculation failed:', error);
+                      });
                   } catch (error) {
                     console.error('Distance calculation failed:', error);
                   }
@@ -936,11 +1065,7 @@ export default function EditRequestScreen() {
               }}
               disabled={!formData.from_address || !formData.to_address}
             >
-              <Ionicons
-                name="swap-vertical-outline"
-                size={24}
-                color={colors.white}
-              />
+              <Ionicons name="swap-vertical-outline" size={24} color={colors.white} />
             </TouchableOpacity>
           </View>
 
@@ -949,19 +1074,28 @@ export default function EditRequestScreen() {
               <Text style={styles.label}>{t('toAddress')} *</Text>
               {touchedFields.to_address && (
                 <Ionicons
-                  name={getFieldError('to_address') ? "close-circle" : "checkmark-circle"}
+                  name={getFieldError('to_address') ? 'close-circle' : 'checkmark-circle'}
                   size={20}
-                  color={getFieldError('to_address') ? theme.iconColors.error : theme.iconColors.success}
+                  color={
+                    getFieldError('to_address') ? theme.iconColors.error : theme.iconColors.success
+                  }
                 />
               )}
             </View>
-            <View style={[
-              styles.googlePlacesContainer,
-              touchedFields.to_address && getFieldError('to_address') && styles.inputError,
-              touchedFields.to_address && !getFieldError('to_address') && styles.inputValid
-            ]}>
+            <View
+              style={[
+                styles.googlePlacesContainer,
+                touchedFields.to_address && getFieldError('to_address') && styles.inputError,
+                touchedFields.to_address && !getFieldError('to_address') && styles.inputValid,
+              ]}
+            >
               <View style={styles.addressInputWrapper}>
-                <Ionicons name="flag-outline" size={20} color={theme.iconColors.error} style={styles.addressIcon} />
+                <Ionicons
+                  name="flag-outline"
+                  size={20}
+                  color={theme.iconColors.error}
+                  style={styles.addressIcon}
+                />
                 <GooglePlacesAutocomplete
                   placeholder={t('enterToAddress')}
                   onPress={async (data, details) => {
@@ -983,7 +1117,7 @@ export default function EditRequestScreen() {
                           if (distance) {
                             setDistanceInfo({
                               distance: distance.distance.text,
-                              duration: distance.duration.text
+                              duration: distance.duration.text,
                             });
                           }
                         } catch (error) {
@@ -1021,15 +1155,36 @@ export default function EditRequestScreen() {
                   predefinedPlaces={[
                     {
                       description: 'Oslo, Norge',
-                      geometry: { location: { lat: 59.9139, lng: 10.7522, latitude: 59.9139, longitude: 10.7522 } },
+                      geometry: {
+                        location: {
+                          lat: 59.9139,
+                          lng: 10.7522,
+                          latitude: 59.9139,
+                          longitude: 10.7522,
+                        },
+                      },
                     },
                     {
                       description: 'Bergen, Norge',
-                      geometry: { location: { lat: 60.3913, lng: 5.3221, latitude: 60.3913, longitude: 5.3221 } },
+                      geometry: {
+                        location: {
+                          lat: 60.3913,
+                          lng: 5.3221,
+                          latitude: 60.3913,
+                          longitude: 5.3221,
+                        },
+                      },
                     },
                     {
                       description: 'Trondheim, Norge',
-                      geometry: { location: { lat: 63.4305, lng: 10.3951, latitude: 63.4305, longitude: 10.3951 } },
+                      geometry: {
+                        location: {
+                          lat: 63.4305,
+                          lng: 10.3951,
+                          latitude: 63.4305,
+                          longitude: 10.3951,
+                        },
+                      },
                     },
                   ]}
                 />
@@ -1117,7 +1272,7 @@ export default function EditRequestScreen() {
                     {formData.pickup_date.toLocaleDateString('no-NO', {
                       weekday: 'short',
                       day: 'numeric',
-                      month: 'short'
+                      month: 'short',
                     })}
                   </Text>
                 </View>
@@ -1190,7 +1345,7 @@ export default function EditRequestScreen() {
                     {formData.delivery_date.toLocaleDateString('no-NO', {
                       weekday: 'short',
                       day: 'numeric',
-                      month: 'short'
+                      month: 'short',
                     })}
                   </Text>
                 </View>
@@ -1205,17 +1360,17 @@ export default function EditRequestScreen() {
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>{t('pricing')} *</Text>
           </View>
-          
+
           {getFieldError('price_type') && (
             <Text style={styles.errorText}>{getFieldError('price_type')}</Text>
           )}
           <View style={styles.priceTypeList}>
-            {PRICE_TYPES.map((type) => (
+            {PRICE_TYPES.map(type => (
               <TouchableOpacity
                 key={type.id}
                 style={[
                   styles.priceTypeItem,
-                  formData.price_type === type.id && styles.priceTypeItemActive
+                  formData.price_type === type.id && styles.priceTypeItemActive,
                 ]}
                 onPress={() => {
                   updateFormData('price_type', type.id);
@@ -1231,10 +1386,12 @@ export default function EditRequestScreen() {
                   color={theme.iconColors.gray.primary}
                   style={styles.priceTypeIcon}
                 />
-                <Text style={[
-                  styles.priceTypeLabel,
-                  formData.price_type === type.id && styles.priceTypeLabelActive
-                ]}>
+                <Text
+                  style={[
+                    styles.priceTypeLabel,
+                    formData.price_type === type.id && styles.priceTypeLabelActive,
+                  ]}
+                >
                   {type.label}
                 </Text>
                 {formData.price_type === type.id && (
@@ -1251,27 +1408,47 @@ export default function EditRequestScreen() {
                 <Ionicons
                   name="cash-outline"
                   size={20}
-                  color={getFieldError('price') ? theme.iconColors.error : isFieldValid('price') ? theme.iconColors.success : theme.iconColors.gray.primary}
+                  color={
+                    getFieldError('price')
+                      ? theme.iconColors.error
+                      : isFieldValid('price')
+                        ? theme.iconColors.success
+                        : theme.iconColors.gray.primary
+                  }
                   style={styles.inputIcon}
                 />
                 <TextInput
                   style={[
                     styles.input,
                     styles.inputWithPadding,
-                    getFieldError('price') ? styles.inputError : isFieldValid('price') ? styles.inputValid : null
+                    getFieldError('price')
+                      ? styles.inputError
+                      : isFieldValid('price')
+                        ? styles.inputValid
+                        : null,
                   ]}
                   placeholder="0"
                   value={formData.price}
-                  onChangeText={(value) => updateFormData('price', value)}
+                  onChangeText={value => updateFormData('price', value)}
                   onBlur={() => handleFieldBlur('price')}
                   keyboardType="numeric"
                   placeholderTextColor={colors.text.tertiary}
                 />
                 {isFieldValid('price') && (
-                  <Ionicons name="checkmark-circle" size={20} color={theme.iconColors.success} style={styles.validationIcon} />
+                  <Ionicons
+                    name="checkmark-circle"
+                    size={20}
+                    color={theme.iconColors.success}
+                    style={styles.validationIcon}
+                  />
                 )}
                 {getFieldError('price') && (
-                  <Ionicons name="close-circle" size={20} color={theme.iconColors.error} style={styles.validationIcon} />
+                  <Ionicons
+                    name="close-circle"
+                    size={20}
+                    color={theme.iconColors.error}
+                    style={styles.validationIcon}
+                  />
                 )}
               </View>
               {getFieldError('price') && (
@@ -1281,9 +1458,9 @@ export default function EditRequestScreen() {
           )}
         </View>
 
-      {/* Bottom spacing for tab bar */}
-      <View style={{ height: insets.bottom + 80 }} />
-    </KeyboardAwareScrollView>
+        {/* Bottom spacing for tab bar */}
+        <View style={{ height: insets.bottom + 80 }} />
+      </KeyboardAwareScrollView>
 
       {/* Date Pickers */}
       {showPickupDate && (

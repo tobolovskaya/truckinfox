@@ -13,7 +13,7 @@ export interface FetchWithTimeoutOptions extends RequestInit {
 /**
  * Fetch with automatic timeout
  * Aborts request if it takes longer than specified timeout
- * 
+ *
  * @param url URL to fetch
  * @param options Fetch options with optional timeout
  * @param timeoutMs Timeout in milliseconds (default: 10 seconds)
@@ -37,7 +37,7 @@ export async function fetchWithTimeout(
     return response;
   } catch (error: any) {
     clearTimeout(timeoutId);
-    
+
     if (error.name === 'AbortError') {
       throw new Error('Request timeout - please check your connection');
     }
@@ -48,7 +48,7 @@ export async function fetchWithTimeout(
 /**
  * Fetch with timeout and automatic retry
  * Retries failed requests with exponential backoff
- * 
+ *
  * @param url URL to fetch
  * @param options Fetch options including retry configuration
  * @returns Response object
@@ -57,20 +57,14 @@ export async function fetchWithRetry(
   url: string,
   options: FetchWithTimeoutOptions = {}
 ): Promise<Response> {
-  const {
-    timeout = 10000,
-    retries = 3,
-    retryDelay = 1000,
-    onRetry,
-    ...fetchOptions
-  } = options;
+  const { timeout = 10000, retries = 3, retryDelay = 1000, onRetry, ...fetchOptions } = options;
 
   let lastError: Error | null = null;
 
   for (let attempt = 0; attempt <= retries; attempt++) {
     try {
       const response = await fetchWithTimeout(url, fetchOptions, timeout);
-      
+
       // Check if response is ok
       if (!response.ok) {
         // Don't retry client errors (4xx) except 408 (timeout) and 429 (rate limit)
@@ -79,7 +73,7 @@ export async function fetchWithRetry(
             return response;
           }
         }
-        
+
         // For server errors (5xx), retry
         if (attempt < retries) {
           const delay = retryDelay * Math.pow(2, attempt); // Exponential backoff
@@ -90,18 +84,20 @@ export async function fetchWithRetry(
           continue;
         }
       }
-      
+
       return response;
     } catch (error: any) {
       lastError = error;
-      
+
       // Don't retry if it's not a network error
-      if (error.message !== 'Request timeout - please check your connection' && 
-          !error.message.includes('Failed to fetch') &&
-          !error.message.includes('Network request failed')) {
+      if (
+        error.message !== 'Request timeout - please check your connection' &&
+        !error.message.includes('Failed to fetch') &&
+        !error.message.includes('Network request failed')
+      ) {
         throw error;
       }
-      
+
       // Retry if attempts remain
       if (attempt < retries) {
         const delay = retryDelay * Math.pow(2, attempt);
@@ -119,7 +115,7 @@ export async function fetchWithRetry(
 
 /**
  * POST request with timeout and JSON parsing
- * 
+ *
  * @param url URL to post to
  * @param data Data to send
  * @param options Additional options
@@ -152,7 +148,7 @@ export async function postJSON<T = any>(
 
 /**
  * GET request with timeout and JSON parsing
- * 
+ *
  * @param url URL to fetch
  * @param options Additional options
  * @returns Parsed JSON response
@@ -178,16 +174,20 @@ export async function getJSON<T = any>(
 
 /**
  * Check if network is available
- * 
+ *
  * @returns true if network is available
  */
 export async function isNetworkAvailable(): Promise<boolean> {
   try {
     // Try to fetch a small resource with short timeout
-    await fetchWithTimeout('https://www.google.com/favicon.ico', {
-      method: 'HEAD',
-      cache: 'no-cache',
-    }, 3000);
+    await fetchWithTimeout(
+      'https://www.google.com/favicon.ico',
+      {
+        method: 'HEAD',
+        cache: 'no-cache',
+      },
+      3000
+    );
     return true;
   } catch {
     return false;
@@ -203,20 +203,18 @@ function sleep(ms: number): Promise<void> {
 
 /**
  * Create a timeout promise that rejects after specified time
- * 
+ *
  * @param ms Milliseconds to wait
  * @param message Error message
  * @returns Promise that rejects
  */
 export function timeout(ms: number, message: string = 'Operation timed out'): Promise<never> {
-  return new Promise((_, reject) => 
-    setTimeout(() => reject(new Error(message)), ms)
-  );
+  return new Promise((_, reject) => setTimeout(() => reject(new Error(message)), ms));
 }
 
 /**
  * Race a promise against a timeout
- * 
+ *
  * @param promise Promise to race
  * @param ms Timeout in milliseconds
  * @param message Timeout error message
@@ -227,15 +225,12 @@ export async function withTimeout<T>(
   ms: number,
   message?: string
 ): Promise<T> {
-  return Promise.race([
-    promise,
-    timeout(ms, message),
-  ]);
+  return Promise.race([promise, timeout(ms, message)]);
 }
 
 /**
  * Retry any async operation
- * 
+ *
  * @param operation Async function to retry
  * @param options Retry options
  * @returns Operation result
@@ -256,7 +251,7 @@ export async function retryOperation<T>(
       return await operation();
     } catch (error: any) {
       lastError = error;
-      
+
       if (attempt < retries) {
         const waitTime = delay * Math.pow(2, attempt);
         if (onRetry) {

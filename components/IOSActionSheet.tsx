@@ -118,11 +118,7 @@ export function IOSActionSheet({
     >
       <View style={styles.container}>
         {/* Backdrop */}
-        <TouchableOpacity
-          style={styles.backdrop}
-          activeOpacity={1}
-          onPress={handleBackdropPress}
-        >
+        <TouchableOpacity style={styles.backdrop} activeOpacity={1} onPress={handleBackdropPress}>
           <Animated.View
             style={[
               styles.backdropOverlay,
@@ -178,8 +174,8 @@ export function IOSActionSheet({
                         option.disabled
                           ? theme.iconColors.ios.lightGray
                           : option.destructive
-                          ? theme.iconColors.ios.red
-                          : theme.iconColors.ios.blue
+                            ? theme.iconColors.ios.red
+                            : theme.iconColors.ios.blue
                       }
                       style={styles.optionIcon}
                     />
@@ -199,11 +195,7 @@ export function IOSActionSheet({
           </View>
 
           {/* Cancel Button */}
-          <TouchableOpacity
-            style={styles.cancelButton}
-            onPress={handleCancel}
-            activeOpacity={0.6}
-          >
+          <TouchableOpacity style={styles.cancelButton} onPress={handleCancel} activeOpacity={0.6}>
             <Text style={styles.cancelText}>{cancelText}</Text>
           </TouchableOpacity>
         </Animated.View>
@@ -262,8 +254,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 0.5,
     borderBottomColor: 'rgba(60, 60, 67, 0.36)',
   },
-  firstOption: {
-  },
+  firstOption: {},
   lastOption: {
     borderBottomWidth: 0,
   },

@@ -152,51 +152,51 @@ export const commonStyles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.background,
   },
-  
+
   header: {
     backgroundColor: colors.white,
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.lg,
   },
-  
+
   headerTitle: {
     fontSize: fontSize.xxl,
     fontWeight: fontWeight.bold,
     color: colors.text.primary,
   },
-  
+
   headerSubtitle: {
     fontSize: fontSize.md,
     color: colors.text.secondary,
     marginTop: spacing.xs,
   },
-  
+
   section: {
     backgroundColor: colors.white,
     marginBottom: spacing.md,
     padding: spacing.lg,
   },
-  
+
   sectionTitle: {
     fontSize: fontSize.lg,
     fontWeight: fontWeight.semibold,
     color: colors.text.primary,
     marginBottom: spacing.md,
   },
-  
+
   sectionSubtitle: {
     fontSize: fontSize.sm,
     color: colors.text.secondary,
     marginBottom: spacing.md,
   },
-  
+
   card: {
     backgroundColor: colors.white,
     borderRadius: borderRadius.lg,
     padding: spacing.lg,
     ...shadows.md,
   },
-  
+
   cardLight: {
     backgroundColor: colors.white,
     borderRadius: borderRadius.md,
@@ -204,7 +204,7 @@ export const commonStyles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border.light,
   },
-  
+
   input: {
     height: 44,
     borderWidth: 1,
@@ -215,38 +215,38 @@ export const commonStyles = StyleSheet.create({
     backgroundColor: colors.white,
     color: colors.text.primary,
   },
-  
+
   inputWithIcon: {
     paddingLeft: 44,
   },
-  
+
   inputError: {
     borderColor: colors.status.error,
   },
-  
+
   inputValid: {
     borderColor: colors.status.success,
   },
-  
+
   textArea: {
     minHeight: 100,
     paddingTop: spacing.md,
     textAlignVertical: 'top',
   },
-  
+
   label: {
     fontSize: fontSize.sm,
     fontWeight: fontWeight.semibold,
     color: colors.text.primary,
     marginBottom: spacing.sm,
   },
-  
+
   errorText: {
     fontSize: fontSize.xs,
     color: colors.status.error,
     marginTop: spacing.xs,
   },
-  
+
   button: {
     height: 44,
     backgroundColor: colors.primary,
@@ -256,28 +256,28 @@ export const commonStyles = StyleSheet.create({
     flexDirection: 'row',
     ...shadows.primary,
   },
-  
+
   buttonText: {
     color: colors.white,
     fontSize: fontSize.md,
     fontWeight: fontWeight.semibold,
   },
-  
+
   buttonDisabled: {
     opacity: 0.6,
   },
-  
+
   buttonSecondary: {
     backgroundColor: colors.white,
     borderWidth: 1,
     borderColor: colors.border.default,
     ...shadows.sm,
   },
-  
+
   buttonSecondaryText: {
     color: colors.text.primary,
   },
-  
+
   badge: {
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.xs,
@@ -285,7 +285,7 @@ export const commonStyles = StyleSheet.create({
     backgroundColor: colors.badge.background,
     alignSelf: 'flex-start',
   },
-  
+
   badgeText: {
     fontSize: fontSize.xs,
     fontWeight: fontWeight.medium,
@@ -293,20 +293,20 @@ export const commonStyles = StyleSheet.create({
     textTransform: 'capitalize',
     letterSpacing: 0.3,
   },
-  
+
   divider: {
     height: 1,
     backgroundColor: colors.border.light,
     marginVertical: spacing.md,
   },
-  
+
   emptyContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     padding: spacing.xxxl,
   },
-  
+
   emptyTitle: {
     fontSize: fontSize.xl,
     fontWeight: fontWeight.semibold,
@@ -314,25 +314,25 @@ export const commonStyles = StyleSheet.create({
     marginTop: spacing.lg,
     marginBottom: spacing.sm,
   },
-  
+
   emptySubtitle: {
     fontSize: fontSize.md,
     color: colors.text.secondary,
     textAlign: 'center',
   },
-  
+
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  
+
   loadingText: {
     fontSize: fontSize.md,
     color: colors.text.secondary,
     marginTop: spacing.md,
   },
-  
+
   iconContainer: {
     width: 40,
     height: 40,
@@ -341,7 +341,7 @@ export const commonStyles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  
+
   avatar: {
     width: 48,
     height: 48,
@@ -350,29 +350,29 @@ export const commonStyles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  
+
   avatarText: {
     fontSize: fontSize.lg,
     fontWeight: fontWeight.semibold,
     color: colors.primary,
   },
-  
+
   row: {
     flexDirection: 'row',
     alignItems: 'center',
   },
-  
+
   rowBetween: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
   },
-  
+
   separator: {
     height: 1,
     backgroundColor: colors.border.light,
   },
-  
+
   placeholder: {
     width: 80,
     height: 80,

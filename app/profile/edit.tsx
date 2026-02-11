@@ -8,7 +8,8 @@ import {
   TouchableOpacity,
   Alert,
   ActivityIndicator,
- Switch } from 'react-native';
+  Switch,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -19,7 +20,14 @@ import { doc, getDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { updateProfile as updateAuthProfile } from 'firebase/auth';
 import AvatarUpload from '../../components/AvatarUpload';
 import { theme } from '../../theme/theme';
-import { colors, spacing, fontSize, fontWeight, borderRadius, shadows } from '../../lib/sharedStyles';
+import {
+  colors,
+  spacing,
+  fontSize,
+  fontWeight,
+  borderRadius,
+  shadows,
+} from '../../lib/sharedStyles';
 
 interface UserProfile {
   id: string;
@@ -44,12 +52,12 @@ export default function EditProfileScreen() {
   const { user } = useAuth();
   const { t } = useTranslation();
   const router = useRouter();
-  
+
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState<string>('');
-  
+
   const [formData, setFormData] = useState({
     full_name: '',
     phone: '',
@@ -62,7 +70,7 @@ export default function EditProfileScreen() {
     vehicle_description: '',
     bio: '',
   });
-  
+
   const [privacySettings, setPrivacySettings] = useState({
     show_phone_publicly: false,
     show_email_publicly: false,
@@ -76,16 +84,16 @@ export default function EditProfileScreen() {
   const fetchProfile = async () => {
     try {
       if (!user?.uid) return;
-      
+
       const userRef = doc(db, 'users', user.uid);
       const userSnap = await getDoc(userRef);
 
       if (!userSnap.exists()) {
         throw new Error('Profile not found');
       }
-      
+
       const data = { id: userSnap.id, ...userSnap.data() } as UserProfile;
-      
+
       setProfile(data);
       setFormData({
         full_name: data.full_name || '',
@@ -144,7 +152,7 @@ export default function EditProfileScreen() {
     setSaving(true);
     try {
       if (!user?.uid) return;
-      
+
       // Update profile in database
       const updateData: any = {
         full_name: formData.full_name.trim(),
@@ -156,18 +164,20 @@ export default function EditProfileScreen() {
         updateData.company_name = formData.company_name.trim();
         updateData.org_number = formData.org_number.trim();
       }
-      
+
       // Add extended fields
       updateData.city = formData.city.trim() || null;
       updateData.region = formData.region.trim() || null;
       updateData.bio = formData.bio.trim() || null;
       updateData.show_phone_publicly = privacySettings.show_phone_publicly;
       updateData.show_email_publicly = privacySettings.show_email_publicly;
-      
+
       // Add vehicle info for carriers
       if (profile?.user_type === 'business') {
         updateData.vehicle_type = formData.vehicle_type || null;
-        updateData.vehicle_capacity = formData.vehicle_capacity ? Number(formData.vehicle_capacity) : null;
+        updateData.vehicle_capacity = formData.vehicle_capacity
+          ? Number(formData.vehicle_capacity)
+          : null;
         updateData.vehicle_description = formData.vehicle_description.trim() || null;
       }
 
@@ -181,16 +191,12 @@ export default function EditProfileScreen() {
         });
       }
 
-      Alert.alert(
-        t('success'),
-        'Profile updated successfully',
-        [
-          {
-            text: t('ok'),
-            onPress: () => router.back(),
-          },
-        ]
-      );
+      Alert.alert(t('success'), 'Profile updated successfully', [
+        {
+          text: t('ok'),
+          onPress: () => router.back(),
+        },
+      ]);
     } catch (error: any) {
       console.error('Error updating profile:', error);
       Alert.alert(t('error'), error.message);
@@ -214,10 +220,7 @@ export default function EditProfileScreen() {
     <SafeAreaView style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => router.back()}
-        >
+        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
           <Ionicons name="arrow-back" size={24} color={theme.iconColors.dark} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>{t('editProfile')}</Text>
@@ -238,11 +241,7 @@ export default function EditProfileScreen() {
         {/* Avatar Upload */}
         <View style={styles.avatarSection}>
           <View style={styles.avatarContainer}>
-            <AvatarUpload
-              avatarUrl={avatarUrl}
-              onUpload={(url) => setAvatarUrl(url)}
-              size={120}
-            />
+            <AvatarUpload avatarUrl={avatarUrl} onUpload={url => setAvatarUrl(url)} size={120} />
           </View>
         </View>
 
@@ -254,7 +253,7 @@ export default function EditProfileScreen() {
               style={styles.input}
               placeholder={t('enterFullName')}
               value={formData.full_name}
-              onChangeText={(value) => updateFormData('full_name', value)}
+              onChangeText={value => updateFormData('full_name', value)}
               placeholderTextColor="#C7C7CD"
             />
           </View>
@@ -265,7 +264,7 @@ export default function EditProfileScreen() {
               style={styles.input}
               placeholder="+47 123 45 678"
               value={formData.phone}
-              onChangeText={(value) => updateFormData('phone', value)}
+              onChangeText={value => updateFormData('phone', value)}
               keyboardType="phone-pad"
               placeholderTextColor="#9CA3AF"
             />
@@ -280,14 +279,14 @@ export default function EditProfileScreen() {
               placeholderTextColor="#9CA3AF"
             />
           </View>
-          
+
           <View style={styles.inputContainer}>
             <Text style={styles.label}>Bio</Text>
             <TextInput
               style={[styles.input, styles.textArea]}
               placeholder="Tell others about yourself..."
               value={formData.bio}
-              onChangeText={(value) => updateFormData('bio', value)}
+              onChangeText={value => updateFormData('bio', value)}
               multiline
               numberOfLines={3}
               textAlignVertical="top"
@@ -300,7 +299,7 @@ export default function EditProfileScreen() {
         {/* Location Information */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Location</Text>
-          
+
           <View style={styles.row}>
             <View style={[styles.inputContainer, { flex: 1, marginRight: 8 }]}>
               <Text style={styles.label}>City</Text>
@@ -308,18 +307,18 @@ export default function EditProfileScreen() {
                 style={styles.input}
                 placeholder="Oslo"
                 value={formData.city}
-                onChangeText={(value) => updateFormData('city', value)}
+                onChangeText={value => updateFormData('city', value)}
                 placeholderTextColor="#9CA3AF"
               />
             </View>
-            
+
             <View style={[styles.inputContainer, { flex: 1, marginLeft: 8 }]}>
               <Text style={styles.label}>Region</Text>
               <TextInput
                 style={styles.input}
                 placeholder="Oslo"
                 value={formData.region}
-                onChangeText={(value) => updateFormData('region', value)}
+                onChangeText={value => updateFormData('region', value)}
                 placeholderTextColor="#9CA3AF"
               />
             </View>
@@ -330,14 +329,14 @@ export default function EditProfileScreen() {
         {profile?.user_type === 'business' && (
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>{t('businessInformation')}</Text>
-            
+
             <View style={styles.inputContainer}>
               <Text style={styles.label}>{t('companyName')} *</Text>
               <TextInput
                 style={styles.input}
                 placeholder={t('enterCompanyName')}
                 value={formData.company_name}
-                onChangeText={(value) => updateFormData('company_name', value)}
+                onChangeText={value => updateFormData('company_name', value)}
                 placeholderTextColor="#9CA3AF"
               />
             </View>
@@ -348,7 +347,7 @@ export default function EditProfileScreen() {
                 style={styles.input}
                 placeholder="123 456 789"
                 value={formData.org_number}
-                onChangeText={(value) => updateFormData('org_number', value)}
+                onChangeText={value => updateFormData('org_number', value)}
                 keyboardType="numeric"
                 placeholderTextColor="#9CA3AF"
               />
@@ -360,7 +359,7 @@ export default function EditProfileScreen() {
         {profile?.user_type === 'business' && (
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Vehicle Information</Text>
-            
+
             <View style={styles.inputContainer}>
               <Text style={styles.label}>Vehicle Type</Text>
               <View style={styles.vehicleTypeGrid}>
@@ -371,12 +370,12 @@ export default function EditProfileScreen() {
                   { id: 'medium_truck', label: 'Medium Truck', icon: 'car-outline' },
                   { id: 'large_truck', label: 'Large Truck', icon: 'car-outline' },
                   { id: 'trailer', label: 'Trailer', icon: 'car-outline' },
-                ].map((vehicle) => (
+                ].map(vehicle => (
                   <TouchableOpacity
                     key={vehicle.id}
                     style={[
                       styles.vehicleTypeCard,
-                      formData.vehicle_type === vehicle.id && styles.vehicleTypeCardActive
+                      formData.vehicle_type === vehicle.id && styles.vehicleTypeCardActive,
                     ]}
                     onPress={() => updateFormData('vehicle_type', vehicle.id)}
                   >
@@ -385,50 +384,52 @@ export default function EditProfileScreen() {
                       size={20}
                       color={formData.vehicle_type === vehicle.id ? '#FF7043' : '#616161'}
                     />
-                    <Text style={[
-                      styles.vehicleTypeText,
-                      formData.vehicle_type === vehicle.id && styles.vehicleTypeTextActive
-                    ]}>
+                    <Text
+                      style={[
+                        styles.vehicleTypeText,
+                        formData.vehicle_type === vehicle.id && styles.vehicleTypeTextActive,
+                      ]}
+                    >
                       {vehicle.label}
                     </Text>
                   </TouchableOpacity>
                 ))}
               </View>
             </View>
-            
+
             <View style={styles.inputContainer}>
               <Text style={styles.label}>Vehicle Capacity (kg)</Text>
               <TextInput
                 style={styles.input}
                 placeholder="1000"
                 value={formData.vehicle_capacity}
-                onChangeText={(value) => updateFormData('vehicle_capacity', value)}
+                onChangeText={value => updateFormData('vehicle_capacity', value)}
                 keyboardType="numeric"
                 placeholderTextColor="#9CA3AF"
               />
             </View>
-            
+
             <View style={styles.inputContainer}>
               <Text style={styles.label}>Vehicle Description</Text>
               <TextInput
                 style={[styles.input, styles.textArea]}
                 placeholder="Describe your vehicle, special equipment, etc."
                 value={formData.vehicle_description}
-                onChangeText={(value) => updateFormData('vehicle_description', value)}
+                onChangeText={value => updateFormData('vehicle_description', value)}
                 multiline
                 numberOfLines={3}
                 textAlignVertical="top"
                 maxLength={300}
                 placeholderTextColor="#9CA3AF"
               />
-              </View>
+            </View>
           </View>
         )}
 
         {/* Privacy Settings */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Privacy Settings</Text>
-          
+
           <View style={styles.privacyRow}>
             <View style={styles.privacyInfo}>
               <Text style={styles.privacyLabel}>Show phone publicly</Text>
@@ -438,12 +439,14 @@ export default function EditProfileScreen() {
             </View>
             <Switch
               value={privacySettings.show_phone_publicly}
-              onValueChange={(value) => setPrivacySettings(prev => ({ ...prev, show_phone_publicly: value }))}
+              onValueChange={value =>
+                setPrivacySettings(prev => ({ ...prev, show_phone_publicly: value }))
+              }
               trackColor={{ false: '#E5E7EB', true: '#FF7043' }}
               thumbColor={privacySettings.show_phone_publicly ? 'white' : '#F3F4F6'}
             />
           </View>
-          
+
           <View style={styles.privacyRow}>
             <View style={styles.privacyInfo}>
               <Text style={styles.privacyLabel}>Show email publicly</Text>
@@ -453,7 +456,9 @@ export default function EditProfileScreen() {
             </View>
             <Switch
               value={privacySettings.show_email_publicly}
-              onValueChange={(value) => setPrivacySettings(prev => ({ ...prev, show_email_publicly: value }))}
+              onValueChange={value =>
+                setPrivacySettings(prev => ({ ...prev, show_email_publicly: value }))
+              }
               trackColor={{ false: '#E5E7EB', true: '#FF7043' }}
               thumbColor={privacySettings.show_email_publicly ? 'white' : '#F3F4F6'}
             />
@@ -463,7 +468,7 @@ export default function EditProfileScreen() {
         {/* Account Type */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Account Information</Text>
-          
+
           <View style={styles.inputContainer}>
             <Text style={styles.label}>Account Type</Text>
             <View style={styles.accountTypeContainer}>

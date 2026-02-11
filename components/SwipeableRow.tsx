@@ -132,26 +132,21 @@ export function SwipeableRow({
     if (actions.length === 0) return null;
 
     return (
-      <View style={[styles.actionsContainer, side === 'left' ? styles.leftActions : styles.rightActions]}>
+      <View
+        style={[
+          styles.actionsContainer,
+          side === 'left' ? styles.leftActions : styles.rightActions,
+        ]}
+      >
         {actions.map((action, index) => (
           <TouchableOpacity
             key={index}
-            style={[
-              styles.actionButton,
-              { backgroundColor: action.backgroundColor },
-            ]}
+            style={[styles.actionButton, { backgroundColor: action.backgroundColor }]}
             onPress={() => handleActionPress(action)}
             activeOpacity={0.7}
           >
-            <Ionicons
-              name={action.icon}
-              size={22}
-              color={action.color}
-              style={styles.actionIcon}
-            />
-            <Text style={[styles.actionText, { color: action.color }]}>
-              {action.text}
-            </Text>
+            <Ionicons name={action.icon} size={22} color={action.color} style={styles.actionIcon} />
+            <Text style={[styles.actionText, { color: action.color }]}>{action.text}</Text>
           </TouchableOpacity>
         ))}
       </View>

@@ -8,7 +8,7 @@ import {
   RefreshControl,
   TextInput,
 } from 'react-native';
-import { SafeAreaView , useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTranslation } from 'react-i18next';
@@ -18,7 +18,15 @@ import { collection, query, where, orderBy, getDocs, doc, getDoc } from 'firebas
 import { useRouter } from 'expo-router';
 import { triggerHapticFeedback } from '../../utils/haptics';
 import { theme } from '../../theme/theme';
-import { colors, spacing, fontSize, fontWeight, borderRadius, shadows, gradients } from '../../lib/sharedStyles';
+import {
+  colors,
+  spacing,
+  fontSize,
+  fontWeight,
+  borderRadius,
+  shadows,
+  gradients,
+} from '../../lib/sharedStyles';
 
 interface Conversation {
   id: string;
@@ -72,22 +80,23 @@ function MessagesScreen() {
 
       const [senderSnap, receiverSnap] = await Promise.all([
         getDocs(senderQuery),
-        getDocs(receiverQuery)
+        getDocs(receiverQuery),
       ]);
-      
+
       // Combine all messages
       const userMessages = [
         ...senderSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })),
-        ...receiverSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }))
+        ...receiverSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })),
       ];
 
       // Group messages by conversation and get latest message
       const conversationMap = new Map();
-      
+
       for (const message of userMessages as any[]) {
-        const otherUserId = message.sender_id === user.uid ? message.receiver_id : message.sender_id;
+        const otherUserId =
+          message.sender_id === user.uid ? message.receiver_id : message.sender_id;
         const key = `${message.request_id}-${otherUserId}`;
-        
+
         if (!conversationMap.has(key)) {
           // Fetch other user data
           let otherUser = null;
@@ -116,7 +125,12 @@ function MessagesScreen() {
           conversationMap.set(key, {
             id: key,
             request_id: message.request_id,
-            other_user: otherUser || { id: otherUserId, full_name: 'Unknown User', user_type: 'customer', rating: 0 },
+            other_user: otherUser || {
+              id: otherUserId,
+              full_name: 'Unknown User',
+              user_type: 'customer',
+              rating: 0,
+            },
             last_message: {
               content: message.content,
               created_at: message.created_at,
@@ -158,7 +172,8 @@ function MessagesScreen() {
 
     if (diffInHours < 24) {
       return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    } else if (diffInHours < 168) { // 7 days
+    } else if (diffInHours < 168) {
+      // 7 days
       return date.toLocaleDateString([], { weekday: 'short' });
     } else {
       return date.toLocaleDateString([], { month: 'short', day: 'numeric' });
@@ -166,12 +181,18 @@ function MessagesScreen() {
   };
 
   const getUserInitials = (fullName: string) => {
-    return fullName.split(' ').map(name => name[0]).join('').toUpperCase().slice(0, 2);
+    return fullName
+      .split(' ')
+      .map(name => name[0])
+      .join('')
+      .toUpperCase()
+      .slice(0, 2);
   };
 
-  const filteredConversations = conversations.filter(conv =>
-    conv.other_user.full_name.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
-    conv.last_message.content.toLowerCase().includes(debouncedSearchQuery.toLowerCase())
+  const filteredConversations = conversations.filter(
+    conv =>
+      conv.other_user.full_name.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
+      conv.last_message.content.toLowerCase().includes(debouncedSearchQuery.toLowerCase())
   );
 
   return (
@@ -198,9 +219,7 @@ function MessagesScreen() {
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-        }
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
         showsVerticalScrollIndicator={false}
       >
         {loading ? (
@@ -215,7 +234,7 @@ function MessagesScreen() {
           </View>
         ) : (
           <View style={styles.conversationsList}>
-            {filteredConversations.map((conversation) => (
+            {filteredConversations.map(conversation => (
               <TouchableOpacity
                 key={conversation.id}
                 style={styles.conversationCard}
@@ -253,10 +272,13 @@ function MessagesScreen() {
                   )}
 
                   <View style={styles.lastMessageContainer}>
-                    <Text style={[
-                      styles.lastMessage,
-                      conversation.unread_count > 0 && styles.unreadMessage
-                    ]} numberOfLines={1}>
+                    <Text
+                      style={[
+                        styles.lastMessage,
+                        conversation.unread_count > 0 && styles.unreadMessage,
+                      ]}
+                      numberOfLines={1}
+                    >
                       {conversation.last_message.sender_id === user?.uid ? t('you') + ': ' : ''}
                       {conversation.last_message.content}
                     </Text>
@@ -271,7 +293,7 @@ function MessagesScreen() {
             ))}
           </View>
         )}
-        
+
         {/* Bottom spacing for tab bar */}
         <View style={{ height: insets.bottom + 80 }} />
       </ScrollView>

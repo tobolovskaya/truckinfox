@@ -5,7 +5,6 @@ import { theme } from '../../theme/theme';
 import { BlurView } from 'expo-blur';
 
 export default function TabLayout() {
-
   const TabIcon = ({ name, color, focused }: { name: string; color: string; focused: boolean }) => {
     // Get the appropriate icon name based on focus state
     const getIconName = (baseName: string, isFocused: boolean) => {
@@ -18,16 +17,18 @@ export default function TabLayout() {
     };
 
     return (
-      <View style={{
-        backgroundColor: focused ? theme.colors.primary : 'transparent',
-        paddingHorizontal: focused ? 16 : 10,
-        paddingVertical: focused ? 6 : 6,
-        borderRadius: focused ? 20 : 12,
-        minWidth: focused ? 64 : 44,
-        minHeight: focused ? 35 : 35,
-        justifyContent: 'center',
-        alignItems: 'center',
-      }}>
+      <View
+        style={{
+          backgroundColor: focused ? theme.colors.primary : 'transparent',
+          paddingHorizontal: focused ? 16 : 10,
+          paddingVertical: focused ? 6 : 6,
+          borderRadius: focused ? 20 : 12,
+          minWidth: focused ? 64 : 44,
+          minHeight: focused ? 35 : 35,
+          justifyContent: 'center',
+          alignItems: 'center',
+        }}
+      >
         <Ionicons
           name={getIconName(name, focused) as any}
           size={24}
@@ -83,11 +84,7 @@ export default function TabLayout() {
         options={{
           title: 'Hjem',
           tabBarIcon: ({ color, focused }) => (
-            <TabIcon
-              name="home"
-              color={color}
-              focused={focused}
-            />
+            <TabIcon name="home" color={color} focused={focused} />
           ),
         }}
       />
@@ -96,11 +93,7 @@ export default function TabLayout() {
         options={{
           title: 'Meldinger',
           tabBarIcon: ({ color, focused }) => (
-            <TabIcon
-              name="chatbubbles"
-              color={color}
-              focused={focused}
-            />
+            <TabIcon name="chatbubbles" color={color} focused={focused} />
           ),
         }}
       />
@@ -109,11 +102,7 @@ export default function TabLayout() {
         options={{
           title: 'Opprett',
           tabBarIcon: ({ color, focused }) => (
-            <TabIcon
-              name="add-circle"
-              color={color}
-              focused={focused}
-            />
+            <TabIcon name="add-circle" color={color} focused={focused} />
           ),
         }}
       />
@@ -122,11 +111,7 @@ export default function TabLayout() {
         options={{
           title: 'Bestillinger',
           tabBarIcon: ({ color, focused }) => (
-            <TabIcon
-              name="receipt"
-              color={color}
-              focused={focused}
-            />
+            <TabIcon name="receipt" color={color} focused={focused} />
           ),
         }}
       />
@@ -135,11 +120,7 @@ export default function TabLayout() {
         options={{
           title: 'Profil',
           tabBarIcon: ({ color, focused }) => (
-            <TabIcon
-              name="person"
-              color={color}
-              focused={focused}
-            />
+            <TabIcon name="person" color={color} focused={focused} />
           ),
         }}
       />

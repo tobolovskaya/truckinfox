@@ -1,12 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-  RefreshControl,
-} from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../contexts/AuthContext';
@@ -15,7 +8,6 @@ import { db } from '../../lib/firebase';
 import { collection, query, where, orderBy, limit, getDocs, doc, getDoc } from 'firebase/firestore';
 import { useRouter } from 'expo-router';
 import { theme } from '../../theme/theme';
-
 
 interface CargoRequest {
   id: string;
@@ -46,7 +38,7 @@ export default function HomeScreen() {
 
   const fetchProfile = useCallback(async () => {
     if (!user?.uid) return;
-    
+
     try {
       const userDoc = await getDoc(doc(db, 'users', user.uid));
       if (userDoc.exists()) {
@@ -68,16 +60,16 @@ export default function HomeScreen() {
 
       const querySnapshot = await getDocs(q);
       const requestsData = await Promise.all(
-        querySnapshot.docs.map(async (docSnap) => {
+        querySnapshot.docs.map(async docSnap => {
           const data = docSnap.data();
-          
+
           // Fetch user data
           let userData = {
             full_name: 'Unknown User',
             user_type: 'personal',
             rating: 0,
           };
-          
+
           if (data.user_id) {
             try {
               const userDoc = await getDoc(doc(db, 'users', data.user_id));
@@ -157,15 +149,16 @@ export default function HomeScreen() {
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-        }
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
         showsVerticalScrollIndicator={false}
       >
         {/* Header */}
         <View style={[styles.header, { paddingTop: insets.top + 16 }]}>
           <View>
-            <Text style={styles.greeting}>{t('hello')}, {userProfile?.full_name || user?.displayName || user?.email?.split('@')[0] || 'User'}!</Text>
+            <Text style={styles.greeting}>
+              {t('hello')},{' '}
+              {userProfile?.full_name || user?.displayName || user?.email?.split('@')[0] || 'User'}!
+            </Text>
             <Text style={styles.subtitle}>{t('findBestDeals')}</Text>
           </View>
           <TouchableOpacity style={styles.notificationButton}>
@@ -207,8 +200,12 @@ export default function HomeScreen() {
             </View>
           ) : (
             <View style={styles.requestsList}>
-              {requests.map((request) => (
-                <TouchableOpacity key={request.id} style={styles.requestCard} onPress={() => handleRequestPress(request)}>
+              {requests.map(request => (
+                <TouchableOpacity
+                  key={request.id}
+                  style={styles.requestCard}
+                  onPress={() => handleRequestPress(request)}
+                >
                   <View style={styles.requestHeader}>
                     <View style={styles.requestInfo}>
                       <View style={styles.cargoTypeContainer}>
@@ -230,12 +227,20 @@ export default function HomeScreen() {
 
                   <View style={styles.routeContainer}>
                     <View style={styles.routePoint}>
-                      <Ionicons name="location-outline" size={16} color={theme.iconColors.success} />
+                      <Ionicons
+                        name="location-outline"
+                        size={16}
+                        color={theme.iconColors.success}
+                      />
                       <Text style={styles.routeText} numberOfLines={1}>
                         {request.from_address}
                       </Text>
                     </View>
-                    <Ionicons name="arrow-forward" size={16} color={theme.iconColors.gray.primary} />
+                    <Ionicons
+                      name="arrow-forward"
+                      size={16}
+                      color={theme.iconColors.gray.primary}
+                    />
                     <View style={styles.routePoint}>
                       <Ionicons name="location-outline" size={16} color={theme.iconColors.error} />
                       <Text style={styles.routeText} numberOfLines={1}>
@@ -247,7 +252,9 @@ export default function HomeScreen() {
                   <View style={styles.requestFooter}>
                     <View style={styles.userInfo}>
                       <Ionicons
-                        name={request.user_type === 'business' ? 'business-outline' : 'person-outline'}
+                        name={
+                          request.user_type === 'business' ? 'business-outline' : 'person-outline'
+                        }
                         size={16}
                         color={theme.iconColors.gray.primary}
                       />
@@ -264,7 +271,7 @@ export default function HomeScreen() {
             </View>
           )}
         </View>
-        
+
         {/* Bottom spacing for tab bar */}
         <View style={{ height: insets.bottom + 80 }} />
       </ScrollView>

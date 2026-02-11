@@ -1,9 +1,9 @@
 /**
  * Geospatial Search Utilities
- * 
+ *
  * Utilities for finding nearby cargo requests using geohash-based search.
  * Uses geofire-common for efficient geospatial queries with Firestore.
- * 
+ *
  * Installation required:
  * npm install geofire-common
  * or
@@ -16,11 +16,11 @@ import { db } from '../lib/firebase';
 
 /**
  * Calculate geohash for a location
- * 
+ *
  * @param lat - Latitude
  * @param lng - Longitude
  * @returns Geohash string
- * 
+ *
  * @example
  * const hash = calculateGeohash(59.9139, 10.7522); // Oslo
  * console.log(hash); // "u4pruyd"
@@ -31,19 +31,19 @@ export function calculateGeohash(lat: number, lng: number): string {
 
 /**
  * Search for nearby cargo requests within a radius
- * 
+ *
  * @param centerLat - Center latitude
  * @param centerLng - Center longitude
  * @param radiusInKm - Search radius in kilometers
  * @param searchType - 'from' or 'to' - which location to search by
  * @returns Array of cargo requests within the radius
- * 
+ *
  * @example
  * // Find cargo requests within 50km of Oslo
  * const nearbyRequests = await findNearbyCargoRequests(
- *   59.9139, 
- *   10.7522, 
- *   50, 
+ *   59.9139,
+ *   10.7522,
+ *   50,
  *   'from'
  * );
  */
@@ -64,7 +64,7 @@ export async function findNearbyCargoRequests(
     // Create queries for each geohash range
     for (const b of bounds) {
       const geohashField = searchType === 'from' ? 'from_geohash' : 'to_geohash';
-      
+
       const q = query(
         collection(db, 'cargo_requests'),
         orderBy(geohashField),
@@ -105,8 +105,8 @@ export async function findNearbyCargoRequests(
     }
 
     // Remove duplicates (geohash ranges can overlap)
-    const uniqueDocs = matchingDocs.filter((doc, index, self) =>
-      index === self.findIndex((d) => d.id === doc.id)
+    const uniqueDocs = matchingDocs.filter(
+      (doc, index, self) => index === self.findIndex(d => d.id === doc.id)
     );
 
     // Sort by distance
@@ -121,17 +121,17 @@ export async function findNearbyCargoRequests(
 
 /**
  * Search for cargo requests along a route
- * 
+ *
  * Finds cargo requests that are near the route between two points.
  * Useful for carriers to find loads along their planned route.
- * 
+ *
  * @param fromLat - Route start latitude
  * @param fromLng - Route start longitude
  * @param toLat - Route end latitude
  * @param toLng - Route end longitude
  * @param radiusInKm - Search radius around route points (in km)
  * @returns Array of cargo requests near the route
- * 
+ *
  * @example
  * // Find cargo along route from Oslo to Bergen
  * const routeCargo = await findCargoAlongRoute(
@@ -150,7 +150,7 @@ export async function findCargoAlongRoute(
   try {
     // Search near route start
     const nearStartPromise = findNearbyCargoRequests(fromLat, fromLng, radiusInKm, 'from');
-    
+
     // Search near route end
     const nearEndPromise = findNearbyCargoRequests(toLat, toLng, radiusInKm, 'to');
 
@@ -158,8 +158,8 @@ export async function findCargoAlongRoute(
 
     // Combine and deduplicate results
     const combined = [...nearStart, ...nearEnd];
-    const unique = combined.filter((doc, index, self) =>
-      index === self.findIndex((d) => d.id === doc.id)
+    const unique = combined.filter(
+      (doc, index, self) => index === self.findIndex(d => d.id === doc.id)
     );
 
     return unique;
@@ -171,13 +171,13 @@ export async function findCargoAlongRoute(
 
 /**
  * Calculate distance between two locations
- * 
+ *
  * @param lat1 - First location latitude
  * @param lng1 - First location longitude
  * @param lat2 - Second location latitude
  * @param lng2 - Second location longitude
  * @returns Distance in kilometers
- * 
+ *
  * @example
  * const distance = calculateGeoDistance(
  *   59.9139, 10.7522,  // Oslo
@@ -196,10 +196,10 @@ export function calculateGeoDistance(
 
 /**
  * Search for cargo requests with flexible filters
- * 
+ *
  * @param options - Search options
  * @returns Array of matching cargo requests
- * 
+ *
  * @example
  * const results = await searchCargoRequests({
  *   centerLat: 59.9139,
@@ -234,27 +234,19 @@ export async function searchCargoRequests(options: {
     let filtered = nearby;
 
     if (options.cargoTypes && options.cargoTypes.length > 0) {
-      filtered = filtered.filter(doc => 
-        options.cargoTypes!.includes(doc.cargo_type)
-      );
+      filtered = filtered.filter(doc => options.cargoTypes!.includes(doc.cargo_type));
     }
 
     if (options.maxWeight) {
-      filtered = filtered.filter(doc => 
-        doc.weight <= options.maxWeight!
-      );
+      filtered = filtered.filter(doc => doc.weight <= options.maxWeight!);
     }
 
     if (options.minPrice) {
-      filtered = filtered.filter(doc => 
-        doc.price >= options.minPrice!
-      );
+      filtered = filtered.filter(doc => doc.price >= options.minPrice!);
     }
 
     if (options.maxPrice) {
-      filtered = filtered.filter(doc => 
-        doc.price <= options.maxPrice!
-      );
+      filtered = filtered.filter(doc => doc.price <= options.maxPrice!);
     }
 
     return filtered;
@@ -266,18 +258,18 @@ export async function searchCargoRequests(options: {
 
 /**
  * Get geohash precision based on search radius
- * 
+ *
  * Returns the appropriate geohash precision for a given radius.
  * Smaller radius = higher precision needed.
- * 
+ *
  * @param radiusInKm - Search radius in kilometers
  * @returns Geohash precision (1-9)
  */
 export function getGeohashPrecision(radiusInKm: number): number {
-  if (radiusInKm <= 0.6) return 9;      // ~0.6 km
-  if (radiusInKm <= 5) return 7;         // ~5 km
-  if (radiusInKm <= 20) return 6;        // ~20 km
-  if (radiusInKm <= 78) return 5;        // ~78 km
-  if (radiusInKm <= 630) return 4;       // ~630 km
-  return 3;                               // ~2500 km
+  if (radiusInKm <= 0.6) return 9; // ~0.6 km
+  if (radiusInKm <= 5) return 7; // ~5 km
+  if (radiusInKm <= 20) return 6; // ~20 km
+  if (radiusInKm <= 78) return 5; // ~78 km
+  if (radiusInKm <= 630) return 4; // ~630 km
+  return 3; // ~2500 km
 }

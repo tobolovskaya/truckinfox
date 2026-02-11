@@ -137,9 +137,9 @@ export function useCargoRequests({ activeTab, filters, sortBy, userId }: UseCarg
       setHasMore(querySnapshot.docs.length === INITIAL_LIMIT);
 
       const data = await Promise.all(
-        querySnapshot.docs.map(async (docSnapshot) => {
+        querySnapshot.docs.map(async docSnapshot => {
           const requestData = docSnapshot.data();
-          
+
           // Fetch user data
           let userData = { full_name: 'Unknown User', user_type: 'customer', rating: 0 };
           if (requestData.user_id) {
@@ -155,7 +155,7 @@ export function useCargoRequests({ activeTab, filters, sortBy, userId }: UseCarg
             where('cargo_request_id', '==', docSnapshot.id)
           );
           const bidsSnapshot = await getDocs(bidsQuery);
-          const bids = bidsSnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+          const bids = bidsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 
           // Check favorites
           let isFavorite = false;
@@ -276,7 +276,7 @@ export function useCargoRequests({ activeTab, filters, sortBy, userId }: UseCarg
       }
 
       const newData = await Promise.all(
-        snapshot.docs.map(async (docSnapshot) => {
+        snapshot.docs.map(async docSnapshot => {
           const requestData = docSnapshot.data();
 
           // Fetch user data
@@ -294,7 +294,7 @@ export function useCargoRequests({ activeTab, filters, sortBy, userId }: UseCarg
             where('cargo_request_id', '==', docSnapshot.id)
           );
           const bidsSnapshot = await getDocs(bidsQuery);
-          const bids = bidsSnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+          const bids = bidsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 
           // Check favorites
           let isFavorite = false;
@@ -332,7 +332,7 @@ export function useCargoRequests({ activeTab, filters, sortBy, userId }: UseCarg
       const lastDoc = snapshot.docs[snapshot.docs.length - 1];
       setLastVisible(lastDoc);
       setHasMore(snapshot.docs.length === PAGE_SIZE);
-      setRequests((prev) => [...prev, ...(filteredData as CargoRequest[])]);
+      setRequests(prev => [...prev, ...(filteredData as CargoRequest[])]);
 
       console.log(`Loaded ${filteredData.length} more requests`);
     } catch (error: any) {

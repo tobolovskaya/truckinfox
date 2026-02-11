@@ -3,7 +3,7 @@ import { router } from 'expo-router';
 /**
  * Handle notification tap navigation
  * Routes users to the appropriate screen based on notification type
- * 
+ *
  * @param response - Notification response from Expo Notifications
  */
 export function handleNotificationTap(response: any): void {
@@ -82,7 +82,7 @@ export function handleNotificationTap(response: any): void {
 /**
  * Handle foreground notification
  * Shows an in-app banner or updates badge count
- * 
+ *
  * @param notification - Notification object from Expo Notifications
  */
 export function handleForegroundNotification(notification: any): void {
@@ -91,7 +91,7 @@ export function handleForegroundNotification(notification: any): void {
 
     // You can implement custom in-app banner here
     // For now, Expo will handle showing the notification
-    
+
     // Optionally update badge count
     // setBadge(notification.request.content.badge);
   } catch (error) {

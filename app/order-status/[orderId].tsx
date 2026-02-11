@@ -17,9 +17,26 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTranslation } from 'react-i18next';
 import { db } from '../../lib/firebase';
-import { doc, getDoc, updateDoc, collection, query, where, getDocs, serverTimestamp, onSnapshot } from 'firebase/firestore';
+import {
+  doc,
+  getDoc,
+  updateDoc,
+  collection,
+  query,
+  where,
+  getDocs,
+  serverTimestamp,
+  onSnapshot,
+} from 'firebase/firestore';
 import { theme } from '../../theme/theme';
-import { colors, spacing, fontSize, fontWeight, borderRadius, shadows } from '../../lib/sharedStyles';
+import {
+  colors,
+  spacing,
+  fontSize,
+  fontWeight,
+  borderRadius,
+  shadows,
+} from '../../lib/sharedStyles';
 import { releaseFundsToCarrier } from '../../utils/escrowManagement';
 import { uploadDeliveryProof } from '../../utils/deliveryProof';
 import * as ImagePicker from 'expo-image-picker';
@@ -106,7 +123,7 @@ export default function OrderStatusScreen() {
     const orderRef = doc(db, 'orders', orderIdString);
     const unsubscribeOrder = onSnapshot(
       orderRef,
-      async (docSnap) => {
+      async docSnap => {
         if (docSnap.exists()) {
           console.log('Order updated in real-time:', docSnap.data());
           const orderData = { id: docSnap.id, ...docSnap.data() } as any;
@@ -125,7 +142,7 @@ export default function OrderStatusScreen() {
           Alert.alert(t('error'), t('orderNotFound') || 'Order not found');
         }
       },
-      (error) => {
+      error => {
         console.error('Error in order listener:', error);
       }
     );
@@ -137,11 +154,11 @@ export default function OrderStatusScreen() {
     );
     const unsubscribeEscrow = onSnapshot(
       escrowQuery,
-      (querySnap) => {
+      querySnap => {
         console.log('Escrow payments updated in real-time');
-        const escrowPayments = querySnap.docs.map(doc => ({ 
-          id: doc.id, 
-          ...doc.data() 
+        const escrowPayments = querySnap.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data(),
         })) as any;
 
         setOrder(prevOrder => {
@@ -153,7 +170,7 @@ export default function OrderStatusScreen() {
         });
         setLastUpdated(new Date());
       },
-      (error) => {
+      error => {
         console.error('Error in escrow listener:', error);
       }
     );
@@ -287,15 +304,11 @@ export default function OrderStatusScreen() {
       return;
     }
 
-    Alert.alert(
-      t('addPhoto'),
-      t('choosePhotoSource'),
-      [
-        { text: t('cancel'), style: 'cancel' },
-        { text: t('camera'), onPress: takePhoto },
-        { text: t('gallery'), onPress: pickPhoto },
-      ]
-    );
+    Alert.alert(t('addPhoto'), t('choosePhotoSource'), [
+      { text: t('cancel'), style: 'cancel' },
+      { text: t('camera'), onPress: takePhoto },
+      { text: t('gallery'), onPress: pickPhoto },
+    ]);
   };
 
   // Remove photo from list
@@ -326,17 +339,13 @@ export default function OrderStatusScreen() {
       return;
     }
 
-    Alert.alert(
-      t('confirmDelivery'),
-      t('confirmDeliveryProofMessage'),
-      [
-        { text: t('cancel'), style: 'cancel' },
-        {
-          text: t('submit'),
-          onPress: processDeliveryProofSubmission,
-        },
-      ]
-    );
+    Alert.alert(t('confirmDelivery'), t('confirmDeliveryProofMessage'), [
+      { text: t('cancel'), style: 'cancel' },
+      {
+        text: t('submit'),
+        onPress: processDeliveryProofSubmission,
+      },
+    ]);
   };
 
   // Process delivery proof submission
@@ -345,22 +354,14 @@ export default function OrderStatusScreen() {
 
     setUploadingProof(true);
     try {
-      await uploadDeliveryProof(
-        orderIdString as string,
-        deliveryPhotos,
-        signature
-      );
+      await uploadDeliveryProof(orderIdString as string, deliveryPhotos, signature);
 
-      Alert.alert(
-        t('deliveryConfirmed'),
-        t('deliveryProofSubmitted'),
-        [
-          {
-            text: 'OK',
-            onPress: () => router.replace('/(tabs)/orders'),
-          },
-        ]
-      );
+      Alert.alert(t('deliveryConfirmed'), t('deliveryProofSubmitted'), [
+        {
+          text: 'OK',
+          onPress: () => router.replace('/(tabs)/orders'),
+        },
+      ]);
     } catch (error: any) {
       console.error('Error submitting delivery proof:', error);
       Alert.alert(t('error'), error.message || 'Failed to submit delivery proof');
@@ -370,17 +371,13 @@ export default function OrderStatusScreen() {
   };
 
   const confirmDelivery = async () => {
-    Alert.alert(
-      t('confirmDelivery'),
-      t('confirmDeliveryMessage'),
-      [
-        { text: t('cancel'), style: 'cancel' },
-        {
-          text: t('confirmDelivery'),
-          onPress: processDeliveryConfirmation,
-        },
-      ]
-    );
+    Alert.alert(t('confirmDelivery'), t('confirmDeliveryMessage'), [
+      { text: t('cancel'), style: 'cancel' },
+      {
+        text: t('confirmDelivery'),
+        onPress: processDeliveryConfirmation,
+      },
+    ]);
   };
 
   const processDeliveryConfirmation = async () => {
@@ -399,7 +396,7 @@ export default function OrderStatusScreen() {
       try {
         const result = await releaseFundsToCarrier(orderIdString as string);
         console.log('Funds release result:', result);
-        
+
         Alert.alert(
           t('deliveryConfirmed'),
           `Delivery confirmed! ${result.message}\n\nYou can now leave a review for the carrier.`,
@@ -506,10 +503,7 @@ export default function OrderStatusScreen() {
     <SafeAreaView style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => router.back()}
-        >
+        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
           <Ionicons name="arrow-back" size={24} color={theme.iconColors.dark} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>{t('orderStatus')}</Text>
@@ -581,7 +575,7 @@ export default function OrderStatusScreen() {
         {/* Participants */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>{t('participants')}</Text>
-          
+
           <View style={styles.participantCard}>
             <View style={styles.participantHeader}>
               <Ionicons name="person-outline" size={20} color={theme.iconColors.gray.primary} />
@@ -608,18 +602,20 @@ export default function OrderStatusScreen() {
         {/* Payment Info */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>{t('paymentInformation')}</Text>
-          
+
           <View style={styles.paymentRow}>
             <Text style={styles.paymentLabel}>{t('totalAmount')}:</Text>
             <Text style={styles.paymentAmount}>{order.total_amount} NOK</Text>
           </View>
-          
+
           <View style={styles.paymentRow}>
             <Text style={styles.paymentLabel}>{t('paymentStatus')}:</Text>
-            <Text style={[
-              styles.paymentStatus,
-              { color: order.payment_status === 'completed' ? '#10B981' : '#F59E0B' }
-            ]}>
+            <Text
+              style={[
+                styles.paymentStatus,
+                { color: order.payment_status === 'completed' ? '#10B981' : '#F59E0B' },
+              ]}
+            >
               {t(order.payment_status)}
             </Text>
           </View>
@@ -639,17 +635,19 @@ export default function OrderStatusScreen() {
               <Ionicons name="camera-outline" size={24} color={theme.iconColors.primary} />
               <Text style={styles.proofTitle}>{t('proofOfDelivery')}</Text>
             </View>
-            <Text style={styles.proofDescription}>
-              {t('proofOfDeliveryDescription')}
-            </Text>
+            <Text style={styles.proofDescription}>{t('proofOfDeliveryDescription')}</Text>
 
             {/* Delivery Photos */}
             <View style={styles.photosSection}>
               <Text style={styles.subsectionTitle}>
                 {t('deliveryPhotos')} ({deliveryPhotos.length})
               </Text>
-              
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.photosScroll}>
+
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                style={styles.photosScroll}
+              >
                 {deliveryPhotos.map((photo, index) => (
                   <View key={index} style={styles.photoContainer}>
                     <LazyImage
@@ -669,7 +667,7 @@ export default function OrderStatusScreen() {
                     </TouchableOpacity>
                   </View>
                 ))}
-                
+
                 <TouchableOpacity style={styles.addPhotoButton} onPress={addPhoto}>
                   <Ionicons name="camera-outline" size={32} color={theme.iconColors.gray.primary} />
                   <Text style={styles.addPhotoText}>{t('addPhoto')}</Text>
@@ -680,12 +678,16 @@ export default function OrderStatusScreen() {
             {/* Digital Signature */}
             <View style={styles.signatureSection}>
               <Text style={styles.subsectionTitle}>{t('customerSignature')}</Text>
-              
+
               {signature ? (
                 <View style={styles.signaturePreviewContainer}>
                   {signatureError ? (
                     <View style={[styles.signaturePreview, styles.signatureError]}>
-                      <Ionicons name="document-outline" size={48} color={theme.iconColors.gray.secondary} />
+                      <Ionicons
+                        name="document-outline"
+                        size={48}
+                        color={theme.iconColors.gray.secondary}
+                      />
                       <Text style={styles.signatureErrorText}>Signature unavailable</Text>
                     </View>
                   ) : (
@@ -693,25 +695,19 @@ export default function OrderStatusScreen() {
                       source={{ uri: signature }}
                       style={styles.signaturePreview}
                       resizeMode="contain"
-                      onError={(error) => {
+                      onError={error => {
                         console.error('Signature load error:', error.nativeEvent.error);
                         setSignatureError(true);
                       }}
                     />
                   )}
-                  <TouchableOpacity
-                    style={styles.retakeSignatureButton}
-                    onPress={captureSignature}
-                  >
+                  <TouchableOpacity style={styles.retakeSignatureButton} onPress={captureSignature}>
                     <Ionicons name="refresh-outline" size={20} color={theme.iconColors.primary} />
                     <Text style={styles.retakeSignatureText}>{t('retake')}</Text>
                   </TouchableOpacity>
                 </View>
               ) : (
-                <TouchableOpacity
-                  style={styles.captureSignatureButton}
-                  onPress={captureSignature}
-                >
+                <TouchableOpacity style={styles.captureSignatureButton} onPress={captureSignature}>
                   <Ionicons name="create-outline" size={24} color={theme.iconColors.white} />
                   <Text style={styles.captureSignatureText}>{t('captureSignature')}</Text>
                 </TouchableOpacity>
@@ -722,7 +718,8 @@ export default function OrderStatusScreen() {
             <TouchableOpacity
               style={[
                 styles.submitProofButton,
-                (uploadingProof || deliveryPhotos.length === 0 || !signature) && styles.submitProofButtonDisabled
+                (uploadingProof || deliveryPhotos.length === 0 || !signature) &&
+                  styles.submitProofButtonDisabled,
               ]}
               onPress={submitDeliveryProof}
               disabled={uploadingProof || deliveryPhotos.length === 0 || !signature}
@@ -731,7 +728,11 @@ export default function OrderStatusScreen() {
                 <ActivityIndicator size="small" color={theme.iconColors.white} />
               ) : (
                 <>
-                  <Ionicons name="checkmark-done-outline" size={20} color={theme.iconColors.white} />
+                  <Ionicons
+                    name="checkmark-done-outline"
+                    size={20}
+                    color={theme.iconColors.white}
+                  />
                   <Text style={styles.submitProofButtonText}>{t('submitDeliveryProof')}</Text>
                 </>
               )}
@@ -743,17 +744,16 @@ export default function OrderStatusScreen() {
         {canConfirmDelivery && (
           <View style={styles.section}>
             <View style={styles.confirmationHeader}>
-              <Ionicons name="checkmark-circle-outline" size={24} color={theme.iconColors.success} />
+              <Ionicons
+                name="checkmark-circle-outline"
+                size={24}
+                color={theme.iconColors.success}
+              />
               <Text style={styles.confirmationTitle}>{t('confirmDelivery')}</Text>
             </View>
-            <Text style={styles.confirmationDescription}>
-              {t('confirmDeliveryDescription')}
-            </Text>
+            <Text style={styles.confirmationDescription}>{t('confirmDeliveryDescription')}</Text>
             <TouchableOpacity
-              style={[
-                styles.confirmButton,
-                confirming && styles.confirmButtonDisabled
-              ]}
+              style={[styles.confirmButton, confirming && styles.confirmButtonDisabled]}
               onPress={confirmDelivery}
               disabled={confirming}
             >
@@ -779,13 +779,13 @@ export default function OrderStatusScreen() {
               <Text style={styles.subsectionTitle}>
                 {t('deliveryPhotos')} ({order.delivery_photos.length})
               </Text>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.photosScroll}>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                style={styles.photosScroll}
+              >
                 {order.delivery_photos.map((photo, index) => (
-                  <Image
-                    key={index}
-                    source={{ uri: photo }}
-                    style={styles.photoPreview}
-                  />
+                  <Image key={index} source={{ uri: photo }} style={styles.photoPreview} />
                 ))}
               </ScrollView>
             </View>
@@ -804,7 +804,8 @@ export default function OrderStatusScreen() {
               <View style={styles.deliveryTimeInfo}>
                 <Ionicons name="time-outline" size={16} color={theme.iconColors.gray.primary} />
                 <Text style={styles.deliveryTimeText}>
-                  {t('deliveredAt')}: {new Date(order.delivery_time.seconds * 1000).toLocaleString()}
+                  {t('deliveredAt')}:{' '}
+                  {new Date(order.delivery_time.seconds * 1000).toLocaleString()}
                 </Text>
               </View>
             )}

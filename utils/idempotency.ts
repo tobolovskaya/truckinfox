@@ -8,7 +8,7 @@ import { collection, query, where, getDocs } from 'firebase/firestore';
 
 /**
  * Generate a unique idempotency key
- * 
+ *
  * @param prefix Operation type prefix (e.g., 'payment', 'refund', 'bid')
  * @param identifier Unique identifier (e.g., order_id, user_id)
  * @returns Idempotency key string
@@ -21,7 +21,7 @@ export function generateIdempotencyKey(prefix: string, identifier: string): stri
 
 /**
  * Check if an operation with this idempotency key already exists
- * 
+ *
  * @param collectionName Firestore collection to check
  * @param idempotencyKey The idempotency key to search for
  * @returns Existing document data or null
@@ -31,18 +31,15 @@ export async function checkIdempotency(
   idempotencyKey: string
 ): Promise<any | null> {
   try {
-    const q = query(
-      collection(db, collectionName),
-      where('idempotency_key', '==', idempotencyKey)
-    );
-    
+    const q = query(collection(db, collectionName), where('idempotency_key', '==', idempotencyKey));
+
     const snapshot = await getDocs(q);
-    
+
     if (!snapshot.empty) {
       const doc = snapshot.docs[0];
       return { id: doc.id, ...doc.data() };
     }
-    
+
     return null;
   } catch (error) {
     console.error('Error checking idempotency:', error);
@@ -53,7 +50,7 @@ export async function checkIdempotency(
 /**
  * Check if a payment already exists for an order
  * Prevents duplicate payment initiations
- * 
+ *
  * @param orderId Order ID to check
  * @param statuses Payment statuses to check (default: initiated, paid, completed)
  * @returns Existing payment or null
@@ -68,14 +65,14 @@ export async function checkExistingPayment(
       where('order_id', '==', orderId),
       where('status', 'in', statuses)
     );
-    
+
     const snapshot = await getDocs(q);
-    
+
     if (!snapshot.empty) {
       const doc = snapshot.docs[0];
       return { id: doc.id, ...doc.data() };
     }
-    
+
     return null;
   } catch (error) {
     console.error('Error checking existing payment:', error);
@@ -85,7 +82,7 @@ export async function checkExistingPayment(
 
 /**
  * Validate idempotency key format
- * 
+ *
  * @param key Idempotency key to validate
  * @returns true if valid format
  */
@@ -97,7 +94,7 @@ export function validateIdempotencyKey(key: string): boolean {
 
 /**
  * Extract metadata from idempotency key
- * 
+ *
  * @param key Idempotency key
  * @returns Metadata object with prefix, identifier, timestamp
  */
@@ -110,12 +107,12 @@ export function parseIdempotencyKey(key: string): {
   try {
     const parts = key.split('_');
     if (parts.length < 4) return null;
-    
+
     const random = parts.pop()!;
     const timestamp = parseInt(parts.pop()!, 10);
     const identifier = parts.pop()!;
     const prefix = parts.join('_');
-    
+
     return { prefix, identifier, timestamp, random };
   } catch {
     return null;
@@ -124,7 +121,7 @@ export function parseIdempotencyKey(key: string): {
 
 /**
  * Check if idempotency key is expired
- * 
+ *
  * @param key Idempotency key
  * @param maxAgeMs Maximum age in milliseconds (default: 24 hours)
  * @returns true if expired
@@ -135,7 +132,7 @@ export function isIdempotencyKeyExpired(
 ): boolean {
   const metadata = parseIdempotencyKey(key);
   if (!metadata) return true;
-  
+
   const age = Date.now() - metadata.timestamp;
   return age > maxAgeMs;
 }
@@ -143,7 +140,7 @@ export function isIdempotencyKeyExpired(
 /**
  * Idempotency wrapper for async operations
  * Automatically checks for existing operations and returns cached result
- * 
+ *
  * @param key Idempotency key
  * @param collectionName Collection to check
  * @param operation Operation to perform if no duplicate found
@@ -156,31 +153,31 @@ export async function withIdempotency<T>(
 ): Promise<{ result: T; cached: boolean }> {
   // Check for existing operation
   const existing = await checkIdempotency(collectionName, key);
-  
+
   if (existing) {
     console.log('Idempotency: Using cached result', key);
     return { result: existing as T, cached: true };
   }
-  
+
   // Perform new operation
   console.log('Idempotency: Performing new operation', key);
   const result = await operation();
-  
+
   return { result, cached: false };
 }
 
 /**
  * Example usage:
- * 
+ *
  * // Generate key
  * const key = generateIdempotencyKey('payment', orderId);
- * 
+ *
  * // Check existing
  * const existing = await checkExistingPayment(orderId);
  * if (existing) {
  *   // Handle existing payment
  * }
- * 
+ *
  * // With wrapper
  * const { result, cached } = await withIdempotency(
  *   key,
@@ -189,7 +186,7 @@ export async function withIdempotency<T>(
  *     return await createPayment(data);
  *   }
  * );
- * 
+ *
  * if (cached) {
  *   console.log('Used existing payment:', result.id);
  * }
@@ -217,12 +214,12 @@ const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 export function getCachedIdempotency(key: string): any | null {
   const cached = idempotencyCache.get(key);
   if (!cached) return null;
-  
+
   if (Date.now() - cached.timestamp > CACHE_TTL) {
     idempotencyCache.delete(key);
     return null;
   }
-  
+
   return cached.data;
 }
 

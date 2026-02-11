@@ -68,9 +68,13 @@ export default function AvatarUpload({ avatarUrl, onUpload, size = 80 }: AvatarU
       const fileName = `avatars/${user.uid}/avatar.${fileExt}`;
 
       // Convert URI to blob for Firebase Storage with timeout
-      const response = await fetchWithTimeout(uri, {
-        method: 'GET',
-      }, 15000); // 15 second timeout for image download
+      const response = await fetchWithTimeout(
+        uri,
+        {
+          method: 'GET',
+        },
+        15000
+      ); // 15 second timeout for image download
       const blob = await response.blob();
 
       // Upload to Firebase Storage
@@ -107,53 +111,49 @@ export default function AvatarUpload({ avatarUrl, onUpload, size = 80 }: AvatarU
   const removeAvatar = async () => {
     if (!user?.uid || !avatarUrl) return;
 
-    Alert.alert(
-      'Remove Avatar',
-      'Are you sure you want to remove your profile picture?',
-      [
-        { text: t('cancel'), style: 'cancel' },
-        {
-          text: 'Remove',
-          style: 'destructive',
-          onPress: async () => {
+    Alert.alert('Remove Avatar', 'Are you sure you want to remove your profile picture?', [
+      { text: t('cancel'), style: 'cancel' },
+      {
+        text: 'Remove',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            setUploading(true);
+
+            // Remove from Firebase Storage
+            const fileExt = avatarUrl.split('.').pop()?.split('?')[0] || 'jpg';
+            const fileName = `avatars/${user.uid}/avatar.${fileExt}`;
+            const storageRef = ref(storage, fileName);
+
             try {
-              setUploading(true);
-
-              // Remove from Firebase Storage
-              const fileExt = avatarUrl.split('.').pop()?.split('?')[0] || 'jpg';
-              const fileName = `avatars/${user.uid}/avatar.${fileExt}`;
-              const storageRef = ref(storage, fileName);
-              
-              try {
-                await deleteObject(storageRef);
-              } catch (error) {
-                console.warn('File may not exist in storage:', error);
-              }
-
-              // Update user profile in Firestore
-              const userDocRef = doc(db, 'users', user.uid);
-              await updateDoc(userDocRef, {
-                avatar_url: null,
-                updated_at: new Date().toISOString(),
-              });
-
-              // Update Firebase Auth profile
-              await updateProfile(user, {
-                photoURL: null,
-              });
-
-              onUpload('');
-              Alert.alert(t('success'), 'Avatar removed successfully!');
-            } catch (error: any) {
-              console.error('Error removing avatar:', error);
-              Alert.alert(t('error'), error.message);
-            } finally {
-              setUploading(false);
+              await deleteObject(storageRef);
+            } catch (error) {
+              console.warn('File may not exist in storage:', error);
             }
-          },
+
+            // Update user profile in Firestore
+            const userDocRef = doc(db, 'users', user.uid);
+            await updateDoc(userDocRef, {
+              avatar_url: null,
+              updated_at: new Date().toISOString(),
+            });
+
+            // Update Firebase Auth profile
+            await updateProfile(user, {
+              photoURL: null,
+            });
+
+            onUpload('');
+            Alert.alert(t('success'), 'Avatar removed successfully!');
+          } catch (error: any) {
+            console.error('Error removing avatar:', error);
+            Alert.alert(t('error'), error.message);
+          } finally {
+            setUploading(false);
+          }
         },
-      ]
-    );
+      },
+    ]);
   };
 
   return (
@@ -173,24 +173,20 @@ export default function AvatarUpload({ avatarUrl, onUpload, size = 80 }: AvatarU
             <Ionicons name="person" size={size * 0.5} color={theme.iconColors.gray.primary} />
           </View>
         )}
-        
+
         {uploading && (
           <View style={[styles.uploadingOverlay, { width: size, height: size }]}>
             <ActivityIndicator size="small" color={theme.iconColors.white} />
           </View>
         )}
-        
+
         <View style={styles.editBadge}>
           <Ionicons name="camera" size={16} color={theme.iconColors.white} />
         </View>
       </TouchableOpacity>
 
       {avatarUrl && (
-        <TouchableOpacity
-          style={styles.removeButton}
-          onPress={removeAvatar}
-          disabled={uploading}
-        >
+        <TouchableOpacity style={styles.removeButton} onPress={removeAvatar} disabled={uploading}>
           <Ionicons name="trash-outline" size={16} color={theme.iconColors.error} />
           <Text style={styles.removeText}>Remove</Text>
         </TouchableOpacity>

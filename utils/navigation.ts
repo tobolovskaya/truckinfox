@@ -55,22 +55,14 @@ export class SafeNavigation {
   /**
    * Safe push navigation
    */
-  static async push(
-    router: Router,
-    route: string,
-    options?: NavigationOptions
-  ): Promise<void> {
+  static async push(router: Router, route: string, options?: NavigationOptions): Promise<void> {
     return this.navigate(router, route, 'push', options);
   }
 
   /**
    * Safe replace navigation
    */
-  static async replace(
-    router: Router,
-    route: string,
-    options?: NavigationOptions
-  ): Promise<void> {
+  static async replace(router: Router, route: string, options?: NavigationOptions): Promise<void> {
     return this.navigate(router, route, 'replace', options);
   }
 

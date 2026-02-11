@@ -162,22 +162,22 @@ export const theme = {
 
     // Gray scale (unified with text colors)
     gray: {
-      primary: '#616161',      // Text secondary
-      secondary: '#9CA3AF',    // Secondary gray for less prominent elements
-      light: '#FF7043',        // Updated to primary orange
-      lighter: '#E0E0E0',      // Border/divider color for disabled states
+      primary: '#616161', // Text secondary
+      secondary: '#9CA3AF', // Secondary gray for less prominent elements
+      light: '#FF7043', // Updated to primary orange
+      lighter: '#E0E0E0', // Border/divider color for disabled states
     },
 
     // Semantic colors
-    success: '#4CAF50',        // Green for success
-    error: '#F44336',          // Red for errors
-    warning: '#FFC107',        // Yellow for warnings
-    info: '#FF8A65',           // Secondary orange for information
+    success: '#4CAF50', // Green for success
+    error: '#F44336', // Red for errors
+    warning: '#FFC107', // Yellow for warnings
+    info: '#FF8A65', // Secondary orange for information
 
     // Special colors
-    rating: '#FFC107',         // Warning/yellow for stars
-    white: '#FFFFFF',          // White for icons on colored backgrounds
-    dark: '#212121',           // Text primary for text-like icons
+    rating: '#FFC107', // Warning/yellow for stars
+    white: '#FFFFFF', // White for icons on colored backgrounds
+    dark: '#212121', // Text primary for text-like icons
 
     // iOS system colors (for compatibility with IOSButton and IOSActionSheet)
     ios: {

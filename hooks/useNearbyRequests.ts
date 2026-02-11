@@ -18,35 +18,32 @@ export interface UserLocation {
 
 /**
  * Hook for finding nearby cargo requests with proper permission handling
- * 
+ *
  * Features:
  * - User-friendly permission flow with explanations
  * - Handles permission denial gracefully
  * - Provides option to open Settings if denied
  * - Loads nearby cargo requests automatically
  * - Proper error handling and loading states
- * 
+ *
  * @param radiusKm - Search radius in kilometers (default: 50)
  * @param searchType - Search by 'from' (pickup) or 'to' (delivery) location
  * @returns Hook state with requests, loading, location, and permission status
- * 
+ *
  * @example
  * const { requests, loading, userLocation, permissionDenied, retry } = useNearbyRequests(50);
- * 
+ *
  * if (permissionDenied) {
  *   return <PermissionDeniedView onRetry={retry} />;
  * }
- * 
+ *
  * if (loading) {
  *   return <LoadingView />;
  * }
- * 
+ *
  * return <RequestsList requests={requests} userLocation={userLocation} />;
  */
-export function useNearbyRequests(
-  radiusKm: number = 50,
-  searchType: 'from' | 'to' = 'from'
-) {
+export function useNearbyRequests(radiusKm: number = 50, searchType: 'from' | 'to' = 'from') {
   const { t } = useTranslation();
   const [requests, setRequests] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -61,10 +58,11 @@ export function useNearbyRequests(
   const requestLocationPermission = async (): Promise<boolean> => {
     try {
       // 1. Check existing permission status
-      const { status: existingStatus, canAskAgain } = await Location.getForegroundPermissionsAsync();
-      
+      const { status: existingStatus, canAskAgain } =
+        await Location.getForegroundPermissionsAsync();
+
       console.log('📍 Current location permission:', existingStatus);
-      
+
       // If already granted, proceed
       if (existingStatus === Location.PermissionStatus.GRANTED) {
         setPermissionStatus({
@@ -74,7 +72,7 @@ export function useNearbyRequests(
         });
         return true;
       }
-      
+
       // If permission was denied and we can't ask again, show settings option
       if (!canAskAgain) {
         console.log('⚠️  Cannot ask for permission again, showing settings option');
@@ -84,13 +82,13 @@ export function useNearbyRequests(
           canAskAgain: false,
           status: existingStatus,
         });
-        
+
         showSettingsAlert();
         return false;
       }
-      
+
       // 2. Show explanation before requesting permission
-      return new Promise((resolve) => {
+      return new Promise(resolve => {
         Alert.alert(
           t('locationRequired'),
           t('locationPermissionMessage'),
@@ -114,28 +112,29 @@ export function useNearbyRequests(
               text: t('allowLocation'),
               onPress: async () => {
                 // 3. Request permission
-                const { status, canAskAgain: canAskAgainAfter } = await Location.requestForegroundPermissionsAsync();
-                
+                const { status, canAskAgain: canAskAgainAfter } =
+                  await Location.requestForegroundPermissionsAsync();
+
                 console.log('📍 Permission response:', status);
-                
+
                 const granted = status === Location.PermissionStatus.GRANTED;
-                
+
                 setPermissionStatus({
                   granted,
                   canAskAgain: canAskAgainAfter,
                   status,
                 });
-                
+
                 if (!granted) {
                   setPermissionDenied(true);
                   setLoading(false);
-                  
+
                   // If user denied, show settings option
                   if (!canAskAgainAfter) {
                     showSettingsAlert();
                   }
                 }
-                
+
                 resolve(granted);
               },
             },
@@ -155,26 +154,22 @@ export function useNearbyRequests(
    * Show alert with option to open Settings
    */
   const showSettingsAlert = () => {
-    Alert.alert(
-      t('permissionRequired'),
-      t('enableLocationInSettings'),
-      [
-        {
-          text: t('cancel'),
-          style: 'cancel',
+    Alert.alert(t('permissionRequired'), t('enableLocationInSettings'), [
+      {
+        text: t('cancel'),
+        style: 'cancel',
+      },
+      {
+        text: t('openSettings'),
+        onPress: () => {
+          if (Platform.OS === 'ios') {
+            Linking.openURL('app-settings:');
+          } else {
+            Linking.openSettings();
+          }
         },
-        {
-          text: t('openSettings'),
-          onPress: () => {
-            if (Platform.OS === 'ios') {
-              Linking.openURL('app-settings:');
-            } else {
-              Linking.openSettings();
-            }
-          },
-        },
-      ]
-    );
+      },
+    ]);
   };
 
   /**
@@ -183,22 +178,22 @@ export function useNearbyRequests(
   const getUserLocation = async (): Promise<UserLocation | null> => {
     try {
       console.log('📍 Getting current location...');
-      
+
       const location = await Location.getCurrentPositionAsync({
         accuracy: Location.Accuracy.Balanced,
         timeInterval: 10000, // Cache for 10 seconds
         distanceInterval: 100, // Update every 100 meters
       });
-      
+
       const userLoc: UserLocation = {
         latitude: location.coords.latitude,
         longitude: location.coords.longitude,
         accuracy: location.coords.accuracy,
       };
-      
+
       console.log('✅ Location obtained:', userLoc.latitude, userLoc.longitude);
       setUserLocation(userLoc);
-      
+
       return userLoc;
     } catch (error: any) {
       console.error('Error getting location:', error);
@@ -213,14 +208,14 @@ export function useNearbyRequests(
   const fetchNearbyRequests = async (location: UserLocation) => {
     try {
       console.log(`🔍 Searching for cargo within ${radiusKm}km...`);
-      
+
       const nearby = await findNearbyCargoRequests(
         location.latitude,
         location.longitude,
         radiusKm,
         searchType
       );
-      
+
       console.log(`✅ Found ${nearby.length} nearby cargo requests`);
       setRequests(nearby);
     } catch (error: any) {
@@ -236,25 +231,25 @@ export function useNearbyRequests(
     setLoading(true);
     setError(null);
     setPermissionDenied(false);
-    
+
     try {
       // 1. Request location permission
       const hasPermission = await requestLocationPermission();
-      
+
       if (!hasPermission) {
         setLoading(false);
         return;
       }
-      
+
       // 2. Get user location
       const location = await getUserLocation();
-      
+
       if (!location) {
         setError('Could not determine your location');
         setLoading(false);
         return;
       }
-      
+
       // 3. Fetch nearby requests
       await fetchNearbyRequests(location);
     } catch (error: any) {
@@ -280,10 +275,10 @@ export function useNearbyRequests(
       await initialize();
       return;
     }
-    
+
     setLoading(true);
     setError(null);
-    
+
     try {
       await fetchNearbyRequests(userLocation);
     } catch (error: any) {
@@ -305,37 +300,37 @@ export function useNearbyRequests(
      * Array of nearby cargo requests with distance information
      */
     requests,
-    
+
     /**
      * Loading state
      */
     loading,
-    
+
     /**
      * User's current location
      */
     userLocation,
-    
+
     /**
      * Whether location permission was denied
      */
     permissionDenied,
-    
+
     /**
      * Detailed permission status
      */
     permissionStatus,
-    
+
     /**
      * Error message if any
      */
     error,
-    
+
     /**
      * Retry permission request and load data
      */
     retry,
-    
+
     /**
      * Refresh nearby requests using current location
      */

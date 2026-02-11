@@ -23,7 +23,14 @@ import { LinearGradient } from 'expo-linear-gradient';
 import * as ImagePicker from 'expo-image-picker';
 import * as DocumentPicker from 'expo-document-picker';
 import { theme } from '../../../theme/theme';
-import { colors, spacing, fontSize, fontWeight, borderRadius, shadows } from '../../../lib/sharedStyles';
+import {
+  colors,
+  spacing,
+  fontSize,
+  fontWeight,
+  borderRadius,
+  shadows,
+} from '../../../lib/sharedStyles';
 
 interface Message {
   id: string;
@@ -52,12 +59,12 @@ export default function ChatScreen() {
   const { t } = useTranslation();
   const router = useRouter();
   const scrollViewRef = useRef<ScrollView>(null);
-  
+
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
-  const [chatUser, setChatUser] = useState<ChatUser | null>(null);
+  const [chatUser] = useState<ChatUser | null>(null); // setChatUser will be used when Firebase migration is complete
   const messageAnimations = useRef<{ [key: string]: Animated.Value }>({});
 
   useEffect(() => {
@@ -78,7 +85,7 @@ export default function ChatScreen() {
     };
 
     loadData();
-    
+
     // TODO: Migrate to Firebase Realtime Database or Firestore listeners
     // Subscribe to new messages
     // const subscription = supabase
@@ -126,12 +133,12 @@ export default function ChatScreen() {
     //     console.error('Error fetching user:', userError);
     //     throw userError;
     //   }
-    //   
+    //
     //   if (!userData) {
     //     console.log('User not found for ID:', userId);
     //     // Don't throw error, just set null and continue
     //   }
-    //   
+    //
     //   setChatUser(userData);
 
     //   // Fetch cargo request info
@@ -145,7 +152,7 @@ export default function ChatScreen() {
     //     console.error('Error fetching request:', requestError);
     //     throw requestError;
     //   }
-    //   
+    //
     //   if (!requestData) {
     //     console.log('Request not found for ID:', requestId);
     //     // Don't throw error, just set null and continue
@@ -185,7 +192,7 @@ export default function ChatScreen() {
     //     console.error('Error fetching messages:', error);
     //     throw error;
     //   }
-    //   
+    //
     //   console.log('Fetched messages:', data?.length || 0);
     //   setMessages(data || []);
     // } catch (error) {
@@ -198,7 +205,7 @@ export default function ChatScreen() {
 
   const sendMessage = async () => {
     if (!newMessage.trim() || sending) return;
-    
+
     if (!user?.uid || !userId || !requestId) {
       Alert.alert(t('error'), 'Missing required information to send message');
       return;
@@ -206,7 +213,7 @@ export default function ChatScreen() {
 
     // 🔐 Sanitize message before sending
     const sanitizedMessage = sanitizeMessage(newMessage.trim(), 1000);
-    
+
     if (!sanitizedMessage) {
       Alert.alert(t('error'), t('messageCannotBeEmpty'));
       return;
@@ -227,12 +234,12 @@ export default function ChatScreen() {
       //   });
 
       // if (error) throw error;
-      
+
       // setNewMessage('');
       // Messages will be updated via subscription
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error sending message:', error);
-      Alert.alert(t('error'), error.message);
+      Alert.alert(t('error'), error instanceof Error ? error.message : 'Unknown error');
     } finally {
       setSending(false);
     }
@@ -260,14 +267,19 @@ export default function ChatScreen() {
 
   const getUserInitials = (fullName: string) => {
     if (!fullName) return 'U';
-    return fullName.split(' ').map(name => name[0]).join('').toUpperCase().slice(0, 2);
+    return fullName
+      .split(' ')
+      .map(name => name[0])
+      .join('')
+      .toUpperCase()
+      .slice(0, 2);
   };
 
   const getUserRoleText = (userType: string, rating: number) => {
     const roleMap: { [key: string]: string } = {
       business: 'Bedrift',
       customer: 'Kunde',
-      carrier: 'Sjåfør'
+      carrier: 'Sjåfør',
     };
     const role = roleMap[userType] || 'Bruker';
     return `${role} • ⭐ ${rating.toFixed(1)}`;
@@ -298,16 +310,12 @@ export default function ChatScreen() {
   }, [messages]);
 
   const handleAttachmentPress = async () => {
-    Alert.alert(
-      'Velg vedlegg',
-      'Hvilken type fil vil du legge ved?',
-      [
-        { text: 'Avbryt', style: 'cancel' },
-        { text: 'Kamera', onPress: openCamera },
-        { text: 'Galleri', onPress: openImagePicker },
-        { text: 'Dokument', onPress: openDocumentPicker },
-      ]
-    );
+    Alert.alert('Velg vedlegg', 'Hvilken type fil vil du legge ved?', [
+      { text: 'Avbryt', style: 'cancel' },
+      { text: 'Kamera', onPress: openCamera },
+      { text: 'Galleri', onPress: openImagePicker },
+      { text: 'Dokument', onPress: openDocumentPicker },
+    ]);
   };
 
   const openCamera = async () => {
@@ -358,7 +366,7 @@ export default function ChatScreen() {
     }
   };
 
-  const handleFileSelected = async (file: any) => {
+  const handleFileSelected = async (file: { name?: string; size?: number; uri?: string }) => {
     try {
       // TODO: Upload file to server and send as message
       const fileName = file.name || 'attachment';
@@ -388,23 +396,16 @@ export default function ChatScreen() {
     <SafeAreaView style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => router.back()}
-        >
+        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
           <Ionicons name="arrow-back" size={24} color={theme.iconColors.dark} />
         </TouchableOpacity>
-        
+
         <View style={styles.headerInfo}>
           <View style={styles.avatar}>
-            <Text style={styles.avatarInitials}>
-              {getUserInitials(chatUser?.full_name || '')}
-            </Text>
+            <Text style={styles.avatarInitials}>{getUserInitials(chatUser?.full_name || '')}</Text>
           </View>
           <View style={styles.headerText}>
-            <Text style={styles.userName}>
-              {chatUser?.full_name || t('unknownUser')}
-            </Text>
+            <Text style={styles.userName}>{chatUser?.full_name || t('unknownUser')}</Text>
             <Text style={styles.userRole}>
               {chatUser ? getUserRoleText(chatUser.user_type, chatUser.rating) : ''}
             </Text>
@@ -416,8 +417,7 @@ export default function ChatScreen() {
         </TouchableOpacity>
       </View>
 
-
-      <KeyboardAvoidingView 
+      <KeyboardAvoidingView
         style={styles.chatContainer}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
@@ -446,7 +446,7 @@ export default function ChatScreen() {
                   <Text style={styles.dateText}>{formatDate(date)}</Text>
                   <View style={styles.dateLine} />
                 </View>
-                {dayMessages.map((message) => (
+                {dayMessages.map(message => (
                   <Animated.View
                     key={message.id}
                     style={[
@@ -456,14 +456,16 @@ export default function ChatScreen() {
                         : styles.receivedMessageContainer,
                       {
                         opacity: messageAnimations.current[message.id] || 1,
-                        transform: [{
-                          translateY: messageAnimations.current[message.id]
-                            ? messageAnimations.current[message.id].interpolate({
-                                inputRange: [0, 1],
-                                outputRange: [20, 0],
-                              })
-                            : 0,
-                        }],
+                        transform: [
+                          {
+                            translateY: messageAnimations.current[message.id]
+                              ? messageAnimations.current[message.id].interpolate({
+                                  inputRange: [0, 1],
+                                  outputRange: [20, 0],
+                                })
+                              : 0,
+                          },
+                        ],
                       },
                     ]}
                   >
@@ -531,13 +533,17 @@ export default function ChatScreen() {
             disabled={!newMessage.trim() || sending}
           >
             <LinearGradient
-              colors={newMessage.trim() && !sending ? ['#FF7043', '#FF8A65'] : ['#E5E5EA', '#E5E5EA']}
+              colors={
+                newMessage.trim() && !sending ? ['#FF7043', '#FF8A65'] : ['#E5E5EA', '#E5E5EA']
+              }
               style={styles.sendButtonGradient}
             >
-              <Text style={[
-                styles.sendButtonEmoji,
-                (!newMessage.trim() || sending) && styles.sendButtonEmojiDisabled
-              ]}>
+              <Text
+                style={[
+                  styles.sendButtonEmoji,
+                  (!newMessage.trim() || sending) && styles.sendButtonEmojiDisabled,
+                ]}
+              >
                 {sending ? '⏳' : '➤'}
               </Text>
             </LinearGradient>

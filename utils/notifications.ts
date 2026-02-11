@@ -1,17 +1,17 @@
 /**
  * Client-side notification utilities
- * 
+ *
  * This file contains helper functions for managing notifications
  * in the React Native app.
  */
 
-import { 
-  collection, 
-  query, 
-  where, 
-  orderBy, 
+import {
+  collection,
+  query,
+  where,
+  orderBy,
   limit,
-  onSnapshot, 
+  onSnapshot,
   doc,
   updateDoc,
   deleteDoc,
@@ -46,17 +46,17 @@ export interface Notification {
 
 /**
  * Subscribe to real-time notifications for a user
- * 
+ *
  * @param userId - The user's ID
  * @param onUpdate - Callback function called when notifications change
  * @param maxNotifications - Maximum number of notifications to retrieve (default: 50)
  * @returns Unsubscribe function
- * 
+ *
  * @example
  * const unsubscribe = subscribeToNotifications(userId, (notifications) => {
  *   setNotifications(notifications);
  * });
- * 
+ *
  * // Later, when component unmounts:
  * unsubscribe();
  */
@@ -74,10 +74,10 @@ export function subscribeToNotifications(
 
   return onSnapshot(
     notificationsQuery,
-    (snapshot) => {
+    snapshot => {
       const notifications: Notification[] = [];
-      
-      snapshot.forEach((doc) => {
+
+      snapshot.forEach(doc => {
         notifications.push({
           id: doc.id,
           ...doc.data(),
@@ -86,7 +86,7 @@ export function subscribeToNotifications(
 
       onUpdate(notifications);
     },
-    (error) => {
+    error => {
       console.error('Error subscribing to notifications:', error);
     }
   );
@@ -94,7 +94,7 @@ export function subscribeToNotifications(
 
 /**
  * Get unread notification count for a user
- * 
+ *
  * @param userId - The user's ID
  * @returns Number of unread notifications
  */
@@ -116,7 +116,7 @@ export async function getUnreadNotificationCount(userId: string): Promise<number
 
 /**
  * Subscribe to unread notification count
- * 
+ *
  * @param userId - The user's ID
  * @param onUpdate - Callback function called when count changes
  * @returns Unsubscribe function
@@ -133,10 +133,10 @@ export function subscribeToUnreadCount(
 
   return onSnapshot(
     unreadQuery,
-    (snapshot) => {
+    snapshot => {
       onUpdate(snapshot.size);
     },
-    (error) => {
+    error => {
       console.error('Error subscribing to unread count:', error);
     }
   );
@@ -144,13 +144,13 @@ export function subscribeToUnreadCount(
 
 /**
  * Mark a notification as read
- * 
+ *
  * @param notificationId - The notification ID
  */
 export async function markNotificationAsRead(notificationId: string): Promise<void> {
   try {
     const notificationRef = doc(db, 'notifications', notificationId);
-    
+
     await updateDoc(notificationRef, {
       read: true,
       read_at: serverTimestamp(),
@@ -165,7 +165,7 @@ export async function markNotificationAsRead(notificationId: string): Promise<vo
 
 /**
  * Mark all notifications as read (using Cloud Function for efficiency)
- * 
+ *
  * @param userId - The user's ID
  * @returns Number of notifications marked as read
  */
@@ -179,7 +179,7 @@ export async function markAllNotificationsAsRead(): Promise<number> {
 
     const result = await markAllRead();
     console.log(`Marked ${result.data.count} notifications as read`);
-    
+
     return result.data.count;
   } catch (error) {
     console.error('Error marking all notifications as read:', error);
@@ -189,10 +189,10 @@ export async function markAllNotificationsAsRead(): Promise<number> {
 
 /**
  * Delete old notifications (older than specified days)
- * 
+ *
  * This is a client-side utility for users to clean up their notifications.
  * Use with caution as it permanently deletes data.
- * 
+ *
  * @param userId - The user's ID
  * @param olderThanDays - Delete notifications older than this many days
  * @returns Number of notifications deleted
@@ -213,7 +213,7 @@ export async function deleteOldNotifications(
     );
 
     const snapshot = await getDocs(oldNotificationsQuery);
-    
+
     if (snapshot.empty) {
       return 0;
     }
@@ -233,9 +233,9 @@ export async function deleteOldNotifications(
 
 /**
  * Get notification navigation info
- * 
+ *
  * Helper function to determine where to navigate when user taps a notification.
- * 
+ *
  * @param notification - The notification object
  * @returns Navigation route and params
  */
@@ -278,7 +278,7 @@ export function getNotificationNavigation(notification: Notification): {
 
 /**
  * Format notification timestamp for display
- * 
+ *
  * @param timestamp - Firestore timestamp
  * @returns Formatted string like "2 hours ago" or "Yesterday"
  */

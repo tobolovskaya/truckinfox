@@ -1,12 +1,5 @@
 import React, { useRef } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  Modal,
-  Dimensions,
-} from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Modal, Dimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import SignatureCanvas from 'react-native-signature-canvas';
 import { colors, spacing, fontSize, fontWeight, borderRadius } from '../lib/sharedStyles';
@@ -42,12 +35,7 @@ export default function SignaturePad({
   };
 
   return (
-    <Modal
-      visible={visible}
-      animationType="slide"
-      transparent={false}
-      onRequestClose={onClose}
-    >
+    <Modal visible={visible} animationType="slide" transparent={false} onRequestClose={onClose}>
       <View style={styles.container}>
         {/* Header */}
         <View style={styles.header}>
@@ -90,25 +78,17 @@ export default function SignaturePad({
         {/* Instructions */}
         <View style={styles.instructions}>
           <Ionicons name="information-circle-outline" size={20} color={colors.text.secondary} />
-          <Text style={styles.instructionsText}>
-            Sign with your finger or stylus above
-          </Text>
+          <Text style={styles.instructionsText}>Sign with your finger or stylus above</Text>
         </View>
 
         {/* Action Buttons */}
         <View style={styles.actions}>
-          <TouchableOpacity
-            style={[styles.button, styles.clearButton]}
-            onPress={handleClear}
-          >
+          <TouchableOpacity style={[styles.button, styles.clearButton]} onPress={handleClear}>
             <Ionicons name="refresh-outline" size={20} color={colors.text.primary} />
             <Text style={styles.clearButtonText}>Clear</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity
-            style={[styles.button, styles.confirmButton]}
-            onPress={handleConfirm}
-          >
+          <TouchableOpacity style={[styles.button, styles.confirmButton]} onPress={handleConfirm}>
             <Ionicons name="checkmark-outline" size={20} color={colors.white} />
             <Text style={styles.confirmButtonText}>Confirm</Text>
           </TouchableOpacity>

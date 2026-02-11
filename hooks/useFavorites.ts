@@ -1,7 +1,15 @@
 import { useCallback } from 'react';
 import { Alert } from 'react-native';
 import { db } from '../lib/firebase';
-import { collection, addDoc, deleteDoc, query, where, getDocs, serverTimestamp } from 'firebase/firestore';
+import {
+  collection,
+  addDoc,
+  deleteDoc,
+  query,
+  where,
+  getDocs,
+  serverTimestamp,
+} from 'firebase/firestore';
 import { triggerHapticFeedback } from '../utils/haptics';
 
 /**
@@ -32,7 +40,7 @@ export function useFavorites(userId?: string) {
             where('request_id', '==', requestId)
           );
           const snapshot = await getDocs(favoritesQuery);
-          await Promise.all(snapshot.docs.map((doc) => deleteDoc(doc.ref)));
+          await Promise.all(snapshot.docs.map(doc => deleteDoc(doc.ref)));
 
           // Call success callback with new status
           onSuccess?.(false);
@@ -49,10 +57,10 @@ export function useFavorites(userId?: string) {
         }
       } catch (error: any) {
         console.error('Error toggling favorite:', error);
-        
+
         // Rollback optimistic update by calling callback with original status
         onSuccess?.(isFavorite);
-        
+
         Alert.alert('Error', 'Could not update favorite. Please try again.');
       }
     },
@@ -99,7 +107,7 @@ export function useFavorites(userId?: string) {
           where('request_id', '==', requestId)
         );
         const snapshot = await getDocs(favoritesQuery);
-        await Promise.all(snapshot.docs.map((doc) => deleteDoc(doc.ref)));
+        await Promise.all(snapshot.docs.map(doc => deleteDoc(doc.ref)));
         onSuccess?.();
       } catch (error: any) {
         console.error('Error removing favorite:', error);

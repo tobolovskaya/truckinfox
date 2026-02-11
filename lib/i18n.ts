@@ -26,7 +26,7 @@ const resources = {
 
 // Supported languages
 export const SUPPORTED_LANGUAGES = ['no', 'en'] as const;
-export type SupportedLanguage = typeof SUPPORTED_LANGUAGES[number];
+export type SupportedLanguage = (typeof SUPPORTED_LANGUAGES)[number];
 
 // Get device language with fallback
 export const getDeviceLanguage = (): SupportedLanguage => {
@@ -53,46 +53,44 @@ export const initI18n = async () => {
     return i18n;
   }
 
-  await i18n
-    .use(initReactI18next)
-    .init({
-      resources,
-      lng: getDeviceLanguage(),
-      fallbackLng: 'no',
+  await i18n.use(initReactI18next).init({
+    resources,
+    lng: getDeviceLanguage(),
+    fallbackLng: 'no',
 
-      // Default namespace
-      defaultNS: 'translation',
+    // Default namespace
+    defaultNS: 'translation',
 
-      // Fallback namespace if key not found
-      fallbackNS: 'translation',
+    // Fallback namespace if key not found
+    fallbackNS: 'translation',
 
-      // Interpolation settings
-      interpolation: {
-        escapeValue: false, // React already escapes
-      },
+    // Interpolation settings
+    interpolation: {
+      escapeValue: false, // React already escapes
+    },
 
-      // Missing key handling
-      saveMissing: false,
-      missingKeyHandler: (lngs, ns, key, fallbackValue) => {
-        if (__DEV__) {
-          console.warn(
-            `Missing translation key: "${key}" in namespace "${ns}" for languages: ${lngs.join(', ')}`
-          );
-        }
-      },
+    // Missing key handling
+    saveMissing: false,
+    missingKeyHandler: (lngs, ns, key, fallbackValue) => {
+      if (__DEV__) {
+        console.warn(
+          `Missing translation key: "${key}" in namespace "${ns}" for languages: ${lngs.join(', ')}`
+        );
+      }
+    },
 
-      // Return key if translation missing (instead of empty string)
-      returnNull: false,
-      returnEmptyString: false,
+    // Return key if translation missing (instead of empty string)
+    returnNull: false,
+    returnEmptyString: false,
 
-      // Debug mode (only in development)
-      debug: __DEV__,
+    // Debug mode (only in development)
+    debug: __DEV__,
 
-      // React specific options
-      react: {
-        useSuspense: false, // Disable suspense for React Native
-      },
-    });
+    // React specific options
+    react: {
+      useSuspense: false, // Disable suspense for React Native
+    },
+  });
 
   return i18n;
 };

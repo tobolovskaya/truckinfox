@@ -6,7 +6,8 @@ import {
   ScrollView,
   TouchableOpacity,
   ActivityIndicator,
- Image } from 'react-native';
+  Image,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -14,7 +15,14 @@ import { useTranslation } from 'react-i18next';
 import { db } from '../../lib/firebase';
 import { doc, getDoc, collection, query, where, orderBy, limit, getDocs } from 'firebase/firestore';
 import { theme } from '../../theme/theme';
-import { colors, spacing, fontSize, fontWeight, borderRadius, shadows } from '../../lib/sharedStyles';
+import {
+  colors,
+  spacing,
+  fontSize,
+  fontWeight,
+  borderRadius,
+  shadows,
+} from '../../lib/sharedStyles';
 
 interface UserProfile {
   id: string;
@@ -47,7 +55,7 @@ export default function UserProfileScreen() {
   const { userId } = useLocalSearchParams();
   const { t } = useTranslation();
   const router = useRouter();
-  
+
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [reviews, setReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState(true);
@@ -66,7 +74,7 @@ export default function UserProfileScreen() {
       if (!userSnap.exists()) {
         throw new Error('User not found');
       }
-      
+
       setProfile({ id: userSnap.id, ...userSnap.data() } as UserProfile);
     } catch (error) {
       console.error('Error fetching profile:', error);
@@ -81,12 +89,12 @@ export default function UserProfileScreen() {
         orderBy('created_at', 'desc'),
         limit(10)
       );
-      
+
       const reviewsSnap = await getDocs(reviewsQuery);
       const reviewsData = await Promise.all(
-        reviewsSnap.docs.map(async (reviewDoc) => {
+        reviewsSnap.docs.map(async reviewDoc => {
           const reviewData = { id: reviewDoc.id, ...reviewDoc.data() } as any;
-          
+
           // Fetch reviewer data
           if (reviewData.reviewer_id) {
             const reviewerRef = doc(db, 'users', reviewData.reviewer_id);
@@ -95,7 +103,7 @@ export default function UserProfileScreen() {
               reviewData.reviewer = reviewerSnap.data();
             }
           }
-          
+
           // Fetch order and cargo request data
           if (reviewData.order_id) {
             const orderRef = doc(db, 'orders', reviewData.order_id);
@@ -107,17 +115,17 @@ export default function UserProfileScreen() {
                 const requestSnap = await getDoc(requestRef);
                 if (requestSnap.exists()) {
                   reviewData.orders = {
-                    cargo_requests: requestSnap.data()
+                    cargo_requests: requestSnap.data(),
                   };
                 }
               }
             }
           }
-          
+
           return reviewData;
         })
       );
-      
+
       setReviews(reviewsData);
     } catch (error) {
       console.error('Error fetching reviews:', error);
@@ -129,7 +137,7 @@ export default function UserProfileScreen() {
   const renderStars = (rating: number, size: number = 16) => {
     return (
       <View style={styles.starsContainer}>
-        {[1, 2, 3, 4, 5].map((star) => (
+        {[1, 2, 3, 4, 5].map(star => (
           <Ionicons
             key={star}
             name={star <= rating ? 'star' : 'star-outline'}
@@ -170,10 +178,7 @@ export default function UserProfileScreen() {
     <SafeAreaView style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => router.back()}
-        >
+        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
           <Ionicons name="arrow-back" size={24} color={theme.iconColors.dark} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>User Profile</Text>
@@ -184,10 +189,7 @@ export default function UserProfileScreen() {
         <View style={styles.profileHeader}>
           <View style={styles.avatarContainer}>
             {profile.avatar_url ? (
-              <Image
-                source={{ uri: profile.avatar_url }}
-                style={styles.avatar}
-              />
+              <Image source={{ uri: profile.avatar_url }} style={styles.avatar} />
             ) : (
               <View style={styles.avatarPlaceholder}>
                 <Ionicons
@@ -201,15 +203,13 @@ export default function UserProfileScreen() {
               <Ionicons name="checkmark" size={16} color={theme.iconColors.white} />
             </View>
           </View>
-          
+
           <Text style={styles.userName}>{profile.full_name}</Text>
-          {profile.company_name && (
-            <Text style={styles.companyName}>{profile.company_name}</Text>
-          )}
+          {profile.company_name && <Text style={styles.companyName}>{profile.company_name}</Text>}
           <Text style={styles.userType}>
             {profile.user_type === 'business' ? t('business') : t('private')}
           </Text>
-          
+
           <View style={styles.ratingContainer}>
             {renderStars(Math.round(profile.rating), 20)}
             <Text style={styles.rating}>{profile.rating}</Text>
@@ -221,15 +221,13 @@ export default function UserProfileScreen() {
 
         {/* Reviews Section */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>
-            Recent Reviews ({reviews.length})
-          </Text>
-          
+          <Text style={styles.sectionTitle}>Recent Reviews ({reviews.length})</Text>
+
           {reviews.length === 0 ? (
             <Text style={styles.noReviewsText}>No reviews yet</Text>
           ) : (
             <View style={styles.reviewsList}>
-              {reviews.map((review) => (
+              {reviews.map(review => (
                 <View key={review.id} style={styles.reviewCard}>
                   <View style={styles.reviewHeader}>
                     <View style={styles.reviewerInfo}>
@@ -241,26 +239,20 @@ export default function UserProfileScreen() {
                         />
                       </View>
                       <View>
-                        <Text style={styles.reviewerName}>
-                          {review.reviewer.full_name}
-                        </Text>
-                        <Text style={styles.reviewDate}>
-                          {formatDate(review.created_at)}
-                        </Text>
+                        <Text style={styles.reviewerName}>{review.reviewer.full_name}</Text>
+                        <Text style={styles.reviewDate}>{formatDate(review.created_at)}</Text>
                       </View>
                     </View>
                     {renderStars(review.rating)}
                   </View>
-                  
+
                   {review.orders?.cargo_requests && (
                     <Text style={styles.orderTitle}>
                       Order: {review.orders.cargo_requests.title}
                     </Text>
                   )}
-                  
-                  {review.comment && (
-                    <Text style={styles.reviewComment}>{review.comment}</Text>
-                  )}
+
+                  {review.comment && <Text style={styles.reviewComment}>{review.comment}</Text>}
                 </View>
               ))}
             </View>

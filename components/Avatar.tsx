@@ -15,7 +15,7 @@ export default function Avatar({
   size = 40,
   iconName = 'person',
   backgroundColor = '#FFD9CC',
-  iconColor = '#FF7043'
+  iconColor = '#FF7043',
 }: AvatarProps) {
   return photoURL ? (
     <Image

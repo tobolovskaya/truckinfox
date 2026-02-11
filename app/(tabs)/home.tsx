@@ -28,8 +28,20 @@ import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { theme } from '../../theme/theme';
-import { colors, spacing, fontSize, fontWeight, borderRadius, shadows } from '../../lib/sharedStyles';
-import { useCargoRequests, type CargoRequest as ImportedCargoRequest, type FilterState as ImportedFilterState, type SortOption as ImportedSortOption } from '../../hooks/useCargoRequests';
+import {
+  colors,
+  spacing,
+  fontSize,
+  fontWeight,
+  borderRadius,
+  shadows,
+} from '../../lib/sharedStyles';
+import {
+  useCargoRequests,
+  type CargoRequest as ImportedCargoRequest,
+  type FilterState as ImportedFilterState,
+  type SortOption as ImportedSortOption,
+} from '../../hooks/useCargoRequests';
 import { useCities } from '../../hooks/useCities';
 import { useCurrentUser } from '../../hooks/useCurrentUser';
 import { useFavorites } from '../../hooks/useFavorites';
@@ -43,8 +55,6 @@ import { SkeletonCard } from '../../components/home/SkeletonCard';
 type CargoRequest = ImportedCargoRequest;
 type FilterState = ImportedFilterState;
 type SortOption = ImportedSortOption;
-
-
 
 const EmptyStateAnimation = ({ activeTab }: { activeTab: 'all' | 'my' }) => {
   const { t } = useTranslation();
@@ -64,33 +74,30 @@ const EmptyStateAnimation = ({ activeTab }: { activeTab: 'all' | 'my' }) => {
           activeOpacity={0.8}
         >
           <View style={styles.emptyIconContainer}>
-            <Ionicons
-              name="add-circle"
-              size={84}
-              color="white"
-            />
+            <Ionicons name="add-circle" size={84} color="white" />
           </View>
-          <Text style={styles.emptyCreateButtonText}>{t('createRequest') || 'Opprett forespørsel'}</Text>
+          <Text style={styles.emptyCreateButtonText}>
+            {t('createRequest') || 'Opprett forespørsel'}
+          </Text>
         </TouchableOpacity>
 
         {/* Title */}
         <Text style={styles.emptyTitle}>
-          {activeTab === 'all' ? t('noActiveRequests') || 'Ingen aktive forespørsler' : t('noMyRequests') || 'Du har ingen forespørsler'}
+          {activeTab === 'all'
+            ? t('noActiveRequests') || 'Ingen aktive forespørsler'
+            : t('noMyRequests') || 'Du har ingen forespørsler'}
         </Text>
 
         {/* Subtitle */}
         <Text style={styles.emptySubtitle}>
           {activeTab === 'all'
             ? t('checkBackLater') || 'Sjekk tilbake senere for nye forespørsler'
-            : t('createFirstRequest') || 'Opprett din første forespørsel for å komme i gang'
-          }
+            : t('createFirstRequest') || 'Opprett din første forespørsel for å komme i gang'}
         </Text>
-
       </View>
     </View>
   );
 };
-
 
 export default function HomeScreen() {
   const { user } = useAuth();
@@ -117,31 +124,34 @@ export default function HomeScreen() {
     closeModal,
     applyFilters,
     resetFilters,
-    clearFilter
+    clearFilter,
   } = useFilterState();
 
   // Convert filterState to the format expected by useCargoRequests (memoized to prevent re-renders)
-  const filters: FilterState = useMemo(() => ({
-    city: filterState.city,
-    cargo_type: filterState.cargo_type,
-    price_min: filterState.price_min,
-    price_max: filterState.price_max,
-    price_type: filterState.price_type,
-  }), [
-    filterState.city,
-    filterState.cargo_type,
-    filterState.price_min,
-    filterState.price_max,
-    filterState.price_type,
-  ]);
+  const filters: FilterState = useMemo(
+    () => ({
+      city: filterState.city,
+      cargo_type: filterState.cargo_type,
+      price_min: filterState.price_min,
+      price_max: filterState.price_max,
+      price_type: filterState.price_type,
+    }),
+    [
+      filterState.city,
+      filterState.cargo_type,
+      filterState.price_min,
+      filterState.price_max,
+      filterState.price_type,
+    ]
+  );
 
   // Data fetching hooks
-  const { 
-    requests, 
-    setRequests, 
-    loading, 
-    refreshing, 
-    refresh, 
+  const {
+    requests,
+    setRequests,
+    loading,
+    refreshing,
+    refresh,
     fetchMoreRequests,
     loadingMore,
     hasMore,
@@ -162,12 +172,7 @@ export default function HomeScreen() {
   // Bottom Sheet backdrop
   const renderBackdrop = useCallback(
     (props: any) => (
-      <BottomSheetBackdrop
-        {...props}
-        disappearsOnIndex={-1}
-        appearsOnIndex={0}
-        opacity={0.5}
-      />
+      <BottomSheetBackdrop {...props} disappearsOnIndex={-1} appearsOnIndex={0} opacity={0.5} />
     ),
     []
   );
@@ -182,47 +187,49 @@ export default function HomeScreen() {
   }, []);
 
   // Wrapper for toggleFavorite with optimistic updates
-  const toggleFavorite = React.useCallback((requestId: string) => {
-    const request = requests.find(r => r.id === requestId);
-    if (!request) return;
+  const toggleFavorite = React.useCallback(
+    (requestId: string) => {
+      const request = requests.find(r => r.id === requestId);
+      if (!request) return;
 
-    const originalFavoriteState = request.is_favorite ?? false;
+      const originalFavoriteState = request.is_favorite ?? false;
 
-    // ✅ Optimistic update - instant UI feedback
-    setRequests(prev => prev.map(req =>
-      req.id === requestId
-        ? { ...req, is_favorite: !req.is_favorite }
-        : req
-    ));
+      // ✅ Optimistic update - instant UI feedback
+      setRequests(prev =>
+        prev.map(req => (req.id === requestId ? { ...req, is_favorite: !req.is_favorite } : req))
+      );
 
-    // Call hook with callback to handle success or rollback on error
-    toggleFavoriteHook(requestId, originalFavoriteState, (newStatus) => {
-      // Update to actual status from Firebase
-      // If error occurred, this will revert to original state (rollback)
-      setRequests(prev => prev.map(req =>
-        req.id === requestId
-          ? { ...req, is_favorite: newStatus }
-          : req
-      ));
-    });
-  }, [requests, setRequests, toggleFavoriteHook]);
+      // Call hook with callback to handle success or rollback on error
+      toggleFavoriteHook(requestId, originalFavoriteState, newStatus => {
+        // Update to actual status from Firebase
+        // If error occurred, this will revert to original state (rollback)
+        setRequests(prev =>
+          prev.map(req => (req.id === requestId ? { ...req, is_favorite: newStatus } : req))
+        );
+      });
+    },
+    [requests, setRequests, toggleFavoriteHook]
+  );
 
   // Handle delete request (for swipe action)
-  const handleDeleteRequest = React.useCallback(async (requestId: string) => {
-    try {
-      // Optimistically remove from UI
-      setRequests(prev => prev.filter(req => req.id !== requestId));
-      
-      // TODO: Add actual delete API call here
-      // await deleteDoc(doc(db, 'cargo_requests', requestId));
-      
-      console.log('Delete request:', requestId);
-    } catch (error: any) {
-      console.error('Error deleting request:', error);
-      // Refresh on error
-      refresh();
-    }
-  }, [setRequests, refresh]);
+  const handleDeleteRequest = React.useCallback(
+    async (requestId: string) => {
+      try {
+        // Optimistically remove from UI
+        setRequests(prev => prev.filter(req => req.id !== requestId));
+
+        // TODO: Add actual delete API call here
+        // await deleteDoc(doc(db, 'cargo_requests', requestId));
+
+        console.log('Delete request:', requestId);
+      } catch (error: any) {
+        console.error('Error deleting request:', error);
+        // Refresh on error
+        refresh();
+      }
+    },
+    [setRequests, refresh]
+  );
 
   // Refresh wrapper
   const onRefresh = React.useCallback(() => {
@@ -245,7 +252,6 @@ export default function HomeScreen() {
     };
   });
 
-
   const handleTabChange = (tab: 'all' | 'my') => {
     const newValue = tab === 'all' ? 0 : 1;
 
@@ -266,9 +272,12 @@ export default function HomeScreen() {
     setActiveTab(tab);
   };
 
-  const handleRequestPress = React.useCallback((request: CargoRequest) => {
-    router.push(`/request-details/${request.id}` as any);
-  }, [router]);
+  const handleRequestPress = React.useCallback(
+    (request: CargoRequest) => {
+      router.push(`/request-details/${request.id}` as any);
+    },
+    [router]
+  );
 
   const getGreeting = () => {
     return t('greeting') || 'Hei';
@@ -276,7 +285,12 @@ export default function HomeScreen() {
 
   const getUserInitials = () => {
     const name = currentUser?.full_name || user?.displayName || user?.email || 'User';
-    return name.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2);
+    return name
+      .split(' ')
+      .map((n: string) => n[0])
+      .join('')
+      .toUpperCase()
+      .slice(0, 2);
   };
 
   return (
@@ -285,10 +299,7 @@ export default function HomeScreen() {
       <View style={[styles.header, { paddingTop: insets.top + 16 }]}>
         <View style={styles.userInfoContainer}>
           {currentUser?.avatar_url ? (
-            <Image
-              source={{ uri: currentUser.avatar_url }}
-              style={styles.greetingAvatar}
-            />
+            <Image source={{ uri: currentUser.avatar_url }} style={styles.greetingAvatar} />
           ) : (
             <View style={styles.greetingAvatarFallback}>
               <Text style={styles.greetingInitials}>{getUserInitials()}</Text>
@@ -296,7 +307,8 @@ export default function HomeScreen() {
           )}
           <View style={styles.greetingContainer}>
             <Text style={styles.greeting}>
-              {getGreeting()}, {currentUser?.full_name || user?.displayName || user?.email || 'User'}
+              {getGreeting()},{' '}
+              {currentUser?.full_name || user?.displayName || user?.email || 'User'}
               <Text style={styles.waveEmoji}> 👋</Text>
             </Text>
           </View>
@@ -312,49 +324,47 @@ export default function HomeScreen() {
             onPress={() => router.push('/profile')}
           >
             {currentUser?.avatar_url ? (
-              <Image
-                source={{ uri: currentUser.avatar_url }}
-                style={styles.compactAvatar}
-              />
+              <Image source={{ uri: currentUser.avatar_url }} style={styles.compactAvatar} />
             ) : (
               <View style={styles.compactAvatarFallback}>
                 <Text style={styles.compactInitials}>{getUserInitials()}</Text>
               </View>
             )}
             <Text style={styles.compactGreetingSubtle}>
-              {getGreeting()}, {(currentUser?.full_name || user?.displayName || user?.email || 'User').split(' ')[0]}
+              {getGreeting()},{' '}
+              {(currentUser?.full_name || user?.displayName || user?.email || 'User').split(' ')[0]}
             </Text>
           </TouchableOpacity>
 
           {/* Action Buttons */}
           <View style={styles.headerActions}>
-            <TouchableOpacity
-              style={styles.filterButtonHeader}
-              onPress={openFilterSheet}
-            >
+            <TouchableOpacity style={styles.filterButtonHeader} onPress={openFilterSheet}>
               <View style={styles.iconButtonCircle}>
-                <Ionicons
-                  name="filter-outline"
-                  size={22}
-                  color="#FF7043"
-                />
-                {(filters.city || filters.cargo_type || filterState.priceRange.min || filterState.priceRange.max || filterState.weightRange.min || filterState.weightRange.max || filterState.pickupDate) && (
+                <Ionicons name="filter-outline" size={22} color="#FF7043" />
+                {(filters.city ||
+                  filters.cargo_type ||
+                  filterState.priceRange.min ||
+                  filterState.priceRange.max ||
+                  filterState.weightRange.min ||
+                  filterState.weightRange.max ||
+                  filterState.pickupDate) && (
                   <View style={styles.filterCountBadge}>
                     <Text style={styles.filterCountText}>
-                      {[
-                        filters.city,
-                        filters.cargo_type,
-                        filterState.priceRange.min || filterState.priceRange.max,
-                        filterState.weightRange.min || filterState.weightRange.max,
-                        filterState.pickupDate
-                      ].filter(Boolean).length}
+                      {
+                        [
+                          filters.city,
+                          filters.cargo_type,
+                          filterState.priceRange.min || filterState.priceRange.max,
+                          filterState.weightRange.min || filterState.weightRange.max,
+                          filterState.pickupDate,
+                        ].filter(Boolean).length
+                      }
                     </Text>
                   </View>
                 )}
               </View>
               <Text style={styles.filterButtonLabel}>Filtrer</Text>
             </TouchableOpacity>
-
           </View>
         </View>
       </View>
@@ -378,24 +388,18 @@ export default function HomeScreen() {
       <View style={styles.tabNavigationContainer}>
         <View
           style={styles.tabNavigation}
-          onLayout={(event) => {
+          onLayout={event => {
             const { width } = event.nativeEvent.layout;
             containerWidth.value = width;
           }}
         >
-          <TouchableOpacity
-            style={styles.tabButton}
-            onPress={() => handleTabChange('all')}
-          >
+          <TouchableOpacity style={styles.tabButton} onPress={() => handleTabChange('all')}>
             <Text style={[styles.tabText, activeTab === 'all' && styles.activeTabText]}>
               {t('allRequests')}
             </Text>
           </TouchableOpacity>
 
-          <TouchableOpacity
-            style={styles.tabButton}
-            onPress={() => handleTabChange('my')}
-          >
+          <TouchableOpacity style={styles.tabButton} onPress={() => handleTabChange('my')}>
             <Text style={[styles.tabText, activeTab === 'my' && styles.activeTabText]}>
               {t('myRequests')}
             </Text>
@@ -407,95 +411,108 @@ export default function HomeScreen() {
       </View>
 
       {/* Active Filter Chips */}
-      {activeTab === 'all' && (filters.city || filters.cargo_type || filterState.priceRange.min || filterState.priceRange.max || filterState.weightRange.min || filterState.weightRange.max || filterState.pickupDate) && (
-        <View style={styles.filterChipsWrapper}>
-          {(filters.city || filters.cargo_type || filterState.priceRange.min || filterState.priceRange.max || filterState.weightRange.min || filterState.weightRange.max || filterState.pickupDate) && (
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.filterChipsContainer}
-              style={styles.filterChipsScroll}
-            >
-              {/* City Chip */}
-              {filters.city && (
-                <View style={styles.filterChip}>
-                  <Text style={styles.filterChipLabel}>By:</Text>
-                  <Text style={styles.filterChipValue}>{filters.city}</Text>
-                  <TouchableOpacity
-                    onPress={() => {
-                      setCity('');
-                      setCitySearch('');
-                    }}
-                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                  >
-                    <Ionicons name="close" size={16} color={colors.text.secondary} />
-                  </TouchableOpacity>
-                </View>
-              )}
+      {activeTab === 'all' &&
+        (filters.city ||
+          filters.cargo_type ||
+          filterState.priceRange.min ||
+          filterState.priceRange.max ||
+          filterState.weightRange.min ||
+          filterState.weightRange.max ||
+          filterState.pickupDate) && (
+          <View style={styles.filterChipsWrapper}>
+            {(filters.city ||
+              filters.cargo_type ||
+              filterState.priceRange.min ||
+              filterState.priceRange.max ||
+              filterState.weightRange.min ||
+              filterState.weightRange.max ||
+              filterState.pickupDate) && (
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.filterChipsContainer}
+                style={styles.filterChipsScroll}
+              >
+                {/* City Chip */}
+                {filters.city && (
+                  <View style={styles.filterChip}>
+                    <Text style={styles.filterChipLabel}>By:</Text>
+                    <Text style={styles.filterChipValue}>{filters.city}</Text>
+                    <TouchableOpacity
+                      onPress={() => {
+                        setCity('');
+                        setCitySearch('');
+                      }}
+                      hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                    >
+                      <Ionicons name="close" size={16} color={colors.text.secondary} />
+                    </TouchableOpacity>
+                  </View>
+                )}
 
-              {/* Cargo Type Chip */}
-              {filters.cargo_type && (
-                <View style={styles.filterChip}>
-                  <Text style={styles.filterChipLabel}>Type:</Text>
-                  <Text style={styles.filterChipValue}>{t(filters.cargo_type)}</Text>
-                  <TouchableOpacity
-                    onPress={() => setCargoType('')}
-                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                  >
-                    <Ionicons name="close" size={16} color={colors.text.secondary} />
-                  </TouchableOpacity>
-                </View>
-              )}
+                {/* Cargo Type Chip */}
+                {filters.cargo_type && (
+                  <View style={styles.filterChip}>
+                    <Text style={styles.filterChipLabel}>Type:</Text>
+                    <Text style={styles.filterChipValue}>{t(filters.cargo_type)}</Text>
+                    <TouchableOpacity
+                      onPress={() => setCargoType('')}
+                      hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                    >
+                      <Ionicons name="close" size={16} color={colors.text.secondary} />
+                    </TouchableOpacity>
+                  </View>
+                )}
 
-              {/* Price Range Chip */}
-              {(filterState.priceRange.min || filterState.priceRange.max) && (
-                <View style={styles.filterChip}>
-                  <Text style={styles.filterChipLabel}>Pris:</Text>
-                  <Text style={styles.filterChipValue}>
-                    {filterState.priceRange.min || '0'}–{filterState.priceRange.max || '∞'} NOK
-                  </Text>
-                  <TouchableOpacity
-                    onPress={() => setPriceRange({ min: '', max: '' })}
-                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                  >
-                    <Ionicons name="close" size={16} color={colors.text.secondary} />
-                  </TouchableOpacity>
-                </View>
-              )}
+                {/* Price Range Chip */}
+                {(filterState.priceRange.min || filterState.priceRange.max) && (
+                  <View style={styles.filterChip}>
+                    <Text style={styles.filterChipLabel}>Pris:</Text>
+                    <Text style={styles.filterChipValue}>
+                      {filterState.priceRange.min || '0'}–{filterState.priceRange.max || '∞'} NOK
+                    </Text>
+                    <TouchableOpacity
+                      onPress={() => setPriceRange({ min: '', max: '' })}
+                      hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                    >
+                      <Ionicons name="close" size={16} color={colors.text.secondary} />
+                    </TouchableOpacity>
+                  </View>
+                )}
 
-              {/* Weight Range Chip */}
-              {(filterState.weightRange.min || filterState.weightRange.max) && (
-                <View style={styles.filterChip}>
-                  <Text style={styles.filterChipLabel}>Vekt:</Text>
-                  <Text style={styles.filterChipValue}>
-                    {filterState.weightRange.min || '0'}–{filterState.weightRange.max || '∞'} kg
-                  </Text>
-                  <TouchableOpacity
-                    onPress={() => setWeightRange({ min: '', max: '' })}
-                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                  >
-                    <Ionicons name="close" size={16} color={colors.text.secondary} />
-                  </TouchableOpacity>
-                </View>
-              )}
+                {/* Weight Range Chip */}
+                {(filterState.weightRange.min || filterState.weightRange.max) && (
+                  <View style={styles.filterChip}>
+                    <Text style={styles.filterChipLabel}>Vekt:</Text>
+                    <Text style={styles.filterChipValue}>
+                      {filterState.weightRange.min || '0'}–{filterState.weightRange.max || '∞'} kg
+                    </Text>
+                    <TouchableOpacity
+                      onPress={() => setWeightRange({ min: '', max: '' })}
+                      hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                    >
+                      <Ionicons name="close" size={16} color={colors.text.secondary} />
+                    </TouchableOpacity>
+                  </View>
+                )}
 
-              {/* Pickup Date Chip */}
-              {filterState.pickupDate && (
-                <View style={styles.filterChip}>
-                  <Text style={styles.filterChipLabel}>Dato:</Text>
-                  <Text style={styles.filterChipValue}>{filterState.pickupDate}</Text>
-                  <TouchableOpacity
-                    onPress={() => setPickupDate('')}
-                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                  >
-                    <Ionicons name="close" size={16} color={colors.text.secondary} />
-                  </TouchableOpacity>
-                </View>
-              )}
-            </ScrollView>
-          )}
-        </View>
-      )}
+                {/* Pickup Date Chip */}
+                {filterState.pickupDate && (
+                  <View style={styles.filterChip}>
+                    <Text style={styles.filterChipLabel}>Dato:</Text>
+                    <Text style={styles.filterChipValue}>{filterState.pickupDate}</Text>
+                    <TouchableOpacity
+                      onPress={() => setPickupDate('')}
+                      hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                    >
+                      <Ionicons name="close" size={16} color={colors.text.secondary} />
+                    </TouchableOpacity>
+                  </View>
+                )}
+              </ScrollView>
+            )}
+          </View>
+        )}
 
       <View style={styles.contentContainer}>
         {loading ? (
@@ -516,7 +533,7 @@ export default function HomeScreen() {
             showsVerticalScrollIndicator={false}
           >
             <View style={styles.requestsList}>
-              {[1, 2, 3].map((index) => (
+              {[1, 2, 3].map(index => (
                 <SkeletonCard key={index} />
               ))}
             </View>
@@ -554,7 +571,7 @@ export default function HomeScreen() {
                 isOwner={activeTab === 'my'}
               />
             )}
-            keyExtractor={(item) => item.id}
+            keyExtractor={item => item.id}
             numColumns={2}
             columnWrapperStyle={styles.gridRow}
             contentContainerStyle={[
@@ -563,7 +580,7 @@ export default function HomeScreen() {
                 paddingBottom: 120, // Space for FAB button
                 paddingTop: 16,
                 paddingHorizontal: spacing.sm,
-              }
+              },
             ]}
             refreshControl={
               <RefreshControl
@@ -588,16 +605,18 @@ export default function HomeScreen() {
                 </View>
               ) : !hasMore && requests.length > 0 ? (
                 <View style={styles.footerLoader}>
-                  <Text style={styles.footerEndText}>{t('noMoreRequests') || 'Ingen flere forespørsler'}</Text>
+                  <Text style={styles.footerEndText}>
+                    {t('noMoreRequests') || 'Ingen flere forespørsler'}
+                  </Text>
                 </View>
               ) : null
             }
             // Performance optimizations
-            removeClippedSubviews={true}  // Enable native optimization
-            maxToRenderPerBatch={10}  // Reduced from 20 for better performance
-            updateCellsBatchingPeriod={50}  // Batch updates every 50ms
-            initialNumToRender={10}  // Initial render (5 rows for 2 columns)
-            windowSize={5}  // Reduced window size for better memory usage
+            removeClippedSubviews={true} // Enable native optimization
+            maxToRenderPerBatch={10} // Reduced from 20 for better performance
+            updateCellsBatchingPeriod={50} // Batch updates every 50ms
+            initialNumToRender={10} // Initial render (5 rows for 2 columns)
+            windowSize={5} // Reduced window size for better memory usage
             keyboardShouldPersistTaps="handled"
           />
         )}
@@ -609,10 +628,7 @@ export default function HomeScreen() {
         onPress={() => router.push('/(tabs)/create')}
         activeOpacity={0.8}
       >
-        <LinearGradient
-          colors={[colors.primary, colors.primary]}
-          style={styles.fabGradient}
-        >
+        <LinearGradient colors={[colors.primary, colors.primary]} style={styles.fabGradient}>
           <Ionicons name="add" size={32} color={theme.iconColors.white} />
         </LinearGradient>
       </TouchableOpacity>
@@ -644,243 +660,304 @@ export default function HomeScreen() {
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.bottomSheetScrollContent}
         >
-              {/* Sorting Section */}
-              <View style={styles.filterSection}>
-                <Text style={styles.filterSectionTitle}>Sorter etter</Text>
-                <View style={styles.filterOptionsGrid}>
-                  <TouchableOpacity
-                    style={[styles.sortOption, sortBy === 'newest' && styles.sortOptionActive]}
-                    onPress={() => setSortBy('newest')}
-                  >
-                    <View style={[styles.radioCircle, sortBy === 'newest' && styles.radioCircleActive]}>
-                      {sortBy === 'newest' && <View style={styles.radioInner} />}
-                    </View>
-                    <Text style={[styles.sortOptionText, sortBy === 'newest' && styles.sortOptionTextActive]}>
-                      Nyeste
-                    </Text>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
-                    style={[styles.sortOption, sortBy === 'oldest' && styles.sortOptionActive]}
-                    onPress={() => setSortBy('oldest')}
-                  >
-                    <View style={[styles.radioCircle, sortBy === 'oldest' && styles.radioCircleActive]}>
-                      {sortBy === 'oldest' && <View style={styles.radioInner} />}
-                    </View>
-                    <Text style={[styles.sortOptionText, sortBy === 'oldest' && styles.sortOptionTextActive]}>
-                      Eldste
-                    </Text>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
-                    style={[styles.sortOption, sortBy === 'priceLowToHigh' && styles.sortOptionActive]}
-                    onPress={() => setSortBy('priceLowToHigh')}
-                  >
-                    <View style={[styles.radioCircle, sortBy === 'priceLowToHigh' && styles.radioCircleActive]}>
-                      {sortBy === 'priceLowToHigh' && <View style={styles.radioInner} />}
-                    </View>
-                    <Text style={[styles.sortOptionText, sortBy === 'priceLowToHigh' && styles.sortOptionTextActive]}>
-                      Pris: Lav → Høy
-                    </Text>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
-                    style={[styles.sortOption, sortBy === 'priceHighToLow' && styles.sortOptionActive]}
-                    onPress={() => setSortBy('priceHighToLow')}
-                  >
-                    <View style={[styles.radioCircle, sortBy === 'priceHighToLow' && styles.radioCircleActive]}>
-                      {sortBy === 'priceHighToLow' && <View style={styles.radioInner} />}
-                    </View>
-                    <Text style={[styles.sortOptionText, sortBy === 'priceHighToLow' && styles.sortOptionTextActive]}>
-                      Pris: Høy → Lav
-                    </Text>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
-                    style={[styles.sortOption, sortBy === 'date' && styles.sortOptionActive]}
-                    onPress={() => setSortBy('date')}
-                  >
-                    <View style={[styles.radioCircle, sortBy === 'date' && styles.radioCircleActive]}>
-                      {sortBy === 'date' && <View style={styles.radioInner} />}
-                    </View>
-                    <Text style={[styles.sortOptionText, sortBy === 'date' && styles.sortOptionTextActive]}>
-                      Hentingsdato
-                    </Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
-
-              {/* Divider */}
-              <View style={styles.sectionDivider} />
-
-              {/* City Search with Autocomplete */}
-              <View style={styles.filterSection}>
-                <Text style={styles.filterSectionTitle}>By</Text>
-                <View style={styles.searchInputContainer}>
-                  <Ionicons name="search-outline" size={20} color={colors.text.secondary} />
-                  <TextInput
-                    style={styles.searchInput}
-                    placeholder="Søk etter by..."
-                    value={filterState.citySearch}
-                    onChangeText={setCitySearch}
-                    placeholderTextColor={colors.text.secondary}
-                  />
-                  {filterState.citySearch && (
-                    <TouchableOpacity onPress={() => setCitySearch('')}>
-                      <Ionicons name="close-circle" size={20} color={colors.text.secondary} />
-                    </TouchableOpacity>
-                  )}
-                </View>
-                <View style={styles.filterOptionsGrid}>
-                  <TouchableOpacity
-                    style={[styles.filterOption, !filterState.city && styles.filterOptionActive]}
-                    onPress={() => {
-                      setCity('');
-                      setCitySearch('');
-                    }}
-                  >
-                    <Text style={[styles.filterOptionText, !filterState.city && styles.filterOptionTextActive]}>
-                      Alle byer
-                    </Text>
-                  </TouchableOpacity>
-                  {cities
-                    .filter(city => city.toLowerCase().includes(filterState.citySearch.toLowerCase()))
-                    .map(city => (
-                    <TouchableOpacity
-                      key={city}
-                      style={[styles.filterOption, filterState.city === city && styles.filterOptionActive]}
-                      onPress={() => {
-                        setCity(city);
-                        setCitySearch(city);
-                      }}
-                    >
-                      <Text style={[styles.filterOptionText, filterState.city === city && styles.filterOptionTextActive]}>
-                        {city}
-                      </Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-              </View>
-
-              {/* Cargo Type Tags */}
-              <View style={styles.filterSection}>
-                <Text style={styles.filterSectionTitle}>Type</Text>
-                <View style={styles.filterOptionsGrid}>
-                  <TouchableOpacity
-                    style={[styles.filterOption, !filterState.cargo_type && styles.filterOptionActive]}
-                    onPress={() => setCargoType('')}
-                  >
-                    <Text style={[styles.filterOptionText, !filterState.cargo_type && styles.filterOptionTextActive]}>
-                      Alle typer
-                    </Text>
-                  </TouchableOpacity>
-                  {['construction', 'automotive', 'furniture', 'electronics', 'food', 'clothing', 'other'].map(type => (
-                    <TouchableOpacity
-                      key={type}
-                      style={[styles.filterOption, filterState.cargo_type === type && styles.filterOptionActive]}
-                      onPress={() => setCargoType(type)}
-                    >
-                      <Text style={[styles.filterOptionText, filterState.cargo_type === type && styles.filterOptionTextActive]}>
-                        {t(type)}
-                      </Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-              </View>
-
-              {/* Price Range */}
-              <View style={styles.filterSection}>
-                <Text style={styles.filterSectionTitle}>Pris (NOK)</Text>
-                <View style={styles.rangeInputContainer}>
-                  <View style={styles.rangeInputWrapper}>
-                    <Text style={styles.rangeLabel}>Fra</Text>
-                    <TextInput
-                      style={styles.rangeInput}
-                      placeholder="0"
-                      value={filterState.priceRange.min}
-                      onChangeText={(text) => setPriceRange({ ...filterState.priceRange, min: text })}
-                      keyboardType="numeric"
-                      placeholderTextColor={colors.text.secondary}
-                    />
-                  </View>
-                  <View style={styles.rangeSeparator} />
-                  <View style={styles.rangeInputWrapper}>
-                    <Text style={styles.rangeLabel}>Til</Text>
-                    <TextInput
-                      style={styles.rangeInput}
-                      placeholder="50000"
-                      value={filterState.priceRange.max}
-                      onChangeText={(text) => setPriceRange({ ...filterState.priceRange, max: text })}
-                      keyboardType="numeric"
-                      placeholderTextColor={colors.text.secondary}
-                    />
-                  </View>
-                </View>
-              </View>
-
-              {/* Date Picker */}
-              <View style={styles.filterSection}>
-                <Text style={styles.filterSectionTitle}>Dato (hentingsdato)</Text>
-                <TouchableOpacity style={styles.datePickerButton}>
-                  <Ionicons name="calendar-outline" size={20} color={colors.text.primary} />
-                  <Text style={styles.datePickerText}>
-                    {filterState.pickupDate || 'Velg dato'}
-                  </Text>
-                  <Ionicons name="chevron-forward" size={20} color={colors.text.secondary} />
-                </TouchableOpacity>
-              </View>
-
-              {/* Weight Range */}
-              <View style={styles.filterSection}>
-                <Text style={styles.filterSectionTitle}>Vekt (kg)</Text>
-                <View style={styles.rangeInputContainer}>
-                  <View style={styles.rangeInputWrapper}>
-                    <Text style={styles.rangeLabel}>Min</Text>
-                    <TextInput
-                      style={styles.rangeInput}
-                      placeholder="0"
-                      value={filterState.weightRange.min}
-                      onChangeText={(text) => setWeightRange({ ...filterState.weightRange, min: text })}
-                      keyboardType="numeric"
-                      placeholderTextColor={colors.text.secondary}
-                    />
-                  </View>
-                  <View style={styles.rangeSeparator} />
-                  <View style={styles.rangeInputWrapper}>
-                    <Text style={styles.rangeLabel}>Maks</Text>
-                    <TextInput
-                      style={styles.rangeInput}
-                      placeholder="1000"
-                      value={filterState.weightRange.max}
-                      onChangeText={(text) => setWeightRange({ ...filterState.weightRange, max: text })}
-                      keyboardType="numeric"
-                      placeholderTextColor={colors.text.secondary}
-                    />
-                  </View>
-                </View>
-              </View>
-
-              {/* Extra padding at bottom for sticky bar */}
-              <View style={{ height: 120 }} />
-            </BottomSheetScrollView>
-
-            {/* Sticky Action Bar at Bottom */}
-            <View style={styles.stickyActionBar}>
+          {/* Sorting Section */}
+          <View style={styles.filterSection}>
+            <Text style={styles.filterSectionTitle}>Sorter etter</Text>
+            <View style={styles.filterOptionsGrid}>
               <TouchableOpacity
-                onPress={() => {
-                  resetFilters();
-                }}
+                style={[styles.sortOption, sortBy === 'newest' && styles.sortOptionActive]}
+                onPress={() => setSortBy('newest')}
               >
-                <Text style={styles.resetButtonText}>Tilbakestill</Text>
+                <View style={[styles.radioCircle, sortBy === 'newest' && styles.radioCircleActive]}>
+                  {sortBy === 'newest' && <View style={styles.radioInner} />}
+                </View>
+                <Text
+                  style={[
+                    styles.sortOptionText,
+                    sortBy === 'newest' && styles.sortOptionTextActive,
+                  ]}
+                >
+                  Nyeste
+                </Text>
               </TouchableOpacity>
 
               <TouchableOpacity
-                style={styles.ctaButton}
-                onPress={closeFilterSheet}
+                style={[styles.sortOption, sortBy === 'oldest' && styles.sortOptionActive]}
+                onPress={() => setSortBy('oldest')}
               >
-                <Text style={styles.ctaButtonText}>Vis treff ({requests.length})</Text>
+                <View style={[styles.radioCircle, sortBy === 'oldest' && styles.radioCircleActive]}>
+                  {sortBy === 'oldest' && <View style={styles.radioInner} />}
+                </View>
+                <Text
+                  style={[
+                    styles.sortOptionText,
+                    sortBy === 'oldest' && styles.sortOptionTextActive,
+                  ]}
+                >
+                  Eldste
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.sortOption, sortBy === 'priceLowToHigh' && styles.sortOptionActive]}
+                onPress={() => setSortBy('priceLowToHigh')}
+              >
+                <View
+                  style={[
+                    styles.radioCircle,
+                    sortBy === 'priceLowToHigh' && styles.radioCircleActive,
+                  ]}
+                >
+                  {sortBy === 'priceLowToHigh' && <View style={styles.radioInner} />}
+                </View>
+                <Text
+                  style={[
+                    styles.sortOptionText,
+                    sortBy === 'priceLowToHigh' && styles.sortOptionTextActive,
+                  ]}
+                >
+                  Pris: Lav → Høy
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.sortOption, sortBy === 'priceHighToLow' && styles.sortOptionActive]}
+                onPress={() => setSortBy('priceHighToLow')}
+              >
+                <View
+                  style={[
+                    styles.radioCircle,
+                    sortBy === 'priceHighToLow' && styles.radioCircleActive,
+                  ]}
+                >
+                  {sortBy === 'priceHighToLow' && <View style={styles.radioInner} />}
+                </View>
+                <Text
+                  style={[
+                    styles.sortOptionText,
+                    sortBy === 'priceHighToLow' && styles.sortOptionTextActive,
+                  ]}
+                >
+                  Pris: Høy → Lav
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.sortOption, sortBy === 'date' && styles.sortOptionActive]}
+                onPress={() => setSortBy('date')}
+              >
+                <View style={[styles.radioCircle, sortBy === 'date' && styles.radioCircleActive]}>
+                  {sortBy === 'date' && <View style={styles.radioInner} />}
+                </View>
+                <Text
+                  style={[styles.sortOptionText, sortBy === 'date' && styles.sortOptionTextActive]}
+                >
+                  Hentingsdato
+                </Text>
               </TouchableOpacity>
             </View>
+          </View>
+
+          {/* Divider */}
+          <View style={styles.sectionDivider} />
+
+          {/* City Search with Autocomplete */}
+          <View style={styles.filterSection}>
+            <Text style={styles.filterSectionTitle}>By</Text>
+            <View style={styles.searchInputContainer}>
+              <Ionicons name="search-outline" size={20} color={colors.text.secondary} />
+              <TextInput
+                style={styles.searchInput}
+                placeholder="Søk etter by..."
+                value={filterState.citySearch}
+                onChangeText={setCitySearch}
+                placeholderTextColor={colors.text.secondary}
+              />
+              {filterState.citySearch && (
+                <TouchableOpacity onPress={() => setCitySearch('')}>
+                  <Ionicons name="close-circle" size={20} color={colors.text.secondary} />
+                </TouchableOpacity>
+              )}
+            </View>
+            <View style={styles.filterOptionsGrid}>
+              <TouchableOpacity
+                style={[styles.filterOption, !filterState.city && styles.filterOptionActive]}
+                onPress={() => {
+                  setCity('');
+                  setCitySearch('');
+                }}
+              >
+                <Text
+                  style={[
+                    styles.filterOptionText,
+                    !filterState.city && styles.filterOptionTextActive,
+                  ]}
+                >
+                  Alle byer
+                </Text>
+              </TouchableOpacity>
+              {cities
+                .filter(city => city.toLowerCase().includes(filterState.citySearch.toLowerCase()))
+                .map(city => (
+                  <TouchableOpacity
+                    key={city}
+                    style={[
+                      styles.filterOption,
+                      filterState.city === city && styles.filterOptionActive,
+                    ]}
+                    onPress={() => {
+                      setCity(city);
+                      setCitySearch(city);
+                    }}
+                  >
+                    <Text
+                      style={[
+                        styles.filterOptionText,
+                        filterState.city === city && styles.filterOptionTextActive,
+                      ]}
+                    >
+                      {city}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+            </View>
+          </View>
+
+          {/* Cargo Type Tags */}
+          <View style={styles.filterSection}>
+            <Text style={styles.filterSectionTitle}>Type</Text>
+            <View style={styles.filterOptionsGrid}>
+              <TouchableOpacity
+                style={[styles.filterOption, !filterState.cargo_type && styles.filterOptionActive]}
+                onPress={() => setCargoType('')}
+              >
+                <Text
+                  style={[
+                    styles.filterOptionText,
+                    !filterState.cargo_type && styles.filterOptionTextActive,
+                  ]}
+                >
+                  Alle typer
+                </Text>
+              </TouchableOpacity>
+              {[
+                'construction',
+                'automotive',
+                'furniture',
+                'electronics',
+                'food',
+                'clothing',
+                'other',
+              ].map(type => (
+                <TouchableOpacity
+                  key={type}
+                  style={[
+                    styles.filterOption,
+                    filterState.cargo_type === type && styles.filterOptionActive,
+                  ]}
+                  onPress={() => setCargoType(type)}
+                >
+                  <Text
+                    style={[
+                      styles.filterOptionText,
+                      filterState.cargo_type === type && styles.filterOptionTextActive,
+                    ]}
+                  >
+                    {t(type)}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+
+          {/* Price Range */}
+          <View style={styles.filterSection}>
+            <Text style={styles.filterSectionTitle}>Pris (NOK)</Text>
+            <View style={styles.rangeInputContainer}>
+              <View style={styles.rangeInputWrapper}>
+                <Text style={styles.rangeLabel}>Fra</Text>
+                <TextInput
+                  style={styles.rangeInput}
+                  placeholder="0"
+                  value={filterState.priceRange.min}
+                  onChangeText={text => setPriceRange({ ...filterState.priceRange, min: text })}
+                  keyboardType="numeric"
+                  placeholderTextColor={colors.text.secondary}
+                />
+              </View>
+              <View style={styles.rangeSeparator} />
+              <View style={styles.rangeInputWrapper}>
+                <Text style={styles.rangeLabel}>Til</Text>
+                <TextInput
+                  style={styles.rangeInput}
+                  placeholder="50000"
+                  value={filterState.priceRange.max}
+                  onChangeText={text => setPriceRange({ ...filterState.priceRange, max: text })}
+                  keyboardType="numeric"
+                  placeholderTextColor={colors.text.secondary}
+                />
+              </View>
+            </View>
+          </View>
+
+          {/* Date Picker */}
+          <View style={styles.filterSection}>
+            <Text style={styles.filterSectionTitle}>Dato (hentingsdato)</Text>
+            <TouchableOpacity style={styles.datePickerButton}>
+              <Ionicons name="calendar-outline" size={20} color={colors.text.primary} />
+              <Text style={styles.datePickerText}>{filterState.pickupDate || 'Velg dato'}</Text>
+              <Ionicons name="chevron-forward" size={20} color={colors.text.secondary} />
+            </TouchableOpacity>
+          </View>
+
+          {/* Weight Range */}
+          <View style={styles.filterSection}>
+            <Text style={styles.filterSectionTitle}>Vekt (kg)</Text>
+            <View style={styles.rangeInputContainer}>
+              <View style={styles.rangeInputWrapper}>
+                <Text style={styles.rangeLabel}>Min</Text>
+                <TextInput
+                  style={styles.rangeInput}
+                  placeholder="0"
+                  value={filterState.weightRange.min}
+                  onChangeText={text => setWeightRange({ ...filterState.weightRange, min: text })}
+                  keyboardType="numeric"
+                  placeholderTextColor={colors.text.secondary}
+                />
+              </View>
+              <View style={styles.rangeSeparator} />
+              <View style={styles.rangeInputWrapper}>
+                <Text style={styles.rangeLabel}>Maks</Text>
+                <TextInput
+                  style={styles.rangeInput}
+                  placeholder="1000"
+                  value={filterState.weightRange.max}
+                  onChangeText={text => setWeightRange({ ...filterState.weightRange, max: text })}
+                  keyboardType="numeric"
+                  placeholderTextColor={colors.text.secondary}
+                />
+              </View>
+            </View>
+          </View>
+
+          {/* Extra padding at bottom for sticky bar */}
+          <View style={{ height: 120 }} />
+        </BottomSheetScrollView>
+
+        {/* Sticky Action Bar at Bottom */}
+        <View style={styles.stickyActionBar}>
+          <TouchableOpacity
+            onPress={() => {
+              resetFilters();
+            }}
+          >
+            <Text style={styles.resetButtonText}>Tilbakestill</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.ctaButton} onPress={closeFilterSheet}>
+            <Text style={styles.ctaButtonText}>Vis treff ({requests.length})</Text>
+          </TouchableOpacity>
+        </View>
       </BottomSheet>
     </View>
   );
@@ -1984,7 +2061,7 @@ const styles = StyleSheet.create({
   },
   cardImageWrapper: {
     width: '100%',
-    aspectRatio: 16/9,
+    aspectRatio: 16 / 9,
     borderRadius: borderRadius.md,
     overflow: 'hidden',
     shadowColor: colors.black,

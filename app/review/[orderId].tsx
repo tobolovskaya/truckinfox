@@ -15,9 +15,26 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTranslation } from 'react-i18next';
 import { db } from '../../lib/firebase';
-import { doc, getDoc, addDoc, collection, serverTimestamp, query, where, getDocs, updateDoc } from 'firebase/firestore';
+import {
+  doc,
+  getDoc,
+  addDoc,
+  collection,
+  serverTimestamp,
+  query,
+  where,
+  getDocs,
+  updateDoc,
+} from 'firebase/firestore';
 import { theme } from '../../theme/theme';
-import { colors, spacing, fontSize, fontWeight, borderRadius, shadows } from '../../lib/sharedStyles';
+import {
+  colors,
+  spacing,
+  fontSize,
+  fontWeight,
+  borderRadius,
+  shadows,
+} from '../../lib/sharedStyles';
 
 interface Order {
   id: string;
@@ -40,7 +57,7 @@ export default function ReviewScreen() {
   const { user } = useAuth();
   const { t } = useTranslation();
   const router = useRouter();
-  
+
   const [order, setOrder] = useState<Order | null>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -55,7 +72,7 @@ export default function ReviewScreen() {
     try {
       const orderRef = doc(db, 'orders', orderId as string);
       const orderSnap = await getDoc(orderRef);
-      
+
       if (!orderSnap.exists()) {
         throw new Error('Order not found');
       }
@@ -128,19 +145,13 @@ export default function ReviewScreen() {
 
       // Update user rating
       // Fetch all reviews for the reviewed user to calculate average
-      const reviewsQuery = query(
-        collection(db, 'reviews'),
-        where('reviewed_id', '==', reviewedId)
-      );
+      const reviewsQuery = query(collection(db, 'reviews'), where('reviewed_id', '==', reviewedId));
       const reviewsSnap = await getDocs(reviewsQuery);
-      
+
       // Calculate average rating
-      const totalRating = reviewsSnap.docs.reduce(
-        (sum, doc) => sum + (doc.data().rating || 0), 
-        0
-      );
+      const totalRating = reviewsSnap.docs.reduce((sum, doc) => sum + (doc.data().rating || 0), 0);
       const avgRating = reviewsSnap.size > 0 ? totalRating / reviewsSnap.size : 0;
-      
+
       // Update user document with new rating
       await updateDoc(doc(db, 'users', reviewedId), {
         rating: Number(avgRating.toFixed(2)), // Round to 2 decimal places
@@ -148,18 +159,16 @@ export default function ReviewScreen() {
         updated_at: serverTimestamp(),
       });
 
-      console.log(`Updated rating for user ${reviewedId}: ${avgRating.toFixed(2)} (${reviewsSnap.size} reviews)`);
-
-      Alert.alert(
-        t('success'),
-        'Review submitted successfully!',
-        [
-          {
-            text: t('ok'),
-            onPress: () => router.back(),
-          },
-        ]
+      console.log(
+        `Updated rating for user ${reviewedId}: ${avgRating.toFixed(2)} (${reviewsSnap.size} reviews)`
       );
+
+      Alert.alert(t('success'), 'Review submitted successfully!', [
+        {
+          text: t('ok'),
+          onPress: () => router.back(),
+        },
+      ]);
     } catch (error: any) {
       console.error('Error submitting review:', error);
       Alert.alert(t('error'), error.message);
@@ -197,10 +206,7 @@ export default function ReviewScreen() {
     <SafeAreaView style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => router.back()}
-        >
+        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
           <Ionicons name="arrow-back" size={24} color={theme.iconColors.dark} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Leave Review</Text>
@@ -216,9 +222,7 @@ export default function ReviewScreen() {
 
         {/* Review Target */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>
-            Rate your experience with {reviewedRole}
-          </Text>
+          <Text style={styles.sectionTitle}>Rate your experience with {reviewedRole}</Text>
           <View style={styles.reviewTarget}>
             <View style={styles.avatar}>
               <Ionicons name="person" size={24} color={theme.iconColors.primary} />
@@ -231,7 +235,7 @@ export default function ReviewScreen() {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Rating *</Text>
           <View style={styles.starsContainer}>
-            {[1, 2, 3, 4, 5].map((star) => (
+            {[1, 2, 3, 4, 5].map(star => (
               <TouchableOpacity
                 key={star}
                 style={styles.starButton}
@@ -269,9 +273,7 @@ export default function ReviewScreen() {
             maxLength={500}
             placeholderTextColor="#9CA3AF"
           />
-          <Text style={styles.characterCount}>
-            {comment.length}/500 characters
-          </Text>
+          <Text style={styles.characterCount}>{comment.length}/500 characters</Text>
         </View>
 
         {/* Submit Button */}
@@ -279,7 +281,7 @@ export default function ReviewScreen() {
           <TouchableOpacity
             style={[
               styles.submitButton,
-              (rating === 0 || submitting) && styles.submitButtonDisabled
+              (rating === 0 || submitting) && styles.submitButtonDisabled,
             ]}
             onPress={submitReview}
             disabled={rating === 0 || submitting}

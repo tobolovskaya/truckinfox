@@ -1,10 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import {
-  Animated,
-  RefreshControl,
-  RefreshControlProps,
-  Platform,
-} from 'react-native';
+import { Animated, RefreshControl, RefreshControlProps, Platform } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { colors, spacing, fontSize, fontWeight, borderRadius, shadows } from '../lib/sharedStyles';
 

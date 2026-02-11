@@ -23,16 +23,19 @@ export const uploadImage = async (
 ): Promise<string> => {
   try {
     const storage = getStorage();
-    const filename = type === 'signature' 
-      ? `signature_${Date.now()}.png`
-      : `photo_${index}_${Date.now()}.jpg`;
-    
+    const filename =
+      type === 'signature' ? `signature_${Date.now()}.png` : `photo_${index}_${Date.now()}.jpg`;
+
     const storageRef = ref(storage, `delivery_proofs/${orderId}/${filename}`);
 
     // Convert URI to blob with timeout
-    const response = await fetchWithTimeout(uri, {
-      method: 'GET',
-    }, 15000); // 15 second timeout for image download
+    const response = await fetchWithTimeout(
+      uri,
+      {
+        method: 'GET',
+      },
+      15000
+    ); // 15 second timeout for image download
     const blob = await response.blob();
 
     // Upload to Firebase Storage

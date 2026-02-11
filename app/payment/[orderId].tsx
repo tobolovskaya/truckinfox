@@ -16,9 +16,26 @@ import { useTranslation } from 'react-i18next';
 import { db, firebaseProjectId, firebaseApiKey } from '../../lib/firebase';
 import { trackPaymentInitiated, trackPaymentCompleted } from '../../utils/analytics';
 import { fetchWithRetry } from '../../utils/fetchWithTimeout';
-import { doc, getDoc, collection, addDoc, serverTimestamp, query, where, getDocs, setDoc } from 'firebase/firestore';
+import {
+  doc,
+  getDoc,
+  collection,
+  addDoc,
+  serverTimestamp,
+  query,
+  where,
+  getDocs,
+  setDoc,
+} from 'firebase/firestore';
 import { theme } from '../../theme/theme';
-import { colors, spacing, fontSize, fontWeight, borderRadius, shadows } from '../../lib/sharedStyles';
+import {
+  colors,
+  spacing,
+  fontSize,
+  fontWeight,
+  borderRadius,
+  shadows,
+} from '../../lib/sharedStyles';
 
 interface Order {
   id: string;
@@ -47,7 +64,7 @@ export default function PaymentScreen() {
   const { user } = useAuth();
   const { t } = useTranslation();
   const router = useRouter();
-  
+
   const [order, setOrder] = useState<Order | null>(null);
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState(false);
@@ -66,7 +83,7 @@ export default function PaymentScreen() {
       // Fetch order
       const orderRef = doc(db, 'orders', orderId);
       const orderSnap = await getDoc(orderRef);
-      
+
       if (!orderSnap.exists()) {
         throw new Error('Order not found');
       }
@@ -94,7 +111,10 @@ export default function PaymentScreen() {
       setOrder(orderData);
     } catch (error) {
       console.error('Error fetching order:', error);
-      Alert.alert(t('error'), error instanceof Error ? error.message : 'Failed to load order details');
+      Alert.alert(
+        t('error'),
+        error instanceof Error ? error.message : 'Failed to load order details'
+      );
     } finally {
       setLoading(false);
     }
@@ -107,7 +127,7 @@ export default function PaymentScreen() {
     try {
       // 🔐 Generate idempotency key to prevent duplicate payments
       const idempotencyKey = `payment_${order.id}_${Date.now()}`;
-      
+
       // 🔍 Check if payment already exists for this order
       const existingPaymentQuery = query(
         collection(db, 'escrow_payments'),
@@ -115,35 +135,31 @@ export default function PaymentScreen() {
         where('status', 'in', ['initiated', 'paid'])
       );
       const existingPaymentSnap = await getDocs(existingPaymentQuery);
-      
+
       if (!existingPaymentSnap.empty) {
         const existingPayment = existingPaymentSnap.docs[0].data();
         const existingPaymentId = existingPaymentSnap.docs[0].id;
-        
+
         // If payment is already initiated with a Vipps URL, offer to continue
         if (existingPayment.vipps_url) {
-          Alert.alert(
-            t('paymentInProgress'),
-            t('paymentAlreadyInitiated'),
-            [
-              {
-                text: t('continue'),
-                onPress: () => {
-                  // In production, open the existing Vipps URL
-                  // Linking.openURL(existingPayment.vipps_url);
-                  simulatePaymentSuccess();
-                },
+          Alert.alert(t('paymentInProgress'), t('paymentAlreadyInitiated'), [
+            {
+              text: t('continue'),
+              onPress: () => {
+                // In production, open the existing Vipps URL
+                // Linking.openURL(existingPayment.vipps_url);
+                simulatePaymentSuccess();
               },
-              {
-                text: t('cancel'),
-                style: 'cancel',
-              },
-            ]
-          );
+            },
+            {
+              text: t('cancel'),
+              style: 'cancel',
+            },
+          ]);
           setProcessing(false);
           return;
         }
-        
+
         // If payment exists but no Vipps URL, it might be stuck
         // Log this for debugging
         console.warn('Existing payment without Vipps URL:', existingPaymentId);
@@ -151,24 +167,28 @@ export default function PaymentScreen() {
 
       // Validate Firebase configuration
       if (!firebaseProjectId || !firebaseApiKey) {
-        throw new Error('Firebase configuration is incomplete. Please check your environment variables.');
+        throw new Error(
+          'Firebase configuration is incomplete. Please check your environment variables.'
+        );
       }
 
       // Validate all required data before making the request
       if (!user?.uid) {
         throw new Error('User not authenticated');
       }
-      
+
       // Get phone number from user profile
       const userRef = doc(db, 'users', user.uid);
       const userSnap = await getDoc(userRef);
-      
+
       if (!userSnap.exists() || !userSnap.data()?.phone) {
-        throw new Error('User phone number is required for Vipps payment. Please update your profile.');
+        throw new Error(
+          'User phone number is required for Vipps payment. Please update your profile.'
+        );
       }
-      
+
       const customerPhone = userSnap.data()?.phone;
-      
+
       // Validate order data
       if (!order.carrier_id) {
         throw new Error('Order data is incomplete - missing carrier information');
@@ -215,7 +235,7 @@ export default function PaymentScreen() {
       const response = await fetchWithRetry(cloudFunctionUrl, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${firebaseApiKey}`,
+          Authorization: `Bearer ${firebaseApiKey}`,
           'Content-Type': 'application/json',
           'Idempotency-Key': idempotencyKey, // 🔑 Critical for preventing duplicate charges
         },
@@ -244,24 +264,20 @@ export default function PaymentScreen() {
       // Redirect to Vipps
       if (result.vipps_url) {
         // In a real app, you would open this URL in the Vipps app or browser
-        Alert.alert(
-          t('vippsPayment'),
-          t('vippsRedirectMessage'),
-          [
-            {
-              text: t('continue'),
-              onPress: () => {
-                // Here you would typically use Linking.openURL(result.vipps_url)
-                // For now, we'll simulate the payment process
-                simulatePaymentSuccess();
-              },
+        Alert.alert(t('vippsPayment'), t('vippsRedirectMessage'), [
+          {
+            text: t('continue'),
+            onPress: () => {
+              // Here you would typically use Linking.openURL(result.vipps_url)
+              // For now, we'll simulate the payment process
+              simulatePaymentSuccess();
             },
-            {
-              text: t('cancel'),
-              style: 'cancel',
-            },
-          ]
-        );
+          },
+          {
+            text: t('cancel'),
+            style: 'cancel',
+          },
+        ]);
       }
     } catch (error: any) {
       console.error('Vipps payment error:', error);
@@ -284,16 +300,12 @@ export default function PaymentScreen() {
         });
       }
 
-      Alert.alert(
-        t('paymentSuccessful'),
-        t('paymentSuccessMessage'),
-        [
-          {
-            text: t('ok'),
-            onPress: () => router.replace(`/order-status/${orderId}`),
-          },
-        ]
-      );
+      Alert.alert(t('paymentSuccessful'), t('paymentSuccessMessage'), [
+        {
+          text: t('ok'),
+          onPress: () => router.replace(`/order-status/${orderId}`),
+        },
+      ]);
     }, 2000);
   };
 
@@ -314,10 +326,7 @@ export default function PaymentScreen() {
         <View style={styles.errorContainer}>
           <Ionicons name="alert-circle-outline" size={64} color={theme.iconColors.error} />
           <Text style={styles.errorText}>{t('orderNotFound')}</Text>
-          <TouchableOpacity
-            style={styles.backButton}
-            onPress={() => router.back()}
-          >
+          <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
             <Text style={styles.backButtonText}>{t('goBack')}</Text>
           </TouchableOpacity>
         </View>
@@ -329,10 +338,7 @@ export default function PaymentScreen() {
     <SafeAreaView style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.headerBackButton}
-          onPress={() => router.back()}
-        >
+        <TouchableOpacity style={styles.headerBackButton} onPress={() => router.back()}>
           <Ionicons name="arrow-back" size={24} color={theme.iconColors.dark} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Payment</Text>
@@ -354,14 +360,16 @@ export default function PaymentScreen() {
                 {processing ? t('processing') : t('payWithVipps')}
               </Text>
               {processing && (
-                <ActivityIndicator size="small" color={theme.iconColors.white} style={styles.vippsSpinner} />
+                <ActivityIndicator
+                  size="small"
+                  color={theme.iconColors.white}
+                  style={styles.vippsSpinner}
+                />
               )}
             </View>
           </TouchableOpacity>
 
-          <Text style={styles.paymentNote}>
-            {t('paymentNote')}
-          </Text>
+          <Text style={styles.paymentNote}>{t('paymentNote')}</Text>
         </View>
 
         {/* 2. Payment Breakdown */}
@@ -392,9 +400,7 @@ export default function PaymentScreen() {
             <Ionicons name="shield-checkmark" size={24} color={theme.iconColors.success} />
             <Text style={styles.escrowTitle}>{t('secureEscrowPayment')}</Text>
           </View>
-          <Text style={styles.escrowDescription}>
-            {t('escrowDescription')}
-          </Text>
+          <Text style={styles.escrowDescription}>{t('escrowDescription')}</Text>
         </View>
       </ScrollView>
     </SafeAreaView>
