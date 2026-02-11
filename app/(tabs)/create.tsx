@@ -454,7 +454,7 @@ export default function CreateRequestScreen() {
       toast.success(t('requestCreated'));
 
       // Navigate after short delay to show toast
-      const navigationTimer = setTimeout(() => {
+      setTimeout(() => {
         try {
           router.replace('/(tabs)/home');
         } catch (error) {
@@ -462,9 +462,6 @@ export default function CreateRequestScreen() {
           router.push('/(tabs)/home');
         }
       }, 500);
-
-      // Cleanup timer on unmount
-      return () => clearTimeout(navigationTimer);
     } catch (error: any) {
       toast.error(error.message || t('error'));
     } finally {
