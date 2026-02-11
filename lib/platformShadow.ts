@@ -1,22 +1,33 @@
-import { Platform, ViewStyle } from 'react-native';
+import { Platform } from 'react-native';
 
-/**
- * Creates platform-specific shadow styles
- * iOS uses shadow props, Android uses elevation
- */
-export const platformShadow = (elevation: number): ViewStyle => {
-  if (Platform.OS === 'ios') {
+interface ShadowParams {
+  shadowColor: string;
+  shadowOffset: { width: number; height: number };
+  shadowOpacity: number;
+  shadowRadius: number;
+  elevation?: number;
+}
+
+export function getPlatformShadow(params: ShadowParams) {
+  const { shadowColor, shadowOffset, shadowOpacity, shadowRadius, elevation } = params;
+
+  if (Platform.OS === 'web') {
+    const rgbaColor = shadowColor === '#000' || shadowColor === 'black'
+      ? `rgba(0, 0, 0, ${shadowOpacity})`
+      : shadowColor.includes('rgb')
+      ? shadowColor
+      : shadowColor;
+
     return {
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: elevation / 2 },
-      shadowOpacity: 0.1 + elevation * 0.02,
-      shadowRadius: elevation,
+      boxShadow: `${shadowOffset.width}px ${shadowOffset.height}px ${shadowRadius}px ${rgbaColor}`,
     };
   }
 
   return {
-    elevation,
+    shadowColor,
+    shadowOffset,
+    shadowOpacity,
+    shadowRadius,
+    ...(elevation !== undefined && Platform.OS === 'android' ? { elevation } : {}),
   };
-};
-
-export default platformShadow;
+}
