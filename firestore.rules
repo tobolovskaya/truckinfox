@@ -1,0 +1,79 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+    
+    // Users collection
+    match /users/{userId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && isOwner(userId);
+      allow update, delete: if isOwner(userId);
+    }
+    
+    // Cargo requests collection
+    match /cargoRequests/{requestId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated() && 
+        (isOwner(resource.data.customerId) || 
+         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'carrier');
+      allow delete: if isAuthenticated() && isOwner(resource.data.customerId);
+    }
+    
+    // Bids collection
+    match /bids/{bidId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && 
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'carrier';
+      allow update: if isAuthenticated() && 
+        (isOwner(resource.data.carrierId) || isOwner(resource.data.customerId));
+      allow delete: if isAuthenticated() && isOwner(resource.data.carrierId);
+    }
+    
+    // Messages collection
+    match /messages/{messageId} {
+      allow read: if isAuthenticated() && 
+        (isOwner(resource.data.senderId) || isOwner(resource.data.receiverId));
+      allow create: if isAuthenticated() && isOwner(request.resource.data.senderId);
+      allow update, delete: if isAuthenticated() && isOwner(resource.data.senderId);
+    }
+    
+    // Chats collection
+    match /chats/{chatId} {
+      allow read: if isAuthenticated() && 
+        request.auth.uid in resource.data.participantIds;
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated() && 
+        request.auth.uid in resource.data.participantIds;
+    }
+    
+    // Reviews collection
+    match /reviews/{reviewId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && isOwner(request.resource.data.reviewerId);
+      allow update, delete: if isAuthenticated() && isOwner(resource.data.reviewerId);
+    }
+    
+    // Orders collection
+    match /orders/{orderId} {
+      allow read: if isAuthenticated() && 
+        (isOwner(resource.data.customerId) || isOwner(resource.data.carrierId));
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated() && 
+        (isOwner(resource.data.customerId) || isOwner(resource.data.carrierId));
+    }
+    
+    // Notifications collection
+    match /notifications/{notificationId} {
+      allow read, update, delete: if isAuthenticated() && isOwner(resource.data.userId);
+      allow create: if isAuthenticated();
+    }
+  }
+}

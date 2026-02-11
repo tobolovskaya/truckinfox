@@ -1,30 +1,85 @@
 {
   "expo": {
-    "name": "truckinfox",
+    "name": "TruckinFox",
     "slug": "truckinfox",
     "version": "1.0.0",
+    "scheme": "truckinfox",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
+    "primaryColor": "#FF7043",
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#FF7043"
     },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.truckinfox.app",
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "TruckinFox needs access to your location to show delivery routes and track cargo.",
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "TruckinFox needs access to your location to provide real-time tracking during deliveries.",
+        "NSCameraUsageDescription": "TruckinFox needs access to your camera to take photos of cargo and delivery confirmation.",
+        "NSPhotoLibraryUsageDescription": "TruckinFox needs access to your photo library to upload cargo images.",
+        "NSMicrophoneUsageDescription": "TruckinFox needs access to your microphone for video calls."
+      },
+      "googleServicesFile": "./GoogleService-Info.plist"
     },
     "android": {
+      "package": "com.truckinfox.app",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
+        "backgroundColor": "#FF7043"
       },
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "permissions": [
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_BACKGROUND_LOCATION",
+        "CAMERA",
+        "READ_EXTERNAL_STORAGE",
+        "WRITE_EXTERNAL_STORAGE",
+        "RECORD_AUDIO"
+      ],
+      "googleServicesFile": "./google-services.json"
     },
     "web": {
       "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Allow TruckinFox to use your location for real-time cargo tracking."
+        }
+      ],
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Allow TruckinFox to access your camera for cargo photos."
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/notification-icon.png",
+          "color": "#FF7043"
+        }
+      ]
+    ],
+    "extra": {
+      "router": {
+        "origin": false
+      },
+      "eas": {
+        "projectId": "your-eas-project-id"
+      }
     }
   }
 }
