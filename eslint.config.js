@@ -59,13 +59,6 @@ export default [
     },
   },
   {
-    ignores: [
-      'node_modules/**',
-      '.expo/**',
-      'dist/**',
-      'build/**',
-      'coverage/**',
-      '*.config.js',
-    ],
+    ignores: ['node_modules/**', '.expo/**', 'dist/**', 'build/**', 'coverage/**', '*.config.js'],
   },
 ];
