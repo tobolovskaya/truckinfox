@@ -1,70 +1,68 @@
-import React, { useEffect } from 'react';
-import { View, StyleSheet, Image, ActivityIndicator } from 'react-native';
+import 'react-native-get-random-values';
+import React, { useEffect, useState } from 'react';
+import { View } from 'react-native';
+import { ActivityIndicator } from 'react-native-paper';
 import { useRouter } from 'expo-router';
-import { Text } from 'react-native-paper';
 import { useAuth } from '../contexts/AuthContext';
-import { colors, spacing } from '../theme';
+import { AuthProvider } from '../contexts/AuthContext';
 
-export default function Index() {
-  const { user, loading } = useAuth();
-  const router = useRouter();
-
-  useEffect(() => {
-    if (!loading) {
-      if (user) {
-        // User is authenticated, navigate to main app
-        router.replace('/(tabs)');
-      } else {
-        // User is not authenticated, navigate to auth flow
-        router.replace('/auth/login');
-      }
-    }
-  }, [user, loading]);
-
+export default function App() {
   return (
-    <View style={styles.container}>
-      <View style={styles.logoContainer}>
-        <Text style={styles.logo}>🚚</Text>
-        <Text style={styles.appName}>TruckinFox</Text>
-        <Text style={styles.tagline}>Your Cargo, Our Priority</Text>
-      </View>
-      {loading && (
-        <ActivityIndicator
-          size="large"
-          color={colors.primary}
-          style={styles.loader}
-        />
-      )}
-    </View>
+    <AuthProvider>
+      <Index />
+    </AuthProvider>
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.primary,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  logoContainer: {
-    alignItems: 'center',
-  },
-  logo: {
-    fontSize: 80,
-    marginBottom: spacing.md,
-  },
-  appName: {
-    fontSize: 36,
-    fontWeight: 'bold',
-    color: colors.background,
-    marginBottom: spacing.sm,
-  },
-  tagline: {
-    fontSize: 16,
-    color: colors.background,
-    opacity: 0.9,
-  },
-  loader: {
-    marginTop: spacing.xl,
-  },
-});
+function Index() {
+  const { user, loading } = useAuth();
+  const router = useRouter();
+  const [isMounted, setIsMounted] = useState(false);
+  const [hasNavigated, setHasNavigated] = useState(false);
+
+  useEffect(() => {
+    // Mark as mounted after a brief delay to ensure router is ready
+    const mountTimer = setTimeout(() => {
+      setIsMounted(true);
+    }, 100);
+
+    return () => clearTimeout(mountTimer);
+  }, []);
+
+  useEffect(() => {
+    if (!loading && isMounted && !hasNavigated) {
+      setHasNavigated(true);
+
+      // Use setTimeout to ensure router is fully ready
+      setTimeout(() => {
+        try {
+          if (user) {
+            router.replace('/(tabs)');
+          } else {
+            router.replace('/(auth)/login');
+          }
+        } catch (error) {
+          console.warn('Navigation error:', error);
+          // Retry navigation after a longer delay
+          setTimeout(() => {
+            try {
+              if (user) {
+                router.replace('/(tabs)');
+              } else {
+                router.replace('/(auth)/login');
+              }
+            } catch (retryError) {
+              console.error('Failed to navigate after retry:', retryError);
+            }
+          }, 500);
+        }
+      }, 50);
+    }
+  }, [user, loading, router, isMounted, hasNavigated]);
+
+  return (
+    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#FF7043' }}>
+      <ActivityIndicator size="large" color="white" />
+    </View>
+  );
+}
