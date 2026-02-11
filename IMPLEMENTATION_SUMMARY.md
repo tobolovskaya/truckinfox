@@ -187,6 +187,7 @@ firebase deploy --only functions
 ```bash
 npx expo start
 npx expo start --tunnel
+npx expo start --tunnel --clear
 ```
 
 ## Deployment

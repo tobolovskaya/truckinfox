@@ -1,9 +1,7 @@
-import { initializeApp, getApps, FirebaseApp } from 'firebase/app';
-import { initializeAuth, getReactNativePersistence, Auth, getAuth as getAuthInstance } from 'firebase/auth';
-import { getFirestore, Firestore } from 'firebase/firestore';
-import { getStorage, FirebaseStorage } from 'firebase/storage';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import Constants from 'expo-constants';
+import { initializeApp, getApps } from 'firebase/app';
+import { getAuth } from 'firebase/auth';
+import { getFirestore } from 'firebase/firestore';
+import { getStorage } from 'firebase/storage';
 
 // Firebase configuration from environment variables
 const firebaseConfig = {
@@ -16,25 +14,13 @@ const firebaseConfig = {
   measurementId: process.env.EXPO_PUBLIC_FIREBASE_MEASUREMENT_ID || '',
 };
 
-// Initialize Firebase
-let app: FirebaseApp;
-let auth: Auth;
-let firestore: Firestore;
-let storage: FirebaseStorage;
+// Initialize Firebase app
+const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
 
-if (getApps().length === 0) {
-  app = initializeApp(firebaseConfig);
-  auth = initializeAuth(app, {
-    persistence: getReactNativePersistence(AsyncStorage)
-  });
-  firestore = getFirestore(app);
-  storage = getStorage(app);
-} else {
-  app = getApps()[0];
-  auth = getAuthInstance(app);
-  firestore = getFirestore(app);
-  storage = getStorage(app);
-}
+// Get services - these are lazy-initialized
+const auth = getAuth(app);
+const firestore = getFirestore(app);
+const storage = getStorage(app);
 
 export { app, auth, firestore, storage };
 export default app;
