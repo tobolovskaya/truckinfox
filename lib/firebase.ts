@@ -1,7 +1,7 @@
-import { initializeApp, getApps } from 'firebase/app';
-import { getAuth } from 'firebase/auth';
-import { getFirestore } from 'firebase/firestore';
-import { getStorage } from 'firebase/storage';
+import { initializeApp, getApps, FirebaseApp } from 'firebase/app';
+import { Auth, getAuth } from 'firebase/auth';
+import { Firestore, getFirestore } from 'firebase/firestore';
+import { FirebaseStorage, getStorage } from 'firebase/storage';
 
 // Firebase configuration from environment variables
 const firebaseConfig = {
@@ -15,12 +15,40 @@ const firebaseConfig = {
 };
 
 // Initialize Firebase app
-const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
+let app: FirebaseApp;
 
-// Get services - these are lazy-initialized
-const auth = getAuth(app);
-const firestore = getFirestore(app);
-const storage = getStorage(app);
+if (getApps().length === 0) {
+  app = initializeApp(firebaseConfig);
+} else {
+  app = getApps()[0];
+}
+
+// Initialize services with error handling
+let auth: Auth | undefined;
+let firestore: Firestore | undefined;
+let storage: FirebaseStorage | undefined;
+
+try {
+  auth = getAuth(app);
+  console.log('Firebase Auth initialized successfully');
+} catch (error) {
+  console.error('Firebase Auth initialization failed:', error);
+  console.warn('App will run without authentication features');
+}
+
+try {
+  firestore = getFirestore(app);
+  console.log('Firebase Firestore initialized successfully');
+} catch (error) {
+  console.error('Firebase Firestore initialization failed:', error);
+}
+
+try {
+  storage = getStorage(app);
+  console.log('Firebase Storage initialized successfully');
+} catch (error) {
+  console.error('Firebase Storage initialization failed:', error);
+}
 
 export { app, auth, firestore, storage };
 export default app;
