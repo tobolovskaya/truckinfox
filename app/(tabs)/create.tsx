@@ -54,7 +54,17 @@ const CARGO_LIMITS = {
   volume: { max: 40 }, // m³
 } as const;
 
+const PRICING_CONSTANTS = {
+  pricePerKg: 15, // NOK
+  volumeAdjustment: 500, // NOK per m³
+  distanceDivisor: 1000, // km
+  defaultDistanceFactor: 1.5,
+} as const;
+
 const DRAFT_KEY = 'cargo-request-draft';
+const DRAFT_EXPIRY_HOURS = 24;
+const AUTOSAVE_DEBOUNCE_MS = 2000; // 2 seconds
+const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
 export default function CreateRequestScreen() {
   const { user } = useAuth();
@@ -78,14 +88,14 @@ export default function CreateRequestScreen() {
           const savedAt = new Date(parsed.savedAt);
           const hoursSince = (Date.now() - savedAt.getTime()) / (1000 * 60 * 60);
           
-          if (hoursSince < 24) {
+          if (hoursSince < DRAFT_EXPIRY_HOURS) {
             // Show a toast with action to restore draft
             toast.info(`Fant lagret utkast fra ${Math.round(hoursSince)} timer siden`);
-            // Auto-restore the draft
+            // Auto-restore the draft with safe date handling
             setFormData({
               ...parsed,
-              pickup_date: new Date(parsed.pickup_date),
-              delivery_date: new Date(parsed.delivery_date),
+              pickup_date: parsed.pickup_date ? new Date(parsed.pickup_date) : new Date(),
+              delivery_date: parsed.delivery_date ? new Date(parsed.delivery_date) : new Date(Date.now() + MS_PER_DAY),
             });
             setImages(parsed.images || []);
           } else {
@@ -115,7 +125,7 @@ export default function CreateRequestScreen() {
       }
     };
 
-    const timeoutId = setTimeout(saveDraft, 1000);
+    const timeoutId = setTimeout(saveDraft, AUTOSAVE_DEBOUNCE_MS);
     return () => clearTimeout(timeoutId);
   }, [formData, images]);
 
@@ -133,7 +143,7 @@ export default function CreateRequestScreen() {
     to_lng: null as number | null,
     distance_km: null as number | null,
     pickup_date: new Date(),
-    delivery_date: new Date(Date.now() + 24 * 60 * 60 * 1000), // Tomorrow
+    delivery_date: new Date(Date.now() + MS_PER_DAY), // Tomorrow
     price_type: '',
     price: '',
   });
@@ -289,7 +299,6 @@ export default function CreateRequestScreen() {
     if (!formData.weight || !formData.dimensions) return null;
 
     try {
-      const pricePerKg = 15; // NOK
       const dimStr = formData.dimensions.trim();
       const parts = dimStr.split('x').map(d => Number(d.trim()));
       
@@ -297,10 +306,12 @@ export default function CreateRequestScreen() {
       
       const [length, width, height] = parts;
       const volume = (length * width * height) / 1000000; // m³
-      const distanceFactor = formData.distance_km ? 1 + (formData.distance_km / 1000) : 1.5;
+      const distanceFactor = formData.distance_km 
+        ? 1 + (formData.distance_km / PRICING_CONSTANTS.distanceDivisor) 
+        : PRICING_CONSTANTS.defaultDistanceFactor;
       
-      const basePrice = Number(formData.weight) * pricePerKg;
-      const volumeAdjustment = volume > 1 ? volume * 500 : 0;
+      const basePrice = Number(formData.weight) * PRICING_CONSTANTS.pricePerKg;
+      const volumeAdjustment = volume > 1 ? volume * PRICING_CONSTANTS.volumeAdjustment : 0;
       
       return Math.round((basePrice + volumeAdjustment) * distanceFactor);
     } catch {
@@ -1674,7 +1685,7 @@ export default function CreateRequestScreen() {
             if (selectedDate) {
               // If delivery date is before new pickup date, adjust it
               if (formData.delivery_date < selectedDate) {
-                const newDeliveryDate = new Date(selectedDate.getTime() + 24 * 60 * 60 * 1000);
+                const newDeliveryDate = new Date(selectedDate.getTime() + MS_PER_DAY);
                 setFormData(prev => ({ 
                   ...prev, 
                   pickup_date: selectedDate,
