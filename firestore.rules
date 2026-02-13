@@ -9,6 +9,12 @@ service cloud.firestore {
     function isOwner(userId) {
       return isAuthenticated() && request.auth.uid == userId;
     }
+
+    function isCarrier() {
+      return isAuthenticated() &&
+        (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'carrier' ||
+         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.user_type == 'carrier');
+    }
     
     // Users collection
     match /users/{userId} {
@@ -23,26 +29,40 @@ service cloud.firestore {
       allow create: if isAuthenticated();
       allow update: if isAuthenticated() && 
         (isOwner(resource.data.customerId) || 
-         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'carrier');
+         isCarrier());
       allow delete: if isAuthenticated() && isOwner(resource.data.customerId);
+    }
+
+    // Cargo requests (snake_case)
+    match /cargo_requests/{requestId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && isOwner(request.resource.data.user_id);
+      allow update: if isAuthenticated() &&
+        (isOwner(resource.data.user_id) || isCarrier());
+      allow delete: if isAuthenticated() && isOwner(resource.data.user_id);
     }
     
     // Bids collection
     match /bids/{bidId} {
       allow read: if isAuthenticated();
       allow create: if isAuthenticated() && 
-        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'carrier';
+        isCarrier();
       allow update: if isAuthenticated() && 
-        (isOwner(resource.data.carrierId) || isOwner(resource.data.customerId));
-      allow delete: if isAuthenticated() && isOwner(resource.data.carrierId);
+        (isOwner(resource.data.carrierId) || isOwner(resource.data.customerId) ||
+         isOwner(resource.data.carrier_id) || isOwner(resource.data.customer_id));
+      allow delete: if isAuthenticated() &&
+        (isOwner(resource.data.carrierId) || isOwner(resource.data.carrier_id));
     }
     
     // Messages collection
     match /messages/{messageId} {
       allow read: if isAuthenticated() && 
-        (isOwner(resource.data.senderId) || isOwner(resource.data.receiverId));
-      allow create: if isAuthenticated() && isOwner(request.resource.data.senderId);
-      allow update, delete: if isAuthenticated() && isOwner(resource.data.senderId);
+        (isOwner(resource.data.senderId) || isOwner(resource.data.receiverId) ||
+         isOwner(resource.data.sender_id) || isOwner(resource.data.receiver_id));
+      allow create: if isAuthenticated() &&
+        (isOwner(request.resource.data.senderId) || isOwner(request.resource.data.sender_id));
+      allow update, delete: if isAuthenticated() &&
+        (isOwner(resource.data.senderId) || isOwner(resource.data.sender_id));
     }
     
     // Chats collection
@@ -64,16 +84,31 @@ service cloud.firestore {
     // Orders collection
     match /orders/{orderId} {
       allow read: if isAuthenticated() && 
-        (isOwner(resource.data.customerId) || isOwner(resource.data.carrierId));
+        (isOwner(resource.data.customerId) || isOwner(resource.data.carrierId) ||
+         isOwner(resource.data.customer_id) || isOwner(resource.data.carrier_id));
       allow create: if isAuthenticated();
       allow update: if isAuthenticated() && 
-        (isOwner(resource.data.customerId) || isOwner(resource.data.carrierId));
+        (isOwner(resource.data.customerId) || isOwner(resource.data.carrierId) ||
+         isOwner(resource.data.customer_id) || isOwner(resource.data.carrier_id));
     }
     
     // Notifications collection
     match /notifications/{notificationId} {
-      allow read, update, delete: if isAuthenticated() && isOwner(resource.data.userId);
+      allow read, update, delete: if isAuthenticated() &&
+        (isOwner(resource.data.userId) || isOwner(resource.data.user_id));
       allow create: if isAuthenticated();
+    }
+
+    // User notification settings
+    match /user_notification_settings/{userId} {
+      allow read, write: if isAuthenticated() && isOwner(userId);
+    }
+
+    // User favorites
+    match /user_favorites/{favoriteId} {
+      allow read: if isAuthenticated() && isOwner(resource.data.user_id);
+      allow create: if isAuthenticated() && isOwner(request.resource.data.user_id);
+      allow update, delete: if isAuthenticated() && isOwner(resource.data.user_id);
     }
   }
 }

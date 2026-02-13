@@ -4,6 +4,8 @@ import {
   where,
   orderBy,
   limit,
+  doc,
+  getDoc,
   getDocs,
   QueryConstraint,
   DocumentData,
@@ -36,6 +38,28 @@ export const fetchDocuments = async (
     return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
   } catch (error) {
     console.error(`Error fetching documents from ${collectionName}:`, error);
+    throw error;
+  }
+};
+
+/**
+ * Fetch a single document by id
+ */
+export const getDocument = async <T = DocumentData>(
+  collectionName: string,
+  documentId: string
+): Promise<T | null> => {
+  try {
+    const documentRef = doc(firestore, collectionName, documentId);
+    const snapshot = await getDoc(documentRef);
+
+    if (!snapshot.exists()) {
+      return null;
+    }
+
+    return snapshot.data() as T;
+  } catch (error) {
+    console.error(`Error fetching document ${collectionName}/${documentId}:`, error);
     throw error;
   }
 };
