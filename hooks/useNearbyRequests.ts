@@ -182,7 +182,7 @@ export function useNearbyRequests(radiusKm: number = 50, searchType: 'from' | 't
       const location = await Location.getCurrentPositionAsync({
         accuracy: Location.Accuracy.Balanced,
         timeInterval: 10000, // Cache for 10 seconds
-        distanceInterval: 100, // Update every 100 meters
+        distanceInterval: 50, // Update every 50 meters
       });
 
       const userLoc: UserLocation = {

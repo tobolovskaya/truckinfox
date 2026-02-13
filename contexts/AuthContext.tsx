@@ -89,6 +89,8 @@ const getAuthErrorMessage = (error: unknown): string => {
         return 'Акаунт вимкнено. Зверніться до підтримки.';
       case 'auth/too-many-requests':
         return 'Забагато спроб. Спробуйте пізніше.';
+      case 'auth/network-request-failed':
+        return 'Nettverksfeil. Sjekk tilkoblingen og prov igjen.';
       case 'auth/configuration-not-found':
         return 'Налаштування Firebase Auth не знайдено. Увімкніть Email/Password у Firebase Console.';
       default:
