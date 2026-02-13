@@ -1,10 +1,11 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, TextInput, LogBox } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { manipulateAsync, SaveFormat } from 'expo-image-manipulator';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTranslation } from 'react-i18next';
 import { useToast } from '../../contexts/ToastContext';
@@ -47,6 +48,24 @@ const PRICE_TYPES = [
   { id: 'negotiable', icon: 'chatbubble-outline', label: 'Kan forhandles' },
 ];
 
+const CARGO_LIMITS = {
+  weight: { min: 1, max: 25000 }, // kg
+  dimension: { min: 1, max: 1200 }, // cm
+  volume: { max: 40 }, // m³
+} as const;
+
+const PRICING_CONSTANTS = {
+  pricePerKg: 15, // NOK
+  volumeAdjustment: 500, // NOK per m³
+  distanceDivisor: 1000, // km
+  defaultDistanceFactor: 1.5,
+} as const;
+
+const DRAFT_KEY = 'cargo-request-draft';
+const DRAFT_EXPIRY_HOURS = 24;
+const AUTOSAVE_DEBOUNCE_MS = 2000; // 2 seconds
+const MS_PER_DAY = 24 * 60 * 60 * 1000;
+
 export default function CreateRequestScreen() {
   const { user } = useAuth();
   const { t } = useTranslation();
@@ -58,6 +77,70 @@ export default function CreateRequestScreen() {
   useEffect(() => {
     LogBox.ignoreLogs(['VirtualizedLists should never be nested']);
   }, []);
+
+  // Load draft on mount
+  useEffect(() => {
+    const loadDraft = async () => {
+      try {
+        const draft = await AsyncStorage.getItem(DRAFT_KEY);
+        if (draft) {
+          const parsed = JSON.parse(draft);
+          
+          // Validate savedAt exists and is valid
+          if (!parsed.savedAt) {
+            await AsyncStorage.removeItem(DRAFT_KEY);
+            return;
+          }
+          
+          const savedAt = new Date(parsed.savedAt);
+          if (isNaN(savedAt.getTime())) {
+            await AsyncStorage.removeItem(DRAFT_KEY);
+            return;
+          }
+          
+          const hoursSince = (Date.now() - savedAt.getTime()) / (1000 * 60 * 60);
+          
+          if (hoursSince < DRAFT_EXPIRY_HOURS) {
+            // Show a toast with action to restore draft
+            const hoursText = Math.round(hoursSince) === 1 ? 'time' : 'timer';
+            toast.info(`Fant lagret utkast fra ${Math.round(hoursSince)} ${hoursText} siden`);
+            // Auto-restore the draft with safe date handling
+            setFormData({
+              ...parsed,
+              pickup_date: parsed.pickup_date ? new Date(parsed.pickup_date) : new Date(),
+              delivery_date: parsed.delivery_date ? new Date(parsed.delivery_date) : new Date(Date.now() + MS_PER_DAY),
+            });
+            setImages(parsed.images || []);
+          } else {
+            // Clear old draft
+            await AsyncStorage.removeItem(DRAFT_KEY);
+          }
+        }
+      } catch (error) {
+        console.error('Failed to load draft:', error);
+      }
+    };
+
+    loadDraft();
+  }, []);
+
+  // Auto-save draft on form changes (debounced)
+  useEffect(() => {
+    const saveDraft = async () => {
+      try {
+        await AsyncStorage.setItem(DRAFT_KEY, JSON.stringify({
+          ...formData,
+          images,
+          savedAt: new Date().toISOString(),
+        }));
+      } catch (error) {
+        console.error('Failed to save draft:', error);
+      }
+    };
+
+    const timeoutId = setTimeout(saveDraft, AUTOSAVE_DEBOUNCE_MS);
+    return () => clearTimeout(timeoutId);
+  }, [formData, images]);
 
   const [formData, setFormData] = useState({
     title: '',
@@ -73,7 +156,7 @@ export default function CreateRequestScreen() {
     to_lng: null as number | null,
     distance_km: null as number | null,
     pickup_date: new Date(),
-    delivery_date: new Date(Date.now() + 24 * 60 * 60 * 1000), // Tomorrow
+    delivery_date: new Date(Date.now() + MS_PER_DAY), // Tomorrow
     price_type: '',
     price: '',
   });
@@ -124,15 +207,29 @@ export default function CreateRequestScreen() {
         if (!value || value.toString().trim() === '') return 'Vekt er påkrevd';
         const weight = Number(value);
         if (isNaN(weight)) return 'Vekt må være et tall';
-        if (weight <= 0) return 'Vekt må være større enn 0';
-        if (weight > 50000) return 'Vekt kan ikke være større enn 50000 kg';
+        if (weight < CARGO_LIMITS.weight.min || weight > CARGO_LIMITS.weight.max) 
+          return `Vekt må være mellom ${CARGO_LIMITS.weight.min} og ${CARGO_LIMITS.weight.max} kg`;
         return '';
       }
 
-      case 'dimensions':
-        if (value && value.toString().trim().length > 50)
-          return 'Dimensjoner kan ikke være lengre enn 50 tegn';
+      case 'dimensions': {
+        if (value && value.toString().trim()) {
+          const dimStr = value.toString().trim();
+          if (dimStr.length > 50) return 'Dimensjoner kan ikke være lengre enn 50 tegn';
+          
+          // Validate format and values if dimensions are provided
+          const parts = dimStr.split('x').map(d => d.trim());
+          if (parts.length === 3) {
+            for (const part of parts) {
+              const dim = Number(part);
+              if (isNaN(dim) || dim < CARGO_LIMITS.dimension.min || dim > CARGO_LIMITS.dimension.max) {
+                return `Dimensjoner må være mellom ${CARGO_LIMITS.dimension.min} og ${CARGO_LIMITS.dimension.max} cm`;
+              }
+            }
+          }
+        }
         return '';
+      }
 
       case 'from_address':
         if (!value || !value.toString().trim()) return 'Fra-adresse er påkrevd';
@@ -189,6 +286,94 @@ export default function CreateRequestScreen() {
 
   const hasErrors = (): boolean => {
     return Object.values(fieldErrors).some(error => error !== '');
+  };
+
+  // Calculate form completion progress
+  const calculateProgress = (): number => {
+    const fields = [
+      formData.title,
+      formData.description,
+      formData.cargo_type,
+      formData.weight,
+      formData.dimensions,
+      formData.from_address,
+      formData.to_address,
+      formData.price_type,
+    ];
+    
+    const filled = fields.filter(f => f && f.toString().trim() !== '').length;
+    return Math.round((filled / fields.length) * 100);
+  };
+
+  // Calculate estimated price with useMemo to avoid duplicate calculations
+  const estimatedPrice = useMemo(() => {
+    if (!formData.weight || !formData.dimensions) return null;
+
+    try {
+      const dimStr = formData.dimensions.trim();
+      const parts = dimStr.split('x').map(d => Number(d.trim()));
+      
+      if (parts.length !== 3 || parts.some(isNaN)) return null;
+      
+      const [length, width, height] = parts;
+      const volume = (length * width * height) / 1000000; // m³
+      const distanceFactor = formData.distance_km 
+        ? 1 + (formData.distance_km / PRICING_CONSTANTS.distanceDivisor) 
+        : PRICING_CONSTANTS.defaultDistanceFactor;
+      
+      const basePrice = Number(formData.weight) * PRICING_CONSTANTS.pricePerKg;
+      const volumeAdjustment = volume > 1 ? volume * PRICING_CONSTANTS.volumeAdjustment : 0;
+      
+      return Math.round((basePrice + volumeAdjustment) * distanceFactor);
+    } catch {
+      return null;
+    }
+  }, [formData.weight, formData.dimensions, formData.distance_km]);
+
+  // Validate dimensions with volume check
+  const validateDimensions = (): boolean => {
+    const weight = Number(formData.weight);
+    
+    if (!formData.dimensions || !formData.dimensions.trim()) {
+      return true; // Dimensions are optional
+    }
+
+    const dimStr = formData.dimensions.trim();
+    const parts = dimStr.split('x').map(d => Number(d.trim()));
+
+    if (parts.length !== 3) {
+      toast.error('Dimensjoner må være i format: lengde x bredde x høyde (f.eks. 100 x 50 x 30)');
+      triggerHapticFeedback.error();
+      return false;
+    }
+
+    const [length, width, height] = parts;
+
+    // Weight validation
+    if (weight < CARGO_LIMITS.weight.min || weight > CARGO_LIMITS.weight.max) {
+      toast.error(`Vekt må være mellom ${CARGO_LIMITS.weight.min} og ${CARGO_LIMITS.weight.max} kg`);
+      triggerHapticFeedback.error();
+      return false;
+    }
+
+    // Dimension validation
+    for (const dim of [length, width, height]) {
+      if (isNaN(dim) || dim < CARGO_LIMITS.dimension.min || dim > CARGO_LIMITS.dimension.max) {
+        toast.error(`Dimensjoner må være mellom ${CARGO_LIMITS.dimension.min} og ${CARGO_LIMITS.dimension.max} cm`);
+        triggerHapticFeedback.error();
+        return false;
+      }
+    }
+
+    // Volume validation (cubic meters)
+    const volume = (length * width * height) / 1000000;
+    if (volume > CARGO_LIMITS.volume.max) {
+      toast.error(`Lastevolum (${volume.toFixed(2)} m³) overstiger maksimum (${CARGO_LIMITS.volume.max} m³)`);
+      triggerHapticFeedback.error();
+      return false;
+    }
+
+    return true;
   };
 
   // Quick date selection functions
@@ -265,6 +450,12 @@ export default function CreateRequestScreen() {
     const firstError = Object.values(newErrors).find(error => error);
     if (firstError) {
       toast.error(firstError);
+      triggerHapticFeedback.error();
+      return false;
+    }
+
+    // Additional dimension and volume validation
+    if (!validateDimensions()) {
       return false;
     }
 
@@ -448,6 +639,9 @@ export default function CreateRequestScreen() {
 
       toast.success(t('requestCreated'));
 
+      // Clear draft on successful submit
+      await AsyncStorage.removeItem(DRAFT_KEY);
+
       // Navigate after short delay to show toast
       setTimeout(() => {
         try {
@@ -510,6 +704,36 @@ export default function CreateRequestScreen() {
             </TouchableOpacity>
           </View>
         </View>
+        
+        {/* Progress Indicator */}
+        <View style={styles.progressContainer}>
+          <View style={styles.progressBarBackground}>
+            <View 
+              style={[
+                styles.progressBarFill, 
+                { width: `${calculateProgress()}%` }
+              ]} 
+            />
+          </View>
+          <Text style={styles.progressText}>{calculateProgress()}% fullført</Text>
+        </View>
+
+        {/* Estimated Price Card */}
+        {estimatedPrice && (
+          <View style={styles.estimatedPriceCard}>
+            <Ionicons name="calculator-outline" size={24} color={colors.primary} />
+            <View style={styles.estimatedPriceContent}>
+              <Text style={styles.estimatedPriceLabel}>Estimert pris</Text>
+              <Text style={styles.estimatedPriceValue}>
+                {estimatedPrice.toLocaleString('nb-NO')} NOK
+              </Text>
+              <Text style={styles.estimatedPriceNote}>
+                Basert på vekt, volum og distanse
+              </Text>
+            </View>
+          </View>
+        )}
+        
         {/* Basic Information */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
@@ -1470,7 +1694,17 @@ export default function CreateRequestScreen() {
           onChange={(_event, selectedDate) => {
             setShowPickupDate(false);
             if (selectedDate) {
-              updateFormData('pickup_date', selectedDate);
+              // If delivery date is before new pickup date, adjust it
+              if (formData.delivery_date.getTime() < selectedDate.getTime()) {
+                const newDeliveryDate = new Date(selectedDate.getTime() + MS_PER_DAY);
+                setFormData(prev => ({ 
+                  ...prev, 
+                  pickup_date: selectedDate,
+                  delivery_date: newDeliveryDate
+                }));
+              } else {
+                updateFormData('pickup_date', selectedDate);
+              }
             }
           }}
           minimumDate={new Date()}
@@ -2115,5 +2349,58 @@ const styles = StyleSheet.create({
     color: '#9CA3AF',
     marginTop: 4,
     fontWeight: '400',
+  },
+  progressContainer: {
+    padding: spacing.md,
+    backgroundColor: colors.surface,
+  },
+  progressBarBackground: {
+    height: 6,
+    backgroundColor: colors.border.light,
+    borderRadius: 3,
+    overflow: 'hidden',
+  },
+  progressBarFill: {
+    height: '100%',
+    backgroundColor: colors.primary,
+    borderRadius: 3,
+  },
+  progressText: {
+    marginTop: spacing.xs,
+    fontSize: fontSize.xs,
+    color: colors.text.secondary,
+    textAlign: 'center',
+  },
+  estimatedPriceCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: spacing.md,
+    backgroundColor: '#FFF7ED',
+    borderRadius: borderRadius.lg,
+    gap: spacing.sm,
+    marginHorizontal: spacing.md,
+    marginBottom: spacing.md,
+  },
+  estimatedPriceContent: {
+    flex: 1,
+  },
+  estimatedPriceLabel: {
+    fontSize: fontSize.sm,
+    color: colors.text.secondary,
+    marginBottom: spacing.xs / 2,
+  },
+  estimatedPriceValue: {
+    fontSize: fontSize.xl,
+    fontWeight: fontWeight.bold,
+    color: colors.primary,
+    marginBottom: spacing.xs / 2,
+  },
+  estimatedPriceNote: {
+    fontSize: fontSize.xs,
+    color: colors.text.tertiary,
+  },
+  requiredIndicator: {
+    color: colors.error,
+    fontSize: fontSize.md,
   },
 });
