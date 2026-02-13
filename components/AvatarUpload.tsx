@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
+import * as ImageManipulator from 'expo-image-manipulator';
 import { auth, storage, db } from '../lib/firebase';
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import { doc, updateDoc } from 'firebase/firestore';
@@ -31,6 +32,15 @@ export default function AvatarUpload({ avatarUrl, onUpload, size = 80 }: AvatarU
   const { t } = useTranslation();
   const [uploading, setUploading] = useState(false);
 
+  const compressImage = async (uri: string) => {
+    const manipResult = await ImageManipulator.manipulateAsync(
+      uri,
+      [{ resize: { width: 1200 } }],
+      { compress: 0.7, format: ImageManipulator.SaveFormat.JPEG }
+    );
+    return manipResult.uri;
+  };
+
   const pickImage = async () => {
     try {
       // Request permission
@@ -50,7 +60,8 @@ export default function AvatarUpload({ avatarUrl, onUpload, size = 80 }: AvatarU
       });
 
       if (!result.canceled && result.assets[0]) {
-        uploadAvatar(result.assets[0].uri);
+        const compressedUri = await compressImage(result.assets[0].uri);
+        uploadAvatar(compressedUri);
       }
     } catch (error) {
       console.error('Error picking image:', error);
