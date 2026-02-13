@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, TextInput, LogBox } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -85,12 +85,25 @@ export default function CreateRequestScreen() {
         const draft = await AsyncStorage.getItem(DRAFT_KEY);
         if (draft) {
           const parsed = JSON.parse(draft);
+          
+          // Validate savedAt exists and is valid
+          if (!parsed.savedAt) {
+            await AsyncStorage.removeItem(DRAFT_KEY);
+            return;
+          }
+          
           const savedAt = new Date(parsed.savedAt);
+          if (isNaN(savedAt.getTime())) {
+            await AsyncStorage.removeItem(DRAFT_KEY);
+            return;
+          }
+          
           const hoursSince = (Date.now() - savedAt.getTime()) / (1000 * 60 * 60);
           
           if (hoursSince < DRAFT_EXPIRY_HOURS) {
             // Show a toast with action to restore draft
-            toast.info(`Fant lagret utkast fra ${Math.round(hoursSince)} timer siden`);
+            const hoursText = Math.round(hoursSince) === 1 ? 'time' : 'timer';
+            toast.info(`Fant lagret utkast fra ${Math.round(hoursSince)} ${hoursText} siden`);
             // Auto-restore the draft with safe date handling
             setFormData({
               ...parsed,
@@ -285,8 +298,6 @@ export default function CreateRequestScreen() {
       formData.dimensions,
       formData.from_address,
       formData.to_address,
-      formData.pickup_date,
-      formData.delivery_date,
       formData.price_type,
     ];
     
@@ -294,8 +305,8 @@ export default function CreateRequestScreen() {
     return Math.round((filled / fields.length) * 100);
   };
 
-  // Calculate estimated price
-  const calculateEstimatedPrice = (): number | null => {
+  // Calculate estimated price with useMemo to avoid duplicate calculations
+  const estimatedPrice = useMemo(() => {
     if (!formData.weight || !formData.dimensions) return null;
 
     try {
@@ -317,7 +328,7 @@ export default function CreateRequestScreen() {
     } catch {
       return null;
     }
-  };
+  }, [formData.weight, formData.dimensions, formData.distance_km]);
 
   // Validate dimensions with volume check
   const validateDimensions = (): boolean => {
@@ -708,13 +719,13 @@ export default function CreateRequestScreen() {
         </View>
 
         {/* Estimated Price Card */}
-        {calculateEstimatedPrice() && (
+        {estimatedPrice && (
           <View style={styles.estimatedPriceCard}>
             <Ionicons name="calculator-outline" size={24} color={colors.primary} />
             <View style={styles.estimatedPriceContent}>
               <Text style={styles.estimatedPriceLabel}>Estimert pris</Text>
               <Text style={styles.estimatedPriceValue}>
-                {calculateEstimatedPrice()?.toLocaleString('nb-NO')} NOK
+                {estimatedPrice.toLocaleString('nb-NO')} NOK
               </Text>
               <Text style={styles.estimatedPriceNote}>
                 Basert på vekt, volum og distanse
@@ -1684,7 +1695,7 @@ export default function CreateRequestScreen() {
             setShowPickupDate(false);
             if (selectedDate) {
               // If delivery date is before new pickup date, adjust it
-              if (formData.delivery_date < selectedDate) {
+              if (formData.delivery_date.getTime() < selectedDate.getTime()) {
                 const newDeliveryDate = new Date(selectedDate.getTime() + MS_PER_DAY);
                 setFormData(prev => ({ 
                   ...prev, 
