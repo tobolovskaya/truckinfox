@@ -11,13 +11,8 @@ import {
   Image,
   TextInput,
   ActivityIndicator,
+  Modal,
 } from 'react-native';
-import BottomSheet, { BottomSheetScrollView, BottomSheetBackdrop } from '@gorhom/bottom-sheet';
-import Reanimated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withSpring,
-} from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTranslation } from 'react-i18next';
@@ -101,7 +96,8 @@ export default function HomeScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const reduceMotion = useReduceMotion();
-  const bottomSheetRef = useRef<BottomSheet>(null);
+  // Filter modal state
+  const [isFilterModalVisible, setIsFilterModalVisible] = useState(false);
 
   // Tab and sort state (keep local)
   const [activeTab, setActiveTab] = useState<'all' | 'my'>('all');
@@ -162,21 +158,13 @@ export default function HomeScreen() {
   // Bottom Sheet snap points
   const snapPoints = useMemo(() => ['25%', '50%', '92%'], []);
 
-  // Bottom Sheet backdrop
-  const renderBackdrop = useCallback(
-    (props: any) => (
-      <BottomSheetBackdrop {...props} disappearsOnIndex={-1} appearsOnIndex={0} opacity={0.5} />
-    ),
-    []
-  );
-
-  // Open/close bottom sheet functions
+  // Open/close filter modal functions
   const openFilterSheet = useCallback(() => {
-    bottomSheetRef.current?.expand();
+    setIsFilterModalVisible(true);
   }, []);
 
   const closeFilterSheet = useCallback(() => {
-    bottomSheetRef.current?.close();
+    setIsFilterModalVisible(false);
   }, []);
 
   // Wrapper for toggleFavorite with optimistic updates
@@ -626,33 +614,30 @@ export default function HomeScreen() {
         </LinearGradient>
       </TouchableOpacity>
 
-      {/* Filter Bottom Sheet */}
-      <BottomSheet
-        ref={bottomSheetRef}
-        index={-1}
-        snapPoints={snapPoints}
-        enablePanDownToClose
-        backdropComponent={renderBackdrop}
-        onClose={closeModal}
-        backgroundStyle={styles.bottomSheetBackground}
-        handleIndicatorStyle={styles.bottomSheetIndicator}
+      {/* Filter Modal */}
+      <Modal
+        visible={isFilterModalVisible}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={closeFilterSheet}
       >
-        <View style={styles.bottomSheetHeader}>
-          <Text style={styles.modalTitle}>Filtrer & Sorter transport</Text>
-          <TouchableOpacity
-            style={styles.closeButton}
-            onPress={closeFilterSheet}
-            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-          >
-            <Ionicons name="close" size={24} color={colors.text.primary} />
-          </TouchableOpacity>
-        </View>
+        <View style={styles.modalContainer}>
+          <View style={styles.modalHeader}>
+            <Text style={styles.modalTitle}>Filtrer & Sorter transport</Text>
+            <TouchableOpacity
+              style={styles.closeButton}
+              onPress={closeFilterSheet}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            >
+              <Ionicons name="close" size={24} color={colors.text.primary} />
+            </TouchableOpacity>
+          </View>
 
-        <BottomSheetScrollView
-          style={styles.bottomSheetContent}
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={styles.bottomSheetScrollContent}
-        >
+          <ScrollView
+            style={styles.modalContent}
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={styles.modalScrollContent}
+          >
           {/* Sorting Section */}
           <View style={styles.filterSection}>
             <Text style={styles.filterSectionTitle}>Sorter etter</Text>
@@ -951,7 +936,8 @@ export default function HomeScreen() {
             <Text style={styles.ctaButtonText}>Vis treff ({requests.length})</Text>
           </TouchableOpacity>
         </View>
-      </BottomSheet>
+        </ScrollView>
+      </Modal>
     </View>
   );
 }
