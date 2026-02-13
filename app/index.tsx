@@ -4,14 +4,9 @@ import { View } from 'react-native';
 import { ActivityIndicator } from 'react-native-paper';
 import { useRouter } from 'expo-router';
 import { useAuth } from '../contexts/AuthContext';
-import { AuthProvider } from '../contexts/AuthContext';
 
 export default function App() {
-  return (
-    <AuthProvider>
-      <Index />
-    </AuthProvider>
-  );
+  return <Index />;
 }
 
 function Index() {
