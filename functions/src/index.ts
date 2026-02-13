@@ -1,5 +1,6 @@
 import * as functions from 'firebase-functions';
 import * as admin from 'firebase-admin';
+import axios from 'axios';
 
 admin.initializeApp();
 
@@ -176,6 +177,50 @@ export const processVippsPayment = functions.https.onCall(async (data, context) 
   } catch (error) {
     console.error('Error processing payment:', error);
     throw new functions.https.HttpsError('internal', 'Payment processing failed');
+  }
+});
+
+export const refundVippsPayment = functions.https.onCall(async (data, context) => {
+  const { orderId, amount, reason } = data;
+
+  if (!context.auth) {
+    throw new functions.https.HttpsError('unauthenticated', 'Not logged in');
+  }
+
+  if (!orderId || !amount) {
+    throw new functions.https.HttpsError('invalid-argument', 'orderId and amount are required');
+  }
+
+  const order = await admin.firestore().doc(`orders/${orderId}`).get();
+  const orderData = order.data();
+
+  if (!orderData) {
+    throw new functions.https.HttpsError('not-found', 'Order not found');
+  }
+
+  if (orderData.customer_id !== context.auth.uid) {
+    throw new functions.https.HttpsError('permission-denied', 'Not order owner');
+  }
+
+  try {
+    const vippsAccessToken = process.env.VIPPS_ACCESS_TOKEN;
+    if (!vippsAccessToken) {
+      throw new functions.https.HttpsError('failed-precondition', 'Vipps token not configured');
+    }
+
+    const refundResponse = await axios.post(
+      `https://api.vipps.no/ecomm/v2/payments/${orderId}/refund`,
+      {
+        modificationAmount: { currency: 'NOK', value: amount },
+        merchantRefundReason: reason,
+      },
+      { headers: { Authorization: `Bearer ${vippsAccessToken}` } }
+    );
+
+    return { success: true, refundId: refundResponse.data.refundId };
+  } catch (error) {
+    console.error('Error processing refund:', error);
+    throw new functions.https.HttpsError('internal', 'Refund processing failed');
   }
 });
 
