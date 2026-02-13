@@ -327,7 +327,7 @@ export default function ChatScreen() {
     }
 
     const result = await ImagePicker.launchCameraAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      mediaTypes: [ImagePicker.MediaType.Images],
       allowsEditing: true,
       aspect: [4, 3],
       quality: 0.8,
@@ -340,7 +340,7 @@ export default function ChatScreen() {
 
   const openImagePicker = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.All,
+      mediaTypes: [ImagePicker.MediaType.Images, ImagePicker.MediaType.Videos],
       allowsEditing: true,
       aspect: [4, 3],
       quality: 0.8,
