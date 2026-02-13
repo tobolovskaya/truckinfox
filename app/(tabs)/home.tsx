@@ -2589,6 +2589,27 @@ const styles = StyleSheet.create({
     borderBottomColor: '#E0E0E0',
     position: 'relative',
   },
+  modalContainer: {
+    flex: 1,
+    backgroundColor: colors.white,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: spacing.xl,
+    paddingVertical: spacing.lg,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E0E0E0',
+    position: 'relative',
+  },
+  modalContent: {
+    flex: 1,
+  },
+  modalScrollContent: {
+    paddingHorizontal: spacing.xl,
+    paddingBottom: spacing.xl,
+  },
   modalTitle: {
     fontSize: 20,
     fontWeight: fontWeight.bold,
