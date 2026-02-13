@@ -178,3 +178,75 @@ export const processVippsPayment = functions.https.onCall(async (data, context) 
     throw new functions.https.HttpsError('internal', 'Payment processing failed');
   }
 });
+
+export const scheduledNotifications = functions.pubsub
+  .schedule('every day 09:00')
+  .timeZone('Europe/Oslo')
+  .onRun(async () => {
+    const since = admin.firestore.Timestamp.fromMillis(Date.now() - 24 * 60 * 60 * 1000);
+
+    const requestsSnapshot = await admin
+      .firestore()
+      .collection('cargo_requests')
+      .where('status', '==', 'open')
+      .where('created_at', '>=', since)
+      .get();
+
+    if (requestsSnapshot.empty) {
+      return null;
+    }
+
+    const carriersSnapshot = await admin
+      .firestore()
+      .collection('users')
+      .where('user_type', '==', 'carrier')
+      .get();
+
+    const tokens: string[] = [];
+    const carrierIds: string[] = [];
+
+    carriersSnapshot.forEach(doc => {
+      const data = doc.data();
+      if (data?.fcmToken) {
+        tokens.push(data.fcmToken);
+        carrierIds.push(doc.id);
+      }
+    });
+
+    if (tokens.length === 0) {
+      return null;
+    }
+
+    const title = 'Nye foresporsler i dag';
+    const body = `Det er ${requestsSnapshot.size} nye foresporsler fra de siste 24 timene.`;
+
+    for (let i = 0; i < tokens.length; i += 500) {
+      const chunk = tokens.slice(i, i + 500);
+      await admin.messaging().sendEachForMulticast({
+        tokens: chunk,
+        notification: { title, body },
+        data: {
+          type: 'daily_requests_summary',
+          count: String(requestsSnapshot.size),
+        },
+      });
+    }
+
+    const batch = admin.firestore().batch();
+    const createdAt = admin.firestore.FieldValue.serverTimestamp();
+
+    carrierIds.forEach(userId => {
+      const notificationRef = admin.firestore().collection('notifications').doc();
+      batch.set(notificationRef, {
+        userId,
+        type: 'daily_requests_summary',
+        title,
+        body,
+        read: false,
+        createdAt,
+      });
+    });
+
+    await batch.commit();
+    return null;
+  });
