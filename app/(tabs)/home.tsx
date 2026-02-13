@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useRef, useCallback } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import {
   View,
   Text,
@@ -19,6 +19,7 @@ import { useTranslation } from 'react-i18next';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
+import Reanimated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 import { theme } from '../../theme/theme';
 import {
   colors,
@@ -112,7 +113,6 @@ export default function HomeScreen() {
     setWeightRange,
     setPickupDate,
     setCitySearch,
-    closeModal,
     resetFilters,
   } = useFilterState();
 
@@ -154,9 +154,6 @@ export default function HomeScreen() {
   const { cities } = useCities();
   const { currentUser } = useCurrentUser(user?.uid);
   const { toggleFavorite: toggleFavoriteHook } = useFavorites(user?.uid);
-
-  // Bottom Sheet snap points
-  const snapPoints = useMemo(() => ['25%', '50%', '92%'], []);
 
   // Open/close filter modal functions
   const openFilterSheet = useCallback(() => {
@@ -920,7 +917,7 @@ export default function HomeScreen() {
 
           {/* Extra padding at bottom for sticky bar */}
           <View style={{ height: 120 }} />
-        </BottomSheetScrollView>
+        </ScrollView>
 
         {/* Sticky Action Bar at Bottom */}
         <View style={styles.stickyActionBar}>
@@ -936,7 +933,7 @@ export default function HomeScreen() {
             <Text style={styles.ctaButtonText}>Vis treff ({requests.length})</Text>
           </TouchableOpacity>
         </View>
-        </ScrollView>
+      </View>
       </Modal>
     </View>
   );

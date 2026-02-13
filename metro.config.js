@@ -3,8 +3,8 @@ const path = require('path');
 
 const config = getDefaultConfig(__dirname);
 
-// Add platform-specific extensions for web
-config.resolver.resolverMainFields = ['browser', 'main'];
+// Prefer native entry points, fall back to browser/main for web.
+config.resolver.resolverMainFields = ['react-native', 'browser', 'main'];
 config.resolver.sourceExts = [...config.resolver.sourceExts, 'web.js', 'web.jsx', 'web.ts', 'web.tsx'];
 
 // Use web mock for react-native-maps on web platform
