@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useMemo, useState, useRef } from 'react';
 import {
   View,
   Text,
@@ -21,6 +21,7 @@ import { collection, getDocs, query, where, QueryConstraint } from 'firebase/fir
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { theme } from '../../theme/theme';
+import SuperCluster from 'react-native-maps-super-cluster';
 
 // Platform-specific imports for maps
 let MapView: any;
@@ -128,6 +129,18 @@ export default function MapScreen() {
       order.to_address.toLowerCase().includes(debouncedSearchQuery.toLowerCase())
   );
 
+  const clusterData = useMemo(
+    () =>
+      filteredOrders
+        .filter(order => order.from_lat != null && order.from_lng != null)
+        .map(order => ({
+          id: order.id,
+          location: { latitude: order.from_lat as number, longitude: order.from_lng as number },
+          order,
+        })),
+    [filteredOrders]
+  );
+
   const getStatusColor = (status: string) => {
     const colors: { [key: string]: string } = {
       active: '#FFC107', // Warning yellow
@@ -182,52 +195,115 @@ export default function MapScreen() {
   return (
     <View style={styles.container}>
       {/* Map */}
-      <MapView style={styles.map} showsUserLocation={true} showsMyLocationButton={true}>
-        {filteredOrders.map(order => (
-          <React.Fragment key={order.id}>
+      {Platform.OS === 'web' ? (
+        <MapView style={styles.map} showsUserLocation={true} showsMyLocationButton={true}>
+          {filteredOrders.map(order => (
+            <React.Fragment key={order.id}>
+              <Marker
+                coordinate={{
+                  latitude: order.from_lat || 59.91,
+                  longitude: order.from_lng || 10.75,
+                }}
+                title={`${t('from')}: ${order.from_address}`}
+                description={order.cargo_title}
+                onPress={() => handleOrderPress(order.id)}
+              >
+                <View style={[styles.marker, { backgroundColor: getStatusColor(order.status) }]}>
+                  <Ionicons name="location-outline" size={14} color={theme.iconColors.white} />
+                </View>
+              </Marker>
+
+              {order.to_lat && order.to_lng && (
+                <Marker
+                  coordinate={{
+                    latitude: order.to_lat,
+                    longitude: order.to_lng,
+                  }}
+                  title={`${t('to')}: ${order.to_address}`}
+                  description={`${order.total_amount} NOK`}
+                  onPress={() => handleOrderPress(order.id)}
+                >
+                  <View style={[styles.marker, { backgroundColor: '#FF8A65' }]}>
+                    <Ionicons name="flag-outline" size={14} color={theme.iconColors.white} />
+                  </View>
+                </Marker>
+              )}
+
+              {order.from_lat && order.from_lng && order.to_lat && order.to_lng && (
+                <Polyline
+                  coordinates={[
+                    { latitude: order.from_lat, longitude: order.from_lng },
+                    { latitude: order.to_lat, longitude: order.to_lng },
+                  ]}
+                  strokeColor={getStatusColor(order.status)}
+                  strokeWidth={4}
+                />
+              )}
+            </React.Fragment>
+          ))}
+        </MapView>
+      ) : (
+        <SuperCluster
+          ref={mapRef}
+          style={styles.map}
+          data={clusterData}
+          renderMarker={item => (
             <Marker
-              coordinate={{
-                latitude: order.from_lat || 59.91,
-                longitude: order.from_lng || 10.75,
-              }}
-              title={`${t('from')}: ${order.from_address}`}
-              description={order.cargo_title}
-              onPress={() => handleOrderPress(order.id)}
+              key={item.id}
+              coordinate={item.location}
+              title={`${t('from')}: ${item.order.from_address}`}
+              description={item.order.cargo_title}
+              onPress={() => handleOrderPress(item.order.id)}
             >
-              <View style={[styles.marker, { backgroundColor: getStatusColor(order.status) }]}>
+              <View
+                style={[styles.marker, { backgroundColor: getStatusColor(item.order.status) }]}
+              >
                 <Ionicons name="location-outline" size={14} color={theme.iconColors.white} />
               </View>
             </Marker>
+          )}
+          renderCluster={(cluster, onPress) => (
+            <Marker key={`cluster-${cluster.clusterId}`} coordinate={cluster.coordinate} onPress={onPress}>
+              <View style={styles.clusterMarker}>
+                <Text style={styles.clusterText}>{cluster.pointCount}</Text>
+              </View>
+            </Marker>
+          )}
+          showsUserLocation={true}
+          showsMyLocationButton={true}
+        >
+          {filteredOrders.map(order => (
+            <React.Fragment key={`extra-${order.id}`}>
+              {order.to_lat && order.to_lng && (
+                <Marker
+                  coordinate={{
+                    latitude: order.to_lat,
+                    longitude: order.to_lng,
+                  }}
+                  title={`${t('to')}: ${order.to_address}`}
+                  description={`${order.total_amount} NOK`}
+                  onPress={() => handleOrderPress(order.id)}
+                >
+                  <View style={[styles.marker, { backgroundColor: '#FF8A65' }]}>
+                    <Ionicons name="flag-outline" size={14} color={theme.iconColors.white} />
+                  </View>
+                </Marker>
+              )}
 
-            {order.to_lat && order.to_lng && (
-              <Marker
-                coordinate={{
-                  latitude: order.to_lat,
-                  longitude: order.to_lng,
-                }}
-                title={`${t('to')}: ${order.to_address}`}
-                description={`${order.total_amount} NOK`}
-                onPress={() => handleOrderPress(order.id)}
-              >
-                <View style={[styles.marker, { backgroundColor: '#FF8A65' }]}>
-                  <Ionicons name="flag-outline" size={14} color={theme.iconColors.white} />
-                </View>
-              </Marker>
-            )}
-
-            {order.from_lat && order.from_lng && order.to_lat && order.to_lng && (
-              <Polyline
-                coordinates={[
-                  { latitude: order.from_lat, longitude: order.from_lng },
-                  { latitude: order.to_lat, longitude: order.to_lng },
-                ]}
-                strokeColor={getStatusColor(order.status)}
-                strokeWidth={4}
-              />
-            )}
-          </React.Fragment>
-        ))}
-      </MapView>
+              {order.from_lat && order.from_lng && order.to_lat && order.to_lng && (
+                <Polyline
+                  coordinates={[
+                    { latitude: order.from_lat, longitude: order.from_lng },
+                    { latitude: order.to_lat, longitude: order.to_lng },
+                  ]}
+                  strokeColor={getStatusColor(order.status)}
+                  strokeWidth={4}
+                />
+              )}
+            </React.Fragment>
+          ))}
+        </SuperCluster>
+      )}
 
       {/* iOS-style search bar */}
       <View style={styles.searchContainer}>
@@ -371,6 +447,27 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 3,
     elevation: 5,
+  },
+  clusterMarker: {
+    minWidth: 36,
+    height: 36,
+    paddingHorizontal: 10,
+    borderRadius: 18,
+    backgroundColor: '#FF7043',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 3,
+    borderColor: 'white',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3,
+    elevation: 5,
+  },
+  clusterText: {
+    color: 'white',
+    fontWeight: '700',
+    fontSize: 14,
   },
   searchContainer: {
     position: 'absolute',
