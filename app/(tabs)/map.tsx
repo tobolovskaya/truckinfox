@@ -9,6 +9,7 @@ import {
   TextInput,
   Animated,
   Dimensions,
+  Platform,
 } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { Ionicons } from '@expo/vector-icons';
@@ -19,8 +20,26 @@ import { db } from '../../lib/firebase';
 import { collection, getDocs, query, where, QueryConstraint } from 'firebase/firestore';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import MapView, { Marker, Polyline } from 'react-native-maps';
 import { theme } from '../../theme/theme';
+
+// Platform-specific imports for maps
+let MapView: any;
+let Marker: any;
+let Polyline: any;
+
+if (Platform.OS === 'web') {
+  // Use web mock
+  const webMaps = require('../../mocks/react-native-maps.web.js');
+  MapView = webMaps.default;
+  Marker = webMaps.Marker;
+  Polyline = webMaps.Polyline;
+} else {
+  // Use native react-native-maps
+  const nativeMaps = require('react-native-maps');
+  MapView = nativeMaps.default;
+  Marker = nativeMaps.Marker;
+  Polyline = nativeMaps.Polyline;
+}
 
 interface MapOrder {
   id: string;
