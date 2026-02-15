@@ -281,34 +281,7 @@ npm run format
 ## Security Considerations
 
 1. **Environment Variables**: Never commit .env files
-2. **Firestore-regler (kritisk)**: Nåværende regler lar transportør oppdatere alle felt i andres forespørsler, noe som kan misbrukes.
-
-Nåværende (risiko):
-
-```rules
-match /bids/{bidId} {
-  allow create: if isAuthenticated() && isCarrier();
-  // OK: bare transportører kan opprette bud
-}
-
-match /cargo_requests/{requestId} {
-  allow update: if isAuthenticated() &&
-    (isOwner(resource.data.user_id) || isCarrier());
-  // ADVARSEL: transportør kan endre alle felt
-}
-```
-
-Anbefalt (begrens felt):
-
-```rules
-match /cargo_requests/{requestId} {
-  allow update: if isAuthenticated() && isOwner(resource.data.user_id)
-    && (!isCarrier() ||
-        (request.resource.data.diff(resource.data).affectedKeys()
-         .hasOnly(['status', 'assigned_carrier_id'])));
-}
-```
-
+2. **Firebase Rules**: Strict security rules implemented
 3. **Input Validation**: All user inputs validated
 4. **Authentication**: Protected routes and API calls
 5. **Data Access**: Role-based access control
