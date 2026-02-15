@@ -647,6 +647,93 @@ Implemented delightful micro-interactions with animations, skeleton loaders, and
 - Modern iOS-native feel
 - Better accessibility with clear loading states
 
+### Mobile-First Patterns ✅
+
+Implemented comprehensive mobile-first design patterns for optimal one-handed usage:
+
+**Touch Target Optimization:**
+
+- **Minimum 44x44pt Touch Targets**: All interactive elements meet or exceed Apple HIG minimum:
+  - IOSButton small size: 40pt → **44pt** (increased by 10%)
+  - Chat send button: 40x40pt → **44x44pt** (ensures easy tapping while typing)
+  - Notification bell buttons: 40x40pt → **44x44pt** (improved header navigation)
+  - Back buttons: 40x40pt → **44x44pt** (consistent across all screens)
+  - FAB (home screen): **64x64pt** (extra large for primary action)
+- **HitSlop Constants**: Created standardized hitSlop values for small visual elements:
+  - SMALL: 8pt extension (total 40pt → 56pt effective area)
+  - MEDIUM: 12pt extension (total 32pt → 56pt effective area)
+  - LARGE: 16pt extension (total 24pt → 56pt effective area)
+- **Helper Function**: `ensureMinTouchTarget()` automatically calculates required hitSlop for any size
+
+**Swipe Gestures:**
+
+- **Edge Swipe to Go Back**: Custom `useSwipeBack` hook for iOS-style navigation:
+  - Detects swipes from left edge (first 50pt)
+  - Triggers back navigation on 100pt swipe or fast velocity (>500 pt/s)
+  - Haptic feedback on gesture start for tactile confirmation
+  - Works with GestureDetector for smooth interaction
+- **Swipe Actions on Lists**: Already implemented with SwipeableRow component:
+  - Favorite/unfavorite cargo requests (left swipe)
+  - Delete requests (right swipe, owner only)
+  - Archive/complete orders (both directions)
+  - 80pt threshold with 500 pt/s velocity trigger
+- **Bottom Sheet Gestures**: Map screen uses pan gestures for sheet expansion/collapse
+
+**Thumb-Friendly Zones:**
+
+- **Zone Classification System**:
+  - EASY: Bottom 1/3 center (primary actions)
+  - COMFORTABLE: Middle area (frequent actions)
+  - STRETCH: Top corners (infrequent actions)
+- **Primary Action Positioning**:
+  - FAB positioned at bottom-right (90pt from bottom, 20pt from right)
+  - Submit buttons in forms positioned at bottom of scroll content
+  - Navigation tabs at bottom of screen (most accessible zone)
+  - Important settings toggles in middle zone (not at screen edges)
+- **Spacing Standards**:
+  - Minimum 8pt between interactive elements (prevents accidental taps)
+  - Recommended 16pt for important actions (comfortable separation)
+  - Touch spacing constants prevent cluttered tap targets
+
+**Implementation Details:**
+
+- Created `constants/touchTargets.ts` with mobile-first constants:
+  - TOUCH_TARGET: MIN (44pt), COMFORTABLE (48pt), LARGE (56pt)
+  - HIT_SLOP: Predefined extension values for small elements
+  - THUMB_ZONES: Zone classification for ergonomic layouts
+  - TOUCH_SPACING: Minimum spacing between interactive elements
+  - SWIPE: Gesture thresholds and edge detection values
+  - FAB: Floating action button sizing and positioning guidelines
+- Created `hooks/useSwipeBack.ts` for edge swipe navigation:
+  - Pan gesture detection from left edge
+  - Velocity and distance thresholds
+  - Haptic feedback integration
+  - Safe navigation with error handling
+- Updated 4 components with proper touch target sizes:
+  - IOSButton.tsx: Small button height increased to 44pt
+  - chat/[requestId]/[userId].tsx: Send button 44x44pt
+  - home.tsx: Notification and filter buttons 44x44pt
+  - profile/payments.tsx: Back button 44x44pt
+
+**Files Modified:**
+
+- `components/IOSButton.tsx`: Increased small button minHeight to 44pt
+- `app/chat/[requestId]/[userId].tsx`: Send button enlarged to 44x44pt
+- `app/(tabs)/home.tsx`: Header icon buttons enlarged to 44x44pt
+- `app/profile/payments.tsx`: Back button enlarged to 44x44pt
+- `constants/touchTargets.ts` (NEW): Mobile-first design constants
+- `hooks/useSwipeBack.ts` (NEW): Edge swipe navigation hook
+
+**Benefits:**
+
+- **Improved Accessibility**: All interactive elements are easily tappable for users with varying dexterity
+- **Better Ergonomics**: One-handed phone usage is natural and comfortable
+- **Reduced Errors**: Larger touch targets prevent accidental taps on wrong elements
+- **Intuitive Navigation**: Swipe gestures match iOS patterns users already know
+- **Platform Consistency**: Meets both Apple HIG (44pt) and Material Design (48dp) standards
+- **Thumb-Friendly**: Primary actions positioned where thumb naturally rests
+- **Professional UX**: Follows industry best practices for mobile interaction design
+
 ### Visual Consistency & Design System ✅
 
 Ensured strict adherence to the design system across all new and existing components:

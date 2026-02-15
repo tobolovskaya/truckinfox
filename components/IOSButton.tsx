@@ -66,7 +66,7 @@ export function IOSButton({
       small: {
         paddingVertical: 10,
         paddingHorizontal: 16,
-        minHeight: 40,
+        minHeight: 44, // Minimum 44pt touch target (Apple HIG)
       },
       medium: {
         paddingVertical: 12,

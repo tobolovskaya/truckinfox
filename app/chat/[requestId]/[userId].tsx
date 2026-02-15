@@ -370,9 +370,23 @@ export default function ChatScreen() {
     if (message.read_at) {
       return <Ionicons name="checkmark-done" size={14} color="white" style={styles.readIcon} />;
     } else if (message.delivered_at) {
-      return <Ionicons name="checkmark-done" size={14} color="rgba(255,255,255,0.6)" style={styles.readIcon} />;
+      return (
+        <Ionicons
+          name="checkmark-done"
+          size={14}
+          color="rgba(255,255,255,0.6)"
+          style={styles.readIcon}
+        />
+      );
     } else {
-      return <Ionicons name="checkmark" size={14} color="rgba(255,255,255,0.6)" style={styles.readIcon} />;
+      return (
+        <Ionicons
+          name="checkmark"
+          size={14}
+          color="rgba(255,255,255,0.6)"
+          style={styles.readIcon}
+        />
+      );
     }
   };
 
@@ -1058,9 +1072,9 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
   },
   sendButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 44, // Minimum 44pt touch target (Apple HIG)
+    height: 44,
+    borderRadius: 22,
     overflow: 'hidden',
     shadowColor: '#FF7043',
     shadowOffset: { width: 0, height: 2 },

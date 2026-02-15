@@ -1190,9 +1190,9 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   iconButtonCircle: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 44, // Minimum 44pt touch target (Apple HIG)
+    height: 44,
+    borderRadius: 22,
     backgroundColor: colors.white,
     justifyContent: 'center',
     alignItems: 'center',
