@@ -123,5 +123,14 @@ service cloud.firestore {
       allow create: if isAuthenticated() && isOwner(request.resource.data.user_id);
       allow update, delete: if isAuthenticated() && isOwner(resource.data.user_id);
     }
+
+    // Typing indicators
+    match /typing_indicators/{indicatorId} {
+      allow read, write: if isAuthenticated();
+      
+      // Auto-delete old typing indicators (cleanup rule)
+      allow delete: if isAuthenticated() && 
+        resource.data.timestamp < request.time - duration.value(10, 's');
+    }
   }
 }

@@ -383,5 +383,20 @@
   "userNotFound": "Bruker ikke funnet",
   "wouldYouLikeToRegister": "Vil du registrere deg?",
   "loginError": "Påloggingsfeil",
-  "somethingWentWrong": "Noe gikk galt"
+  "somethingWentWrong": "Noe gikk galt",
+  "isTyping": "skriver",
+  "user": "Bruker",
+  "filterAndSort": "Filtrer & Sorter",
+  "sortBy": "Sorter etter",
+  "newestFirst": "Nyeste først",
+  "highestPrice": "Høyeste pris",
+  "lowestPrice": "Laveste pris",
+  "nearest": "Nærmeste",
+  "priceRange": "Prisområde",
+  "from": "Fra",
+  "to": "Til",
+  "applyFilters": "Bruk filter",
+  "resetFilters": "Nullstill",
+  "createCargoRequest": "Opprett lastforespørsel",
+  "fillFormBelow": "Fyll ut informasjonen nedenfor for å opprette en ny forespørsel"
 }

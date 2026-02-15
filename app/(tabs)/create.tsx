@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { KeyboardAwareFlatList } from 'react-native-keyboard-aware-scroll-view';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import * as ImagePicker from 'expo-image-picker';
 import { manipulateAsync, SaveFormat } from 'expo-image-manipulator';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -602,12 +603,22 @@ export default function CreateRequestScreen() {
         keyExtractor={item => item.key}
         ListHeaderComponent={
           <View style={styles.screenHeader}>
-            <Text style={styles.screenTitle} accessibilityRole="header">
-              Opprett lastforespørsel
-            </Text>
-            <Text style={styles.screenSubtitle}>
-              Fyll ut informasjonen nedenfor for å opprette en ny forespørsel
-            </Text>
+            <LinearGradient
+              colors={['#FF7043', '#FF9A76']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.headerGradient}
+            >
+              <View style={styles.headerContent}>
+                <Ionicons name="cube" size={48} color="white" />
+                <Text style={styles.screenTitle} accessibilityRole="header">
+                  {t('createCargoRequest')}
+                </Text>
+                <Text style={styles.screenSubtitle}>
+                  {t('fillFormBelow')}
+                </Text>
+              </View>
+            </LinearGradient>
           </View>
         }
         renderItem={() => (
@@ -1092,23 +1103,30 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
   },
   screenHeader: {
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.xl,
-    paddingBottom: spacing.lg,
-    backgroundColor: colors.white,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border.light,
+    marginBottom: spacing.lg,
+  },
+  headerGradient: {
+    paddingHorizontal: spacing.xl,
+    paddingVertical: spacing.xxl,
+    borderBottomLeftRadius: borderRadius.xl,
+    borderBottomRightRadius: borderRadius.xl,
+  },
+  headerContent: {
+    alignItems: 'center',
+    gap: spacing.md,
   },
   screenTitle: {
-    fontSize: fontSize.xxl,
+    fontSize: fontSize.xxxl,
     fontWeight: fontWeight.bold,
-    color: colors.text.primary,
-    marginBottom: spacing.xs,
+    color: 'white',
+    textAlign: 'center',
   },
   screenSubtitle: {
     fontSize: fontSize.md,
-    color: colors.text.secondary,
-    lineHeight: 20,
+    color: 'rgba(255, 255, 255, 0.9)',
+    textAlign: 'center',
+    lineHeight: 22,
+    maxWidth: '80%',
   },
   scrollContent: {
     padding: spacing.lg,
