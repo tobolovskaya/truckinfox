@@ -61,6 +61,10 @@ const EmptyStateAnimation = ({ activeTab }: { activeTab: 'all' | 'my' }) => {
       <View style={styles.emptyContent}>
         {/* Interactive Create Button */}
         <TouchableOpacity
+          testID="empty-state-create-button"
+          accessibilityRole="button"
+          accessibilityLabel="Opprett første lastforespørsel"
+          accessibilityHint="Dobbelttrykk for å opprette din første lastforespørsel"
           style={styles.emptyCreateButton}
           onPress={handleCreateRequest}
           activeOpacity={0.8}
@@ -74,7 +78,7 @@ const EmptyStateAnimation = ({ activeTab }: { activeTab: 'all' | 'my' }) => {
         </TouchableOpacity>
 
         {/* Title */}
-        <Text style={styles.emptyTitle}>
+        <Text style={styles.emptyTitle} accessibilityRole="header">
           {activeTab === 'all'
             ? t('noActiveRequests') || 'Ingen aktive forespørsler'
             : t('noMyRequests') || 'Du har ingen forespørsler'}
@@ -298,6 +302,10 @@ export default function HomeScreen() {
         <View style={styles.stickyHeaderContent}>
           {/* Compact Greeting - Less Prominent */}
           <TouchableOpacity
+            testID="profile-button"
+            accessibilityRole="button"
+            accessibilityLabel={`Gå til profil for ${currentUser?.full_name || user?.displayName || 'deg'}`}
+            accessibilityHint="Dobbelttrykk for å se din profil"
             style={styles.compactGreetingContainer}
             onPress={() => router.push('/profile')}
           >
@@ -316,7 +324,25 @@ export default function HomeScreen() {
 
           {/* Action Buttons */}
           <View style={styles.headerActions}>
-            <TouchableOpacity style={styles.filterButtonHeader} onPress={openFilterSheet}>
+            <TouchableOpacity
+              testID="filter-button"
+              accessibilityRole="button"
+              accessibilityLabel="Filtrer lastforespørsler"
+              accessibilityHint="Dobbelttrykk for å åpne filteralternativer"
+              accessibilityState={{
+                selected: !!(
+                  filters.city ||
+                  filters.cargo_type ||
+                  filterState.priceRange.min ||
+                  filterState.priceRange.max ||
+                  filterState.weightRange.min ||
+                  filterState.weightRange.max ||
+                  filterState.pickupDate
+                ),
+              }}
+              style={styles.filterButtonHeader}
+              onPress={openFilterSheet}
+            >
               <View style={styles.iconButtonCircle}>
                 <Ionicons name="filter-outline" size={22} color="#FF7043" />
                 {(filters.city ||
@@ -350,6 +376,10 @@ export default function HomeScreen() {
       {/* Prominent Search Bar */}
       <View style={styles.searchBarContainer}>
         <TouchableOpacity
+          testID="search-button"
+          accessibilityRole="search"
+          accessibilityLabel="Søk etter transport"
+          accessibilityHint="Dobbelttrykk for å søke"
           style={styles.prominentSearchButton}
           onPress={() => {
             Alert.alert(t('searchPlaceholder') || 'Search', 'Search functionality coming soon');
@@ -371,13 +401,27 @@ export default function HomeScreen() {
             containerWidth.value = width;
           }}
         >
-          <TouchableOpacity style={styles.tabButton} onPress={() => handleTabChange('all')}>
+          <TouchableOpacity
+            testID="tab-all-requests"
+            accessibilityRole="tab"
+            accessibilityLabel="Alle forespørsler"
+            accessibilityState={{ selected: activeTab === 'all' }}
+            style={styles.tabButton}
+            onPress={() => handleTabChange('all')}
+          >
             <Text style={[styles.tabText, activeTab === 'all' && styles.activeTabText]}>
               {t('allRequests')}
             </Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.tabButton} onPress={() => handleTabChange('my')}>
+          <TouchableOpacity
+            testID="tab-my-requests"
+            accessibilityRole="tab"
+            accessibilityLabel="Mine forespørsler"
+            accessibilityState={{ selected: activeTab === 'my' }}
+            style={styles.tabButton}
+            onPress={() => handleTabChange('my')}
+          >
             <Text style={[styles.tabText, activeTab === 'my' && styles.activeTabText]}>
               {t('myRequests')}
             </Text>
@@ -591,6 +635,10 @@ export default function HomeScreen() {
 
       {/* Floating Action Button */}
       <TouchableOpacity
+        testID="fab-create-request"
+        accessibilityRole="button"
+        accessibilityLabel="Opprett ny lastforespørsel"
+        accessibilityHint="Dobbelttrykk for å opprette en ny lastforespørsel"
         style={styles.fab}
         onPress={() => router.push('/(tabs)/create')}
         activeOpacity={0.8}
