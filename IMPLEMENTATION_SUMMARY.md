@@ -489,6 +489,73 @@ Implemented comprehensive payment history with export functionality:
 - Better trust and accountability in the platform
 - Professional financial record keeping
 
+### Profile & Settings Enhancements ✅
+
+Implemented comprehensive profile statistics and reorganized settings for better UX:
+
+**Enhanced Statistics Dashboard:**
+
+- **Primary Stats Grid**: 4-card grid layout showing:
+  - Orders as Customer
+  - Orders as Carrier
+  - Total Transaction Amount (in thousands)
+  - Average Rating
+- **Secondary Stats**: Active bids, completed orders, success rate
+- **Empty State**: Clear message for new users with guidance
+- **Member Since**: Shows profile creation date in header
+- **Loading State**: Spinner while fetching enhanced statistics
+- **Real-time Calculation**: Success rate computed from completed vs cancelled orders
+- **Smart Display**: Only shows stats when user has activity
+
+**Statistics Fetching:**
+
+- Queries active bids from `bids` collection (pending/submitted status)
+- Fetches completed orders (delivered status) across customer/carrier roles
+- Fetches cancelled/failed orders for success rate calculation
+- Calculates success rate: (completed / total) × 100
+- Updates state with real-time Firebase data
+- Performance-optimized with batch queries
+
+**Reorganized Settings:**
+
+- **Language & Region**: Language selection with current language display
+- **Privacy Settings**:
+  - Show phone publicly (toggle)
+  - Show email publicly (toggle)
+  - Clear descriptions for each setting
+- **Help & Support**:
+  - About
+  - Terms of Service
+  - Privacy Policy
+  - Contact Support
+  - App Version display (v1.0.0)
+- Better visual hierarchy with subsection titles
+- Icon-based navigation for all settings
+
+**Implementation Details:**
+
+- Created `fetchEnhancedStatistics()` function with Firebase queries
+- Added `updatePrivacySetting()` for privacy toggle updates
+- Enhanced statistics state with 10 fields: orders, transactions, bids, completion rates, ratings
+- Grid layout with color-coded icon backgrounds (orange, green, blue, yellow)
+- Subsection headers with uppercase styling for better organization
+- Version row at bottom of settings with divider
+
+**Files Modified:**
+
+- `app/(tabs)/profile.tsx`: Enhanced statistics, reorganized settings, new functions
+- `locales/en.json` & `locales/no.json`: Added 24 new translation keys (activeBids, successRate, memberSince, accountSettings, privacySettings, helpSupport, termsOfService, privacyPolicy, contactSupport, showPhonePublicly, showEmailPublicly, etc.)
+
+**Benefits:**
+
+- Complete visibility into user activity and performance
+- Professional dashboard experience
+- Better organized settings reduce confusion
+- Privacy controls give users more control
+- Help & Support section improves user confidence
+- Statistics motivate users with visible progress
+- Success rate gamification encourages quality service
+
 ### Messaging & Communication Enhancements ✅
 
 Implemented WhatsApp-style read receipts for real-time messaging:
