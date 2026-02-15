@@ -14,7 +14,6 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useFocusEffect } from '@react-navigation/native';
 import { useAuth } from '../../../contexts/AuthContext';
 import { useTranslation } from 'react-i18next';
 import { sanitizeMessage } from '../../../utils/sanitization';
@@ -227,13 +226,11 @@ export default function ChatScreen() {
   }, [requestId, userId, user?.uid, otherUserTyping]);
 
   // Mark messages as read when screen is focused
-  useFocusEffect(
-    React.useCallback(() => {
-      if (messages.length > 0) {
-        markMessagesAsRead();
-      }
-    }, [messages])
-  );
+  useEffect(() => {
+    if (messages.length > 0) {
+      markMessagesAsRead();
+    }
+  }, [messages.length]);
 
   const fetchChatData = async () => {
     try {
