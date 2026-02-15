@@ -253,7 +253,7 @@ export default function ReviewScreen() {
         </ScreenSection>
 
         {/* Comment */}
-        <ScreenSection title=\"Comment (Optional)\">
+        <ScreenSection title="Comment (Optional)">
           <TextInput
             style={styles.commentInput}
             placeholder="Share your experience..."
