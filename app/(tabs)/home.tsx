@@ -338,7 +338,7 @@ export default function HomeScreen() {
               onPress={() => router.push('/(tabs)/notifications')}
             >
               <View style={styles.iconButtonCircle}>
-                <Ionicons name="notifications-outline" size={22} color="#FF7043" />
+                <Ionicons name="notifications-outline" size={22} color={colors.primary} />
                 {unreadCount > 0 && (
                   <View style={styles.notificationBadge}>
                     <Text style={styles.notificationBadgeText}>

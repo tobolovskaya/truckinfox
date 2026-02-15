@@ -1109,7 +1109,7 @@ const styles = StyleSheet.create({
     lineHeight: 20,
   },
   scrollContent: {
-    padding: 16,
+    padding: spacing.lg,
   },
   fieldContainer: {
     marginBottom: 24,
