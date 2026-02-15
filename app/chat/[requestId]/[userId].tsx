@@ -690,6 +690,7 @@ export default function ChatScreen() {
               value={newMessage}
               onChangeText={handleTypingChange}
               multiline
+              numberOfLines={1}
               maxLength={500}
               placeholderTextColor="#9CA3AF"
             />
@@ -995,6 +996,7 @@ const styles = StyleSheet.create({
   textInput: {
     fontSize: 16,
     color: '#212121',
+    minHeight: 36,
     maxHeight: 100,
     paddingVertical: 4,
   },
