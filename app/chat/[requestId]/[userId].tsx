@@ -17,8 +17,8 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useAuth } from '../../../contexts/AuthContext';
 import { useTranslation } from 'react-i18next';
 import { sanitizeMessage } from '../../../utils/sanitization';
-// TODO: Migrate to Firebase
-// import { supabase } from '../../../lib/supabase';
+import { db } from '../../../lib/firebase';
+import { doc, setDoc, onSnapshot, serverTimestamp } from 'firebase/firestore';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as ImagePicker from 'expo-image-picker';
 import * as DocumentPicker from 'expo-document-picker';
@@ -65,7 +65,9 @@ export default function ChatScreen() {
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [chatUser] = useState<ChatUser | null>(null); // setChatUser will be used when Firebase migration is complete
+  const [otherUserTyping, setOtherUserTyping] = useState(false);
   const messageAnimations = useRef<{ [key: string]: Animated.Value }>({});
+  const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   useEffect(() => {
     if (!requestId || !userId || !user?.uid) {
@@ -115,6 +117,28 @@ export default function ChatScreen() {
     // };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [requestId, userId]);
+
+  // Typing indicator listener
+  useEffect(() => {
+    if (!requestId || !userId || !user?.uid) return;
+
+    const typingDocRef = doc(db, 'typing_indicators', `${requestId}_${userId}`);
+    
+    const unsubscribe = onSnapshot(typingDocRef, (doc) => {
+      if (doc.exists()) {
+        const data = doc.data();
+        const lastTyping = data.timestamp?.toMillis();
+        const now = Date.now();
+        
+        // Consider typing if updated within last 3 seconds
+        setOtherUserTyping(now - lastTyping < 3000);
+      } else {
+        setOtherUserTyping(false);
+      }
+    });
+
+    return () => unsubscribe();
+  }, [requestId, userId, user?.uid]);
 
   const fetchChatData = async () => {
     // TODO: Migrate to Firebase Firestore
@@ -242,6 +266,36 @@ export default function ChatScreen() {
       Alert.alert(t('error'), error instanceof Error ? error.message : 'Unknown error');
     } finally {
       setSending(false);
+    }
+  };
+
+  // Update typing status
+  const handleTypingChange = async (text: string) => {
+    setNewMessage(text);
+    
+    if (!user?.uid || !requestId || !userId) return;
+
+    // Clear previous timeout
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current);
+    }
+
+    // Update typing indicator
+    if (text.length > 0) {
+      const typingDocRef = doc(db, 'typing_indicators', `${requestId}_${user.uid}`);
+      await setDoc(typingDocRef, {
+        userId: user.uid,
+        typing: true,
+        timestamp: serverTimestamp(),
+      }, { merge: true });
+
+      // Clear typing after 3 seconds of inactivity
+      typingTimeoutRef.current = setTimeout(async () => {
+        await setDoc(typingDocRef, {
+          typing: false,
+          timestamp: serverTimestamp(),
+        }, { merge: true });
+      }, 3000);
     }
   };
 
@@ -382,6 +436,65 @@ export default function ChatScreen() {
     }
   };
 
+  // Animated typing indicator component
+  const TypingIndicator = () => {
+    const dot1 = useRef(new Animated.Value(0)).current;
+    const dot2 = useRef(new Animated.Value(0)).current;
+    const dot3 = useRef(new Animated.Value(0)).current;
+
+    useEffect(() => {
+      const animateDot = (dot: Animated.Value, delay: number) => {
+        Animated.loop(
+          Animated.sequence([
+            Animated.delay(delay),
+            Animated.timing(dot, {
+              toValue: -8,
+              duration: 400,
+              useNativeDriver: true,
+            }),
+            Animated.timing(dot, {
+              toValue: 0,
+              duration: 400,
+              useNativeDriver: true,
+            }),
+          ])
+        ).start();
+      };
+
+      animateDot(dot1, 0);
+      animateDot(dot2, 200);
+      animateDot(dot3, 400);
+    }, []);
+
+    return (
+      <View style={styles.typingIndicatorContainer}>
+        <View style={styles.typingIndicator}>
+          <Animated.View
+            style={[
+              styles.typingDot,
+              { transform: [{ translateY: dot1 }] },
+            ]}
+          />
+          <Animated.View
+            style={[
+              styles.typingDot,
+              { transform: [{ translateY: dot2 }] },
+            ]}
+          />
+          <Animated.View
+            style={[
+              styles.typingDot,
+              { transform: [{ translateY: dot3 }] },
+            ]}
+          />
+        </View>
+        <Text style={styles.typingText}>
+          {chatUser?.full_name || t('user')} {t('isTyping') || 'skriver'}...
+        </Text>
+      </View>
+    );
+  };
+
   // Group messages by date
   const groupedMessages = messages.reduce((groups: { [key: string]: Message[] }, message) => {
     const date = new Date(message.created_at).toDateString();
@@ -502,6 +615,9 @@ export default function ChatScreen() {
           )}
         </ScrollView>
 
+        {/* Typing Indicator */}
+        {otherUserTyping && <TypingIndicator />}
+
         {/* Input */}
         <View style={styles.inputContainer}>
           <TouchableOpacity
@@ -517,7 +633,7 @@ export default function ChatScreen() {
               style={styles.textInput}
               placeholder={t('typeMessage')}
               value={newMessage}
-              onChangeText={setNewMessage}
+              onChangeText={handleTypingChange}
               multiline
               maxLength={500}
               placeholderTextColor="#9CA3AF"
@@ -852,5 +968,32 @@ const styles = StyleSheet.create({
   },
   sendButtonDisabled: {
     opacity: 0.5,
+  },
+  typingIndicatorContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.sm,
+    gap: spacing.sm,
+  },
+  typingIndicator: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    backgroundColor: colors.surfaceVariant,
+    borderRadius: borderRadius.full,
+  },
+  typingDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: colors.primary,
+  },
+  typingText: {
+    fontSize: fontSize.sm,
+    color: colors.text.tertiary,
+    fontStyle: 'italic',
   },
 });
