@@ -19,6 +19,8 @@ import { useTranslation } from 'react-i18next';
 import { db } from '../../lib/firebase';
 import { collection, query, where, orderBy, getDocs, getDoc, doc } from 'firebase/firestore';
 import { theme } from '../../theme/theme';
+import { ScreenHeader } from '../../components/ScreenHeader';
+import { ScreenSection } from '../../components/ScreenSection';
 import {
   colors,
   spacing,
@@ -308,14 +310,8 @@ export default function PaymentHistoryScreen() {
 
   if (loading) {
     return (
-      <SafeAreaView style={styles.container}>
-        <View style={styles.header}>
-          <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-            <Ionicons name="arrow-back" size={24} color={theme.iconColors.primary} />
-          </TouchableOpacity>
-          <Text style={styles.title}>{t('paymentHistory')}</Text>
-          <View style={{ width: 40 }} />
-        </View>
+      <SafeAreaView style={styles.container} edges={['bottom']}>
+        <ScreenHeader title={t('paymentHistory')} showBackButton />
         <View style={styles.centerContent}>
           <ActivityIndicator size="large" color={theme.iconColors.primary} />
         </View>
@@ -324,14 +320,8 @@ export default function PaymentHistoryScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-          <Ionicons name="arrow-back" size={24} color={theme.iconColors.primary} />
-        </TouchableOpacity>
-        <Text style={styles.title}>{t('paymentHistory')}</Text>
-        <View style={{ width: 40 }} />
-      </View>
+    <SafeAreaView style={styles.container} edges={['bottom']}>
+      <ScreenHeader title={t('paymentHistory')} showBackButton />
 
       {/* Filter Buttons */}
       <ScrollView
@@ -372,7 +362,7 @@ export default function PaymentHistoryScreen() {
           </View>
         ) : (
           filteredPayments.map(payment => (
-            <View key={payment.id} style={styles.paymentCard}>
+            <ScreenSection key={payment.id}>
               <View style={styles.paymentHeader}>
                 <View style={styles.paymentHeaderLeft}>
                   <Ionicons
@@ -459,7 +449,7 @@ export default function PaymentHistoryScreen() {
                 <Text style={styles.viewOrderButtonText}>{t('viewDetails')}</Text>
                 <Ionicons name="chevron-forward" size={16} color={theme.iconColors.primary} />
               </TouchableOpacity>
-            </View>
+            </ScreenSection>
           ))
         )}
       </ScrollView>
@@ -506,28 +496,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.backgroundLight,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
-    backgroundColor: 'white',
-    borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
-  },
-  backButton: {
-    width: 44, // Minimum 44pt touch target (Apple HIG)
-    height: 44,
-    borderRadius: 22,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  title: {
-    fontSize: fontSize.xl,
-    fontWeight: fontWeight.bold,
-    color: colors.text.primary,
   },
   centerContent: {
     flex: 1,

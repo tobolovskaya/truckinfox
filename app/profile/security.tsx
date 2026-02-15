@@ -21,6 +21,8 @@ import {
   updatePassword,
   signOut as firebaseSignOut,
 } from 'firebase/auth';
+import { ScreenHeader } from '../../components/ScreenHeader';
+import { ScreenSection } from '../../components/ScreenSection';
 import { theme } from '../../theme/theme';
 import {
   colors,
@@ -136,19 +138,12 @@ export default function SecurityScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-          <Ionicons name="arrow-back" size={24} color={theme.iconColors.dark} />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Security Settings</Text>
-      </View>
+    <SafeAreaView style={styles.container} edges={['bottom']}>
+      <ScreenHeader title="Security Settings" showBackButton />
 
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
         {/* Change Password */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Change Password</Text>
+        <ScreenSection title="Change Password">
 
           <View style={styles.inputContainer}>
             <Text style={styles.label}>Current Password</Text>
@@ -197,14 +192,13 @@ export default function SecurityScreen() {
               <Text style={styles.buttonText}>Change Password</Text>
             )}
           </TouchableOpacity>
-        </View>
+        </ScreenSection>
 
         {/* Two-Factor Authentication */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Two-Factor Authentication</Text>
-          <Text style={styles.sectionDescription}>
-            Add an extra layer of security to your account with 2FA
-          </Text>
+        <ScreenSection
+          title="Two-Factor Authentication"
+          subtitle="Add an extra layer of security to your account with 2FA"
+        >
 
           <View style={styles.settingRow}>
             <View style={styles.settingLeft}>
@@ -233,11 +227,10 @@ export default function SecurityScreen() {
               )}
             </View>
           </View>
-        </View>
+        </ScreenSection>
 
         {/* Session Management */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Session Management</Text>
+        <ScreenSection title="Session Management">
 
           <TouchableOpacity
             style={[styles.signOutAllButton, signingOutAll && styles.buttonDisabled]}
@@ -259,11 +252,10 @@ export default function SecurityScreen() {
           <Text style={styles.helperText}>
             This will sign you out from all devices and browsers. You&apos;ll need to sign in again.
           </Text>
-        </View>
+        </ScreenSection>
 
         {/* Security Tips */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Security Tips</Text>
+        <ScreenSection title="Security Tips">
 
           <View style={styles.tipItem}>
             <Ionicons name="checkmark-circle" size={20} color={theme.iconColors.success} />
@@ -284,7 +276,7 @@ export default function SecurityScreen() {
             <Ionicons name="checkmark-circle" size={20} color={theme.iconColors.success} />
             <Text style={styles.tipText}>Sign out from public devices</Text>
           </View>
-        </View>
+        </ScreenSection>
       </ScrollView>
     </SafeAreaView>
   );

@@ -27,6 +27,8 @@ import {
   getDocs,
   setDoc,
 } from 'firebase/firestore';
+import { ScreenHeader } from '../../components/ScreenHeader';
+import { ScreenSection } from '../../components/ScreenSection';
 import { theme } from '../../theme/theme';
 import {
   colors,
@@ -335,18 +337,12 @@ export default function PaymentScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity style={styles.headerBackButton} onPress={() => router.back()}>
-          <Ionicons name="arrow-back" size={24} color={theme.iconColors.dark} />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Payment</Text>
-      </View>
+    <SafeAreaView style={styles.container} edges={['bottom']}>
+      <ScreenHeader title="Payment" showBackButton />
 
       <ScrollView style={styles.scrollView}>
         {/* 1. Vipps Payment Button - MOVED TO TOP */}
-        <View style={styles.section}>
+        <ScreenSection>
           <TouchableOpacity
             style={[styles.vippsButton, processing && styles.vippsButtonDisabled]}
             onPress={initiateVippsPayment}
@@ -370,11 +366,10 @@ export default function PaymentScreen() {
           </TouchableOpacity>
 
           <Text style={styles.paymentNote}>{t('paymentNote')}</Text>
-        </View>
+        </ScreenSection>
 
         {/* 2. Payment Breakdown */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>{t('paymentBreakdown')}</Text>
+        <ScreenSection title={t('paymentBreakdown')}>
 
           <View style={styles.paymentRow}>
             <Text style={styles.paymentLabel}>{t('carrierPayment')}:</Text>
@@ -392,16 +387,16 @@ export default function PaymentScreen() {
             <Text style={styles.totalLabel}>{t('totalAmount')}:</Text>
             <Text style={styles.totalAmount}>{order.total_amount} NOK</Text>
           </View>
-        </View>
+        </ScreenSection>
 
         {/* 3. Escrow Information (Security) */}
-        <View style={styles.section}>
+        <ScreenSection>
           <View style={styles.escrowHeader}>
             <Ionicons name="shield-checkmark" size={24} color={theme.iconColors.success} />
             <Text style={styles.escrowTitle}>{t('secureEscrowPayment')}</Text>
           </View>
           <Text style={styles.escrowDescription}>{t('escrowDescription')}</Text>
-        </View>
+        </ScreenSection>
       </ScrollView>
     </SafeAreaView>
   );

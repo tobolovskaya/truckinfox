@@ -19,6 +19,8 @@ import { db, auth } from '../../lib/firebase';
 import { doc, getDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { updateProfile as updateAuthProfile } from 'firebase/auth';
 import AvatarUpload from '../../components/AvatarUpload';
+import { ScreenHeader } from '../../components/ScreenHeader';
+import { ScreenSection } from '../../components/ScreenSection';
 import { theme } from '../../theme/theme';
 import {
   colors,
@@ -217,25 +219,17 @@ export default function EditProfileScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['bottom']}>
       {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-          <Ionicons name="arrow-back" size={24} color={theme.iconColors.dark} />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>{t('editProfile')}</Text>
-        <TouchableOpacity
-          style={[styles.saveButton, saving && styles.saveButtonDisabled]}
-          onPress={handleSave}
-          disabled={saving}
-        >
-          {saving ? (
-            <ActivityIndicator size="small" color={theme.iconColors.white} />
-          ) : (
-            <Text style={styles.saveButtonText}>Save</Text>
-          )}
-        </TouchableOpacity>
-      </View>
+      <ScreenHeader
+        title={t('editProfile')}
+        showBackButton
+        rightAction={{
+          icon: 'checkmark',
+          onPress: handleSave,
+          label: saving ? undefined : 'Save',
+        }}
+      />
 
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
         {/* Avatar Upload */}

@@ -26,6 +26,8 @@ import {
   getDocs,
   updateDoc,
 } from 'firebase/firestore';
+import { ScreenHeader } from '../../components/ScreenHeader';
+import { ScreenSection } from '../../components/ScreenSection';
 import { theme } from '../../theme/theme';
 import {
   colors,
@@ -203,37 +205,28 @@ export default function ReviewScreen() {
   const reviewedRole = isCustomer ? t('carrier') : t('customer');
 
   return (
-    <SafeAreaView style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-          <Ionicons name="arrow-back" size={24} color={theme.iconColors.dark} />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Leave Review</Text>
-      </View>
+    <SafeAreaView style={styles.container} edges={['bottom']}>
+      <ScreenHeader title="Leave Review" showBackButton />
 
       <ScrollView style={styles.scrollView}>
         {/* Order Info */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Order Details</Text>
+        <ScreenSection title="Order Details">
           <Text style={styles.orderTitle}>{order.cargo_requests.title}</Text>
           <Text style={styles.orderStatus}>Status: {t(order.status)}</Text>
-        </View>
+        </ScreenSection>
 
         {/* Review Target */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Rate your experience with {reviewedRole}</Text>
+        <ScreenSection title={`Rate your experience with ${reviewedRole}`}>
           <View style={styles.reviewTarget}>
             <View style={styles.avatar}>
               <Ionicons name="person" size={24} color={theme.iconColors.primary} />
             </View>
             <Text style={styles.reviewedName}>{reviewedPerson}</Text>
           </View>
-        </View>
+        </ScreenSection>
 
         {/* Rating */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Rating *</Text>
+        <ScreenSection title="Rating *">
           <View style={styles.starsContainer}>
             {[1, 2, 3, 4, 5].map(star => (
               <TouchableOpacity
@@ -257,11 +250,10 @@ export default function ReviewScreen() {
             {rating === 4 && 'Very Good'}
             {rating === 5 && 'Excellent'}
           </Text>
-        </View>
+        </ScreenSection>
 
         {/* Comment */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Comment (Optional)</Text>
+        <ScreenSection title=\"Comment (Optional)\">
           <TextInput
             style={styles.commentInput}
             placeholder="Share your experience..."
@@ -274,10 +266,10 @@ export default function ReviewScreen() {
             placeholderTextColor="#9CA3AF"
           />
           <Text style={styles.characterCount}>{comment.length}/500 characters</Text>
-        </View>
+        </ScreenSection>
 
         {/* Submit Button */}
-        <View style={styles.section}>
+        <ScreenSection>
           <TouchableOpacity
             style={[
               styles.submitButton,
@@ -292,7 +284,7 @@ export default function ReviewScreen() {
               <Text style={styles.submitButtonText}>Submit Review</Text>
             )}
           </TouchableOpacity>
-        </View>
+        </ScreenSection>
       </ScrollView>
     </SafeAreaView>
   );
