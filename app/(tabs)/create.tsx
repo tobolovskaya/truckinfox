@@ -1,5 +1,13 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, TextInput, Modal } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  TextInput,
+  Modal,
+  ActivityIndicator,
+} from 'react-native';
 import { KeyboardAwareFlatList } from 'react-native-keyboard-aware-scroll-view';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
@@ -585,6 +593,14 @@ export default function CreateRequestScreen() {
         enableResetScrollToCoords={false}
         data={[{ key: 'form' }]}
         keyExtractor={item => item.key}
+        ListHeaderComponent={
+          <View style={styles.screenHeader}>
+            <Text style={styles.screenTitle}>Opprett lastforespørsel</Text>
+            <Text style={styles.screenSubtitle}>
+              Fyll ut informasjonen nedenfor for å opprette en ny forespørsel
+            </Text>
+          </View>
+        }
         renderItem={() => (
           <View>
             {/* Title */}
@@ -893,9 +909,11 @@ export default function CreateRequestScreen() {
                 onPress={handleSubmit}
                 disabled={loading}
               >
-                <Text style={styles.publishButtonText}>
-                  {loading ? 'Publiserer...' : 'Publiser last'}
-                </Text>
+                {loading ? (
+                  <ActivityIndicator color="white" />
+                ) : (
+                  <Text style={styles.publishButtonText}>Publiser last</Text>
+                )}
               </TouchableOpacity>
             </View>
 
@@ -1061,6 +1079,25 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#FFFFFF',
+  },
+  screenHeader: {
+    paddingHorizontal: 16,
+    paddingTop: 24,
+    paddingBottom: 16,
+    backgroundColor: '#FFFFFF',
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E7EB',
+  },
+  screenTitle: {
+    fontSize: 28,
+    fontWeight: '700',
+    color: '#1F2937',
+    marginBottom: 4,
+  },
+  screenSubtitle: {
+    fontSize: 15,
+    color: '#6B7280',
+    lineHeight: 20,
   },
   scrollContent: {
     padding: 16,

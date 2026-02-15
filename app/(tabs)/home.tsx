@@ -40,6 +40,7 @@ import { useCurrentUser } from '../../hooks/useCurrentUser';
 import { useFavorites } from '../../hooks/useFavorites';
 import { useFilterState } from '../../hooks/useFilterState';
 import { useReduceMotion } from '../../hooks/useReduceMotion';
+import { useNotifications } from '../../hooks/useNotifications';
 import { SwipeableRequestCard } from '../../components/home/SwipeableRequestCard';
 import { SkeletonCard } from '../../components/home/SkeletonCard';
 
@@ -158,6 +159,7 @@ export default function HomeScreen() {
   const { cities } = useCities();
   const { currentUser } = useCurrentUser(user?.uid);
   const { toggleFavorite: toggleFavoriteHook } = useFavorites(user?.uid);
+  const { unreadCount } = useNotifications();
 
   // Open/close filter modal functions
   const openFilterSheet = useCallback(() => {
@@ -324,6 +326,29 @@ export default function HomeScreen() {
 
           {/* Action Buttons */}
           <View style={styles.headerActions}>
+            {/* Notifications Button */}
+            <TouchableOpacity
+              testID="notifications-button"
+              accessibilityRole="button"
+              accessibilityLabel="Varsler"
+              accessibilityHint="Dobbelttrykk for å se dine varsler"
+              style={styles.notificationButtonHeader}
+              onPress={() => router.push('/(tabs)/notifications')}
+            >
+              <View style={styles.iconButtonCircle}>
+                <Ionicons name="notifications-outline" size={22} color="#FF7043" />
+                {unreadCount > 0 && (
+                  <View style={styles.notificationBadge}>
+                    <Text style={styles.notificationBadgeText}>
+                      {unreadCount > 99 ? '99+' : unreadCount}
+                    </Text>
+                  </View>
+                )}
+              </View>
+              <Text style={styles.filterButtonLabel}>Varsler</Text>
+            </TouchableOpacity>
+
+            {/* Filter Button */}
             <TouchableOpacity
               testID="filter-button"
               accessibilityRole="button"
@@ -2527,6 +2552,30 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
+  },
+  // Notification Button in Header
+  notificationButtonHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginRight: spacing.md,
+  },
+  notificationBadge: {
+    position: 'absolute',
+    top: -4,
+    right: -4,
+    backgroundColor: colors.error,
+    borderRadius: 10,
+    minWidth: 18,
+    height: 18,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 4,
+  },
+  notificationBadgeText: {
+    fontSize: 11,
+    color: colors.white,
+    fontWeight: fontWeight.bold,
   },
   filterButtonLabel: {
     fontSize: 14,
