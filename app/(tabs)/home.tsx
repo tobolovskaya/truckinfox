@@ -330,9 +330,10 @@ export default function HomeScreen() {
             <TouchableOpacity
               testID="notifications-button"
               accessibilityRole="button"
-              accessibilityLabel="Varsler"
+              accessibilityLabel={
+                unreadCount > 0 ? `Varsler, ${unreadCount} uleste` : 'Varsler, ingen uleste'
+              }
               accessibilityHint="Dobbelttrykk for å se dine varsler"
-              accessibilityValue={{ text: unreadCount > 0 ? `${unreadCount} uleste varsler` : 'Ingen uleste varsler' }}
               style={styles.notificationButtonHeader}
               onPress={() => router.push('/(tabs)/notifications')}
             >
@@ -2559,7 +2560,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    marginRight: spacing.md,
   },
   notificationBadge: {
     position: 'absolute',
