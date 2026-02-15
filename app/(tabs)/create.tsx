@@ -24,7 +24,6 @@ import { LazyImage } from '../../components/LazyImage';
 import { Picker } from '@react-native-picker/picker';
 
 const CARGO_TYPES = [
-  { id: '', label: 'Annet' },
   { id: 'automotive', label: 'Bil/Motor' },
   { id: 'construction', label: 'Byggemateriale' },
   { id: 'boats', label: 'Båter' },
@@ -623,7 +622,9 @@ export default function CreateRequestScreen() {
                 handleBlur('cargo_type');
               }}
               style={styles.picker}
+              accessibilityLabel="Velg lasttype"
             >
+              <Picker.Item label="Velg lasttype..." value="" />
               {CARGO_TYPES.map(type => (
                 <Picker.Item key={type.id} label={type.label} value={type.id} />
               ))}
@@ -790,7 +791,7 @@ export default function CreateRequestScreen() {
             <View style={styles.imageGrid}>
               {images.map((uri, index) => (
                 <View key={index} style={styles.imageGridItem}>
-                  <LazyImage uri={uri} style={styles.imagePreview} />
+                  <LazyImage uri={uri} style={styles.imagePreview} containerStyle={styles.imageGridItem} />
                   <TouchableOpacity
                     style={styles.removeImageButton}
                     onPress={() => removeImage(index)}
@@ -814,7 +815,9 @@ export default function CreateRequestScreen() {
                 handleBlur('price_type');
               }}
               style={styles.picker}
+              accessibilityLabel="Velg prismodell"
             >
+              <Picker.Item label="Velg prismodell..." value="" />
               <Picker.Item label="Kan forhandles" value="negotiable" />
               <Picker.Item label="Fast pris" value="fixed" />
             </Picker>
@@ -859,7 +862,7 @@ export default function CreateRequestScreen() {
           value={formData.pickup_date}
           mode="date"
           display="default"
-          onChange={(event, selectedDate) => {
+          onChange={(_event, selectedDate) => {
             setShowPickupDate(false);
             if (selectedDate) {
               updateFormData('pickup_date', selectedDate);
@@ -873,7 +876,7 @@ export default function CreateRequestScreen() {
           value={formData.delivery_date}
           mode="date"
           display="default"
-          onChange={(event, selectedDate) => {
+          onChange={(_event, selectedDate) => {
             setShowDeliveryDate(false);
             if (selectedDate) {
               updateFormData('delivery_date', selectedDate);
