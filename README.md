@@ -5,6 +5,7 @@ TruckinFox is a comprehensive cargo transportation platform connecting customers
 ## ✨ Features
 
 ### For Customers
+
 - 📦 **Create Cargo Requests**: Post detailed cargo transportation needs
 - 💰 **Competitive Bidding**: Receive bids from multiple carriers
 - 💳 **Secure Payments**: Vipps escrow payment integration
@@ -13,6 +14,7 @@ TruckinFox is a comprehensive cargo transportation platform connecting customers
 - 💬 **Direct Messaging**: Chat with carriers in real-time
 
 ### For Carriers
+
 - 🔍 **Browse Opportunities**: Find cargo requests matching your route
 - 💼 **Place Bids**: Submit competitive offers
 - ✅ **Verification**: Get verified through Brønnøysundregistrene
@@ -21,6 +23,7 @@ TruckinFox is a comprehensive cargo transportation platform connecting customers
 - ⭐ **Build Reputation**: Earn ratings and reviews
 
 ### Platform Features
+
 - 🌍 **Multi-language**: Norwegian (Bokmål) and English
 - 📱 **iOS & Android**: Native mobile experience
 - 🔐 **Secure Authentication**: Firebase Auth with email/phone
@@ -32,6 +35,7 @@ TruckinFox is a comprehensive cargo transportation platform connecting customers
 ## 🛠 Tech Stack
 
 ### Frontend
+
 - **React Native** - Mobile framework
 - **Expo SDK 54+** - Development platform
 - **Expo Router** - File-based routing
@@ -40,6 +44,7 @@ TruckinFox is a comprehensive cargo transportation platform connecting customers
 - **i18next** - Internationalization
 
 ### Backend
+
 - **Firebase Authentication** - User management
 - **Firestore** - Real-time database
 - **Firebase Storage** - File uploads
@@ -47,6 +52,7 @@ TruckinFox is a comprehensive cargo transportation platform connecting customers
 - **Firebase Cloud Messaging** - Push notifications
 
 ### Payments & Services
+
 - **Vipps** - Norwegian payment solution
 - **Brønnøysundregistrene API** - Carrier verification
 - **Google Maps** - Location services
@@ -54,7 +60,7 @@ TruckinFox is a comprehensive cargo transportation platform connecting customers
 
 ## 📋 Prerequisites
 
-- Node.js 18+ 
+- Node.js 18+
 - npm or yarn
 - Expo CLI
 - iOS Simulator (Mac) or Android Emulator
@@ -220,6 +226,7 @@ firebase deploy --only functions
 ## 🎨 Design System
 
 ### Colors
+
 - Primary: `#FF7043` (Warm Orange)
 - Primary Light: `#FF9A76`
 - Primary Dark: `#E64A19`
@@ -227,11 +234,13 @@ firebase deploy --only functions
 - Error: `#F44336`
 
 ### Typography
+
 - Headings: 32px, 24px, 20px
 - Body: 16px
 - Caption: 14px, 12px
 
 ### Spacing
+
 - XS: 4px, SM: 8px, MD: 16px, LG: 24px, XL: 32px
 
 ## 🔐 Security
@@ -245,6 +254,7 @@ firebase deploy --only functions
 ## 🌍 Internationalization
 
 The app supports:
+
 - 🇬🇧 English
 - 🇳🇴 Norwegian (Bokmål)
 

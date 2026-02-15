@@ -1,5 +1,12 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { View, StyleSheet } from 'react-native';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withRepeat,
+  withTiming,
+  Easing,
+} from 'react-native-reanimated';
 import { colors, spacing, borderRadius, shadows } from '../../lib/sharedStyles';
 
 const SkeletonBox = ({
@@ -10,19 +17,39 @@ const SkeletonBox = ({
   width: number | string;
   height: number;
   style?: any;
-}) => (
-  <View
-    style={[
-      {
-        width,
-        height,
-        backgroundColor: colors.border.light,
-        borderRadius: 8,
-      },
-      style,
-    ]}
-  />
-);
+}) => {
+  const opacity = useSharedValue(0.3);
+
+  useEffect(() => {
+    opacity.value = withRepeat(
+      withTiming(1, {
+        duration: 1000,
+        easing: Easing.ease,
+      }),
+      -1,
+      true
+    );
+  }, [opacity]);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    opacity: opacity.value,
+  }));
+
+  return (
+    <Animated.View
+      style={[
+        {
+          width,
+          height,
+          backgroundColor: colors.border.light,
+          borderRadius: 8,
+        },
+        style,
+        animatedStyle,
+      ]}
+    />
+  );
+};
 
 export const SkeletonCard = () => {
   return (

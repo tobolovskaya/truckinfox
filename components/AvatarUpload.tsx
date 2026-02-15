@@ -33,11 +33,10 @@ export default function AvatarUpload({ avatarUrl, onUpload, size = 80 }: AvatarU
   const [uploading, setUploading] = useState(false);
 
   const compressImage = async (uri: string) => {
-    const manipResult = await ImageManipulator.manipulateAsync(
-      uri,
-      [{ resize: { width: 1200 } }],
-      { compress: 0.7, format: ImageManipulator.SaveFormat.JPEG }
-    );
+    const manipResult = await ImageManipulator.manipulateAsync(uri, [{ resize: { width: 1200 } }], {
+      compress: 0.7,
+      format: ImageManipulator.SaveFormat.JPEG,
+    });
     return manipResult.uri;
   };
 
