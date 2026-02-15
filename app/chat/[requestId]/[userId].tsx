@@ -75,6 +75,7 @@ export default function ChatScreen() {
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [chatUser, setChatUser] = useState<ChatUser | null>(null);
+  const [otherUserTyping, setOtherUserTyping] = useState(false);
   const messageAnimations = useRef<{ [key: string]: Animated.Value }>({});
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
