@@ -1,10 +1,22 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, Modal, ScrollView, TouchableOpacity } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  Modal,
+  ScrollView,
+  TouchableOpacity,
+  TextInput,
+  Alert,
+} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { colors, spacing, fontSize, fontWeight, borderRadius, shadows } from '../lib/sharedStyles';
 import { trackFilterApplied } from '../utils/analytics';
 import { startTrace, PerformanceTraces } from '../utils/performance';
+
+const SAVED_FILTERS_KEY = '@truckinfox_saved_filters';
 
 export interface FilterOptions {
   sortBy: 'newest' | 'price_high' | 'price_low' | 'distance';
@@ -12,6 +24,13 @@ export interface FilterOptions {
   priceRange: { min: number; max: number };
   dateRange?: { from: Date; to: Date };
   weightRange?: { min: number; max: number };
+}
+
+export interface SavedFilter {
+  id: string;
+  name: string;
+  filters: FilterOptions;
+  createdAt: number;
 }
 
 interface FilterSheetProps {
@@ -52,6 +71,16 @@ export const FilterSheet: React.FC<FilterSheetProps> = ({
     initialFilters?.priceRange || { min: 0, max: 50000 }
   );
 
+  // Saved filters state
+  const [savedFilters, setSavedFilters] = useState<SavedFilter[]>([]);
+  const [showSaveDialog, setShowSaveDialog] = useState(false);
+  const [filterName, setFilterName] = useState('');
+
+  // Load saved filters from AsyncStorage
+  useEffect(() => {
+    loadSavedFilters();
+  }, []);
+
   // Track filter sheet load performance
   useEffect(() => {
     if (visible) {
@@ -60,6 +89,72 @@ export const FilterSheet: React.FC<FilterSheetProps> = ({
       setTimeout(() => trace?.stop(), 100);
     }
   }, [visible]);
+
+  const loadSavedFilters = async () => {
+    try {
+      const saved = await AsyncStorage.getItem(SAVED_FILTERS_KEY);
+      if (saved) {
+        setSavedFilters(JSON.parse(saved));
+      }
+    } catch (error) {
+      console.error('Error loading saved filters:', error);
+    }
+  };
+
+  const saveSavedFilters = async (filters: SavedFilter[]) => {
+    try {
+      await AsyncStorage.setItem(SAVED_FILTERS_KEY, JSON.stringify(filters));
+      setSavedFilters(filters);
+    } catch (error) {
+      console.error('Error saving filters:', error);
+      Alert.alert(t('error'), t('failedToSaveFilter'));
+    }
+  };
+
+  const handleSaveFilter = () => {
+    if (!filterName.trim()) {
+      Alert.alert(t('error'), t('enterFilterName'));
+      return;
+    }
+
+    const newFilter: SavedFilter = {
+      id: Date.now().toString(),
+      name: filterName.trim(),
+      filters: {
+        sortBy,
+        cargoTypes: selectedTypes,
+        priceRange,
+      },
+      createdAt: Date.now(),
+    };
+
+    const updated = [...savedFilters, newFilter];
+    saveSavedFilters(updated);
+    setFilterName('');
+    setShowSaveDialog(false);
+    Alert.alert(t('success'), t('filterSaved'));
+  };
+
+  const handleLoadFilter = (savedFilter: SavedFilter) => {
+    setSortBy(savedFilter.filters.sortBy);
+    setSelectedTypes(savedFilter.filters.cargoTypes);
+    setPriceRange(savedFilter.filters.priceRange);
+    Alert.alert(t('success'), t('filterLoaded', { name: savedFilter.name }));
+  };
+
+  const handleDeleteFilter = (filterId: string) => {
+    Alert.alert(t('deleteFilter'), t('confirmDeleteFilter'), [
+      { text: t('cancel'), style: 'cancel' },
+      {
+        text: t('delete'),
+        style: 'destructive',
+        onPress: () => {
+          const updated = savedFilters.filter(f => f.id !== filterId);
+          saveSavedFilters(updated);
+        },
+      },
+    ]);
+  };
 
   const toggleCargoType = (typeId: string) => {
     setSelectedTypes(prev =>
@@ -105,6 +200,48 @@ export const FilterSheet: React.FC<FilterSheetProps> = ({
           </View>
 
           <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+            {/* Saved Filters Section */}
+            {savedFilters.length > 0 && (
+              <View style={styles.section}>
+                <Text style={styles.sectionTitle}>{t('savedFilters')}</Text>
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={styles.savedFiltersScroll}
+                >
+                  {savedFilters.map(savedFilter => (
+                    <TouchableOpacity
+                      key={savedFilter.id}
+                      style={styles.savedFilterCard}
+                      onPress={() => handleLoadFilter(savedFilter)}
+                    >
+                      <View style={styles.savedFilterHeader}>
+                        <Ionicons name="bookmark" size={18} color={colors.primary} />
+                        <Text style={styles.savedFilterName} numberOfLines={1}>
+                          {savedFilter.name}
+                        </Text>
+                        <TouchableOpacity
+                          onPress={() => handleDeleteFilter(savedFilter.id)}
+                          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                        >
+                          <Ionicons name="close-circle" size={18} color={colors.text.tertiary} />
+                        </TouchableOpacity>
+                      </View>
+                      <View style={styles.savedFilterDetails}>
+                        <Text style={styles.savedFilterDetail}>
+                          {savedFilter.filters.cargoTypes.length} {t('types')}
+                        </Text>
+                        <Text style={styles.savedFilterDetailSeparator}>•</Text>
+                        <Text style={styles.savedFilterDetail}>
+                          {t(savedFilter.filters.sortBy)}
+                        </Text>
+                      </View>
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
+              </View>
+            )}
+
             {/* Sort Section */}
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>{t('sortBy')}</Text>
@@ -180,11 +317,48 @@ export const FilterSheet: React.FC<FilterSheetProps> = ({
 
           {/* Apply Button */}
           <View style={styles.footer}>
+            <TouchableOpacity
+              style={styles.saveFilterButton}
+              onPress={() => setShowSaveDialog(true)}
+            >
+              <Ionicons name="bookmark-outline" size={20} color={colors.primary} />
+            </TouchableOpacity>
             <TouchableOpacity style={styles.applyButton} onPress={handleApply}>
               <Text style={styles.applyButtonText}>{t('applyFilters')}</Text>
             </TouchableOpacity>
           </View>
         </View>
+
+        {/* Save Filter Dialog */}
+        <Modal visible={showSaveDialog} transparent animationType="fade">
+          <View style={styles.dialogOverlay}>
+            <View style={styles.dialogContent}>
+              <Text style={styles.dialogTitle}>{t('saveCurrentFilter')}</Text>
+              <TextInput
+                style={styles.dialogInput}
+                placeholder={t('enterFilterName')}
+                placeholderTextColor={colors.text.tertiary}
+                value={filterName}
+                onChangeText={setFilterName}
+                autoFocus
+              />
+              <View style={styles.dialogButtons}>
+                <TouchableOpacity
+                  style={styles.dialogButtonCancel}
+                  onPress={() => {
+                    setShowSaveDialog(false);
+                    setFilterName('');
+                  }}
+                >
+                  <Text style={styles.dialogButtonCancelText}>{t('cancel')}</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.dialogButtonSave} onPress={handleSaveFilter}>
+                  <Text style={styles.dialogButtonSaveText}>{t('save')}</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </Modal>
       </View>
     </Modal>
   );
@@ -325,19 +499,131 @@ const styles = StyleSheet.create({
     color: colors.text.tertiary,
   },
   footer: {
+    flexDirection: 'row',
     padding: spacing.lg,
     borderTopWidth: 1,
     borderTopColor: colors.border.light,
+    gap: spacing.md,
+  },
+  saveFilterButton: {
+    width: 56,
+    height: 56,
+    borderRadius: borderRadius.md,
+    borderWidth: 1.5,
+    borderColor: colors.primary,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'white',
   },
   applyButton: {
+    flex: 1,
     backgroundColor: colors.primary,
     paddingVertical: spacing.md,
     borderRadius: borderRadius.md,
     alignItems: 'center',
+    justifyContent: 'center',
     ...(shadows.md as any),
   },
   applyButtonText: {
     fontSize: fontSize.lg,
+    fontWeight: fontWeight.bold,
+    color: 'white',
+  },
+  savedFiltersScroll: {
+    paddingRight: spacing.lg,
+  },
+  savedFilterCard: {
+    minWidth: 160,
+    marginRight: spacing.md,
+    padding: spacing.md,
+    borderRadius: borderRadius.md,
+    borderWidth: 1,
+    borderColor: colors.border.light,
+    backgroundColor: colors.white,
+    ...(shadows.sm as any),
+  },
+  savedFilterHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    marginBottom: spacing.xs,
+  },
+  savedFilterName: {
+    flex: 1,
+    fontSize: fontSize.md,
+    fontWeight: fontWeight.semibold,
+    color: colors.text.primary,
+  },
+  savedFilterDetails: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+  },
+  savedFilterDetail: {
+    fontSize: fontSize.xs,
+    color: colors.text.secondary,
+  },
+  savedFilterDetailSeparator: {
+    fontSize: fontSize.xs,
+    color: colors.text.tertiary,
+  },
+  dialogOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: spacing.xl,
+  },
+  dialogContent: {
+    width: '100%',
+    maxWidth: 400,
+    backgroundColor: 'white',
+    borderRadius: borderRadius.lg,
+    padding: spacing.xl,
+    ...(shadows.lg as any),
+  },
+  dialogTitle: {
+    fontSize: fontSize.xl,
+    fontWeight: fontWeight.bold,
+    color: colors.text.primary,
+    marginBottom: spacing.lg,
+  },
+  dialogInput: {
+    borderWidth: 1,
+    borderColor: colors.border.light,
+    borderRadius: borderRadius.md,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    fontSize: fontSize.md,
+    color: colors.text.primary,
+    marginBottom: spacing.lg,
+  },
+  dialogButtons: {
+    flexDirection: 'row',
+    gap: spacing.md,
+  },
+  dialogButtonCancel: {
+    flex: 1,
+    paddingVertical: spacing.md,
+    borderRadius: borderRadius.md,
+    borderWidth: 1,
+    borderColor: colors.border.default,
+    alignItems: 'center',
+  },
+  dialogButtonCancelText: {
+    fontSize: fontSize.md,
+    fontWeight: fontWeight.semibold,
+    color: colors.text.primary,
+  },
+  dialogButtonSave: {
+    flex: 1,
+    paddingVertical: spacing.md,
+    borderRadius: borderRadius.md,
+    backgroundColor: colors.primary,
+    alignItems: 'center',
+  },
+  dialogButtonSaveText: {
+    fontSize: fontSize.md,
     fontWeight: fontWeight.bold,
     color: 'white',
   },

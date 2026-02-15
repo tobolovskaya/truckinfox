@@ -318,6 +318,57 @@ npm run format
 
 ## Recent Enhancements (February 2026)
 
+### Advanced Search & Filtering with Saved Filters ✅
+
+Enhanced the filtering system with persistent saved filters and improved sorting options:
+
+**Saved Filters Feature:**
+
+- **AsyncStorage Integration**: All saved filters stored locally using `@react-native-async-storage/async-storage`
+- **Save Current Filter**: Bookmark button on FilterSheet footer allows saving current filter configuration with custom names
+- **Quick Access Cards**: Horizontal scrolling section showing all saved filters with:
+  - Filter name with bookmark icon
+  - Quick preview (number of cargo types + sort method)
+  - One-tap apply
+  - Delete button for each saved filter
+- **Filter Management**: Save dialog with text input for naming filters, confirmation alerts for deletion
+
+**Enhanced Sorting Options:**
+
+- ✅ **Newest First**: Default sort by creation date (newest → oldest)
+- ✅ **Highest Price**: Sort by price (high → low)
+- ✅ **Lowest Price**: Sort by price (low → high)
+- ✅ **Nearest**: Sort by distance (closest first) - requires location permission
+
+**Filter Components:**
+
+- 8 cargo type chips (Automotive, Construction, Boats, Electronics, Camper Vans, Machinery, Furniture, Other)
+- Price range selector (0 - 50,000 NOK)
+- Sort method selector with 4 options
+- Save/Load/Delete saved filter presets
+
+**Implementation Details:**
+
+- `SavedFilter` interface with id, name, filters, and timestamp
+- Automatic loading of saved filters from AsyncStorage on component mount
+- Analytics tracking for filter application with cargo types count and price range
+- Performance monitoring for FilterSheet load time
+- Full Norwegian and English translations
+
+**User Benefits:**
+
+- Save frequently used filter combinations
+- Quick access to common searches (e.g., "Oslo Electronics", "Cheap Transport")
+- Reduce repetitive filter configuration
+- Better discovery with distance-based sorting
+- Professional UX with smooth animations and clear visual hierarchy
+
+**Files Modified:**
+
+- `components/FilterSheet.tsx`: Added SavedFilter interface, AsyncStorage integration, save dialog UI
+- `locales/en.json` & `locales/no.json`: Added 11 new translation keys for saved filters
+- AsyncStorage key: `@truckinfox_saved_filters`
+
 ### Performance Monitoring & Analytics ✅
 
 Added comprehensive Firebase Performance Monitoring and Analytics tracking:
