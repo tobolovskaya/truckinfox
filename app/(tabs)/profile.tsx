@@ -8,10 +8,10 @@ import {
   Alert,
   Switch,
   Image,
-  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { SkeletonLoader } from '../../components/SkeletonLoader';
 import { useRouter } from 'expo-router';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTranslation } from 'react-i18next';
@@ -463,9 +463,7 @@ export default function ProfileScreen() {
           </View>
 
           {enhancedStatsLoading ? (
-            <View style={styles.statsLoadingContainer}>
-              <ActivityIndicator size="small" color={theme.iconColors.primary} />
-            </View>
+            <SkeletonLoader variant="stats" count={1} />
           ) : statistics.orders_as_customer === 0 &&
             statistics.orders_as_carrier === 0 &&
             statistics.total_transaction_amount === 0 ? (

@@ -26,6 +26,7 @@ import { collection, addDoc, updateDoc, doc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { useRouter } from 'expo-router';
 import { triggerHapticFeedback } from '../../utils/haptics';
+import { SuccessAnimation } from '../../components/SuccessAnimation';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { GooglePlacesAutocomplete } from 'react-native-google-places-autocomplete';
 import { calculateDistance } from '../../utils/googlePlaces';
@@ -89,6 +90,7 @@ export default function CreateRequestScreen() {
   });
   const [images, setImages] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
+  const [showSuccessAnimation, setShowSuccessAnimation] = useState(false);
   const [touchedFields, setTouchedFields] = useState<Record<string, boolean>>({});
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [distanceInfo, setDistanceInfo] = useState<{ distance: string; duration: string } | null>(
@@ -436,8 +438,12 @@ export default function CreateRequestScreen() {
   };
 
   const handleSubmit = async () => {
-    if (!validateForm()) return;
+    if (!validateForm()) {
+      triggerHapticFeedback.error();
+      return;
+    }
 
+    triggerHapticFeedback.medium();
     setLoading(true);
     try {
       let from_geohash = null;
@@ -500,6 +506,10 @@ export default function CreateRequestScreen() {
         }
       }
 
+      // Success feedback
+      triggerHapticFeedback.success();
+      setShowSuccessAnimation(true);
+      
       toast.success(t('requestCreated'));
 
       await AsyncStorage.removeItem(DRAFT_KEY);
@@ -1090,6 +1100,13 @@ export default function CreateRequestScreen() {
           </View>
         </TouchableOpacity>
       </Modal>
+      
+      {/* Success Animation Overlay */}
+      <SuccessAnimation
+        visible={showSuccessAnimation}
+        type="confetti"
+        onAnimationEnd={() => setShowSuccessAnimation(false)}
+      />
     </View>
   );
 }

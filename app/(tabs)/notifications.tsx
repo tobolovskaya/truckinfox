@@ -17,6 +17,7 @@ import {
 import { FlashList } from '@shopify/flash-list';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { SkeletonLoader } from '../../components/SkeletonLoader';
 import { useNotifications } from '../../hooks/useNotifications';
 import {
   formatNotificationTime,
@@ -139,8 +140,8 @@ export default function NotificationsScreen() {
 
   if (loading && notifications.length === 0) {
     return (
-      <View style={styles.centerContainer}>
-        <ActivityIndicator size="large" color={theme.colors.primary} />
+      <View style={styles.listContainer}>
+        <SkeletonLoader variant="list" count={5} />
       </View>
     );
   }

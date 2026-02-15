@@ -20,6 +20,8 @@ import { useTranslation } from 'react-i18next';
 import { db } from '../../lib/firebase';
 import { trackBidSubmitted, trackBidAccepted } from '../../utils/analytics';
 import { fetchWithTimeout } from '../../utils/fetchWithTimeout';
+import { SuccessAnimation } from '../../components/SuccessAnimation';
+import { triggerHapticFeedback } from '../../utils/haptics';
 import {
   doc,
   getDoc,
@@ -120,6 +122,7 @@ export default function RequestDetailsScreen() {
   const [loading, setLoading] = useState(true);
   const [bidAmount, setBidAmount] = useState('');
   const [submittingBid, setSubmittingBid] = useState(false);
+  const [showSuccessAnimation, setShowSuccessAnimation] = useState(false);
   const [acceptingBid, setAcceptingBid] = useState<string | null>(null);
   const [mapExpanded, setMapExpanded] = useState(false);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
@@ -357,7 +360,13 @@ export default function RequestDetailsScreen() {
 
       setBidAmount('');
       fetchBids();
-      Alert.alert(t('success'), t('bidSubmitted'));
+      
+      // Show success animation and haptic feedback
+      triggerHapticFeedback.success();
+      setShowSuccessAnimation(true);
+      setTimeout(() => {
+        Alert.alert(t('success'), t('bidSubmitted'));
+      }, 800);
     } catch (error: any) {
       Alert.alert(t('error'), error.message);
     } finally {
@@ -1217,6 +1226,13 @@ export default function RequestDetailsScreen() {
           </TouchableOpacity>
         </View>
       )}
+      
+      {/* Success Animation Overlay */}
+      <SuccessAnimation
+        visible={showSuccessAnimation}
+        type="checkmark"
+        onAnimationEnd={() => setShowSuccessAnimation(false)}
+      />
     </SafeAreaView>
   );
 }
