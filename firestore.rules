@@ -88,6 +88,10 @@ service cloud.firestore {
         allow read: if isAuthenticated();
         allow create: if isAuthenticated() &&
           request.auth.uid == request.resource.data.sender_id;
+        // Allow receiver to update read_at and delivered_at fields only
+        allow update: if isAuthenticated() &&
+          request.auth.uid == resource.data.receiver_id &&
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['read_at', 'delivered_at']);
       }
     }
     

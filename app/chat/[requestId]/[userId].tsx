@@ -14,6 +14,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useFocusEffect } from '@react-navigation/native';
 import { useAuth } from '../../../contexts/AuthContext';
 import { useTranslation } from 'react-i18next';
 import { sanitizeMessage } from '../../../utils/sanitization';
@@ -31,6 +32,8 @@ import {
   doc,
   getDoc,
   setDoc,
+  updateDoc,
+  getDocs,
 } from 'firebase/firestore';
 
 import { LinearGradient } from 'expo-linear-gradient';
@@ -52,6 +55,8 @@ interface Message {
   sender_id: string;
   receiver_id: string;
   created_at: string;
+  delivered_at?: any;
+  read_at?: any;
   sender: {
     full_name: string;
     user_type: string;
@@ -221,6 +226,15 @@ export default function ChatScreen() {
     };
   }, [requestId, userId, user?.uid, otherUserTyping]);
 
+  // Mark messages as read when screen is focused
+  useFocusEffect(
+    React.useCallback(() => {
+      if (messages.length > 0) {
+        markMessagesAsRead();
+      }
+    }, [messages])
+  );
+
   const fetchChatData = async () => {
     try {
       // Fetch chat user info from Firebase
@@ -312,6 +326,7 @@ export default function ChatScreen() {
         sender_name: user.displayName || 'Unknown',
         sender_type: user.user_type || 'customer',
         created_at: serverTimestamp(),
+        delivered_at: serverTimestamp(), // Mark as delivered immediately
       });
 
       setNewMessage('');
@@ -321,6 +336,46 @@ export default function ChatScreen() {
       Alert.alert(t('error'), error instanceof Error ? error.message : 'Unknown error');
     } finally {
       setSending(false);
+    }
+  };
+
+  // Mark messages as read
+  const markMessagesAsRead = async () => {
+    if (!user?.uid || !userId || !requestId) return;
+
+    try {
+      const chatId = `${requestId}_${user.uid < userId! ? user.uid : userId}_${user.uid < userId! ? userId : user.uid}`;
+      const messagesQuery = query(
+        collection(db, 'chats', chatId, 'messages'),
+        where('receiver_id', '==', user.uid),
+        where('read_at', '==', null)
+      );
+
+      const unreadMessagesSnapshot = await getDocs(messagesQuery);
+
+      // Mark all unread messages as read
+      const updatePromises = unreadMessagesSnapshot.docs.map(messageDoc =>
+        updateDoc(messageDoc.ref, {
+          read_at: serverTimestamp(),
+        })
+      );
+
+      await Promise.all(updatePromises);
+    } catch (error) {
+      console.error('Error marking messages as read:', error);
+    }
+  };
+
+  // Get read receipt icon
+  const getReadReceiptIcon = (message: Message) => {
+    if (message.sender_id !== user?.uid) return null; // Only show for sent messages
+
+    if (message.read_at) {
+      return <Ionicons name="checkmark-done" size={14} color="white" style={styles.readIcon} />;
+    } else if (message.delivered_at) {
+      return <Ionicons name="checkmark-done" size={14} color="rgba(255,255,255,0.6)" style={styles.readIcon} />;
+    } else {
+      return <Ionicons name="checkmark" size={14} color="rgba(255,255,255,0.6)" style={styles.readIcon} />;
     }
   };
 
@@ -639,9 +694,12 @@ export default function ChatScreen() {
                           <Text style={[styles.messageText, styles.sentMessageText]}>
                             {message.content}
                           </Text>
-                          <Text style={[styles.messageTime, styles.sentMessageTime]}>
-                            {formatTime(message.created_at)}
-                          </Text>
+                          <View style={styles.messageTimeRow}>
+                            <Text style={[styles.messageTime, styles.sentMessageTime]}>
+                              {formatTime(message.created_at)}
+                            </Text>
+                            {getReadReceiptIcon(message)}
+                          </View>
                         </View>
                       </LinearGradient>
                     ) : (
@@ -950,6 +1008,15 @@ const styles = StyleSheet.create({
   },
   receivedMessageTime: {
     color: '#616161',
+  },
+  messageTimeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-end',
+    gap: 4,
+  },
+  readIcon: {
+    marginLeft: 2,
   },
   inputContainer: {
     backgroundColor: 'white',
