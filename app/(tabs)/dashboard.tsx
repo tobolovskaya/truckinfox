@@ -127,6 +127,10 @@ export default function HomeScreen() {
   };
 
   const handleRequestPress = (request: CargoRequest) => {
+    if (!request?.id) {
+      console.error('Cannot navigate: Invalid request ID', request);
+      return;
+    }
     router.push(`/request-details/${request.id}` as any);
   };
 

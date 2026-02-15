@@ -374,6 +374,16 @@ function OrdersScreen() {
   };
 
   const handleOrderPress = (order: Order) => {
+    // Validate order ID before navigation
+    if (!order?.id) {
+      console.error('Cannot navigate: Invalid order ID', order);
+      Alert.alert(
+        t('error') || 'Error',
+        t('invalidOrder') || 'Cannot view this order. Invalid order data.'
+      );
+      return;
+    }
+
     // Check if this is a cargo_request (no order record yet) or an actual order
     // If user is customer and viewing cargo_requests, go to request-details
     // If user is carrier with accepted bid, go to request-details
@@ -586,6 +596,7 @@ function OrdersScreen() {
             contentContainerStyle={styles.filtersScroll}
           >
             <TouchableOpacity
+              key="filter-all"
               style={[styles.filterChip, filterStatus === 'all' && styles.filterChipActive]}
               onPress={() => setFilterStatus('all')}
             >
@@ -600,6 +611,7 @@ function OrdersScreen() {
             </TouchableOpacity>
 
             <TouchableOpacity
+              key="filter-active"
               style={[styles.filterChip, filterStatus === 'active' && styles.filterChipActive]}
               onPress={() => setFilterStatus('active')}
             >
@@ -620,6 +632,7 @@ function OrdersScreen() {
             </TouchableOpacity>
 
             <TouchableOpacity
+              key="filter-delivered"
               style={[styles.filterChip, filterStatus === 'delivered' && styles.filterChipActive]}
               onPress={() => setFilterStatus('delivered')}
             >
@@ -640,6 +653,7 @@ function OrdersScreen() {
             </TouchableOpacity>
 
             <TouchableOpacity
+              key="filter-completed"
               style={[styles.filterChip, filterStatus === 'completed' && styles.filterChipActive]}
               onPress={() => setFilterStatus('completed')}
             >
@@ -660,6 +674,7 @@ function OrdersScreen() {
             </TouchableOpacity>
 
             <TouchableOpacity
+              key="filter-cancelled"
               style={[styles.filterChip, filterStatus === 'cancelled' && styles.filterChipActive]}
               onPress={() => setFilterStatus('cancelled')}
             >

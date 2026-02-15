@@ -153,11 +153,25 @@ export default function RequestDetailsScreen() {
 
   const fetchRequestDetails = async () => {
     try {
-      const requestRef = doc(db, 'cargo_requests', id as string);
+      // Validate id parameter
+      if (!id || typeof id !== 'string') {
+        console.error('Invalid request ID:', id);
+        Alert.alert(t('error'), t('invalidRequestId') || 'Invalid request ID');
+        router.back();
+        return;
+      }
+
+      const requestRef = doc(db, 'cargo_requests', id);
       const requestSnap = await getDoc(requestRef);
 
       if (!requestSnap.exists()) {
-        throw new Error('Request not found');
+        console.error('Request not found. ID:', id);
+        Alert.alert(
+          t('error'),
+          t('requestNotFound') || 'The requested cargo details could not be found.'
+        );
+        router.back();
+        return;
       }
 
       const requestData = { id: requestSnap.id, ...requestSnap.data() } as any;
@@ -173,8 +187,11 @@ export default function RequestDetailsScreen() {
 
       setRequest(requestData);
     } catch (error) {
-      console.error('Error fetching request:', error);
-      Alert.alert(t('error'), 'Failed to load request details');
+      console.error('Error fetching request details:', error);
+      Alert.alert(
+        t('error'),
+        t('failedToLoadRequest') || 'Failed to load request details. Please try again.'
+      );
     } finally {
       setLoading(false);
     }

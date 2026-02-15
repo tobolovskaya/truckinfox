@@ -258,6 +258,10 @@ export default function HomeScreen() {
 
   const handleRequestPress = React.useCallback(
     (request: CargoRequest) => {
+      if (!request?.id) {
+        console.error('Cannot navigate: Invalid request ID', request);
+        return;
+      }
       router.push(`/request-details/${request.id}` as any);
     },
     [router]
