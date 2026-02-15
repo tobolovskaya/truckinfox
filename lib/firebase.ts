@@ -1,5 +1,7 @@
 import { initializeApp, getApps, FirebaseApp } from 'firebase/app';
 import { Auth, initializeAuth, getAuth } from 'firebase/auth';
+// @ts-expect-error - getReactNativePersistence exists at runtime via React Native module resolution
+import { getReactNativePersistence } from 'firebase/auth';
 import { Firestore, getFirestore } from 'firebase/firestore';
 import { FirebaseStorage, getStorage } from 'firebase/storage';
 import { Analytics, getAnalytics, isSupported as isAnalyticsSupported } from 'firebase/analytics';
@@ -46,15 +48,22 @@ let storage: FirebaseStorage;
 let analytics: Analytics | null = null;
 let performance: FirebasePerformance | null = null;
 
-// Initialize Firebase Auth
-// React Native uses AsyncStorage persistence by default
+// Initialize Firebase Auth with proper persistence
 try {
-  // For React Native, just use getAuth which handles persistence automatically
-  auth = getAuth(app);
-  console.log('Firebase Auth initialized successfully with AsyncStorage persistence');
+  if (Platform.OS === 'web') {
+    // Web uses browser persistence automatically
+    auth = getAuth(app);
+    console.log('Firebase Auth initialized successfully (web - browser persistence)');
+  } else {
+    // React Native requires explicit AsyncStorage persistence
+    auth = initializeAuth(app, {
+      persistence: getReactNativePersistence(AsyncStorage)
+    });
+    console.log('Firebase Auth initialized successfully (React Native - AsyncStorage persistence)');
+  }
 } catch (error: unknown) {
   console.error('Firebase Auth initialization failed:', error);
-  // Don't throw - create a fallback to allow app to run
+  // Fallback to getAuth
   auth = getAuth(app);
   console.warn('⚠️ Using fallback Firebase Auth instance');
 }
