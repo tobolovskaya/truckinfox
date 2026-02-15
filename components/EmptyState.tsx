@@ -72,7 +72,7 @@ export function EmptyState({ icon, title, description, actions, tips }: EmptySta
         {tips && tips.length > 0 && (
           <View style={styles.tipsContainer}>
             <View style={styles.tipsHeader}>
-              <Ionicons name="bulb-outline" size={20} color={colors.warning} />
+              <Ionicons name="bulb-outline" size={20} color={colors.primary} />
               <Text style={styles.tipsTitle}>Tips</Text>
             </View>
             {tips.map((tip, index) => (
@@ -188,7 +188,7 @@ const styles = StyleSheet.create({
     width: 6,
     height: 6,
     borderRadius: 3,
-    backgroundColor: colors.warning,
+    backgroundColor: colors.primary,
     marginTop: 7,
     marginRight: spacing.sm,
   },
