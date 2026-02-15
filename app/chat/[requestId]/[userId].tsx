@@ -17,8 +17,18 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useAuth } from '../../../contexts/AuthContext';
 import { useTranslation } from 'react-i18next';
 import { sanitizeMessage } from '../../../utils/sanitization';
-// TODO: Migrate to Firebase
-// import { supabase } from '../../../lib/supabase';
+import { db } from '../../../lib/firebase';
+import {
+  collection,
+  query,
+  where,
+  orderBy,
+  onSnapshot,
+  addDoc,
+  serverTimestamp,
+  doc,
+  getDoc,
+} from 'firebase/firestore';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as ImagePicker from 'expo-image-picker';
 import * as DocumentPicker from 'expo-document-picker';
@@ -64,7 +74,7 @@ export default function ChatScreen() {
   const [newMessage, setNewMessage] = useState('');
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
-  const [chatUser] = useState<ChatUser | null>(null); // setChatUser will be used when Firebase migration is complete
+  const [chatUser, setChatUser] = useState<ChatUser | null>(null);
   const messageAnimations = useRef<{ [key: string]: Animated.Value }>({});
 
   useEffect(() => {
@@ -77,130 +87,87 @@ export default function ChatScreen() {
     const loadData = async () => {
       try {
         await fetchChatData();
-        await fetchMessages();
+        const unsubscribe = await fetchMessages();
+        return unsubscribe;
       } catch (error) {
         console.error('Error loading chat data:', error);
         setLoading(false);
       }
     };
 
-    loadData();
+    let unsubscribe: (() => void) | undefined;
 
-    // TODO: Migrate to Firebase Realtime Database or Firestore listeners
-    // Subscribe to new messages
-    // const subscription = supabase
-    //   .channel(`chat-${requestId}-${userId}`)
-    //   .on(
-    //     'postgres_changes',
-    //     {
-    //       event: 'INSERT',
-    //       schema: 'public',
-    //       table: 'messages',
-    //       filter: `request_id=eq.${requestId}`,
-    //     },
-    //     (payload) => {
-    //       const newMessage = payload.new as any;
-    //       if (
-    //         (newMessage.sender_id === user?.id && newMessage.receiver_id === userId) ||
-    //         (newMessage.sender_id === userId && newMessage.receiver_id === user?.id)
-    //       ) {
-    //         fetchMessages();
-    //       }
-    //     }
-    //   )
-    //   .subscribe();
+    loadData().then(unsub => {
+      unsubscribe = unsub;
+    });
 
-    // return () => {
-    //   subscription.unsubscribe();
-    // };
+    return () => {
+      if (unsubscribe) {
+        unsubscribe();
+      }
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [requestId, userId]);
 
   const fetchChatData = async () => {
-    // TODO: Migrate to Firebase Firestore
-    console.warn('Chat feature requires Firebase migration. Supabase is no longer available.');
-    setLoading(false);
-    return;
-    // try {
-    //   // Fetch chat user info
-    //   const { data: userData, error: userError } = await supabase
-    //     .from('users')
-    //     .select('id, full_name, user_type, rating')
-    //     .eq('id', userId)
-    //     .maybeSingle();
-
-    //   if (userError) {
-    //     console.error('Error fetching user:', userError);
-    //     throw userError;
-    //   }
-    //
-    //   if (!userData) {
-    //     console.log('User not found for ID:', userId);
-    //     // Don't throw error, just set null and continue
-    //   }
-    //
-    //   setChatUser(userData);
-
-    //   // Fetch cargo request info
-    //   const { data: requestData, error: requestError } = await supabase
-    //     .from('cargo_requests')
-    //     .select('id, title, cargo_type, from_address, to_address')
-    //     .eq('id', requestId)
-    //     .maybeSingle();
-
-    //   if (requestError) {
-    //     console.error('Error fetching request:', requestError);
-    //     throw requestError;
-    //   }
-    //
-    //   if (!requestData) {
-    //     console.log('Request not found for ID:', requestId);
-    //     // Don't throw error, just set null and continue
-    //   }
-    // } catch (error) {
-    //   console.error('Error fetching chat data:', error);
-    //   // Don't show alert for missing data, just log it
-    // }
+    try {
+      // Fetch chat user info from Firebase
+      const userDoc = await getDoc(doc(db, 'users', userId!));
+      if (userDoc.exists()) {
+        const userData = userDoc.data();
+        setChatUser({
+          id: userDoc.id,
+          full_name: userData.full_name || userData.display_name || 'Unknown User',
+          user_type: userData.user_type || userData.role || 'customer',
+          rating: userData.rating || 0,
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching chat data:', error);
+    }
   };
 
   const fetchMessages = async () => {
-    // TODO: Migrate to Firebase Firestore
-    console.warn('Chat feature requires Firebase migration. Supabase is no longer available.');
-    setMessages([]);
-    setLoading(false);
-    return;
-    // try {
-    //   if (!user?.id || !userId || !requestId) {
-    //     console.log('Missing required IDs for fetching messages');
-    //     return;
-    //   }
+    try {
+      if (!user?.uid || !userId || !requestId) {
+        console.log('Missing required IDs for fetching messages');
+        setLoading(false);
+        return;
+      }
 
-    //   const { data, error } = await supabase
-    //     .from('messages')
-    //     .select(`
-    //       *,
-    //       sender:users!messages_sender_id_fkey (
-    //         full_name,
-    //         user_type
-    //       )
-    //     `)
-    //     .eq('request_id', requestId)
-    //     .or(`and(sender_id.eq.${user?.id},receiver_id.eq.${userId}),and(sender_id.eq.${userId},receiver_id.eq.${user?.id})`)
-    //     .order('created_at', { ascending: true });
+      // Set up real-time listener for messages
+      const chatId = `${requestId}_${user.uid < userId! ? user.uid : userId}_${user.uid < userId! ? userId : user.uid}`;
+      const messagesQuery = query(
+        collection(db, 'chats', chatId, 'messages'),
+        orderBy('created_at', 'asc')
+      );
 
-    //   if (error) {
-    //     console.error('Error fetching messages:', error);
-    //     throw error;
-    //   }
-    //
-    //   console.log('Fetched messages:', data?.length || 0);
-    //   setMessages(data || []);
-    // } catch (error) {
-    //   console.error('Error fetching messages:', error);
-    //   // Don't show alert for messages fetch error, just log it
-    // } finally {
-    //   setLoading(false);
-    // }
+      const unsubscribe = onSnapshot(
+        messagesQuery,
+        snapshot => {
+          const fetchedMessages = snapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data(),
+            sender: {
+              full_name: doc.data().sender_name || 'Unknown',
+              user_type: doc.data().sender_type || 'customer',
+            },
+          })) as Message[];
+
+          setMessages(fetchedMessages);
+          setLoading(false);
+        },
+        error => {
+          console.error('Error fetching messages:', error);
+          setLoading(false);
+        }
+      );
+
+      return unsubscribe;
+    } catch (error) {
+      console.error('Error setting up messages listener:', error);
+      setLoading(false);
+    }
   };
 
   const sendMessage = async () => {
@@ -221,22 +188,22 @@ export default function ChatScreen() {
 
     setSending(true);
     try {
-      // TODO: Migrate to Firebase Firestore
-      Alert.alert(t('error'), 'Chat feature is currently unavailable. Please contact support.');
-      console.warn('Chat feature requires Firebase migration. Supabase is no longer available.');
-      // const { error } = await supabase
-      //   .from('messages')
-      //   .insert({
-      //     request_id: requestId,
-      //     sender_id: user?.id,
-      //     receiver_id: userId,
-      //     content: sanitizedMessage,
-      //   });
+      // Create deterministic chat ID
+      const chatId = `${requestId}_${user.uid < userId! ? user.uid : userId}_${user.uid < userId! ? userId : user.uid}`;
 
-      // if (error) throw error;
+      // Add message to Firebase
+      await addDoc(collection(db, 'chats', chatId, 'messages'), {
+        content: sanitizedMessage,
+        sender_id: user.uid,
+        receiver_id: userId,
+        request_id: requestId,
+        sender_name: user.displayName || 'Unknown',
+        sender_type: user.user_type || 'customer',
+        created_at: serverTimestamp(),
+      });
 
-      // setNewMessage('');
-      // Messages will be updated via subscription
+      setNewMessage('');
+      // Messages will be updated via real-time listener
     } catch (error) {
       console.error('Error sending message:', error);
       Alert.alert(t('error'), error instanceof Error ? error.message : 'Unknown error');

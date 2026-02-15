@@ -75,6 +75,14 @@ service cloud.firestore {
         request.auth.uid in request.resource.data.participants;
       allow update: if isAuthenticated() && 
         request.auth.uid in resource.data.participants;
+      
+      // Messages subcollection
+      match /messages/{messageId} {
+        allow read: if isAuthenticated() &&
+          request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.participants;
+        allow create: if isAuthenticated() &&
+          request.auth.uid == request.resource.data.sender_id;
+      }
     }
     
     // Reviews collection
@@ -93,6 +101,8 @@ service cloud.firestore {
       allow update: if isAuthenticated() && 
         (isOwner(resource.data.customerId) || isOwner(resource.data.carrierId) ||
          isOwner(resource.data.customer_id) || isOwner(resource.data.carrier_id));
+      allow delete: if isAuthenticated() && 
+        (isOwner(resource.data.customerId) || isOwner(resource.data.customer_id));
     }
     
     // Notifications collection
