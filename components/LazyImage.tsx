@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   View,
   ActivityIndicator,
@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../lib/sharedStyles';
+import { startTrace, PerformanceTraces } from '../utils/performance';
 
 interface LazyImageProps {
   uri: string;
@@ -33,6 +34,18 @@ export const LazyImage: React.FC<LazyImageProps> = ({
 }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
+  const traceRef = useRef<ReturnType<typeof startTrace>>(null);
+
+  // Start performance trace when component mounts
+  useEffect(() => {
+    traceRef.current = startTrace(PerformanceTraces.IMAGE_LOAD_TIME);
+    return () => {
+      // Stop trace on unmount if still running
+      if (traceRef.current && loading) {
+        traceRef.current.stop();
+      }
+    };
+  }, []);
 
   return (
     <View style={[styles.container, containerStyle]}>
@@ -51,11 +64,17 @@ export const LazyImage: React.FC<LazyImageProps> = ({
         <Image
           source={{ uri }}
           style={[style, { opacity: loading ? 0 : 1 }]}
-          onLoad={() => setLoading(false)}
+          onLoad={() => {
+            setLoading(false);
+            // Stop performance trace
+            traceRef.current?.stop();
+          }}
           onError={() => {
             console.log('LazyImage: Failed to load image:', uri);
             setLoading(false);
             setError(true);
+            // Stop performance trace
+            traceRef.current?.stop();
           }}
           resizeMode={resizeMode}
         />

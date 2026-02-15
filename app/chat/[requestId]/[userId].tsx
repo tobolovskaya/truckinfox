@@ -17,6 +17,8 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useAuth } from '../../../contexts/AuthContext';
 import { useTranslation } from 'react-i18next';
 import { sanitizeMessage } from '../../../utils/sanitization';
+import { trackTypingDetected } from '../../../utils/analytics';
+import { startTrace, PerformanceTraces } from '../../../utils/performance';
 import { db } from '../../../lib/firebase';
 import {
   collection,
@@ -127,6 +129,8 @@ export default function ChatScreen() {
   const [otherUserTyping, setOtherUserTyping] = useState(false);
   const messageAnimations = useRef<{ [key: string]: Animated.Value }>({});
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const typingTraceRef = useRef<ReturnType<typeof startTrace> | null>(null);
+  const lastTypingStartRef = useRef<number>(0);
 
   useEffect(() => {
     if (!requestId || !userId || !user?.uid) {
@@ -173,14 +177,49 @@ export default function ChatScreen() {
         const now = Date.now();
         
         // Consider typing if updated within last 3 seconds
-        setOtherUserTyping(now - lastTyping < 3000);
+        const isTyping = data.typing && lastTyping && (now - lastTyping < 3000);
+        
+        if (isTyping && !otherUserTyping) {
+          // Start performance trace
+          typingTraceRef.current = startTrace(PerformanceTraces.TYPING_INDICATOR_LATENCY);
+          lastTypingStartRef.current = now;
+          
+          // Track analytics
+          trackTypingDetected({
+            chat_id: requestId,
+          });
+        } else if (!isTyping && otherUserTyping && typingTraceRef.current) {
+          // Stop performance trace
+          typingTraceRef.current.stop();
+          typingTraceRef.current = null;
+          
+          // Track response time
+          const responseTime = Date.now() - lastTypingStartRef.current;
+          if (responseTime > 0) {
+            trackTypingDetected({
+              chat_id: requestId,
+              response_time: responseTime,
+            });
+          }
+        }
+        
+        setOtherUserTyping(isTyping);
       } else {
         setOtherUserTyping(false);
+        if (typingTraceRef.current) {
+          typingTraceRef.current.stop();
+          typingTraceRef.current = null;
+        }
       }
     });
 
-    return () => unsubscribe();
-  }, [requestId, userId, user?.uid]);
+    return () => {
+      unsubscribe();
+      if (typingTraceRef.current) {
+        typingTraceRef.current.stop();
+      }
+    };
+  }, [requestId, userId, user?.uid, otherUserTyping]);
 
   const fetchChatData = async () => {
     try {

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, Modal, ScrollView, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
@@ -10,6 +10,8 @@ import {
   borderRadius,
   shadows,
 } from '../lib/sharedStyles';
+import { trackFilterApplied } from '../utils/analytics';
+import { startTrace, PerformanceTraces } from '../utils/performance';
 
 export interface FilterOptions {
   sortBy: 'newest' | 'price_high' | 'price_low' | 'distance';
@@ -61,6 +63,15 @@ export const FilterSheet: React.FC<FilterSheetProps> = ({
     initialFilters?.priceRange || { min: 0, max: 50000 }
   );
 
+  // Track filter sheet load performance
+  useEffect(() => {
+    if (visible) {
+      const trace = startTrace(PerformanceTraces.FILTER_SHEET_LOAD);
+      // Stop trace after a small delay to capture render time
+      setTimeout(() => trace?.stop(), 100);
+    }
+  }, [visible]);
+
   const toggleCargoType = (typeId: string) => {
     setSelectedTypes(prev =>
       prev.includes(typeId) ? prev.filter(t => t !== typeId) : [...prev, typeId]
@@ -68,6 +79,13 @@ export const FilterSheet: React.FC<FilterSheetProps> = ({
   };
 
   const handleApply = () => {
+    // Track analytics
+    trackFilterApplied({
+      sort_by: sortBy,
+      cargo_types_count: selectedTypes.length,
+      price_range: `${priceRange.min}-${priceRange.max}`,
+    });
+
     onApply({
       sortBy,
       cargoTypes: selectedTypes,

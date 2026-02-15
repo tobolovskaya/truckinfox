@@ -69,6 +69,12 @@ export const AnalyticsEvents = {
 
   // Navigation Events
   SCREEN_VIEW: 'screen_view',
+
+  // Filter Events
+  FILTER_APPLIED: 'filter_applied',
+
+  // Typing Events
+  TYPING_DETECTED: 'typing_detected',
 } as const;
 
 /**
@@ -100,6 +106,21 @@ export const trackBidAccepted = (params: {
   carrier_id?: string;
 }) => {
   logEvent(AnalyticsEvents.BID_ACCEPTED, params);
+};
+
+export const trackFilterApplied = (params: {
+  sort_by: string;
+  cargo_types_count: number;
+  price_range: string;
+}) => {
+  logEvent(AnalyticsEvents.FILTER_APPLIED, params);
+};
+
+export const trackTypingDetected = (params: {
+  chat_id: string;
+  response_time?: number;
+}) => {
+  logEvent(AnalyticsEvents.TYPING_DETECTED, params);
 };
 
 export const trackPaymentInitiated = (params: {

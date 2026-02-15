@@ -2,6 +2,8 @@ import { initializeApp, getApps, FirebaseApp } from 'firebase/app';
 import { Auth, initializeAuth, getAuth, getReactNativePersistence } from 'firebase/auth';
 import { Firestore, getFirestore } from 'firebase/firestore';
 import { FirebaseStorage, getStorage } from 'firebase/storage';
+import { Analytics, getAnalytics } from 'firebase/analytics';
+import { FirebasePerformance, getPerformance } from 'firebase/performance';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Firebase configuration from environment variables
@@ -40,6 +42,8 @@ if (getApps().length === 0) {
 let auth: Auth;
 let firestore: Firestore;
 let storage: FirebaseStorage;
+let analytics: Analytics | null = null;
+let performance: FirebasePerformance | null = null;
 
 // Initialize Firebase Auth with AsyncStorage persistence
 // Note: initializeAuth must be called before getAuth for persistence to work
@@ -82,7 +86,25 @@ try {
   console.warn('⚠️ Using fallback Storage instance');
 }
 
+// Initialize Analytics (web only)
+try {
+  analytics = getAnalytics(app);
+  console.log('Firebase Analytics initialized successfully');
+} catch (error) {
+  console.warn('Firebase Analytics not available (native platform):', error);
+  analytics = null;
+}
+
+// Initialize Performance Monitoring (web only)
+try {
+  performance = getPerformance(app);
+  console.log('Firebase Performance Monitoring initialized successfully');
+} catch (error) {
+  console.warn('Firebase Performance Monitoring not available (native platform):', error);
+  performance = null;
+}
+
 // Export db as alias for firestore for backward compatibility
 export const db = firestore;
-export { app, auth, firestore, storage };
+export { app, auth, firestore, storage, analytics, performance };
 export default app;
