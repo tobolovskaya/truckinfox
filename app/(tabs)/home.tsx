@@ -347,7 +347,6 @@ export default function HomeScreen() {
                   </View>
                 )}
               </View>
-              <Text style={styles.filterButtonLabel}>Varsler</Text>
             </TouchableOpacity>
 
             {/* Filter Button */}

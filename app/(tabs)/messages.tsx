@@ -14,6 +14,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useTranslation } from 'react-i18next';
 import { db } from '../../lib/firebase';
 import { useDebounce } from '../../hooks/useDebounce';
+import { useNotifications } from '../../hooks/useNotifications';
 import { collection, query, where, orderBy, getDocs, doc, getDoc } from 'firebase/firestore';
 import { useRouter } from 'expo-router';
 import { triggerHapticFeedback } from '../../utils/haptics';
@@ -54,6 +55,7 @@ function MessagesScreen() {
   const { t } = useTranslation();
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { unreadCount } = useNotifications();
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -200,6 +202,19 @@ function MessagesScreen() {
       {/* Header */}
       <View style={[styles.header, { paddingTop: insets.top + 16 }]}>
         <Text style={styles.headerTitle}>{t('messages')}</Text>
+        <TouchableOpacity
+          style={styles.notificationButton}
+          onPress={() => router.push('/(tabs)/notifications')}
+        >
+          <Ionicons name="notifications-outline" size={24} color={colors.primary} />
+          {unreadCount > 0 && (
+            <View style={styles.notificationBadge}>
+              <Text style={styles.notificationBadgeText}>
+                {unreadCount > 99 ? '99+' : unreadCount}
+              </Text>
+            </View>
+          )}
+        </TouchableOpacity>
       </View>
 
       {/* Search Bar */}
@@ -308,6 +323,9 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
   },
   header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     paddingHorizontal: spacing.xl,
     paddingBottom: spacing.lg,
     backgroundColor: colors.white,
@@ -318,6 +336,27 @@ const styles = StyleSheet.create({
     fontSize: fontSize.xl,
     fontWeight: fontWeight.bold,
     color: colors.text.primary,
+  },
+  notificationButton: {
+    position: 'relative',
+    padding: spacing.sm,
+  },
+  notificationBadge: {
+    position: 'absolute',
+    top: 4,
+    right: 4,
+    backgroundColor: colors.error,
+    borderRadius: 10,
+    minWidth: 20,
+    height: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 5,
+  },
+  notificationBadgeText: {
+    color: colors.white,
+    fontSize: 11,
+    fontWeight: fontWeight.bold,
   },
   searchContainer: {
     paddingHorizontal: spacing.xl,
