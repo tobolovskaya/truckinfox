@@ -1,7 +1,6 @@
-import React, { useState, useRef, useEffect, useMemo } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, TextInput, LogBox } from 'react-native';
-import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import React, { useState, useRef, useEffect } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, TextInput } from 'react-native';
+import { KeyboardAwareFlatList } from 'react-native-keyboard-aware-scroll-view';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { manipulateAsync, SaveFormat } from 'expo-image-manipulator';
@@ -51,13 +50,7 @@ export default function CreateRequestScreen() {
   const { t } = useTranslation();
   const toast = useToast();
   const router = useRouter();
-  const insets = useSafeAreaInsets();
-
-  // Suppress VirtualizedList warning for GooglePlacesAutocomplete in ScrollView
-  useEffect(() => {
-    LogBox.ignoreLogs(['VirtualizedLists should never be nested']);
-  }, []);
-
+  // Load draft on mount
   useEffect(() => {
     const loadDraft = async () => {
       try {
@@ -475,421 +468,12 @@ export default function CreateRequestScreen() {
     }
   };
 
-  return (
-    <>
-      <KeyboardAwareScrollView
-        style={styles.container}
-        contentContainerStyle={styles.contentContainer}
-        keyboardShouldPersistTaps="handled"
-        enableOnAndroid
-        extraScrollHeight={100}
-        enableResetScrollToCoords={false}
-      >
-        {/* Header */}
-        <View style={[styles.header, { paddingTop: insets.top + 16 }]}>
-          <Text style={styles.headerTitle}>{t('createRequest')}</Text>
-          <View style={styles.headerButtons}>
-            <TouchableOpacity
-              style={[styles.submitButton, (hasErrors() || loading) && styles.submitButtonDisabled]}
-              onPress={handleSubmit}
-              disabled={loading || hasErrors()}
-            >
-              {loading ? (
-                <Text style={styles.submitButtonText}>{t('creating')}</Text>
-              ) : hasErrors() ? (
-                <>
-                  <Ionicons
-                    name="alert-circle-outline"
-                    size={18}
-                    color={colors.white}
-                    style={{ marginRight: 6 }}
-                  />
-                  <Text style={styles.submitButtonText}>Rett opp feil</Text>
-                </>
-              ) : (
-                <>
-                  <Text style={styles.submitButtonText}>{t('create')}</Text>
-                  <Ionicons
-                    name="checkmark-circle"
-                    size={18}
-                    color={colors.white}
-                    style={{ marginLeft: 6 }}
-                  />
-                </>
-              )}
-            </TouchableOpacity>
-          </View>
-        </View>
-        
-        {/* Progress Indicator */}
-        <View style={styles.progressContainer}>
-          <View style={styles.progressBarBackground}>
-            <View 
-              style={[
-                styles.progressBarFill, 
-                { width: `${calculateProgress()}%` }
-              ]} 
-            />
-          </View>
-          <Text style={styles.progressText}>{calculateProgress()}% fullført</Text>
-        </View>
-
-        {/* Estimated Price Card */}
-        {estimatedPrice && (
-          <View style={styles.estimatedPriceCard}>
-            <Ionicons name="calculator-outline" size={24} color={colors.primary} />
-            <View style={styles.estimatedPriceContent}>
-              <Text style={styles.estimatedPriceLabel}>Estimert pris</Text>
-              <Text style={styles.estimatedPriceValue}>
-                {estimatedPrice.toLocaleString('nb-NO')} NOK
-              </Text>
-              <Text style={styles.estimatedPriceNote}>
-                Basert på vekt, volum og distanse
-              </Text>
-            </View>
-          </View>
-        )}
-        
-        {/* Basic Information */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>{t('basicInformation')}</Text>
-          </View>
-
-          <View style={styles.inputContainer}>
-            <Text style={styles.label}>{t('title')} *</Text>
-            <View style={styles.inputWithIcon}>
-              <Ionicons
-                name="document-text-outline"
-                size={20}
-                color={
-                  getFieldError('title')
-                    ? theme.iconColors.error
-                    : isFieldValid('title')
-                      ? theme.iconColors.success
-                      : theme.iconColors.gray.primary
-                }
-                style={styles.inputIcon}
-              />
-              <TextInput
-                style={[
-                  styles.input,
-                  styles.inputWithPadding,
-                  getFieldError('title')
-                    ? styles.inputError
-                    : isFieldValid('title')
-                      ? styles.inputValid
-                      : null,
-                ]}
-                placeholder={t('enterTitle')}
-                value={formData.title}
-                onChangeText={value => updateFormData('title', value)}
-                onBlur={() => handleFieldBlur('title')}
-                placeholderTextColor={colors.text.tertiary}
-              />
-            </View>
-            {getFieldError('title') && (
-              <Text style={styles.errorText}>{getFieldError('title')}</Text>
-            )}
-            {isFieldValid('title') && <Text style={styles.successText}>OK</Text>}
-          </View>
-
-          <View style={styles.inputContainer}>
-            <Text style={styles.label}>{t('description')} *</Text>
-            <View style={styles.inputWithIcon}>
-              <Ionicons
-                name="text-outline"
-                size={20}
-                color={
-                  getFieldError('description')
-                    ? theme.iconColors.error
-                    : isFieldValid('description')
-                      ? theme.iconColors.success
-                      : theme.iconColors.gray.primary
-                }
-                style={[styles.inputIcon, styles.textAreaIcon]}
-              />
-              <TextInput
-                style={[
-                  styles.input,
-                  styles.textArea,
-                  styles.inputWithPadding,
-                  getFieldError('description')
-                    ? styles.inputError
-                    : isFieldValid('description')
-                      ? styles.inputValid
-                      : null,
-                ]}
-                placeholder={t('enterDescription')}
-                value={formData.description}
-                onChangeText={value => updateFormData('description', value)}
-                onBlur={() => handleFieldBlur('description')}
-                multiline
-                numberOfLines={4}
-                textAlignVertical="top"
-                placeholderTextColor={colors.text.tertiary}
-              />
-            </View>
-            {getFieldError('description') && (
-              <Text style={styles.errorText}>{getFieldError('description')}</Text>
-            )}
-            {isFieldValid('description') && <Text style={styles.successText}>OK</Text>}
-          </View>
-        </View>
-
-        {/* Cargo Type */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>{t('cargoType')} *</Text>
-          </View>
-          <Text style={styles.sectionSubtitle}>Velg type last du skal frakte</Text>
-          {getFieldError('cargo_type') && (
-            <Text style={styles.errorText}>{getFieldError('cargo_type')}</Text>
-          )}
-          <View style={styles.cargoTypeList}>
-            {CARGO_TYPES.map(type => (
-              <TouchableOpacity
-                key={type.id}
-                style={[
-                  styles.cargoTypeListItem,
-                  formData.cargo_type === type.id && styles.cargoTypeListItemSelected,
-                ]}
-                onPress={() => {
-                  updateFormData('cargo_type', type.id);
-                  // Mark as touched and clear any error immediately
-                  setTouchedFields(prev => ({ ...prev, cargo_type: true }));
-                  setFieldErrors(prev => ({ ...prev, cargo_type: '' }));
-                  try {
-                    triggerHapticFeedback.light();
-                  } catch {
-                    // Haptic feedback not available
-                  }
-                }}
-              >
-                <View style={styles.cargoTypeListItemContent}>
-                  {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-                  <Ionicons
-                    name={type.icon as any}
-                    size={24}
-                    color={
-                      formData.cargo_type === type.id ? colors.white : theme.iconColors.gray.primary
-                    }
-                  />
-                  <Text
-                    style={[
-                      styles.cargoTypeListLabel,
-                      formData.cargo_type === type.id && styles.cargoTypeListLabelActive,
-                    ]}
-                  >
-                    {type.label}
-                  </Text>
-                </View>
-                {formData.cargo_type === type.id && (
-                  <Ionicons name="checkmark-circle" size={22} color={colors.white} />
-                )}
-              </TouchableOpacity>
-            ))}
-          </View>
-        </View>
-
-        {/* Cargo Details */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>{t('cargoDetails')}</Text>
-          </View>
-
-          <View style={styles.row}>
-            <View style={[styles.inputContainer, { flex: 1, marginRight: 8 }]}>
-              <Text style={styles.label}>{t('weight')} (kg) *</Text>
-              <View style={styles.inputWithIcon}>
-                <Ionicons
-                  name="barbell-outline"
-                  size={20}
-                  color={
-                    getFieldError('weight')
-                      ? theme.iconColors.error
-                      : isFieldValid('weight')
-                        ? theme.iconColors.success
-                        : theme.iconColors.gray.primary
-                  }
-                  style={styles.inputIcon}
-                />
-                <TextInput
-                  style={[
-                    styles.input,
-                    styles.inputWithPadding,
-                    getFieldError('weight')
-                      ? styles.inputError
-                      : isFieldValid('weight')
-                        ? styles.inputValid
-                        : null,
-                  ]}
-                  placeholder="0"
-                  value={formData.weight}
-                  onChangeText={value => updateFormData('weight', value)}
-                  onBlur={() => handleFieldBlur('weight')}
-                  keyboardType="numeric"
-                  placeholderTextColor={colors.text.tertiary}
-                />
-                {isFieldValid('weight') && (
-                  <Ionicons
-                    name="checkmark-circle"
-                    size={20}
-                    color={theme.iconColors.success}
-                    style={styles.validationIcon}
-                  />
-                )}
-                {getFieldError('weight') && (
-                  <Ionicons
-                    name="close-circle"
-                    size={20}
-                    color={theme.iconColors.error}
-                    style={styles.validationIcon}
-                  />
-                )}
-              </View>
-              {getFieldError('weight') && (
-                <Text style={styles.errorTextSmall}>{getFieldError('weight')}</Text>
-              )}
-            </View>
-            <View style={[styles.inputContainer, { flex: 1, marginLeft: 8 }]}>
-              <Text style={styles.label}>{t('dimensions')}</Text>
-              <View style={styles.inputWithIcon}>
-                <Ionicons
-                  name="resize-outline"
-                  size={20}
-                  color={
-                    getFieldError('dimensions')
-                      ? theme.iconColors.error
-                      : isFieldValid('dimensions')
-                        ? theme.iconColors.success
-                        : theme.iconColors.gray.primary
-                  }
-                  style={styles.inputIcon}
-                />
-                <TextInput
-                  style={[
-                    styles.input,
-                    styles.inputWithPadding,
-                    getFieldError('dimensions')
-                      ? styles.inputError
-                      : isFieldValid('dimensions')
-                        ? styles.inputValid
-                        : null,
-                  ]}
-                  placeholder="L x W x H"
-                  value={formData.dimensions}
-                  onChangeText={value => updateFormData('dimensions', value)}
-                  onBlur={() => handleFieldBlur('dimensions')}
-                  placeholderTextColor={colors.text.tertiary}
-                />
-                {isFieldValid('dimensions') && (
-                  <Ionicons
-                    name="checkmark-circle"
-                    size={20}
-                    color={theme.iconColors.success}
-                    style={styles.validationIcon}
-                  />
-                )}
-                {getFieldError('dimensions') && (
-                  <Ionicons
-                    name="close-circle"
-                    size={20}
-                    color={theme.iconColors.error}
-                    style={styles.validationIcon}
-                  />
-                )}
-              </View>
-              {getFieldError('dimensions') && (
-                <Text style={styles.errorTextSmall}>{getFieldError('dimensions')}</Text>
-              )}
-            </View>
-          </View>
-        </View>
-
-        {/* Photo Upload Section */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Bilder (valgfritt)</Text>
-          </View>
-          <Text style={styles.sectionSubtitle}>Legg til bilder av lasten</Text>
-
-          <View style={styles.photoGrid}>
-            {images.map((uri, index) => (
-              <TouchableOpacity
-                key={index}
-                style={styles.photoGridItem}
-                onPress={() => removeImage(index)}
-              >
-                <LazyImage
-                  uri={uri}
-                  style={styles.photoGridImage}
-                  containerStyle={styles.photoGridImage}
-                  resizeMode="cover"
-                  placeholderIcon="image-outline"
-                  placeholderSize={32}
-                  showErrorText={false}
-                />
-                <View style={styles.removePhotoButton}>
-                  <Ionicons name="close-circle" size={24} color="#EF4444" />
-                </View>
-              </TouchableOpacity>
-            ))}
-
-            {images.length < 5 && (
-              <TouchableOpacity style={styles.addPhotoGrid} onPress={pickImages}>
-                <Ionicons name="camera-outline" size={32} color={theme.iconColors.gray.primary} />
-                <Text style={styles.addPhotoTextGrid}>Legg til bilde</Text>
-                <Text style={styles.maxPhotosText}>Maks 5 bilder</Text>
-              </TouchableOpacity>
-            )}
-          </View>
-        </View>
-
-        {/* Route */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>{t('route')}</Text>
-          </View>
-
-          <View style={styles.inputContainer}>
-            <View style={styles.labelWithValidation}>
-              <Text style={styles.label}>{t('fromAddress')} *</Text>
-              {touchedFields.from_address && (
-                <Ionicons
-                  name={getFieldError('from_address') ? 'close-circle' : 'checkmark-circle'}
-                  size={20}
-                  color={
-                    getFieldError('from_address')
-                      ? theme.iconColors.error
-                      : theme.iconColors.success
-                  }
-                />
-              )}
-            </View>
-            <View
-              style={[
-                styles.googlePlacesContainer,
-                touchedFields.from_address && getFieldError('from_address') && styles.inputError,
-                touchedFields.from_address && !getFieldError('from_address') && styles.inputValid,
-              ]}
-            >
-              <View style={styles.addressInputWrapper}>
-                <Ionicons
-                  name="play-outline"
-                  size={20}
-                  color={theme.iconColors.success}
-                  style={styles.addressIcon}
-                />
-                <GooglePlacesAutocomplete
-                  ref={fromAddressRef}
-                  placeholder={t('enterFromAddress')}
-                  onPress={async (data, details) => {
-                    clearDistanceIfNeeded('from_address');
-                    updateFormData('from_address', data.description);
-                    setTouchedFields(prev => ({ ...prev, from_address: true }));
-                    const error = validateField('from_address', data.description);
-                    setFieldErrors(prev => ({ ...prev, from_address: error }));
+  const handleFromAddressSelect = async (data: any, details: any) => {
+    clearDistanceIfNeeded('from_address');
+    updateFormData('from_address', data.description);
+    setTouchedFields(prev => ({ ...prev, from_address: true }));
+    const error = validateField('from_address', data.description);
+    setFieldErrors(prev => ({ ...prev, from_address: error }));
 
     if (details?.geometry?.location) {
       const coordinates = details.geometry.location;
@@ -922,6 +506,8 @@ export default function CreateRequestScreen() {
     clearDistanceIfNeeded('to_address');
     updateFormData('to_address', data.description);
     setTouchedFields(prev => ({ ...prev, to_address: true }));
+    const error = validateField('to_address', data.description);
+    setFieldErrors(prev => ({ ...prev, to_address: error }));
 
     if (details?.geometry?.location) {
       const coordinates = details.geometry.location;
@@ -952,13 +538,16 @@ export default function CreateRequestScreen() {
 
   return (
     <View style={styles.container}>
-      <KeyboardAwareScrollView
+      <KeyboardAwareFlatList
         contentContainerStyle={styles.scrollContent}
         keyboardShouldPersistTaps="handled"
         enableOnAndroid
         extraScrollHeight={100}
         enableResetScrollToCoords={false}
-      >
+        data={[{ key: 'form' }]}
+        keyExtractor={item => item.key}
+        renderItem={() => (
+          <View>
         {/* Title */}
         <View style={styles.fieldContainer}>
           <Text style={styles.fieldLabel}>Tittel</Text>
@@ -1260,11 +849,11 @@ export default function CreateRequestScreen() {
               )}
             </View>
           )}
-        </View>
-
         {/* Bottom spacing for tab bar */}
-        <View style={{ height: insets.bottom + 80 }} />
-      </KeyboardAwareScrollView>
+        <View style={{ height: 80 }} />
+          </View>
+        )}
+      />
 
       {/* Date Pickers */}
       {showPickupDate && (
