@@ -64,3 +64,4 @@ build/
 *.ipa
 *.aab
 
+*.backup
