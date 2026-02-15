@@ -842,8 +842,7 @@ export default function CreateRequestScreen() {
           <Text style={styles.fieldLabel}>Foreslått pris (NOK)</Text>
           <TextInput
             style={[
-              styles.textInput,
-              { borderColor: '#E5E7EB' },
+              styles.textInputNeutral,
               formData.price_type === 'negotiable' && styles.textInputDisabled
             ]}
             placeholder="0"
@@ -934,6 +933,7 @@ export default function CreateRequestScreen() {
             style={styles.menuContainer}
             accessible={true}
             accessibilityRole="menu"
+            onStartShouldSetResponder={() => true}
           >
             <View style={styles.menuHeader}>
               <Text style={styles.menuTitle}>Velg lasttype</Text>
@@ -990,6 +990,7 @@ export default function CreateRequestScreen() {
             style={styles.menuContainer}
             accessible={true}
             accessibilityRole="menu"
+            onStartShouldSetResponder={() => true}
           >
             <View style={styles.menuHeader}>
               <Text style={styles.menuTitle}>Velg prismodell</Text>
@@ -1053,6 +1054,15 @@ const styles = StyleSheet.create({
   textInput: {
     borderWidth: 2,
     borderColor: '#FF7043',
+    borderRadius: 12,
+    padding: 16,
+    fontSize: 16,
+    backgroundColor: '#FFFFFF',
+    color: '#1F2937',
+  },
+  textInputNeutral: {
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
     borderRadius: 12,
     padding: 16,
     fontSize: 16,
