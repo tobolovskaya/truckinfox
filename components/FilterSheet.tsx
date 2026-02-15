@@ -91,16 +91,16 @@ export const FilterSheet: React.FC<FilterSheetProps> = ({
             <TouchableOpacity onPress={onClose} style={styles.closeButton}>
               <Ionicons name="close" size={24} color={colors.text.primary} />
             </TouchableOpacity>
-            <Text style={styles.headerTitle}>Filter & Sorter</Text>
+            <Text style={styles.headerTitle}>{t('filterAndSort')}</Text>
             <TouchableOpacity onPress={handleReset}>
-              <Text style={styles.resetText}>Nullstill</Text>
+              <Text style={styles.resetText}>{t('resetFilters')}</Text>
             </TouchableOpacity>
           </View>
 
           <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
             {/* Sort Section */}
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Sorter etter</Text>
+              <Text style={styles.sectionTitle}>{t('sortBy')}</Text>
               <View style={styles.optionsGrid}>
                 {SORT_OPTIONS.map(option => (
                   <TouchableOpacity
@@ -131,7 +131,7 @@ export const FilterSheet: React.FC<FilterSheetProps> = ({
 
             {/* Cargo Types */}
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Type vantag</Text>
+              <Text style={styles.sectionTitle}>{t('cargoType')}</Text>
               <View style={styles.chipsContainer}>
                 {CARGO_TYPES.map(type => (
                   <TouchableOpacity
@@ -162,15 +162,15 @@ export const FilterSheet: React.FC<FilterSheetProps> = ({
 
             {/* Price Range */}
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Prisområde</Text>
+              <Text style={styles.sectionTitle}>{t('priceRange')}</Text>
               <View style={styles.priceRange}>
                 <View style={styles.priceInput}>
-                  <Text style={styles.priceLabel}>Fra</Text>
+                  <Text style={styles.priceLabel}>{t('from')}</Text>
                   <Text style={styles.priceValue}>{priceRange.min} NOK</Text>
                 </View>
                 <Text style={styles.priceSeparator}>-</Text>
                 <View style={styles.priceInput}>
-                  <Text style={styles.priceLabel}>Til</Text>
+                  <Text style={styles.priceLabel}>{t('to')}</Text>
                   <Text style={styles.priceValue}>{priceRange.max} NOK</Text>
                 </View>
               </View>
@@ -180,7 +180,7 @@ export const FilterSheet: React.FC<FilterSheetProps> = ({
           {/* Apply Button */}
           <View style={styles.footer}>
             <TouchableOpacity style={styles.applyButton} onPress={handleApply}>
-              <Text style={styles.applyButtonText}>Bruk filter</Text>
+              <Text style={styles.applyButtonText}>{t('applyFilters')}</Text>
             </TouchableOpacity>
           </View>
         </View>

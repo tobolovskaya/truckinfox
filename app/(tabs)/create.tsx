@@ -612,10 +612,10 @@ export default function CreateRequestScreen() {
               <View style={styles.headerContent}>
                 <Ionicons name="cube" size={48} color="white" />
                 <Text style={styles.screenTitle} accessibilityRole="header">
-                  Opprett lastforespørsel
+                  {t('createCargoRequest')}
                 </Text>
                 <Text style={styles.screenSubtitle}>
-                  Fyll ut informasjonen nedenfor for å opprette en ny forespørsel
+                  {t('fillFormBelow')}
                 </Text>
               </View>
             </LinearGradient>
