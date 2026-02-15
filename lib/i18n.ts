@@ -83,8 +83,8 @@ export const initI18n = async () => {
     returnNull: false,
     returnEmptyString: false,
 
-    // Debug mode (only in development)
-    debug: __DEV__,
+    // Debug mode (disabled - verbose logging not needed)
+    debug: false,
 
     // React specific options
     react: {
