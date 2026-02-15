@@ -19,6 +19,7 @@ import { collection, query, where, orderBy, getDocs, doc, getDoc } from 'firebas
 import { useRouter } from 'expo-router';
 import { triggerHapticFeedback } from '../../utils/haptics';
 import { theme } from '../../theme/theme';
+import { EmptyState } from '../../components/EmptyState';
 import {
   colors,
   spacing,
@@ -242,11 +243,15 @@ function MessagesScreen() {
             <Text style={styles.loadingText}>{t('loading')}</Text>
           </View>
         ) : filteredConversations.length === 0 ? (
-          <View style={styles.emptyContainer}>
-            <Ionicons name="chatbubble-outline" size={64} color={theme.iconColors.gray.primary} />
-            <Text style={styles.emptyTitle}>{t('noMessages')}</Text>
-            <Text style={styles.emptySubtitle}>{t('startConversation')}</Text>
-          </View>
+          <EmptyState
+            icon="chatbubble-outline"
+            title={t('emptyState.messages.title') || 'Ingen meldinger'}
+            description={
+              t('emptyState.messages.description') ||
+              'Når du aksepterer bud eller sender forespørsler, vil samtaler dukke opp her.'
+            }
+            tips={t('emptyState.messages.tips', { returnObjects: true }) as string[]}
+          />
         ) : (
           <View style={styles.conversationsList}>
             {filteredConversations.map(conversation => (

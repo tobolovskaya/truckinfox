@@ -21,6 +21,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { SwipeableRow, SwipeActions } from '../../components/SwipeableRow';
 import { IOSActionSheet, IOSActionSheetOption } from '../../components/IOSActionSheet';
 import { IOSRefreshControl } from '../../components/IOSRefreshControl';
+import { EmptyState } from '../../components/EmptyState';
 import { theme } from '../../theme/theme';
 import {
   colors,
@@ -786,28 +787,45 @@ function OrdersScreen() {
             <Text style={styles.loadingText}>{t('loading')}</Text>
           </View>
         ) : orders.length === 0 ? (
-          <View style={styles.emptyContainer}>
-            <View style={styles.emptyIconContainer}>
-              <Ionicons name="receipt-outline" size={64} color={colors.text.secondary} />
-            </View>
-            <Text style={styles.emptyTitle}>
-              {isCustomer ? t('noCustomerOrders') : t('noCarrierOrders')}
-            </Text>
-            <Text style={styles.emptySubtitle}>
-              {isCustomer ? t('createRequestToSeeOrders') : t('acceptBidsToSeeOrders')}
-            </Text>
-            <TouchableOpacity
-              style={styles.emptyActionButton}
-              onPress={() => router.push('/(tabs)/home')}
-            >
-              <Ionicons name="add-circle-outline" size={20} color={colors.white} />
-              <Text style={styles.emptyActionText}>
-                {isCustomer
-                  ? t('createRequest') || 'Opprett forespørsel'
-                  : t('viewRequests') || 'Se forespørsler'}
-              </Text>
-            </TouchableOpacity>
-          </View>
+          <EmptyState
+            icon={isCustomer ? 'cube-outline' : 'car-outline'}
+            title={
+              t(
+                isCustomer
+                  ? 'emptyState.orders.customer.title'
+                  : 'emptyState.orders.carrier.title'
+              ) || (isCustomer ? 'Ingen bestillinger ennå' : 'Ingen oppdrag ennå')
+            }
+            description={
+              t(
+                isCustomer
+                  ? 'emptyState.orders.customer.description'
+                  : 'emptyState.orders.carrier.description'
+              ) ||
+              (isCustomer
+                ? 'Opprett din første lastforespørsel for å motta bud fra transportører.'
+                : 'Søk etter aktive lastforespørsler og send inn bud for å begynne å tjene.')
+            }
+            actions={[
+              {
+                label:
+                  t(
+                    isCustomer
+                      ? 'emptyState.orders.customer.action'
+                      : 'emptyState.orders.carrier.action'
+                  ) || (isCustomer ? 'Opprett forespørsel' : 'Finn last'),
+                icon: isCustomer ? 'add-circle' : 'search',
+                onPress: () =>
+                  router.push(isCustomer ? '/(tabs)/create' : '/(tabs)/home'),
+                variant: 'primary',
+              },
+            ]}
+            tips={
+              (isCustomer
+                ? t('emptyState.orders.customer.tips', { returnObjects: true })
+                : t('emptyState.orders.carrier.tips', { returnObjects: true })) as string[]
+            }
+          />
         ) : (
           <View style={styles.ordersList}>
             {getFilteredAndSortedOrders(orders).map(order => {

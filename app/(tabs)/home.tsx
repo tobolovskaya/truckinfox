@@ -43,58 +43,16 @@ import { useReduceMotion } from '../../hooks/useReduceMotion';
 import { useNotifications } from '../../hooks/useNotifications';
 import { SwipeableRequestCard } from '../../components/home/SwipeableRequestCard';
 import { SkeletonCard } from '../../components/home/SkeletonCard';
+import { EmptyState } from '../../components/EmptyState';
+import { Onboarding } from '../../components/Onboarding';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Use imported types from hooks
 type CargoRequest = ImportedCargoRequest;
 type FilterState = ImportedFilterState;
 type SortOption = ImportedSortOption;
 
-const EmptyStateAnimation = ({ activeTab }: { activeTab: 'all' | 'my' }) => {
-  const { t } = useTranslation();
-  const router = useRouter();
-
-  const handleCreateRequest = () => {
-    router.push('/(tabs)/create');
-  };
-
-  return (
-    <View style={styles.emptyContainer}>
-      <View style={styles.emptyContent}>
-        {/* Interactive Create Button */}
-        <TouchableOpacity
-          testID="empty-state-create-button"
-          accessibilityRole="button"
-          accessibilityLabel="Opprett første lastforespørsel"
-          accessibilityHint="Dobbelttrykk for å opprette din første lastforespørsel"
-          style={styles.emptyCreateButton}
-          onPress={handleCreateRequest}
-          activeOpacity={0.8}
-        >
-          <View style={styles.emptyIconContainer}>
-            <Ionicons name="add-circle" size={84} color="white" />
-          </View>
-          <Text style={styles.emptyCreateButtonText}>
-            {t('createRequest') || 'Opprett forespørsel'}
-          </Text>
-        </TouchableOpacity>
-
-        {/* Title */}
-        <Text style={styles.emptyTitle} accessibilityRole="header">
-          {activeTab === 'all'
-            ? t('noActiveRequests') || 'Ingen aktive forespørsler'
-            : t('noMyRequests') || 'Du har ingen forespørsler'}
-        </Text>
-
-        {/* Subtitle */}
-        <Text style={styles.emptySubtitle}>
-          {activeTab === 'all'
-            ? t('checkBackLater') || 'Sjekk tilbake senere for nye forespørsler'
-            : t('createFirstRequest') || 'Opprett din første forespørsel for å komme i gang'}
-        </Text>
-      </View>
-    </View>
-  );
-};
+const ONBOARDING_KEY = '@truckinfox_onboarding_completed';
 
 export default function HomeScreen() {
   const { user } = useAuth();
@@ -102,6 +60,10 @@ export default function HomeScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const reduceMotion = useReduceMotion();
+  
+  // Onboarding state
+  const [showOnboarding, setShowOnboarding] = useState(false);
+  
   // Filter modal state
   const [isFilterModalVisible, setIsFilterModalVisible] = useState(false);
 
@@ -219,6 +181,33 @@ export default function HomeScreen() {
   const onRefresh = React.useCallback(() => {
     refresh();
   }, [refresh]);
+
+  // Check if user has completed onboarding
+  React.useEffect(() => {
+    checkOnboardingStatus();
+  }, []);
+
+  const checkOnboardingStatus = async () => {
+    try {
+      const completed = await AsyncStorage.getItem(ONBOARDING_KEY);
+      if (!completed && user) {
+        // Show onboarding for new users
+        setTimeout(() => setShowOnboarding(true), 500);
+      }
+    } catch (error) {
+      console.error('Error checking onboarding status:', error);
+    }
+  };
+
+  const handleOnboardingComplete = async () => {
+    try {
+      await AsyncStorage.setItem(ONBOARDING_KEY, 'true');
+      setShowOnboarding(false);
+    } catch (error) {
+      console.error('Error saving onboarding status:', error);
+      setShowOnboarding(false);
+    }
+  };
 
   // Animation values for segmented control
   const segmentedValue = useSharedValue(0);
@@ -608,7 +597,47 @@ export default function HomeScreen() {
             }
             showsVerticalScrollIndicator={false}
           >
-            <EmptyStateAnimation activeTab={activeTab} />
+            <EmptyState
+              icon={activeTab === 'all' ? 'search-outline' : 'cube-outline'}
+              title={
+                t(
+                  activeTab === 'all'
+                    ? 'emptyState.home.all.title'
+                    : 'emptyState.home.my.title'
+                ) ||
+                (activeTab === 'all'
+                  ? 'Ingen aktive forespørsler'
+                  : 'Du har ingen forespørsler')
+              }
+              description={
+                t(
+                  activeTab === 'all'
+                    ? 'emptyState.home.all.description'
+                    : 'emptyState.home.my.description'
+                ) ||
+                (activeTab === 'all'
+                  ? 'Det er ingen aktive lastforespørsler akkurat nå. Sjekk tilbake senere eller opprett din egen.'
+                  : 'Opprett din første lastforespørsel for å motta bud fra verifiserte transportører.')
+              }
+              actions={[
+                {
+                  label:
+                    t(
+                      activeTab === 'all'
+                        ? 'emptyState.home.all.action'
+                        : 'emptyState.home.my.action'
+                    ) || 'Opprett forespørsel',
+                  icon: 'add-circle',
+                  onPress: () => router.push('/(tabs)/create'),
+                  variant: 'primary',
+                },
+              ]}
+              tips={
+                activeTab === 'my'
+                  ? (t('emptyState.home.my.tips', { returnObjects: true }) as string[])
+                  : undefined
+              }
+            />
           </ScrollView>
         ) : (
           <FlashList
@@ -1018,6 +1047,13 @@ export default function HomeScreen() {
           </View>
         </View>
       </Modal>
+
+      {/* Onboarding */}
+      <Onboarding
+        visible={showOnboarding}
+        onComplete={handleOnboardingComplete}
+        userType={currentUser?.user_type === 'carrier' ? 'carrier' : 'customer'}
+      />
     </View>
   );
 }

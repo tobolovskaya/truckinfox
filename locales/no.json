@@ -398,5 +398,94 @@
   "applyFilters": "Bruk filter",
   "resetFilters": "Nullstill",
   "createCargoRequest": "Opprett lastforespørsel",
-  "fillFormBelow": "Fyll ut informasjonen nedenfor for å opprette en ny forespørsel"
+  "fillFormBelow": "Fyll ut informasjonen nedenfor for å opprette en ny forespørsel",
+  "skip": "Hopp over",
+  "next": "Neste",
+  "getStarted": "Kom i gang",
+  "onboarding": {
+    "step1": {
+      "title": "Opprett lastforespørsel",
+      "description": "Legg ut din last med detaljer om henting, levering og vekt. Få tilbud fra verifiserte transportører."
+    },
+    "step2": {
+      "title": "Motta og sammenlign bud",
+      "description": "Transportører sender inn bud. Sammenlign priser, vurderinger og velg den beste."
+    },
+    "step3": {
+      "title": "Kommuniser og spor",
+      "description": "Chat direkte med transportør. Følg sendingen i sanntid med GPS-sporing."
+    },
+    "step4": {
+      "title": "Sikker betaling",
+      "description": "Betaling holdes i escrow til levering. Dine penger er trygge."
+    },
+    "carrier": {
+      "step1": {
+        "title": "Finn lastforespørsler",
+        "description": "Bla gjennom aktive lastforespørsler. Filtrer etter sted, type og vekt."
+      },
+      "step2": {
+        "title": "Send inn bud",
+        "description": "Sett din pris og legg til en melding. Vis hvorfor du er det beste valget."
+      },
+      "step3": {
+        "title": "Start transport",
+        "description": "Når budet ditt aksepteres, hent lasten og lever trygt."
+      },
+      "step4": {
+        "title": "Bygg omdømme",
+        "description": "Få positive vurderinger og øk din rating. Høyere rating = flere oppdrag."
+      }
+    }
+  },
+  "emptyState": {
+    "orders": {
+      "customer": {
+        "title": "Ingen bestillinger ennå",
+        "description": "Opprett din første lastforespørsel for å motta bud fra transportører.",
+        "action": "Opprett forespørsel",
+        "tips": [
+          "Inkluder bilder av lasten for bedre bud",
+          "Beskriv spesielle krav (f.eks. tidskritisk, skjørt gods)",
+          "Sjekk transportørenes vurderinger før du aksepterer"
+        ]
+      },
+      "carrier": {
+        "title": "Ingen oppdrag ennå",
+        "description": "Søk etter aktive lastforespørsler og send inn bud for å begynne å tjene.",
+        "action": "Finn last",
+        "tips": [
+          "Send konkurransedyktige priser for å skille deg ut",
+          "Svar raskt på nye forespørsler",
+          "Hold oppdatert profil med kjøretøyinformasjon"
+        ]
+      }
+    },
+    "messages": {
+      "title": "Ingen meldinger",
+      "description": "Når du aksepterer bud eller sender forespørsler, vil samtaler dukke opp her.",
+      "tips": [
+        "Chat-funksjonen aktiveres automatisk når et bud aksepteres",
+        "Du kan dele bilder og dokumenter i chatten",
+        "Svar raskt for bedre kundetilfredshet"
+      ]
+    },
+    "home": {
+      "all": {
+        "title": "Ingen aktive forespørsler",
+        "description": "Det er ingen aktive lastforespørsler akkurat nå. Sjekk tilbake senere eller opprett din egen.",
+        "action": "Opprett forespørsel"
+      },
+      "my": {
+        "title": "Du har ingen forespørsler",
+        "description": "Opprett din første lastforespørsel for å motta bud fra verifiserte transportører.",
+        "action": "Opprett forespørsel",
+        "tips": [
+          "Legg til flere detaljer for mer nøyaktige bud",
+          "Bruk bilder for å gi transportører bedre oversikt",
+          "Sett riktig tidsramme for henting og levering"
+        ]
+      }
+    }
+  }
 }

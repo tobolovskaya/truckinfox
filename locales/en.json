@@ -382,5 +382,94 @@
   "userNotFound": "User not found",
   "wouldYouLikeToRegister": "Would you like to register?",
   "loginError": "Login Error",
-  "somethingWentWrong": "Something went wrong"
+  "somethingWentWrong": "Something went wrong",
+  "skip": "Skip",
+  "next": "Next",
+  "getStarted": "Get Started",
+  "onboarding": {
+    "step1": {
+      "title": "Create Cargo Request",
+      "description": "Post your cargo with pickup, delivery, and weight details. Get quotes from verified carriers."
+    },
+    "step2": {
+      "title": "Receive and Compare Bids",
+      "description": "Carriers submit bids. Compare prices, ratings, and choose the best one."
+    },
+    "step3": {
+      "title": "Communicate and Track",
+      "description": "Chat directly with carrier. Track shipment in real-time with GPS."
+    },
+    "step4": {
+      "title": "Secure Payment",
+      "description": "Payment held in escrow until delivery. Your money is safe."
+    },
+    "carrier": {
+      "step1": {
+        "title": "Find Cargo Requests",
+        "description": "Browse active cargo requests. Filter by location, type, and weight."
+      },
+      "step2": {
+        "title": "Submit Bids",
+        "description": "Set your price and add a message. Show why you're the best choice."
+      },
+      "step3": {
+        "title": "Start Transport",
+        "description": "Once your bid is accepted, pick up the cargo and deliver safely."
+      },
+      "step4": {
+        "title": "Build Reputation",
+        "description": "Get positive reviews and increase your rating. Higher rating = more jobs."
+      }
+    }
+  },
+  "emptyState": {
+    "orders": {
+      "customer": {
+        "title": "No Orders Yet",
+        "description": "Create your first cargo request to receive bids from carriers.",
+        "action": "Create Request",
+        "tips": [
+          "Include cargo photos for better bids",
+          "Describe special requirements (e.g., time-critical, fragile)",
+          "Check carrier ratings before accepting"
+        ]
+      },
+      "carrier": {
+        "title": "No Jobs Yet",
+        "description": "Search for active cargo requests and submit bids to start earning.",
+        "action": "Find Cargo",
+        "tips": [
+          "Offer competitive prices to stand out",
+          "Respond quickly to new requests",
+          "Keep your profile updated with vehicle information"
+        ]
+      }
+    },
+    "messages": {
+      "title": "No Messages",
+      "description": "When you accept bids or send requests, conversations will appear here.",
+      "tips": [
+        "Chat is automatically enabled when a bid is accepted",
+        "You can share photos and documents in chat",
+        "Reply quickly for better customer satisfaction"
+      ]
+    },
+    "home": {
+      "all": {
+        "title": "No Active Requests",
+        "description": "There are no active cargo requests right now. Check back later or create your own.",
+        "action": "Create Request"
+      },
+      "my": {
+        "title": "You Have No Requests",
+        "description": "Create your first cargo request to receive bids from verified carriers.",
+        "action": "Create Request",
+        "tips": [
+          "Add more details for more accurate bids",
+          "Use photos to give carriers better overview",
+          "Set appropriate timeframe for pickup and delivery"
+        ]
+      }
+    }
+  }
 }
