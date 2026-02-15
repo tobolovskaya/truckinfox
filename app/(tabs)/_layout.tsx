@@ -127,6 +127,12 @@ export default function TabLayout() {
 
       {/* Hidden screens */}
       <Tabs.Screen
+        name="notifications"
+        options={{
+          href: null, // Hide from tabs - accessible via header notification bell
+        }}
+      />
+      <Tabs.Screen
         name="map"
         options={{
           href: null, // Hide from tabs

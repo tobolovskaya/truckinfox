@@ -390,6 +390,7 @@ Optimized bottom navigation for better UX:
 2. **Messages** (Meldinger) - Real-time chat conversations
 3. **Create** (Opprett) - Create new cargo request
 4. **Orders** (Bestillinger) - Track orders as customer/carrier
+5. **Profile** (Profil) - User settings and preferences
 
 **Notification System:**
 
