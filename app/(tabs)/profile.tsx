@@ -18,6 +18,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useTranslation } from 'react-i18next';
 import { useI18n } from '../../contexts/I18nContext';
 import { db, storage } from '../../lib/firebase';
+import { colors as sharedColors } from '../../lib/sharedStyles';
 import {
   doc,
   updateDoc,
@@ -589,8 +590,12 @@ export default function ProfileScreen() {
             <Switch
               value={notificationSettings.notifications_enabled}
               onValueChange={value => updateNotificationSetting('notifications_enabled', value)}
-              trackColor={{ false: '#E5E7EB', true: '#FF7043' }}
-              thumbColor={notificationSettings.notifications_enabled ? 'white' : '#F3F4F6'}
+              trackColor={{ false: sharedColors.border.light, true: sharedColors.primary }}
+              thumbColor={
+                notificationSettings.notifications_enabled
+                  ? sharedColors.white
+                  : sharedColors.badge.background
+              }
             />
           </View>
           <View
@@ -603,7 +608,11 @@ export default function ProfileScreen() {
               <Ionicons
                 name="cube-outline"
                 size={20}
-                color={!notificationSettings.notifications_enabled ? '#9CA3AF' : '#616161'}
+                color={
+                  !notificationSettings.notifications_enabled
+                    ? sharedColors.text.tertiary
+                    : sharedColors.text.secondary
+                }
               />
               <View style={styles.settingInfo}>
                 <Text
@@ -628,8 +637,12 @@ export default function ProfileScreen() {
               value={notificationSettings.new_orders_notifications}
               onValueChange={value => updateNotificationSetting('new_orders_notifications', value)}
               disabled={!notificationSettings.notifications_enabled}
-              trackColor={{ false: '#E5E7EB', true: '#FF7043' }}
-              thumbColor={notificationSettings.new_orders_notifications ? 'white' : '#F3F4F6'}
+              trackColor={{ false: sharedColors.border.light, true: sharedColors.primary }}
+              thumbColor={
+                notificationSettings.new_orders_notifications
+                  ? sharedColors.white
+                  : sharedColors.badge.background
+              }
             />
           </View>
 
@@ -643,7 +656,11 @@ export default function ProfileScreen() {
               <Ionicons
                 name="checkmark-circle-outline"
                 size={20}
-                color={!notificationSettings.notifications_enabled ? '#9CA3AF' : '#616161'}
+                color={
+                  !notificationSettings.notifications_enabled
+                    ? sharedColors.text.tertiary
+                    : sharedColors.text.secondary
+                }
               />
               <View style={styles.settingInfo}>
                 <Text
@@ -670,8 +687,12 @@ export default function ProfileScreen() {
                 updateNotificationSetting('status_updates_notifications', value)
               }
               disabled={!notificationSettings.notifications_enabled}
-              trackColor={{ false: '#E5E7EB', true: '#FF7043' }}
-              thumbColor={notificationSettings.status_updates_notifications ? 'white' : '#F3F4F6'}
+              trackColor={{ false: sharedColors.border.light, true: sharedColors.primary }}
+              thumbColor={
+                notificationSettings.status_updates_notifications
+                  ? sharedColors.white
+                  : sharedColors.badge.background
+              }
             />
           </View>
 
@@ -685,7 +706,11 @@ export default function ProfileScreen() {
               <Ionicons
                 name="pricetag-outline"
                 size={20}
-                color={!notificationSettings.notifications_enabled ? '#9CA3AF' : '#616161'}
+                color={
+                  !notificationSettings.notifications_enabled
+                    ? sharedColors.text.tertiary
+                    : sharedColors.text.secondary
+                }
               />
               <View style={styles.settingInfo}>
                 <Text
@@ -710,8 +735,12 @@ export default function ProfileScreen() {
               value={notificationSettings.bid_notifications}
               onValueChange={value => updateNotificationSetting('bid_notifications', value)}
               disabled={!notificationSettings.notifications_enabled}
-              trackColor={{ false: '#E5E7EB', true: '#FF7043' }}
-              thumbColor={notificationSettings.bid_notifications ? 'white' : '#F3F4F6'}
+              trackColor={{ false: sharedColors.border.light, true: sharedColors.primary }}
+              thumbColor={
+                notificationSettings.bid_notifications
+                  ? sharedColors.white
+                  : sharedColors.badge.background
+              }
             />
           </View>
 
@@ -814,8 +843,10 @@ export default function ProfileScreen() {
             <Switch
               value={profile?.show_phone_publicly ?? false}
               onValueChange={value => updatePrivacySetting('show_phone_publicly', value)}
-              trackColor={{ false: '#E5E7EB', true: '#FF7043' }}
-              thumbColor={profile?.show_phone_publicly ? 'white' : '#F3F4F6'}
+              trackColor={{ false: sharedColors.border.light, true: sharedColors.primary }}
+              thumbColor={
+                profile?.show_phone_publicly ? sharedColors.white : sharedColors.badge.background
+              }
             />
           </View>
 
@@ -830,8 +861,10 @@ export default function ProfileScreen() {
             <Switch
               value={profile?.show_email_publicly ?? false}
               onValueChange={value => updatePrivacySetting('show_email_publicly', value)}
-              trackColor={{ false: '#E5E7EB', true: '#FF7043' }}
-              thumbColor={profile?.show_email_publicly ? 'white' : '#F3F4F6'}
+              trackColor={{ false: sharedColors.border.light, true: sharedColors.primary }}
+              thumbColor={
+                profile?.show_email_publicly ? sharedColors.white : sharedColors.badge.background
+              }
             />
           </View>
 

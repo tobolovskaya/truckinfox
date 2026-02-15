@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import { View, StyleSheet, Animated } from 'react-native';
 import { theme } from '../theme/theme';
-import { shadows } from '../lib/sharedStyles';
+import { shadows, colors, spacing, borderRadius } from '../lib/sharedStyles';
 
 interface SkeletonLoaderProps {
   variant?: 'card' | 'list' | 'message' | 'stats' | 'text';
@@ -138,27 +138,27 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   itemWrapper: {
-    marginBottom: theme.spacing.md,
+    marginBottom: spacing.md,
   },
   shimmer: {
-    backgroundColor: '#E5E7EB',
-    borderRadius: 8,
+    backgroundColor: colors.border.light,
+    borderRadius: borderRadius.sm,
   },
 
   // Card skeleton
   card: {
     backgroundColor: theme.colors.surface,
-    borderRadius: 12,
-    padding: 16,
+    borderRadius: borderRadius.lg,
+    padding: spacing.lg,
     ...(shadows.md as object),
   },
   cardImage: {
     width: '100%',
     height: 120,
-    marginBottom: theme.spacing.sm,
+    marginBottom: spacing.sm,
   },
   cardContent: {
-    gap: theme.spacing.sm,
+    gap: spacing.sm,
   },
   cardTitle: {
     height: 20,
@@ -170,8 +170,8 @@ const styles = StyleSheet.create({
   },
   cardFooter: {
     flexDirection: 'row',
-    gap: theme.spacing.sm,
-    marginTop: theme.spacing.xs,
+    gap: spacing.sm,
+    marginTop: spacing.xs,
   },
   cardFooterItem: {
     height: 32,
@@ -183,9 +183,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: theme.colors.surface,
-    padding: theme.spacing.md,
-    borderRadius: theme.borderRadius.md,
-    gap: theme.spacing.md,
+    padding: spacing.md,
+    borderRadius: borderRadius.md,
+    gap: spacing.md,
   },
   listAvatar: {
     width: 48,
@@ -194,7 +194,7 @@ const styles = StyleSheet.create({
   },
   listContent: {
     flex: 1,
-    gap: theme.spacing.xs,
+    gap: spacing.xs,
   },
   listTitle: {
     height: 16,
@@ -212,18 +212,18 @@ const styles = StyleSheet.create({
 
   // Message skeleton
   messageContainer: {
-    gap: theme.spacing.md,
+    gap: spacing.md,
   },
   messageLeft: {
     flexDirection: 'row',
     alignItems: 'flex-end',
-    gap: theme.spacing.sm,
+    gap: spacing.sm,
   },
   messageRight: {
     flexDirection: 'row',
     alignItems: 'flex-end',
     justifyContent: 'flex-end',
-    gap: theme.spacing.sm,
+    gap: spacing.sm,
   },
   messageAvatar: {
     width: 32,
@@ -233,27 +233,27 @@ const styles = StyleSheet.create({
   messageBubbleLeft: {
     height: 60,
     width: '60%',
-    borderRadius: theme.borderRadius.lg,
+    borderRadius: borderRadius.lg,
   },
   messageBubbleRight: {
     height: 40,
     width: '50%',
-    borderRadius: theme.borderRadius.lg,
+    borderRadius: borderRadius.lg,
   },
 
   // Stats skeleton
   statsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: theme.spacing.md,
+    gap: spacing.md,
   },
   statCard: {
     backgroundColor: theme.colors.surface,
-    padding: theme.spacing.md,
-    borderRadius: theme.borderRadius.lg,
+    padding: spacing.md,
+    borderRadius: borderRadius.lg,
     minWidth: '45%',
     alignItems: 'center',
-    gap: theme.spacing.xs,
+    gap: spacing.xs,
   },
   statIcon: {
     width: 40,
@@ -271,7 +271,7 @@ const styles = StyleSheet.create({
 
   // Text skeleton
   textContainer: {
-    gap: theme.spacing.sm,
+    gap: spacing.sm,
   },
   textLine: {
     height: 16,

@@ -2,7 +2,7 @@ import React, { useEffect, useRef } from 'react';
 import { View, StyleSheet, Animated, Easing } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { theme } from '../theme/theme';
-import { shadows } from '../lib/sharedStyles';
+import { shadows, colors, borderRadius } from '../lib/sharedStyles';
 
 interface SuccessAnimationProps {
   visible: boolean;
@@ -168,6 +168,6 @@ const styles = StyleSheet.create({
   },
   particle: {
     position: 'absolute',
-    borderRadius: 10,
+    borderRadius: borderRadius.md,
   },
 });
