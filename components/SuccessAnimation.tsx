@@ -93,16 +93,14 @@ const ConfettiParticles: React.FC = () => {
     anim: useRef(new Animated.Value(0)).current,
     x: Math.random() * 300 - 150,
     y: Math.random() * -100 - 50,
-    color: ['#FF7043', '#4CAF50', '#2196F3', '#FFC107', '#E91E63'][
-      Math.floor(Math.random() * 5)
-    ],
+    color: ['#FF7043', '#4CAF50', '#2196F3', '#FFC107', '#E91E63'][Math.floor(Math.random() * 5)],
     size: Math.random() * 6 + 4,
   }));
 
   useEffect(() => {
     Animated.stagger(
       30,
-      particles.map((p) =>
+      particles.map(p =>
         Animated.timing(p.anim, {
           toValue: 1,
           duration: 1000,
@@ -115,7 +113,7 @@ const ConfettiParticles: React.FC = () => {
 
   return (
     <>
-      {particles.map((p) => {
+      {particles.map(p => {
         const translateY = p.anim.interpolate({
           inputRange: [0, 1],
           outputRange: [p.y, 400],
