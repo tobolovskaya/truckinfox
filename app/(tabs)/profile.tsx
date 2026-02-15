@@ -82,8 +82,15 @@ export default function ProfileScreen() {
     orders_as_customer: 0,
     orders_as_carrier: 0,
     total_transaction_amount: 0,
-    last_activity_at: null,
+    last_activity_at: null as string | null,
+    active_bids: 0,
+    completed_orders: 0,
+    cancelled_orders: 0,
+    success_rate: 0,
+    avg_rating: 0,
+    total_distance: 0,
   });
+  const [enhancedStatsLoading, setEnhancedStatsLoading] = useState(false);
   const [notificationSettings, setNotificationSettings] = useState({
     notifications_enabled: true,
     new_orders_notifications: true,
@@ -95,6 +102,7 @@ export default function ProfileScreen() {
   useEffect(() => {
     fetchProfile();
     fetchNotificationSettings();
+    fetchEnhancedStatistics();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -127,6 +135,12 @@ export default function ProfileScreen() {
           orders_as_carrier: 0,
           total_transaction_amount: 0,
           last_activity_at: null,
+          active_bids: 0,
+          completed_orders: 0,
+          cancelled_orders: 0,
+          success_rate: 0,
+          avg_rating: 0,
+          total_distance: 0,
         });
       } else {
         const data = { id: userSnap.id, ...userSnap.data() } as UserProfile;
@@ -137,6 +151,12 @@ export default function ProfileScreen() {
           orders_as_carrier: data.orders_as_carrier || 0,
           total_transaction_amount: data.total_transaction_amount || 0,
           last_activity_at: data.last_activity_at || null,
+          active_bids: 0,
+          completed_orders: 0,
+          cancelled_orders: 0,
+          success_rate: 0,
+          avg_rating: data.rating || 0,
+          total_distance: 0,
         });
       }
     } catch (error) {
@@ -168,6 +188,68 @@ export default function ProfileScreen() {
     }
   };
 
+  const fetchEnhancedStatistics = async () => {
+    try {
+      if (!user?.uid) return;
+      setEnhancedStatsLoading(true);
+
+      // Fetch active bids (where user is carrier)
+      const activeBidsQuery = query(
+        collection(db, 'bids'),
+        where('carrier_id', '==', user.uid),
+        where('status', 'in', ['pending', 'submitted'])
+      );
+      const activeBidsSnap = await getDocs(activeBidsQuery);
+      const activeBidsCount = activeBidsSnap.size;
+
+      // Fetch completed orders
+      const completedOrdersQuery = query(
+        collection(db, 'orders'),
+        where('status', '==', 'delivered')
+      );
+      const completedOrdersSnap = await getDocs(completedOrdersQuery);
+      let userCompletedOrders = 0;
+      completedOrdersSnap.forEach(doc => {
+        const data = doc.data();
+        if (data.customer_id === user.uid || data.carrier_id === user.uid) {
+          userCompletedOrders++;
+        }
+      });
+
+      // Fetch cancelled orders
+      const cancelledOrdersQuery = query(
+        collection(db, 'orders'),
+        where('status', 'in', ['cancelled', 'failed'])
+      );
+      const cancelledOrdersSnap = await getDocs(cancelledOrdersQuery);
+      let userCancelledOrders = 0;
+      cancelledOrdersSnap.forEach(doc => {
+        const data = doc.data();
+        if (data.customer_id === user.uid || data.carrier_id === user.uid) {
+          userCancelledOrders++;
+        }
+      });
+
+      // Calculate success rate
+      const totalOrders = userCompletedOrders + userCancelledOrders;
+      const successRate = totalOrders > 0 ? (userCompletedOrders / totalOrders) * 100 : 0;
+
+      // Update statistics
+      setStatistics(prev => ({
+        ...prev,
+        active_bids: activeBidsCount,
+        completed_orders: userCompletedOrders,
+        cancelled_orders: userCancelledOrders,
+        success_rate: Math.round(successRate),
+        avg_rating: profile?.rating || 0,
+      }));
+    } catch (error) {
+      console.error('Error fetching enhanced statistics:', error);
+    } finally {
+      setEnhancedStatsLoading(false);
+    }
+  };
+
   const updateNotificationSetting = async (setting: string, value: boolean) => {
     try {
       if (!user?.uid) return;
@@ -190,6 +272,23 @@ export default function ProfileScreen() {
     } catch (error) {
       console.error('Error updating notification setting:', error);
       Alert.alert(t('error'), 'Failed to update notification settings');
+    }
+  };
+
+  const updatePrivacySetting = async (setting: string, value: boolean) => {
+    try {
+      if (!user?.uid) return;
+
+      const userRef = doc(db, 'users', user.uid);
+      await updateDoc(userRef, {
+        [setting]: value,
+        updated_at: new Date().toISOString(),
+      });
+
+      setProfile(prev => (prev ? { ...prev, [setting]: value } : null));
+    } catch (error) {
+      console.error('Error updating privacy setting:', error);
+      Alert.alert(t('error'), 'Failed to update privacy settings');
     }
   };
 
@@ -348,30 +447,115 @@ export default function ProfileScreen() {
           </View>
         </View>
 
-        {/* Stats - Hide if all zero */}
-        {(statistics.orders_as_customer > 0 ||
-          statistics.orders_as_carrier > 0 ||
-          statistics.total_transaction_amount > 0) && (
-          <View style={styles.statsContainer}>
-            <View style={styles.statCard}>
-              <Ionicons name="person-outline" size={20} color={theme.iconColors.primary} />
-              <Text style={styles.statNumber}>{statistics.orders_as_customer}</Text>
-              <Text style={styles.statLabel}>{t('ordersAsCustomer')}</Text>
-            </View>
-            <View style={styles.statCard}>
-              <Ionicons name="car-outline" size={20} color={theme.iconColors.success} />
-              <Text style={styles.statNumber}>{statistics.orders_as_carrier}</Text>
-              <Text style={styles.statLabel}>{t('ordersAsCarrier')}</Text>
-            </View>
-            <View style={styles.statCard}>
-              <Ionicons name="wallet-outline" size={20} color={theme.iconColors.info} />
-              <Text style={styles.statNumber}>
-                {Math.round(statistics.total_transaction_amount)} NOK
+        {/* Enhanced Statistics Section */}
+        <View style={styles.statisticsSection}>
+          <View style={styles.statisticsHeader}>
+            <Text style={styles.statisticsTitle}>{t('statistics')}</Text>
+            {profile?.created_at && (
+              <Text style={styles.memberSince}>
+                {t('memberSince')}{' '}
+                {new Date(profile.created_at).toLocaleDateString('no-NO', {
+                  month: 'short',
+                  year: 'numeric',
+                })}
               </Text>
-              <Text style={styles.statLabel}>{t('totalTransactions')}</Text>
-            </View>
+            )}
           </View>
-        )}
+
+          {enhancedStatsLoading ? (
+            <View style={styles.statsLoadingContainer}>
+              <ActivityIndicator size="small" color={theme.iconColors.primary} />
+            </View>
+          ) : statistics.orders_as_customer === 0 &&
+            statistics.orders_as_carrier === 0 &&
+            statistics.total_transaction_amount === 0 ? (
+            <View style={styles.noStatsContainer}>
+              <Ionicons name="bar-chart-outline" size={48} color={theme.iconColors.gray.light} />
+              <Text style={styles.noStatsTitle}>{t('noStatisticsYet')}</Text>
+              <Text style={styles.noStatsDescription}>{t('startUsingApp')}</Text>
+            </View>
+          ) : (
+            <>
+              {/* Primary Stats Grid */}
+              <View style={styles.statsGrid}>
+                <View style={styles.statCard}>
+                <View style={[styles.statIconContainer, { backgroundColor: '#FFF4F0' }]}>
+                    <Ionicons name="cube-outline" size={20} color={theme.iconColors.primary} />
+                  </View>
+                  <Text style={styles.statNumber}>{statistics.orders_as_customer}</Text>
+                  <Text style={styles.statLabel}>{t('ordersAsCustomer')}</Text>
+                </View>
+
+                <View style={styles.statCard}>
+                <View style={[styles.statIconContainer, { backgroundColor: '#F0FDF4' }]}>
+                    <Ionicons name="car-outline" size={20} color={theme.iconColors.success} />
+                  </View>
+                  <Text style={styles.statNumber}>{statistics.orders_as_carrier}</Text>
+                  <Text style={styles.statLabel}>{t('ordersAsCarrier')}</Text>
+                </View>
+
+                <View style={styles.statCard}>
+                <View style={[styles.statIconContainer, { backgroundColor: '#EFF6FF' }]}>
+                    <Ionicons name="wallet-outline" size={20} color={theme.iconColors.info} />
+                  </View>
+                  <Text style={styles.statNumber}>
+                    {Math.round(statistics.total_transaction_amount / 1000)}k
+                  </Text>
+                  <Text style={styles.statLabel}>NOK</Text>
+                </View>
+
+                <View style={styles.statCard}>
+                <View style={[styles.statIconContainer, { backgroundColor: '#FFFBEB' }]}>
+                    <Ionicons name="star-outline" size={20} color={theme.iconColors.rating} />
+                  </View>
+                  <Text style={styles.statNumber}>{statistics.avg_rating.toFixed(1)}</Text>
+                  <Text style={styles.statLabel}>{t('rating')}</Text>
+                </View>
+              </View>
+
+              {/* Secondary Stats */}
+              <View style={styles.secondaryStatsContainer}>
+                {statistics.active_bids > 0 && (
+                  <View style={styles.secondaryStatRow}>
+                    <View style={styles.secondaryStatLeft}>
+                      <Ionicons
+                        name="pricetag-outline"
+                        size={16}
+                        color={theme.iconColors.gray.primary}
+                      />
+                      <Text style={styles.secondaryStatLabel}>{t('activeBids')}</Text>
+                    </View>
+                    <Text style={styles.secondaryStatValue}>{statistics.active_bids}</Text>
+                  </View>
+                )}
+
+                {statistics.completed_orders > 0 && (
+                  <View style={styles.secondaryStatRow}>
+                    <View style={styles.secondaryStatLeft}>
+                      <Ionicons
+                        name="checkmark-circle-outline"
+                        size={16}
+                        color={theme.iconColors.success}
+                      />
+                      <Text style={styles.secondaryStatLabel}>{t('completedOrders')}</Text>
+                    </View>
+                    <Text style={styles.secondaryStatValue}>{statistics.completed_orders}</Text>
+                  </View>
+                )}
+
+                {statistics.success_rate > 0 && (
+                  <View style={styles.secondaryStatRow}>
+                    <View style={styles.secondaryStatLeft}>
+                      <Ionicons name="trophy-outline" size={16} color={theme.iconColors.rating} />
+                      <Text style={styles.secondaryStatLabel}>{t('successRate')}</Text>
+                    </View>
+                    <Text style={styles.secondaryStatValue}>{statistics.success_rate}%</Text>
+                  </View>
+                )}
+              </View>
+            </>
+          )}
+        </View>
 
         {/* Activity Status */}
         {statistics.last_activity_at && (
@@ -603,6 +787,8 @@ export default function ProfileScreen() {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>{t('settings')}</Text>
 
+          {/* Language & Region */}
+          <Text style={styles.subSectionTitle}>{t('languageRegion')}</Text>
           <TouchableOpacity style={styles.settingRow} onPress={handleLanguageChange}>
             <View style={styles.settingLeft}>
               <Ionicons name="language-outline" size={20} color={theme.iconColors.gray.primary} />
@@ -615,6 +801,94 @@ export default function ProfileScreen() {
               <Ionicons name="chevron-forward" size={16} color={theme.iconColors.gray.primary} />
             </View>
           </TouchableOpacity>
+
+          {/* Privacy Settings */}
+          <Text style={styles.subSectionTitle}>{t('privacySettings')}</Text>
+          <View style={styles.settingRow}>
+            <View style={styles.settingLeft}>
+              <Ionicons name="eye-outline" size={20} color={theme.iconColors.gray.primary} />
+              <View style={styles.settingInfo}>
+                <Text style={styles.settingText}>{t('showPhonePublicly')}</Text>
+                <Text style={styles.settingDescription}>Allow others to see your phone number</Text>
+              </View>
+            </View>
+            <Switch
+              value={profile?.show_phone_publicly ?? false}
+              onValueChange={value => updatePrivacySetting('show_phone_publicly', value)}
+              trackColor={{ false: '#E5E7EB', true: '#FF7043' }}
+              thumbColor={profile?.show_phone_publicly ? 'white' : '#F3F4F6'}
+            />
+          </View>
+
+          <View style={styles.settingRow}>
+            <View style={styles.settingLeft}>
+              <Ionicons name="mail-outline" size={20} color={theme.iconColors.gray.primary} />
+              <View style={styles.settingInfo}>
+                <Text style={styles.settingText}>{t('showEmailPublicly')}</Text>
+                <Text style={styles.settingDescription}>Allow others to see your email</Text>
+              </View>
+            </View>
+            <Switch
+              value={profile?.show_email_publicly ?? false}
+              onValueChange={value => updatePrivacySetting('show_email_publicly', value)}
+              trackColor={{ false: '#E5E7EB', true: '#FF7043' }}
+              thumbColor={profile?.show_email_publicly ? 'white' : '#F3F4F6'}
+            />
+          </View>
+
+          {/* Help & Support */}
+          <Text style={styles.subSectionTitle}>{t('helpSupport')}</Text>
+          <TouchableOpacity style={styles.settingRow} onPress={() => {}}>
+            <View style={styles.settingLeft}>
+              <Ionicons
+                name="information-circle-outline"
+                size={20}
+                color={theme.iconColors.gray.primary}
+              />
+              <Text style={styles.settingText}>{t('about')}</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={16} color={theme.iconColors.gray.primary} />
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.settingRow} onPress={() => {}}>
+            <View style={styles.settingLeft}>
+              <Ionicons
+                name="document-text-outline"
+                size={20}
+                color={theme.iconColors.gray.primary}
+              />
+              <Text style={styles.settingText}>{t('termsOfService')}</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={16} color={theme.iconColors.gray.primary} />
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.settingRow} onPress={() => {}}>
+            <View style={styles.settingLeft}>
+              <Ionicons
+                name="shield-checkmark-outline"
+                size={20}
+                color={theme.iconColors.gray.primary}
+              />
+              <Text style={styles.settingText}>{t('privacyPolicy')}</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={16} color={theme.iconColors.gray.primary} />
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.settingRow} onPress={() => {}}>
+            <View style={styles.settingLeft}>
+              <Ionicons
+                name="chatbubbles-outline"
+                size={20}
+                color={theme.iconColors.gray.primary}
+              />
+              <Text style={styles.settingText}>{t('contactSupport')}</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={16} color={theme.iconColors.gray.primary} />
+          </TouchableOpacity>
+
+          <View style={styles.versionRow}>
+            <Text style={styles.versionText}>{t('version')} 1.0.0</Text>
+          </View>
         </View>
 
         {/* Business Info */}
@@ -817,11 +1091,13 @@ const styles = StyleSheet.create({
   },
   statCard: {
     flex: 1,
+    minWidth: '45%',
     backgroundColor: colors.white,
     borderRadius: borderRadius.md,
     padding: spacing.md,
     alignItems: 'center',
-    ...shadows.sm,
+    marginHorizontal: spacing.xs,
+    marginBottom: spacing.sm,
   },
   statNumber: {
     fontSize: fontSize.lg,
@@ -861,6 +1137,86 @@ const styles = StyleSheet.create({
     color: colors.text.primary,
     marginTop: 2,
   },
+  statisticsSection: {
+    backgroundColor: colors.white,
+    marginHorizontal: spacing.xl,
+    marginBottom: spacing.xl,
+    borderRadius: borderRadius.lg,
+    padding: spacing.xl,
+    ...shadows.sm,
+  },
+  statisticsHeader: {
+    marginBottom: spacing.lg,
+  },
+  statisticsTitle: {
+    fontSize: fontSize.xl,
+    fontWeight: fontWeight.bold,
+    color: colors.text.primary,
+    marginBottom: 4,
+  },
+  memberSince: {
+    fontSize: fontSize.sm,
+    color: colors.text.tertiary,
+  },
+  statsLoadingContainer: {
+    paddingVertical: spacing.xl,
+    alignItems: 'center',
+  },
+  noStatsContainer: {
+    alignItems: 'center',
+    paddingVertical: spacing.xl,
+  },
+  noStatsTitle: {
+    fontSize: fontSize.lg,
+    fontWeight: fontWeight.semibold,
+    color: colors.text.secondary,
+    marginTop: spacing.md,
+    marginBottom: spacing.xs,
+  },
+  noStatsDescription: {
+    fontSize: fontSize.sm,
+    color: colors.text.tertiary,
+    textAlign: 'center',
+  },
+  statsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    marginHorizontal: -spacing.xs,
+    marginBottom: spacing.md,
+  },
+  statIconContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: spacing.xs,
+  },
+  secondaryStatsContainer: {
+    borderTopWidth: 1,
+    borderTopColor: '#E5E7EB',
+    paddingTop: spacing.md,
+  },
+  secondaryStatRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: spacing.sm,
+  },
+  secondaryStatLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+  },
+  secondaryStatLabel: {
+    fontSize: fontSize.sm,
+    color: colors.text.secondary,
+  },
+  secondaryStatValue: {
+    fontSize: fontSize.md,
+    fontWeight: fontWeight.semibold,
+    color: colors.text.primary,
+  },
   section: {
     backgroundColor: colors.white,
     marginHorizontal: spacing.xl,
@@ -874,6 +1230,26 @@ const styles = StyleSheet.create({
     fontWeight: fontWeight.bold,
     color: colors.text.primary,
     marginBottom: spacing.lg,
+  },
+  subSectionTitle: {
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.semibold,
+    color: colors.text.tertiary,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginTop: spacing.lg,
+    marginBottom: spacing.sm,
+  },
+  versionRow: {
+    paddingTop: spacing.lg,
+    marginTop: spacing.lg,
+    borderTopWidth: 1,
+    borderTopColor: '#E5E7EB',
+    alignItems: 'center',
+  },
+  versionText: {
+    fontSize: fontSize.sm,
+    color: colors.text.tertiary,
   },
   infoRow: {
     flexDirection: 'row',
