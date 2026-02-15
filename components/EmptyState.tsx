@@ -4,15 +4,17 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { colors, fontSize, fontWeight, spacing, borderRadius } from '../lib/sharedStyles';
 
+type IconName = React.ComponentProps<typeof Ionicons>['name'];
+
 interface EmptyStateAction {
   label: string;
-  icon: keyof typeof Ionicons.glyphMap;
+  icon: IconName;
   onPress: () => void;
   variant?: 'primary' | 'secondary';
 }
 
 interface EmptyStateProps {
-  icon: keyof typeof Ionicons.glyphMap;
+  icon: IconName;
   title: string;
   description: string;
   actions?: EmptyStateAction[];
