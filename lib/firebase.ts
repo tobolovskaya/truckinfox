@@ -1,10 +1,11 @@
 import { initializeApp, getApps, FirebaseApp } from 'firebase/app';
-import { Auth, initializeAuth, getAuth, getReactNativePersistence } from 'firebase/auth';
+import { Auth, initializeAuth, getAuth } from 'firebase/auth';
 import { Firestore, getFirestore } from 'firebase/firestore';
 import { FirebaseStorage, getStorage } from 'firebase/storage';
-import { Analytics, getAnalytics } from 'firebase/analytics';
+import { Analytics, getAnalytics, isSupported as isAnalyticsSupported } from 'firebase/analytics';
 import { FirebasePerformance, getPerformance } from 'firebase/performance';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Platform } from 'react-native';
 
 // Firebase configuration from environment variables
 const firebaseConfig = {
@@ -45,25 +46,17 @@ let storage: FirebaseStorage;
 let analytics: Analytics | null = null;
 let performance: FirebasePerformance | null = null;
 
-// Initialize Firebase Auth with AsyncStorage persistence
-// Note: initializeAuth must be called before getAuth for persistence to work
+// Initialize Firebase Auth
+// React Native uses AsyncStorage persistence by default
 try {
-  auth = initializeAuth(app, {
-    persistence: getReactNativePersistence(AsyncStorage),
-  });
+  // For React Native, just use getAuth which handles persistence automatically
+  auth = getAuth(app);
   console.log('Firebase Auth initialized successfully with AsyncStorage persistence');
 } catch (error: unknown) {
-  // If auth is already initialized, get the existing instance
-  const firebaseError = error as { code?: string };
-  if (firebaseError?.code === 'auth/already-initialized') {
-    console.log('Firebase Auth: Using existing instance (caught error)');
-    auth = getAuth(app);
-  } else {
-    console.error('Firebase Auth initialization failed:', error);
-    // Don't throw - create a fallback to allow app to run
-    auth = getAuth(app);
-    console.warn('⚠️ Using fallback Firebase Auth instance');
-  }
+  console.error('Firebase Auth initialization failed:', error);
+  // Don't throw - create a fallback to allow app to run
+  auth = getAuth(app);
+  console.warn('⚠️ Using fallback Firebase Auth instance');
 }
 
 try {
@@ -86,21 +79,36 @@ try {
   console.warn('⚠️ Using fallback Storage instance');
 }
 
-// Initialize Analytics (web only)
-try {
-  analytics = getAnalytics(app);
-  console.log('Firebase Analytics initialized successfully');
-} catch (error) {
-  console.warn('Firebase Analytics not available (native platform):', error);
+// Initialize Analytics (web only) - Native platforms not supported
+if (Platform.OS === 'web') {
+  isAnalyticsSupported()
+    .then((supported) => {
+      if (supported) {
+        analytics = getAnalytics(app);
+        console.log('Firebase Analytics initialized successfully');
+      } else {
+        console.log('Firebase Analytics not supported in this web environment');
+      }
+    })
+    .catch((error) => {
+      console.warn('Firebase Analytics check failed:', error);
+    });
+} else {
+  console.log('Firebase Analytics: Skipping initialization (React Native platform)');
   analytics = null;
 }
 
-// Initialize Performance Monitoring (web only)
-try {
-  performance = getPerformance(app);
-  console.log('Firebase Performance Monitoring initialized successfully');
-} catch (error) {
-  console.warn('Firebase Performance Monitoring not available (native platform):', error);
+// Initialize Performance Monitoring (web only) - Native platforms not supported
+if (Platform.OS === 'web') {
+  try {
+    performance = getPerformance(app);
+    console.log('Firebase Performance Monitoring initialized successfully');
+  } catch (error) {
+    console.warn('Firebase Performance Monitoring not available:', error);
+    performance = null;
+  }
+} else {
+  console.log('Firebase Performance Monitoring: Skipping initialization (React Native platform)');
   performance = null;
 }
 

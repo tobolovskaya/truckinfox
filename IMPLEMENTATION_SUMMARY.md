@@ -341,9 +341,18 @@ Added comprehensive Firebase Performance Monitoring and Analytics tracking:
 
 - Created `utils/performance.ts` with trace management utilities
 - Enhanced `utils/analytics.ts` with new event types
-- Updated `lib/firebase.ts` to initialize Analytics and Performance Monitoring
+- Updated `lib/firebase.ts` to initialize Analytics and Performance Monitoring with platform-specific checks
+- Added proper React Native platform detection to skip web-only Firebase services
+- Used `isSupported()` check for Analytics on web platform
 - Integrated monitoring into FilterSheet, LazyImage, and chat components
-- Automatic fallback to console logging for native platforms
+- Automatic fallback to console logging for native platforms (iOS/Android)
+
+**Platform Support:**
+
+- **Web**: Full Firebase Analytics and Performance Monitoring with IndexedDB and cookies
+- **iOS/Android**: Falls back to console logging (Firebase Analytics/Performance are web-only)
+- Automatic platform detection using React Native's `Platform.OS`
+- No errors or warnings on native platforms
 
 **Benefits:**
 
