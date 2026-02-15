@@ -10,13 +10,14 @@ import {
 } from 'react-native';
 import { KeyboardAwareFlatList } from 'react-native-keyboard-aware-scroll-view';
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as ImagePicker from 'expo-image-picker';
 import { manipulateAsync, SaveFormat } from 'expo-image-manipulator';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTranslation } from 'react-i18next';
 import { useToast } from '../../contexts/ToastContext';
+import { useNotifications } from '../../hooks/useNotifications';
 import { db, storage } from '../../lib/firebase';
 import { trackCargoRequestCreated } from '../../utils/analytics';
 import { sanitizeInput, sanitizeNumber } from '../../utils/sanitization';
@@ -70,6 +71,8 @@ export default function CreateRequestScreen() {
   const { t } = useTranslation();
   const toast = useToast();
   const router = useRouter();
+  const insets = useSafeAreaInsets();
+  const { unreadCount } = useNotifications();
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -593,6 +596,24 @@ export default function CreateRequestScreen() {
 
   return (
     <View style={styles.container}>
+      {/* Header */}
+      <View style={[styles.header, { paddingTop: insets.top + 16 }]}>
+        <Text style={styles.headerTitle}>{t('createCargoRequest') || 'Opprett lastforespørsel'}</Text>
+        <TouchableOpacity
+          style={styles.notificationButton}
+          onPress={() => router.push('/(tabs)/notifications')}
+        >
+          <Ionicons name="notifications-outline" size={24} color={colors.primary} />
+          {unreadCount > 0 && (
+            <View style={styles.notificationBadge}>
+              <Text style={styles.notificationBadgeText}>
+                {unreadCount > 99 ? '99+' : unreadCount}
+              </Text>
+            </View>
+          )}
+        </TouchableOpacity>
+      </View>
+
       <KeyboardAwareFlatList
         contentContainerStyle={styles.scrollContent}
         keyboardShouldPersistTaps="handled"
@@ -601,26 +622,6 @@ export default function CreateRequestScreen() {
         enableResetScrollToCoords={false}
         data={[{ key: 'form' }]}
         keyExtractor={item => item.key}
-        ListHeaderComponent={
-          <View style={styles.screenHeader}>
-            <LinearGradient
-              colors={['#FF7043', '#FF9A76']}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={styles.headerGradient}
-            >
-              <View style={styles.headerContent}>
-                <Ionicons name="cube" size={48} color="white" />
-                <Text style={styles.screenTitle} accessibilityRole="header">
-                  {t('createCargoRequest')}
-                </Text>
-                <Text style={styles.screenSubtitle}>
-                  {t('fillFormBelow')}
-                </Text>
-              </View>
-            </LinearGradient>
-          </View>
-        }
         renderItem={() => (
           <View>
             {/* Title */}
@@ -1100,33 +1101,43 @@ export default function CreateRequestScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#F5F5F5',
   },
-  screenHeader: {
-    marginBottom: spacing.lg,
-  },
-  headerGradient: {
-    paddingHorizontal: spacing.xl,
-    paddingVertical: spacing.xxl,
-    borderBottomLeftRadius: borderRadius.xl,
-    borderBottomRightRadius: borderRadius.xl,
-  },
-  headerContent: {
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    gap: spacing.md,
+    paddingHorizontal: spacing.xl,
+    paddingBottom: spacing.lg,
+    backgroundColor: colors.white,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border.light,
   },
-  screenTitle: {
-    fontSize: fontSize.xxxl,
+  headerTitle: {
+    fontSize: fontSize.xl,
     fontWeight: fontWeight.bold,
-    color: 'white',
-    textAlign: 'center',
+    color: colors.text.primary,
   },
-  screenSubtitle: {
-    fontSize: fontSize.md,
-    color: 'rgba(255, 255, 255, 0.9)',
-    textAlign: 'center',
-    lineHeight: 22,
-    maxWidth: '80%',
+  notificationButton: {
+    position: 'relative',
+    padding: spacing.sm,
+  },
+  notificationBadge: {
+    position: 'absolute',
+    top: 4,
+    right: 4,
+    backgroundColor: colors.error,
+    borderRadius: 10,
+    minWidth: 20,
+    height: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 5,
+  },
+  notificationBadgeText: {
+    color: colors.white,
+    fontSize: 11,
+    fontWeight: fontWeight.bold,
   },
   scrollContent: {
     padding: spacing.lg,

@@ -365,11 +365,19 @@ Added comprehensive Firebase Performance Monitoring and Analytics tracking:
 
 All 5 core UI/UX features verified and complete:
 
-1. **Photo Thumbnails**: LazyImage component with 100×100 thumbnails, progressive loading, and fallback icons
-2. **Notification Badge**: Header bell icon with unread count (99+ for >99 notifications)
-3. **Gradient Header**: LinearGradient on create screen (#FF7043 → #FF9A76)
+1. **Photo Thumbnails**: LazyImage component in RequestCard showing cargo images (request.images[0]) with progressive loading and fallback category icons
+2. **Notification Badge**: Header bell icon with unread count (99+ for >99 notifications) on all screens
+3. **Simple Header**: Clean header design on create screen (removed gradient, added notification bell) matching Messages/Orders style
 4. **FilterSheet**: Advanced filtering with sort options, 8 cargo types, and price range slider
 5. **Typing Indicators**: Real-time typing status with 3 animated bouncing dots
+
+**Visual Hierarchy Improvements:**
+
+- RequestCard displays actual cargo photos when available (via request.images array)
+- Fallback to category icons only when no photos uploaded
+- Consistent header design across all tabs (Home, Messages, Create, Orders, Profile)
+- Reduced empty space on create screen by removing large gradient header
+- Better content density with streamlined header navigation
 
 ### Firebase Configuration ✅
 
