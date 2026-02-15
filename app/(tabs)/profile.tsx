@@ -204,33 +204,41 @@ export default function ProfileScreen() {
       const activeBidsSnap = await getDocs(activeBidsQuery);
       const activeBidsCount = activeBidsSnap.size;
 
-      // Fetch completed orders
-      const completedOrdersQuery = query(
+      // Fetch completed orders as customer
+      const completedAsCustomerQuery = query(
         collection(db, 'orders'),
+        where('customer_id', '==', user.uid),
         where('status', '==', 'delivered')
       );
-      const completedOrdersSnap = await getDocs(completedOrdersQuery);
-      let userCompletedOrders = 0;
-      completedOrdersSnap.forEach(doc => {
-        const data = doc.data();
-        if (data.customer_id === user.uid || data.carrier_id === user.uid) {
-          userCompletedOrders++;
-        }
-      });
+      const completedAsCustomerSnap = await getDocs(completedAsCustomerQuery);
 
-      // Fetch cancelled orders
-      const cancelledOrdersQuery = query(
+      // Fetch completed orders as carrier
+      const completedAsCarrierQuery = query(
         collection(db, 'orders'),
+        where('carrier_id', '==', user.uid),
+        where('status', '==', 'delivered')
+      );
+      const completedAsCarrierSnap = await getDocs(completedAsCarrierQuery);
+
+      const userCompletedOrders = completedAsCustomerSnap.size + completedAsCarrierSnap.size;
+
+      // Fetch cancelled orders as customer
+      const cancelledAsCustomerQuery = query(
+        collection(db, 'orders'),
+        where('customer_id', '==', user.uid),
         where('status', 'in', ['cancelled', 'failed'])
       );
-      const cancelledOrdersSnap = await getDocs(cancelledOrdersQuery);
-      let userCancelledOrders = 0;
-      cancelledOrdersSnap.forEach(doc => {
-        const data = doc.data();
-        if (data.customer_id === user.uid || data.carrier_id === user.uid) {
-          userCancelledOrders++;
-        }
-      });
+      const cancelledAsCustomerSnap = await getDocs(cancelledAsCustomerQuery);
+
+      // Fetch cancelled orders as carrier
+      const cancelledAsCarrierQuery = query(
+        collection(db, 'orders'),
+        where('carrier_id', '==', user.uid),
+        where('status', 'in', ['cancelled', 'failed'])
+      );
+      const cancelledAsCarrierSnap = await getDocs(cancelledAsCarrierQuery);
+
+      const userCancelledOrders = cancelledAsCustomerSnap.size + cancelledAsCarrierSnap.size;
 
       // Calculate success rate
       const totalOrders = userCompletedOrders + userCancelledOrders;

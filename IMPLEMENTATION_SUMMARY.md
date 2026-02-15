@@ -857,6 +857,71 @@ Optimized bottom navigation for better UX:
 - Consistent notification access across all screens
 - Better visual hierarchy and information architecture
 
+### Screen Standardization & Unified Design ✅
+
+Implemented comprehensive screen standardization to ensure visual consistency across the entire app:
+
+**New Reusable Components:**
+
+1. **ScreenHeader Component** (`components/ScreenHeader.tsx`):
+   - Standardized header for all screens with 44pt touch targets
+   - Built-in safe area handling with useSafeAreaInsets()
+   - Support for back button, title, and up to 2 right actions
+   - Badge support for notification counts (99+ display)
+   - Haptic feedback on all interactions
+   - Optional custom center content for specialized headers
+   - Consistent typography and spacing from design system
+
+2. **ScreenSection Component** (`components/ScreenSection.tsx`):
+   - Standardized content sections with 3 variants:
+     - Default: With padding for forms and content
+     - List: No padding for FlatList/ScrollView
+     - FullBleed: No padding/margin for full-width elements
+   - Optional title and subtitle with consistent styling
+   - Right action element support (e.g., "See All" buttons)
+   - Configurable elevation and shadows
+   - Unified borderRadius and spacing
+
+**Screens Standardized:**
+
+- ✅ **app/profile/payments.tsx**: Payment history with ScreenHeader and ScreenSection for payment cards
+- ✅ **app/profile/edit.tsx**: Edit profile with save button as rightAction
+- ✅ **app/profile/security.tsx**: Security settings with 4 standardized sections
+- ✅ **app/payment/[orderId].tsx**: Payment screen with 3 sections (Vipps, breakdown, escrow)
+- ✅ **app/review/[orderId].tsx**: Review submission with 5 sections
+
+**Design System Compliance:**
+
+- All components use shared design tokens from `lib/sharedStyles.ts`
+- Spacing: xs (4), sm (8), md (12), lg (16), xl (20), xxl (24), xxxl (32)
+- Touch targets: TOUCH_TARGET.MIN = 44pt (Apple HIG compliant)
+- Border radius: sm (8), md (10), lg (12), xl (20), full (999)
+- Typography: fontSize and fontWeight constants throughout
+- Colors: Consistent use of colors.primary (#FF7043), text colors, border colors
+
+**Code Quality Improvements:**
+
+- Removed 200+ lines of duplicate styling code
+- Single source of truth for headers and sections
+- Easy to update all screens by modifying components
+- Clear component API with TypeScript interfaces
+- 0 compilation errors, full type safety
+
+**Benefits:**
+
+- Unified visual language across all screens
+- Consistent 44pt touch targets for accessibility
+- Easier maintenance with reusable components
+- Better code organization and readability
+- Faster development of new screens
+- Professional, polished user experience
+
+**Documentation:**
+
+- Complete implementation documented in `SCREEN_STANDARDIZATION.md`
+- Migration patterns and usage examples
+- Component props and variants explained
+
 ## Support & Maintenance
 
 ### Documentation
