@@ -439,6 +439,91 @@ All 5 core UI/UX features verified and complete:
 - Disabled i18next debug logging
 - Fixed Analytics/Performance initialization for React Native platforms
 
+### Payment History & Transaction Management ✅
+
+Implemented comprehensive payment history with export functionality:
+
+**Payment History Screen:**
+
+- **Complete Transaction Tracking**: Displays all payments from `escrow_payments` collection
+- **Dual Role Support**: Shows payments where user is customer OR carrier
+- **Rich Payment Details**: Order title, routes, amount, status, timestamps, Vipps order ID
+- **Smart Data Fetching**: Automatically loads associated order and cargo request details
+- **Status Filtering**: Filter by all, completed, initiated, released, refunded, failed
+- **Status Indicators**: Color-coded badges and icons (green=completed/released, blue=initiated, red=failed, yellow=refunded)
+
+**Export Functionality:**
+
+- **Export to PDF**: Generate text report with all payment details (uses Share API)
+- **Email Report**: Modal dialog to enter email address and send payment summary
+- **Report Format**: Includes payment ID, date, status, amount, order details, routes
+- **Comprehensive Data**: All filtered payments included in export with formatted dates
+
+**User Experience:**
+
+- **Empty State**: Clear message when no payments exist yet
+- **Horizontal Filter Pills**: Quick status filtering with active state highlighting
+- **Payment Cards**: Clean card design with expandable order details
+- **View Order**: Direct navigation to original payment/order screen
+- **Export Buttons**: Prominent PDF and Email buttons when payments exist
+
+**Implementation Details:**
+
+- Created `app/profile/payments.tsx` with full payment history functionality
+- Added "Payment History" button to profile screen (blue wallet icon)
+- Added 21 new translation keys (en.json & no.json): paymentHistory, noPaymentsYet, exportPDF, exportEmail, paymentId, transactionDate, paymentStatus, paymentMethod, escrowAmount, etc.
+- Firebase queries: Combined customer and carrier payment queries with proper ordering
+- Styling: Consistent with app design system (colors, spacing, shadows, borderRadius)
+
+**Files Modified:**
+
+- `app/profile/payments.tsx`: Full payment history screen with filtering and export
+- `app/(tabs)/profile.tsx`: Added payment history navigation button
+- `locales/en.json` & `locales/no.json`: Added 21 payment history translations
+
+**Benefits:**
+
+- Complete transparency of all transactions
+- Easy access to payment records for accounting
+- Export for tax/bookkeeping purposes
+- Better trust and accountability in the platform
+- Professional financial record keeping
+
+### Messaging & Communication Enhancements ✅
+
+Implemented WhatsApp-style read receipts for real-time messaging:
+
+**Read Receipts System:**
+
+- **Three-State Indicators**: Single grey checkmark (sent) → Double grey checkmarks (delivered) → Double white checkmarks (read)
+- **Automatic Delivery Tracking**: Messages marked as delivered when sent with `delivered_at: serverTimestamp()`
+- **Auto-Read Marking**: Messages automatically marked as read when user views chat screen
+- **Visual Feedback**: Read receipt icons displayed next to message timestamp in sent messages
+- **Receiver-Only Updates**: Only receivers can update read_at and delivered_at fields
+
+**Implementation Details:**
+
+- Updated Message interface with `delivered_at` and `read_at` timestamp fields
+- Created `markMessagesAsRead()` function: Queries unread messages and batch updates with read_at
+- Created `getReadReceiptIcon()` function: Returns appropriate Ionicons based on message status
+- Enhanced Firestore rules: Allows receivers to update read_at/delivered_at fields only
+- UI Integration: Message bubble rendering shows read receipt icon in a horizontal row with timestamp
+- Performance: Efficient batch updates using Promise.all
+
+**Files Modified:**
+
+- `app/chat/[requestId]/[userId].tsx`: Full read receipts implementation
+- `firestore.rules`: Added permission for receivers to update read/delivered timestamps
+- Deployed with `firebase deploy --only firestore:rules`
+
+**Benefits:**
+
+- Clear message delivery confirmation
+- Professional messaging experience
+- Reduced uncertainty about message status
+- Better communication flow
+- Industry-standard UX (WhatsApp-style)
+
 ### Navigation & Information Architecture ✅
 
 Optimized bottom navigation for better UX:

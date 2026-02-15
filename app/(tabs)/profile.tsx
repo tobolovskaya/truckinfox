@@ -686,6 +686,14 @@ export default function ProfileScreen() {
           </TouchableOpacity>
 
           <TouchableOpacity
+            style={styles.paymentHistoryButton}
+            onPress={() => router.push('/profile/payments' as any)}
+          >
+            <Ionicons name="wallet-outline" size={20} color={theme.iconColors.info} />
+            <Text style={styles.paymentHistoryButtonText}>{t('paymentHistory')}</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
             style={styles.securityButton}
             onPress={() => router.push('/profile/security' as any)}
           >
@@ -980,6 +988,23 @@ const styles = StyleSheet.create({
     fontSize: fontSize.lg,
     fontWeight: fontWeight.semibold,
     color: colors.primary,
+    marginLeft: spacing.sm,
+  },
+  paymentHistoryButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#EFF6FF',
+    borderWidth: 1,
+    borderColor: theme.iconColors.info,
+    borderRadius: borderRadius.md,
+    paddingVertical: 14,
+    marginBottom: spacing.md,
+  },
+  paymentHistoryButtonText: {
+    fontSize: fontSize.lg,
+    fontWeight: fontWeight.semibold,
+    color: theme.iconColors.info,
     marginLeft: spacing.sm,
   },
   securityButton: {
