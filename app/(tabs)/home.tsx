@@ -7,12 +7,12 @@ import {
   TouchableOpacity,
   RefreshControl,
   Alert,
-  FlatList,
   Image,
   TextInput,
   ActivityIndicator,
   Modal,
 } from 'react-native';
+import { FlashList } from '@shopify/flash-list';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTranslation } from 'react-i18next';
@@ -537,7 +537,7 @@ export default function HomeScreen() {
             <EmptyStateAnimation activeTab={activeTab} />
           </ScrollView>
         ) : (
-          <FlatList
+          <FlashList
             data={requests}
             renderItem={({ item }) => (
               <SwipeableRequestCard
@@ -551,15 +551,11 @@ export default function HomeScreen() {
             )}
             keyExtractor={item => item.id}
             numColumns={2}
-            columnWrapperStyle={styles.gridRow}
-            contentContainerStyle={[
-              styles.requestsList,
-              {
-                paddingBottom: 120, // Space for FAB button
-                paddingTop: 16,
-                paddingHorizontal: spacing.sm,
-              },
-            ]}
+            contentContainerStyle={{
+              paddingBottom: 120, // Space for FAB button
+              paddingTop: 16,
+              paddingHorizontal: spacing.sm,
+            }}
             refreshControl={
               <RefreshControl
                 refreshing={refreshing}
@@ -589,13 +585,6 @@ export default function HomeScreen() {
                 </View>
               ) : null
             }
-            // Performance optimizations
-            removeClippedSubviews={true} // Enable native optimization
-            maxToRenderPerBatch={10} // Reduced from 20 for better performance
-            updateCellsBatchingPeriod={50} // Batch updates every 50ms
-            initialNumToRender={10} // Initial render (5 rows for 2 columns)
-            windowSize={5} // Reduced window size for better memory usage
-            keyboardShouldPersistTaps="handled"
           />
         )}
       </View>

@@ -587,8 +587,11 @@ export default function CreateRequestScreen() {
           <View>
         {/* Title */}
         <View style={styles.fieldContainer}>
-          <Text style={styles.fieldLabel}>Tittel</Text>
+          <Text style={styles.fieldLabel} accessibilityRole="header">Tittel</Text>
           <TextInput
+            testID="cargo-title-input"
+            accessibilityLabel="Tittel på lastforespørsel"
+            accessibilityHint="Skriv inn en beskrivende tittel for lasten din"
             style={styles.textInput}
             value={formData.title}
             onChangeText={value => {
@@ -597,13 +600,18 @@ export default function CreateRequestScreen() {
             }}
             onBlur={() => handleBlur('title')}
             placeholder=""
+            autoComplete="off"
+            returnKeyType="next"
           />
         </View>
 
         {/* Description */}
         <View style={styles.fieldContainer}>
-          <Text style={styles.fieldLabel}>Beskrivelse</Text>
+          <Text style={styles.fieldLabel} accessibilityRole="header">Beskrivelse</Text>
           <TextInput
+            testID="cargo-description-input"
+            accessibilityLabel="Beskrivelse av last"
+            accessibilityHint="Skriv inn en detaljert beskrivelse av lasten"
             style={[styles.textInput, styles.textArea]}
             value={formData.description}
             onChangeText={value => {
@@ -615,6 +623,8 @@ export default function CreateRequestScreen() {
             numberOfLines={4}
             textAlignVertical="top"
             placeholder=""
+            autoComplete="off"
+            returnKeyType="next"
           />
         </View>
 
@@ -945,6 +955,11 @@ export default function CreateRequestScreen() {
             {CARGO_TYPES.map(type => (
               <TouchableOpacity
                 key={type.id}
+                testID={`cargo-type-${type.id}`}
+                accessibilityRole="menuitem"
+                accessibilityLabel={`Velg ${type.label} som lasttype`}
+                accessibilityHint="Dobbelttrykk for å velge denne lasttypen"
+                accessibilityState={{ selected: formData.cargo_type === type.id }}
                 style={[
                   styles.menuItem,
                   formData.cargo_type === type.id && styles.menuItemSelected
@@ -955,9 +970,6 @@ export default function CreateRequestScreen() {
                   setShowCargoTypeMenu(false);
                   triggerHapticFeedback.light();
                 }}
-                accessibilityRole="menuitem"
-                accessibilityLabel={type.label}
-                accessibilityState={{ selected: formData.cargo_type === type.id }}
               >
                 <Text style={[
                   styles.menuItemText,
