@@ -1093,7 +1093,7 @@ const styles = StyleSheet.create({
   },
   screenHeader: {
     paddingHorizontal: spacing.lg,
-    paddingTop: spacing.xxl,
+    paddingTop: spacing.xl,
     paddingBottom: spacing.lg,
     backgroundColor: colors.white,
     borderBottomWidth: 1,
@@ -1114,7 +1114,7 @@ const styles = StyleSheet.create({
     padding: spacing.lg,
   },
   fieldContainer: {
-    marginBottom: 24,
+    marginBottom: spacing.xxl,
   },
   fieldLabel: {
     fontSize: 16,
