@@ -21,13 +21,7 @@ import { useNotifications } from '../../hooks/useNotifications';
 import { db, storage } from '../../lib/firebase';
 import { trackCargoRequestCreated } from '../../utils/analytics';
 import { sanitizeInput, sanitizeNumber } from '../../utils/sanitization';
-import {
-  colors,
-  spacing,
-  fontSize,
-  fontWeight,
-  borderRadius,
-} from '../../lib/sharedStyles';
+import { colors, spacing, fontSize, fontWeight, borderRadius } from '../../lib/sharedStyles';
 import { collection, addDoc, updateDoc, doc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { useRouter } from 'expo-router';
@@ -598,7 +592,9 @@ export default function CreateRequestScreen() {
     <View style={styles.container}>
       {/* Header */}
       <View style={[styles.header, { paddingTop: insets.top + 16 }]}>
-        <Text style={styles.headerTitle}>{t('createCargoRequest') || 'Opprett lastforespørsel'}</Text>
+        <Text style={styles.headerTitle}>
+          {t('createCargoRequest') || 'Opprett lastforespørsel'}
+        </Text>
         <TouchableOpacity
           style={styles.notificationButton}
           onPress={() => router.push('/(tabs)/notifications')}

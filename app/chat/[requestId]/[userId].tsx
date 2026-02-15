@@ -169,21 +169,21 @@ export default function ChatScreen() {
     if (!requestId || !userId || !user?.uid) return;
 
     const typingDocRef = doc(db, 'typing_indicators', `${requestId}_${userId}`);
-    
-    const unsubscribe = onSnapshot(typingDocRef, (doc) => {
+
+    const unsubscribe = onSnapshot(typingDocRef, doc => {
       if (doc.exists()) {
         const data = doc.data();
         const lastTyping = data.timestamp?.toMillis();
         const now = Date.now();
-        
+
         // Consider typing if updated within last 3 seconds
-        const isTyping = data.typing && lastTyping && (now - lastTyping < 3000);
-        
+        const isTyping = data.typing && lastTyping && now - lastTyping < 3000;
+
         if (isTyping && !otherUserTyping) {
           // Start performance trace
           typingTraceRef.current = startTrace(PerformanceTraces.TYPING_INDICATOR_LATENCY);
           lastTypingStartRef.current = now;
-          
+
           // Track analytics
           trackTypingDetected({
             chat_id: requestId,
@@ -192,7 +192,7 @@ export default function ChatScreen() {
           // Stop performance trace
           typingTraceRef.current.stop();
           typingTraceRef.current = null;
-          
+
           // Track response time
           const responseTime = Date.now() - lastTypingStartRef.current;
           if (responseTime > 0) {
@@ -202,7 +202,7 @@ export default function ChatScreen() {
             });
           }
         }
-        
+
         setOtherUserTyping(isTyping);
       } else {
         setOtherUserTyping(false);
@@ -327,7 +327,7 @@ export default function ChatScreen() {
   // Update typing status
   const handleTypingChange = async (text: string) => {
     setNewMessage(text);
-    
+
     if (!user?.uid || !requestId || !userId) return;
 
     // Clear previous timeout
@@ -338,18 +338,26 @@ export default function ChatScreen() {
     // Update typing indicator
     if (text.length > 0) {
       const typingDocRef = doc(db, 'typing_indicators', `${requestId}_${user.uid}`);
-      await setDoc(typingDocRef, {
-        userId: user.uid,
-        typing: true,
-        timestamp: serverTimestamp(),
-      }, { merge: true });
+      await setDoc(
+        typingDocRef,
+        {
+          userId: user.uid,
+          typing: true,
+          timestamp: serverTimestamp(),
+        },
+        { merge: true }
+      );
 
       // Clear typing after 3 seconds of inactivity
       typingTimeoutRef.current = setTimeout(async () => {
-        await setDoc(typingDocRef, {
-          typing: false,
-          timestamp: serverTimestamp(),
-        }, { merge: true });
+        await setDoc(
+          typingDocRef,
+          {
+            typing: false,
+            timestamp: serverTimestamp(),
+          },
+          { merge: true }
+        );
       }, 3000);
     }
   };
@@ -524,24 +532,9 @@ export default function ChatScreen() {
     return (
       <View style={styles.typingIndicatorContainer}>
         <View style={styles.typingIndicator}>
-          <Animated.View
-            style={[
-              styles.typingDot,
-              { transform: [{ translateY: dot1 }] },
-            ]}
-          />
-          <Animated.View
-            style={[
-              styles.typingDot,
-              { transform: [{ translateY: dot2 }] },
-            ]}
-          />
-          <Animated.View
-            style={[
-              styles.typingDot,
-              { transform: [{ translateY: dot3 }] },
-            ]}
-          />
+          <Animated.View style={[styles.typingDot, { transform: [{ translateY: dot1 }] }]} />
+          <Animated.View style={[styles.typingDot, { transform: [{ translateY: dot2 }] }]} />
+          <Animated.View style={[styles.typingDot, { transform: [{ translateY: dot3 }] }]} />
         </View>
         <Text style={styles.typingText}>
           {chatUser?.full_name || t('user')} {t('isTyping') || 'skriver'}...

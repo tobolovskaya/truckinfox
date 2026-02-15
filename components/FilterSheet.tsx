@@ -2,14 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, Modal, ScrollView, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
-import {
-  colors,
-  spacing,
-  fontSize,
-  fontWeight,
-  borderRadius,
-  shadows,
-} from '../lib/sharedStyles';
+import { colors, spacing, fontSize, fontWeight, borderRadius, shadows } from '../lib/sharedStyles';
 import { trackFilterApplied } from '../utils/analytics';
 import { startTrace, PerformanceTraces } from '../utils/performance';
 
@@ -53,12 +46,8 @@ export const FilterSheet: React.FC<FilterSheetProps> = ({
   initialFilters,
 }) => {
   const { t } = useTranslation();
-  const [sortBy, setSortBy] = useState<FilterOptions['sortBy']>(
-    initialFilters?.sortBy || 'newest'
-  );
-  const [selectedTypes, setSelectedTypes] = useState<string[]>(
-    initialFilters?.cargoTypes || []
-  );
+  const [sortBy, setSortBy] = useState<FilterOptions['sortBy']>(initialFilters?.sortBy || 'newest');
+  const [selectedTypes, setSelectedTypes] = useState<string[]>(initialFilters?.cargoTypes || []);
   const [priceRange, setPriceRange] = useState(
     initialFilters?.priceRange || { min: 0, max: 50000 }
   );
@@ -123,10 +112,7 @@ export const FilterSheet: React.FC<FilterSheetProps> = ({
                 {SORT_OPTIONS.map(option => (
                   <TouchableOpacity
                     key={option.id}
-                    style={[
-                      styles.sortOption,
-                      sortBy === option.id && styles.sortOptionActive,
-                    ]}
+                    style={[styles.sortOption, sortBy === option.id && styles.sortOptionActive]}
                     onPress={() => setSortBy(option.id as FilterOptions['sortBy'])}
                   >
                     <Ionicons
@@ -154,10 +140,7 @@ export const FilterSheet: React.FC<FilterSheetProps> = ({
                 {CARGO_TYPES.map(type => (
                   <TouchableOpacity
                     key={type.id}
-                    style={[
-                      styles.chip,
-                      selectedTypes.includes(type.id) && styles.chipActive,
-                    ]}
+                    style={[styles.chip, selectedTypes.includes(type.id) && styles.chipActive]}
                     onPress={() => toggleCargoType(type.id)}
                   >
                     <Ionicons

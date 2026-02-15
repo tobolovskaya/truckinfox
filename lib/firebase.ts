@@ -57,7 +57,7 @@ try {
   } else {
     // React Native requires explicit AsyncStorage persistence
     auth = initializeAuth(app, {
-      persistence: getReactNativePersistence(AsyncStorage)
+      persistence: getReactNativePersistence(AsyncStorage),
     });
     console.log('Firebase Auth initialized successfully (React Native - AsyncStorage persistence)');
   }
@@ -91,7 +91,7 @@ try {
 // Initialize Analytics (web only) - Native platforms not supported
 if (Platform.OS === 'web') {
   isAnalyticsSupported()
-    .then((supported) => {
+    .then(supported => {
       if (supported) {
         analytics = getAnalytics(app);
         console.log('Firebase Analytics initialized successfully');
@@ -99,7 +99,7 @@ if (Platform.OS === 'web') {
         console.log('Firebase Analytics not supported in this web environment');
       }
     })
-    .catch((error) => {
+    .catch(error => {
       console.warn('Firebase Analytics check failed:', error);
     });
 } else {

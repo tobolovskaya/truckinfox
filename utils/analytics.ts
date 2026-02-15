@@ -116,10 +116,7 @@ export const trackFilterApplied = (params: {
   logEvent(AnalyticsEvents.FILTER_APPLIED, params);
 };
 
-export const trackTypingDetected = (params: {
-  chat_id: string;
-  response_time?: number;
-}) => {
+export const trackTypingDetected = (params: { chat_id: string; response_time?: number }) => {
   logEvent(AnalyticsEvents.TYPING_DETECTED, params);
 };
 

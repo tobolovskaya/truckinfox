@@ -1,22 +1,12 @@
 import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  Modal,
-  TouchableOpacity,
-  ScrollView,
-  Dimensions,
-} from 'react-native';
+import { View, Text, StyleSheet, Modal, TouchableOpacity, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useTranslation } from 'react-i18next';
-import { colors, fontSize, fontWeight, spacing, borderRadius } from '../lib/sharedStyles';
-
-const { width, height } = Dimensions.get('window');
+import { colors, fontSize, fontWeight, spacing } from '../lib/sharedStyles';
 
 interface OnboardingStep {
-  icon: keyof typeof Ionicons.glyphMap;
+  icon: React.ComponentProps<typeof Ionicons>['name'];
   title: string;
   description: string;
   color: string;
@@ -132,10 +122,7 @@ export function Onboarding({ visible, onComplete, userType = 'customer' }: Onboa
           </TouchableOpacity>
         </View>
 
-        <ScrollView
-          contentContainerStyle={styles.content}
-          showsVerticalScrollIndicator={false}
-        >
+        <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
           {/* Icon */}
           <View style={[styles.iconContainer, { backgroundColor: step.color + '20' }]}>
             <Ionicons name={step.icon} size={80} color={step.color} />
@@ -248,7 +235,6 @@ const styles = StyleSheet.create({
   indicator: {
     height: 8,
     borderRadius: 4,
-    transition: 'all 0.3s',
   },
   footer: {
     flexDirection: 'row',
@@ -260,7 +246,7 @@ const styles = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: 28,
-    backgroundColor: colors.background.secondary,
+    backgroundColor: colors.backgroundLight,
     alignItems: 'center',
     justifyContent: 'center',
   },

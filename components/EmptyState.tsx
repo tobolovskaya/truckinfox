@@ -105,7 +105,7 @@ const styles = StyleSheet.create({
     width: 120,
     height: 120,
     borderRadius: 60,
-    backgroundColor: colors.background.secondary,
+    backgroundColor: colors.backgroundLight,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: spacing.xl,
@@ -148,7 +148,7 @@ const styles = StyleSheet.create({
     color: 'white',
   },
   actionButtonSecondary: {
-    backgroundColor: colors.background.secondary,
+    backgroundColor: colors.white,
   },
   actionButtonSecondaryContent: {
     flex: 1,
@@ -164,7 +164,7 @@ const styles = StyleSheet.create({
   },
   tipsContainer: {
     width: '100%',
-    backgroundColor: colors.background.secondary,
+    backgroundColor: colors.backgroundLight,
     borderRadius: borderRadius.lg,
     padding: spacing.lg,
   },

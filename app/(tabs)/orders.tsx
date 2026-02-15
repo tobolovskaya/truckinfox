@@ -791,9 +791,7 @@ function OrdersScreen() {
             icon={isCustomer ? 'cube-outline' : 'car-outline'}
             title={
               t(
-                isCustomer
-                  ? 'emptyState.orders.customer.title'
-                  : 'emptyState.orders.carrier.title'
+                isCustomer ? 'emptyState.orders.customer.title' : 'emptyState.orders.carrier.title'
               ) || (isCustomer ? 'Ingen bestillinger ennå' : 'Ingen oppdrag ennå')
             }
             description={
@@ -815,8 +813,7 @@ function OrdersScreen() {
                       : 'emptyState.orders.carrier.action'
                   ) || (isCustomer ? 'Opprett forespørsel' : 'Finn last'),
                 icon: isCustomer ? 'add-circle' : 'search',
-                onPress: () =>
-                  router.push(isCustomer ? '/(tabs)/create' : '/(tabs)/home'),
+                onPress: () => router.push(isCustomer ? '/(tabs)/create' : '/(tabs)/home'),
                 variant: 'primary',
               },
             ]}

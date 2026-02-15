@@ -60,10 +60,10 @@ export default function HomeScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const reduceMotion = useReduceMotion();
-  
+
   // Onboarding state
   const [showOnboarding, setShowOnboarding] = useState(false);
-  
+
   // Filter modal state
   const [isFilterModalVisible, setIsFilterModalVisible] = useState(false);
 
@@ -600,14 +600,8 @@ export default function HomeScreen() {
             <EmptyState
               icon={activeTab === 'all' ? 'search-outline' : 'cube-outline'}
               title={
-                t(
-                  activeTab === 'all'
-                    ? 'emptyState.home.all.title'
-                    : 'emptyState.home.my.title'
-                ) ||
-                (activeTab === 'all'
-                  ? 'Ingen aktive forespørsler'
-                  : 'Du har ingen forespørsler')
+                t(activeTab === 'all' ? 'emptyState.home.all.title' : 'emptyState.home.my.title') ||
+                (activeTab === 'all' ? 'Ingen aktive forespørsler' : 'Du har ingen forespørsler')
               }
               description={
                 t(

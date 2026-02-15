@@ -38,10 +38,7 @@ export const startTrace = (traceName: string) => {
  * @param fn - Async function to measure
  * @returns Result of the function
  */
-export const measureAsync = async <T>(
-  traceName: string,
-  fn: () => Promise<T>
-): Promise<T> => {
+export const measureAsync = async <T>(traceName: string, fn: () => Promise<T>): Promise<T> => {
   const traceInstance = startTrace(traceName);
   try {
     const result = await fn();
