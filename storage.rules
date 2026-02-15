@@ -27,7 +27,7 @@ service firebase.storage {
     }
     
     // Cargo request images
-    match /cargo-images/{requestId}/{allPaths=**} {
+    match /request-images/{allPaths=**} {
       allow read: if isAuthenticated();
       allow write: if isAuthenticated() && isValidImage();
     }
