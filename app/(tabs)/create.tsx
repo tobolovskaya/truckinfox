@@ -735,6 +735,7 @@ export default function CreateRequestScreen() {
               }}
               onBlur={() => handleBlur('length')}
               placeholder="L (cm)"
+              placeholderTextColor="#9CA3AF"
               keyboardType="numeric"
             />
             <TextInput
@@ -746,6 +747,7 @@ export default function CreateRequestScreen() {
               }}
               onBlur={() => handleBlur('width')}
               placeholder="B (cm)"
+              placeholderTextColor="#9CA3AF"
               keyboardType="numeric"
             />
             <TextInput
@@ -757,6 +759,7 @@ export default function CreateRequestScreen() {
               }}
               onBlur={() => handleBlur('height')}
               placeholder="H (cm)"
+              placeholderTextColor="#9CA3AF"
               keyboardType="numeric"
             />
           </View>
@@ -841,6 +844,27 @@ export default function CreateRequestScreen() {
               ) : null}
             </View>
           )}
+
+        {/* Bottom Action Buttons */}
+        <View style={styles.bottomActions}>
+          <TouchableOpacity
+            style={styles.cancelButton}
+            onPress={() => router.back()}
+          >
+            <Text style={styles.cancelButtonText}>Avbryt</Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity
+            style={styles.publishButton}
+            onPress={handleSubmit}
+            disabled={loading}
+          >
+            <Text style={styles.publishButtonText}>
+              {loading ? 'Publiserer...' : 'Publiser last'}
+            </Text>
+          </TouchableOpacity>
+        </View>
+
         {/* Bottom spacing for tab bar */}
         <View style={{ height: 80 }} />
           </View>
