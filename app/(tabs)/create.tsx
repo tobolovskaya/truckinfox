@@ -849,13 +849,13 @@ export default function CreateRequestScreen() {
         <View style={styles.bottomActions}>
           <TouchableOpacity
             style={styles.cancelButton}
-            onPress={() => router.back()}
+            onPress={() => router.push('/(tabs)/home')}
           >
             <Text style={styles.cancelButtonText}>Avbryt</Text>
           </TouchableOpacity>
           
           <TouchableOpacity
-            style={styles.publishButton}
+            style={[styles.publishButton, loading && styles.publishButtonDisabled]}
             onPress={handleSubmit}
             disabled={loading}
           >
@@ -1033,6 +1033,9 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     backgroundColor: '#FF7043',
     alignItems: 'center',
+  },
+  publishButtonDisabled: {
+    opacity: 0.6,
   },
   publishButtonText: {
     fontSize: 16,
