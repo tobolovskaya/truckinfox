@@ -28,7 +28,9 @@ import {
   serverTimestamp,
   doc,
   getDoc,
+  setDoc,
 } from 'firebase/firestore';
+
 import { LinearGradient } from 'expo-linear-gradient';
 import * as ImagePicker from 'expo-image-picker';
 import * as DocumentPicker from 'expo-document-picker';
@@ -60,6 +62,53 @@ interface ChatUser {
   user_type: string;
   rating: number;
 }
+
+// Typing Indicator Component
+const TypingIndicator = () => {
+  const dot1Anim = useRef(new Animated.Value(0)).current;
+  const dot2Anim = useRef(new Animated.Value(0)).current;
+  const dot3Anim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    const createAnimation = (anim: Animated.Value, delay: number) => {
+      return Animated.loop(
+        Animated.sequence([
+          Animated.delay(delay),
+          Animated.timing(anim, {
+            toValue: -8,
+            duration: 400,
+            useNativeDriver: true,
+          }),
+          Animated.timing(anim, {
+            toValue: 0,
+            duration: 400,
+            useNativeDriver: true,
+          }),
+        ])
+      );
+    };
+
+    const animation = Animated.parallel([
+      createAnimation(dot1Anim, 0),
+      createAnimation(dot2Anim, 150),
+      createAnimation(dot3Anim, 300),
+    ]);
+
+    animation.start();
+
+    return () => animation.stop();
+  }, [dot1Anim, dot2Anim, dot3Anim]);
+
+  return (
+    <View style={styles.typingIndicator}>
+      <View style={styles.typingDots}>
+        <Animated.View style={[styles.typingDot, { transform: [{ translateY: dot1Anim }] }]} />
+        <Animated.View style={[styles.typingDot, { transform: [{ translateY: dot2Anim }] }]} />
+        <Animated.View style={[styles.typingDot, { transform: [{ translateY: dot3Anim }] }]} />
+      </View>
+    </View>
+  );
+};
 
 export default function ChatScreen() {
   const params = useLocalSearchParams();
@@ -944,19 +993,25 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   typingIndicator: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    marginHorizontal: 16,
+    marginBottom: 8,
+    backgroundColor: '#F3F4F6',
+    borderRadius: 20,
+    alignSelf: 'flex-start',
+    maxWidth: '75%',
+  },
+  typingDots: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    backgroundColor: colors.surfaceVariant,
-    borderRadius: borderRadius.full,
+    gap: 6,
   },
   typingDot: {
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: colors.primary,
+    backgroundColor: '#9CA3AF',
   },
   typingText: {
     fontSize: fontSize.sm,
