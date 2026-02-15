@@ -8,6 +8,7 @@ import {
   Alert,
   Switch,
   Image,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -477,7 +478,7 @@ export default function ProfileScreen() {
               {/* Primary Stats Grid */}
               <View style={styles.statsGrid}>
                 <View style={styles.statCard}>
-                <View style={[styles.statIconContainer, { backgroundColor: '#FFF4F0' }]}>
+                  <View style={[styles.statIconContainer, { backgroundColor: '#FFF4F0' }]}>
                     <Ionicons name="cube-outline" size={20} color={theme.iconColors.primary} />
                   </View>
                   <Text style={styles.statNumber}>{statistics.orders_as_customer}</Text>
@@ -485,7 +486,7 @@ export default function ProfileScreen() {
                 </View>
 
                 <View style={styles.statCard}>
-                <View style={[styles.statIconContainer, { backgroundColor: '#F0FDF4' }]}>
+                  <View style={[styles.statIconContainer, { backgroundColor: '#F0FDF4' }]}>
                     <Ionicons name="car-outline" size={20} color={theme.iconColors.success} />
                   </View>
                   <Text style={styles.statNumber}>{statistics.orders_as_carrier}</Text>
@@ -493,7 +494,7 @@ export default function ProfileScreen() {
                 </View>
 
                 <View style={styles.statCard}>
-                <View style={[styles.statIconContainer, { backgroundColor: '#EFF6FF' }]}>
+                  <View style={[styles.statIconContainer, { backgroundColor: '#EFF6FF' }]}>
                     <Ionicons name="wallet-outline" size={20} color={theme.iconColors.info} />
                   </View>
                   <Text style={styles.statNumber}>
@@ -503,7 +504,7 @@ export default function ProfileScreen() {
                 </View>
 
                 <View style={styles.statCard}>
-                <View style={[styles.statIconContainer, { backgroundColor: '#FFFBEB' }]}>
+                  <View style={[styles.statIconContainer, { backgroundColor: '#FFFBEB' }]}>
                     <Ionicons name="star-outline" size={20} color={theme.iconColors.rating} />
                   </View>
                   <Text style={styles.statNumber}>{statistics.avg_rating.toFixed(1)}</Text>

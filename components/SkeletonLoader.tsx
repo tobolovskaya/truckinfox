@@ -1,16 +1,14 @@
 import React, { useEffect, useRef } from 'react';
 import { View, StyleSheet, Animated } from 'react-native';
 import { theme } from '../theme/theme';
+import { shadows } from '../lib/sharedStyles';
 
 interface SkeletonLoaderProps {
   variant?: 'card' | 'list' | 'message' | 'stats' | 'text';
   count?: number;
 }
 
-export const SkeletonLoader: React.FC<SkeletonLoaderProps> = ({
-  variant = 'card',
-  count = 1,
-}) => {
+export const SkeletonLoader: React.FC<SkeletonLoaderProps> = ({ variant = 'card', count = 1 }) => {
   const renderSkeleton = () => {
     switch (variant) {
       case 'card':
@@ -143,16 +141,16 @@ const styles = StyleSheet.create({
     marginBottom: theme.spacing.md,
   },
   shimmer: {
-    backgroundColor: theme.colors.border,
-    borderRadius: theme.borderRadius.md,
+    backgroundColor: '#E5E7EB',
+    borderRadius: 8,
   },
 
   // Card skeleton
   card: {
     backgroundColor: theme.colors.surface,
-    borderRadius: theme.borderRadius.lg,
-    padding: theme.spacing.md,
-    ...theme.shadows.default,
+    borderRadius: 12,
+    padding: 16,
+    ...(shadows.md as object),
   },
   cardImage: {
     width: '100%',
