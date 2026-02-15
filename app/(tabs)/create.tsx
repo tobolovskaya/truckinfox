@@ -50,6 +50,37 @@ export default function CreateRequestScreen() {
   const { t } = useTranslation();
   const toast = useToast();
   const router = useRouter();
+  const [formData, setFormData] = useState({
+    title: '',
+    description: '',
+    cargo_type: '',
+    weight: '',
+    length: '',
+    width: '',
+    height: '',
+    from_address: '',
+    to_address: '',
+    from_lat: null as number | null,
+    from_lng: null as number | null,
+    to_lat: null as number | null,
+    to_lng: null as number | null,
+    distance_km: null as number | null,
+    pickup_date: new Date(),
+    delivery_date: new Date(Date.now() + MS_PER_DAY),
+    price_type: '',
+    price: '',
+  });
+  const [images, setImages] = useState<string[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [touchedFields, setTouchedFields] = useState<Record<string, boolean>>({});
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const [distanceInfo, setDistanceInfo] = useState<{ distance: string; duration: string } | null>(null);
+  const [showPickupDate, setShowPickupDate] = useState(false);
+  const [showDeliveryDate, setShowDeliveryDate] = useState(false);
+  const fromAddressRef = useRef<any>(null);
+  const toAddressRef = useRef<any>(null);
+  const fromAddressTextRef = useRef('');
+  const toAddressTextRef = useRef('');
   // Load draft on mount
   useEffect(() => {
     const loadDraft = async () => {
@@ -795,58 +826,19 @@ export default function CreateRequestScreen() {
         </View>
 
           {formData.price_type === 'fixed' && (
-            <View style={styles.inputContainer}>
-              <Text style={styles.label}>{t('price')} (NOK) *</Text>
-              <View style={styles.inputWithIcon}>
-                <Ionicons
-                  name="cash-outline"
-                  size={20}
-                  color={
-                    getFieldError('price')
-                      ? theme.iconColors.error
-                      : isFieldValid('price')
-                        ? theme.iconColors.success
-                        : theme.iconColors.gray.primary
-                  }
-                  style={styles.inputIcon}
-                />
-                <TextInput
-                  style={[
-                    styles.input,
-                    styles.inputWithPadding,
-                    getFieldError('price')
-                      ? styles.inputError
-                      : isFieldValid('price')
-                        ? styles.inputValid
-                        : null,
-                  ]}
-                  placeholder="0"
-                  value={formData.price}
-                  onChangeText={value => updateFormData('price', value)}
-                  onBlur={() => handleFieldBlur('price')}
-                  keyboardType="numeric"
-                  placeholderTextColor={colors.text.tertiary}
-                />
-                {isFieldValid('price') && (
-                  <Ionicons
-                    name="checkmark-circle"
-                    size={20}
-                    color={theme.iconColors.success}
-                    style={styles.validationIcon}
-                  />
-                )}
-                {getFieldError('price') && (
-                  <Ionicons
-                    name="close-circle"
-                    size={20}
-                    color={theme.iconColors.error}
-                    style={styles.validationIcon}
-                  />
-                )}
-              </View>
-              {getFieldError('price') && (
-                <Text style={styles.errorText}>{getFieldError('price')}</Text>
-              )}
+            <View style={styles.fieldContainer}>
+              <Text style={styles.fieldLabel}>{t('price')} (NOK)</Text>
+              <TextInput
+                style={styles.textInput}
+                placeholder="0"
+                value={formData.price}
+                onChangeText={value => updateFormData('price', value)}
+                onBlur={() => handleBlur('price')}
+                keyboardType="numeric"
+              />
+              {fieldErrors.price ? (
+                <Text style={styles.errorText}>{fieldErrors.price}</Text>
+              ) : null}
             </View>
           )}
         {/* Bottom spacing for tab bar */}
@@ -1033,5 +1025,10 @@ const styles = StyleSheet.create({
     height: 48,
     fontSize: 16,
     color: '#1F2937',
+  },
+  errorText: {
+    marginTop: 6,
+    fontSize: 12,
+    color: '#EF4444',
   },
 });
