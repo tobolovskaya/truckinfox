@@ -917,9 +917,11 @@ export default function CreateRequestScreen() {
                 style={[styles.publishButton, loading && styles.publishButtonDisabled]}
                 onPress={handleSubmit}
                 disabled={loading}
+                accessibilityLabel={loading ? 'Publiserer lastforespørsel' : 'Publiser last'}
+                accessibilityState={{ disabled: loading, busy: loading }}
               >
                 {loading ? (
-                  <ActivityIndicator color={colors.white} />
+                  <ActivityIndicator color={colors.white} accessibilityLabel="Publiserer" />
                 ) : (
                   <Text style={styles.publishButtonText}>Publiser last</Text>
                 )}
