@@ -19,6 +19,13 @@ import { useToast } from '../../contexts/ToastContext';
 import { db, storage } from '../../lib/firebase';
 import { trackCargoRequestCreated } from '../../utils/analytics';
 import { sanitizeInput, sanitizeNumber } from '../../utils/sanitization';
+import {
+  colors,
+  spacing,
+  fontSize,
+  fontWeight,
+  borderRadius,
+} from '../../lib/sharedStyles';
 import { collection, addDoc, updateDoc, doc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { useRouter } from 'expo-router';
@@ -1083,21 +1090,24 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
   },
   screenHeader: {
-    paddingHorizontal: 16,
-    paddingTop: 24,
-    paddingBottom: 16,
-    backgroundColor: '#FFFFFF',
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.xxl,
+    paddingBottom: spacing.lg,
+    backgroundColor: colors.white,
     borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
+    borderBottomColor: colors.border.light,
   },
   screenTitle: {
-    fontSize: 28,
-    fontWeight: '700',
-    color: '#1F2937',
-    marginBottom: 4,
+    fontSize: fontSize.xxl,
+    fontWeight: fontWeight.bold,
+    color: colors.text.primary,
+    marginBottom: spacing.xs,
   },
   screenSubtitle: {
-    fontSize: 15,
+    fontSize: fontSize.md,
+    color: colors.text.secondary,
+    lineHeight: 20,
+  },
     color: '#6B7280',
     lineHeight: 20,
   },
