@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, TextInput } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, TextInput, Modal } from 'react-native';
 import { KeyboardAwareFlatList } from 'react-native-keyboard-aware-scroll-view';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
@@ -21,7 +21,6 @@ import { calculateDistance } from '../../utils/googlePlaces';
 import { geohashForLocation } from 'geofire-common';
 import { fetchWithTimeout } from '../../utils/fetchWithTimeout';
 import { LazyImage } from '../../components/LazyImage';
-import { Picker } from '@react-native-picker/picker';
 
 const CARGO_TYPES = [
   { id: 'automotive', label: 'Bil/Motor' },
@@ -32,6 +31,11 @@ const CARGO_TYPES = [
   { id: 'machinery', label: 'Maskineri' },
   { id: 'furniture', label: 'Møbler' },
   { id: 'other', label: 'Annet' },
+];
+
+const PRICE_TYPES = [
+  { id: 'negotiable', label: 'Kan forhandles' },
+  { id: 'fixed', label: 'Fast pris' },
 ];
 
 const CARGO_LIMITS = {
@@ -77,6 +81,8 @@ export default function CreateRequestScreen() {
   const [distanceInfo, setDistanceInfo] = useState<{ distance: string; duration: string } | null>(null);
   const [showPickupDate, setShowPickupDate] = useState(false);
   const [showDeliveryDate, setShowDeliveryDate] = useState(false);
+  const [showCargoTypeMenu, setShowCargoTypeMenu] = useState(false);
+  const [showPriceTypeMenu, setShowPriceTypeMenu] = useState(false);
   const fromAddressRef = useRef<any>(null);
   const toAddressRef = useRef<any>(null);
   const fromAddressTextRef = useRef('');
@@ -615,22 +621,20 @@ export default function CreateRequestScreen() {
         {/* Cargo Type */}
         <View style={styles.fieldContainer}>
           <Text style={styles.fieldLabel}>Lasttype</Text>
-          <View style={styles.pickerContainer}>
-            <Picker
-              selectedValue={formData.cargo_type}
-              onValueChange={value => {
-                updateFormData('cargo_type', value);
-                handleBlur('cargo_type');
-              }}
-              style={styles.picker}
-              accessibilityLabel="Velg lasttype"
-            >
-              <Picker.Item label="Velg lasttype..." value="" />
-              {CARGO_TYPES.map(type => (
-                <Picker.Item key={type.id} label={type.label} value={type.id} />
-              ))}
-            </Picker>
-          </View>
+          <TouchableOpacity
+            style={styles.dropdownButton}
+            onPress={() => setShowCargoTypeMenu(true)}
+          >
+            <Text style={[
+              styles.dropdownText,
+              !formData.cargo_type && styles.dropdownPlaceholder
+            ]}>
+              {formData.cargo_type 
+                ? CARGO_TYPES.find(t => t.id === formData.cargo_type)?.label 
+                : 'Velg lasttype'}
+            </Text>
+            <Ionicons name="chevron-down" size={20} color="#6B7280" />
+          </TouchableOpacity>
         </View>
 
         {/* From Address */}
@@ -811,39 +815,47 @@ export default function CreateRequestScreen() {
         {/* Price Type */}
         <View style={styles.fieldContainer}>
           <Text style={styles.fieldLabel}>Prismodell</Text>
-          <View style={styles.pickerContainer}>
-            <Picker
-              selectedValue={formData.price_type}
-              onValueChange={value => {
-                updateFormData('price_type', value);
-                handleBlur('price_type');
-              }}
-              style={styles.picker}
-              accessibilityLabel="Velg prismodell"
-            >
-              <Picker.Item label="Velg prismodell..." value="" />
-              <Picker.Item label="Kan forhandles" value="negotiable" />
-              <Picker.Item label="Fast pris" value="fixed" />
-            </Picker>
-          </View>
+          <TouchableOpacity
+            style={styles.dropdownButton}
+            onPress={() => setShowPriceTypeMenu(true)}
+          >
+            <Text style={[
+              styles.dropdownText,
+              !formData.price_type && styles.dropdownPlaceholder
+            ]}>
+              {formData.price_type 
+                ? PRICE_TYPES.find(t => t.id === formData.price_type)?.label 
+                : 'Velg prismodell'}
+            </Text>
+            <Ionicons name="chevron-down" size={20} color="#6B7280" />
+          </TouchableOpacity>
         </View>
 
-          {formData.price_type === 'fixed' && (
-            <View style={styles.fieldContainer}>
-              <Text style={styles.fieldLabel}>{t('price')} (NOK)</Text>
-              <TextInput
-                style={styles.textInput}
-                placeholder="0"
-                value={formData.price}
-                onChangeText={value => updateFormData('price', value)}
-                onBlur={() => handleBlur('price')}
-                keyboardType="numeric"
-              />
-              {fieldErrors.price ? (
-                <Text style={styles.errorText}>{fieldErrors.price}</Text>
-              ) : null}
-            </View>
+        {/* Price - ALWAYS VISIBLE */}
+        <View style={styles.fieldContainer}>
+          <Text style={styles.fieldLabel}>Foreslått pris (NOK)</Text>
+          <TextInput
+            style={[
+              styles.textInput,
+              { borderColor: '#E5E7EB' },
+              formData.price_type === 'negotiable' && styles.textInputDisabled
+            ]}
+            placeholder="0"
+            value={formData.price}
+            onChangeText={value => updateFormData('price', value)}
+            onBlur={() => handleBlur('price')}
+            keyboardType="numeric"
+            editable={formData.price_type === 'fixed'}
+          />
+          {formData.price_type === 'negotiable' && (
+            <Text style={styles.fieldHint}>
+              Pris kan forhandles med transportør
+            </Text>
           )}
+          {fieldErrors.price ? (
+            <Text style={styles.errorText}>{fieldErrors.price}</Text>
+          ) : null}
+        </View>
 
         {/* Bottom Action Buttons */}
         <View style={styles.bottomActions}>
@@ -899,6 +911,104 @@ export default function CreateRequestScreen() {
           }}
         />
       )}
+
+      {/* Cargo Type Modal Menu */}
+      <Modal
+        visible={showCargoTypeMenu}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowCargoTypeMenu(false)}
+      >
+        <TouchableOpacity
+          style={styles.menuOverlay}
+          activeOpacity={1}
+          onPress={() => setShowCargoTypeMenu(false)}
+        >
+          <View style={styles.menuContainer}>
+            <View style={styles.menuHeader}>
+              <Text style={styles.menuTitle}>Velg lasttype</Text>
+              <TouchableOpacity onPress={() => setShowCargoTypeMenu(false)}>
+                <Ionicons name="close" size={24} color="#6B7280" />
+              </TouchableOpacity>
+            </View>
+            
+            {CARGO_TYPES.map(type => (
+              <TouchableOpacity
+                key={type.id}
+                style={[
+                  styles.menuItem,
+                  formData.cargo_type === type.id && styles.menuItemSelected
+                ]}
+                onPress={() => {
+                  updateFormData('cargo_type', type.id);
+                  handleBlur('cargo_type');
+                  setShowCargoTypeMenu(false);
+                  triggerHapticFeedback.light();
+                }}
+              >
+                <Text style={[
+                  styles.menuItemText,
+                  formData.cargo_type === type.id && styles.menuItemTextSelected
+                ]}>
+                  {type.label}
+                </Text>
+                {formData.cargo_type === type.id && (
+                  <Ionicons name="checkmark" size={20} color="#10B981" />
+                )}
+              </TouchableOpacity>
+            ))}
+          </View>
+        </TouchableOpacity>
+      </Modal>
+
+      {/* Price Type Modal Menu */}
+      <Modal
+        visible={showPriceTypeMenu}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowPriceTypeMenu(false)}
+      >
+        <TouchableOpacity
+          style={styles.menuOverlay}
+          activeOpacity={1}
+          onPress={() => setShowPriceTypeMenu(false)}
+        >
+          <View style={styles.menuContainer}>
+            <View style={styles.menuHeader}>
+              <Text style={styles.menuTitle}>Velg prismodell</Text>
+              <TouchableOpacity onPress={() => setShowPriceTypeMenu(false)}>
+                <Ionicons name="close" size={24} color="#6B7280" />
+              </TouchableOpacity>
+            </View>
+            
+            {PRICE_TYPES.map(type => (
+              <TouchableOpacity
+                key={type.id}
+                style={[
+                  styles.menuItem,
+                  formData.price_type === type.id && styles.menuItemSelected
+                ]}
+                onPress={() => {
+                  updateFormData('price_type', type.id);
+                  handleBlur('price_type');
+                  setShowPriceTypeMenu(false);
+                  triggerHapticFeedback.light();
+                }}
+              >
+                <Text style={[
+                  styles.menuItemText,
+                  formData.price_type === type.id && styles.menuItemTextSelected
+                ]}>
+                  {type.label}
+                </Text>
+                {formData.price_type === type.id && (
+                  <Ionicons name="checkmark" size={20} color="#10B981" />
+                )}
+              </TouchableOpacity>
+            ))}
+          </View>
+        </TouchableOpacity>
+      </Modal>
     </View>
   );
 }
@@ -1057,5 +1167,76 @@ const styles = StyleSheet.create({
     marginTop: 6,
     fontSize: 12,
     color: '#EF4444',
+  },
+  dropdownButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    borderRadius: 8,
+    padding: 14,
+    backgroundColor: '#FFFFFF',
+  },
+  dropdownText: {
+    fontSize: 16,
+    color: '#1F2937',
+    flex: 1,
+  },
+  dropdownPlaceholder: {
+    color: '#9CA3AF',
+  },
+  textInputDisabled: {
+    backgroundColor: '#F9FAFB',
+    color: '#9CA3AF',
+  },
+  fieldHint: {
+    fontSize: 12,
+    color: '#6B7280',
+    marginTop: 4,
+  },
+  menuOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'flex-end',
+  },
+  menuContainer: {
+    backgroundColor: '#FFFFFF',
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
+    paddingBottom: 34,
+    maxHeight: '70%',
+  },
+  menuHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E7EB',
+  },
+  menuTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#1F2937',
+  },
+  menuItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F3F4F6',
+  },
+  menuItemSelected: {
+    backgroundColor: '#F0FDF4',
+  },
+  menuItemText: {
+    fontSize: 16,
+    color: '#1F2937',
+  },
+  menuItemTextSelected: {
+    color: '#10B981',
+    fontWeight: '600',
   },
 });
