@@ -332,6 +332,7 @@ export default function HomeScreen() {
               accessibilityRole="button"
               accessibilityLabel="Varsler"
               accessibilityHint="Dobbelttrykk for å se dine varsler"
+              accessibilityValue={{ text: unreadCount > 0 ? `${unreadCount} uleste varsler` : 'Ingen uleste varsler' }}
               style={styles.notificationButtonHeader}
               onPress={() => router.push('/(tabs)/notifications')}
             >

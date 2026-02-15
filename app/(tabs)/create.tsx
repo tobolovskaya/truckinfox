@@ -595,7 +595,9 @@ export default function CreateRequestScreen() {
         keyExtractor={item => item.key}
         ListHeaderComponent={
           <View style={styles.screenHeader}>
-            <Text style={styles.screenTitle}>Opprett lastforespørsel</Text>
+            <Text style={styles.screenTitle} accessibilityRole="header">
+              Opprett lastforespørsel
+            </Text>
             <Text style={styles.screenSubtitle}>
               Fyll ut informasjonen nedenfor for å opprette en ny forespørsel
             </Text>
