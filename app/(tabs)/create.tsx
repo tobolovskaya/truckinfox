@@ -1,5 +1,13 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, TextInput, Modal } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  TextInput,
+  Modal,
+  ActivityIndicator,
+} from 'react-native';
 import { KeyboardAwareFlatList } from 'react-native-keyboard-aware-scroll-view';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
@@ -11,6 +19,13 @@ import { useToast } from '../../contexts/ToastContext';
 import { db, storage } from '../../lib/firebase';
 import { trackCargoRequestCreated } from '../../utils/analytics';
 import { sanitizeInput, sanitizeNumber } from '../../utils/sanitization';
+import {
+  colors,
+  spacing,
+  fontSize,
+  fontWeight,
+  borderRadius,
+} from '../../lib/sharedStyles';
 import { collection, addDoc, updateDoc, doc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { useRouter } from 'expo-router';
@@ -585,6 +600,16 @@ export default function CreateRequestScreen() {
         enableResetScrollToCoords={false}
         data={[{ key: 'form' }]}
         keyExtractor={item => item.key}
+        ListHeaderComponent={
+          <View style={styles.screenHeader}>
+            <Text style={styles.screenTitle} accessibilityRole="header">
+              Opprett lastforespørsel
+            </Text>
+            <Text style={styles.screenSubtitle}>
+              Fyll ut informasjonen nedenfor for å opprette en ny forespørsel
+            </Text>
+          </View>
+        }
         renderItem={() => (
           <View>
             {/* Title */}
@@ -892,10 +917,14 @@ export default function CreateRequestScreen() {
                 style={[styles.publishButton, loading && styles.publishButtonDisabled]}
                 onPress={handleSubmit}
                 disabled={loading}
+                accessibilityLabel={loading ? 'Publiserer lastforespørsel' : 'Publiser last'}
+                accessibilityState={{ disabled: loading, busy: loading }}
               >
-                <Text style={styles.publishButtonText}>
-                  {loading ? 'Publiserer...' : 'Publiser last'}
-                </Text>
+                {loading ? (
+                  <ActivityIndicator color={colors.white} accessibilityLabel="Publiserer" />
+                ) : (
+                  <Text style={styles.publishButtonText}>Publiser last</Text>
+                )}
               </TouchableOpacity>
             </View>
 
@@ -1062,11 +1091,30 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#FFFFFF',
   },
+  screenHeader: {
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.xl,
+    paddingBottom: spacing.lg,
+    backgroundColor: colors.white,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border.light,
+  },
+  screenTitle: {
+    fontSize: fontSize.xxl,
+    fontWeight: fontWeight.bold,
+    color: colors.text.primary,
+    marginBottom: spacing.xs,
+  },
+  screenSubtitle: {
+    fontSize: fontSize.md,
+    color: colors.text.secondary,
+    lineHeight: 20,
+  },
   scrollContent: {
-    padding: 16,
+    padding: spacing.lg,
   },
   fieldContainer: {
-    marginBottom: 24,
+    marginBottom: spacing.xxl,
   },
   fieldLabel: {
     fontSize: 16,
