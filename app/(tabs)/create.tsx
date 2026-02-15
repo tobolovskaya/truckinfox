@@ -919,7 +919,7 @@ export default function CreateRequestScreen() {
                 disabled={loading}
               >
                 {loading ? (
-                  <ActivityIndicator color="white" />
+                  <ActivityIndicator color={colors.white} />
                 ) : (
                   <Text style={styles.publishButtonText}>Publiser last</Text>
                 )}
