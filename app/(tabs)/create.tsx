@@ -624,6 +624,9 @@ export default function CreateRequestScreen() {
           <TouchableOpacity
             style={styles.dropdownButton}
             onPress={() => setShowCargoTypeMenu(true)}
+            accessibilityRole="button"
+            accessibilityLabel="Velg lasttype"
+            accessibilityHint="Åpner meny for å velge lasttype"
           >
             <Text style={[
               styles.dropdownText,
@@ -818,6 +821,9 @@ export default function CreateRequestScreen() {
           <TouchableOpacity
             style={styles.dropdownButton}
             onPress={() => setShowPriceTypeMenu(true)}
+            accessibilityRole="button"
+            accessibilityLabel="Velg prismodell"
+            accessibilityHint="Åpner meny for å velge prismodell"
           >
             <Text style={[
               styles.dropdownText,
@@ -924,7 +930,11 @@ export default function CreateRequestScreen() {
           activeOpacity={1}
           onPress={() => setShowCargoTypeMenu(false)}
         >
-          <View style={styles.menuContainer}>
+          <View 
+            style={styles.menuContainer}
+            accessible={true}
+            accessibilityRole="menu"
+          >
             <View style={styles.menuHeader}>
               <Text style={styles.menuTitle}>Velg lasttype</Text>
               <TouchableOpacity onPress={() => setShowCargoTypeMenu(false)}>
@@ -945,6 +955,9 @@ export default function CreateRequestScreen() {
                   setShowCargoTypeMenu(false);
                   triggerHapticFeedback.light();
                 }}
+                accessibilityRole="menuitem"
+                accessibilityLabel={type.label}
+                accessibilityState={{ selected: formData.cargo_type === type.id }}
               >
                 <Text style={[
                   styles.menuItemText,
@@ -973,7 +986,11 @@ export default function CreateRequestScreen() {
           activeOpacity={1}
           onPress={() => setShowPriceTypeMenu(false)}
         >
-          <View style={styles.menuContainer}>
+          <View 
+            style={styles.menuContainer}
+            accessible={true}
+            accessibilityRole="menu"
+          >
             <View style={styles.menuHeader}>
               <Text style={styles.menuTitle}>Velg prismodell</Text>
               <TouchableOpacity onPress={() => setShowPriceTypeMenu(false)}>
@@ -994,6 +1011,9 @@ export default function CreateRequestScreen() {
                   setShowPriceTypeMenu(false);
                   triggerHapticFeedback.light();
                 }}
+                accessibilityRole="menuitem"
+                accessibilityLabel={type.label}
+                accessibilityState={{ selected: formData.price_type === type.id }}
               >
                 <Text style={[
                   styles.menuItemText,
