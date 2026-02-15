@@ -1108,9 +1108,6 @@ const styles = StyleSheet.create({
     color: colors.text.secondary,
     lineHeight: 20,
   },
-    color: '#6B7280',
-    lineHeight: 20,
-  },
   scrollContent: {
     padding: 16,
   },
