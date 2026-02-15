@@ -14,9 +14,7 @@
       "resizeMode": "contain",
       "backgroundColor": "#FF7043"
     },
-    "assetBundlePatterns": [
-      "**/*"
-    ],
+    "assetBundlePatterns": ["**/*"],
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.truckinfox.app",

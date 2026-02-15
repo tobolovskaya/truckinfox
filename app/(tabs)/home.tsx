@@ -624,305 +624,321 @@ export default function HomeScreen() {
             showsVerticalScrollIndicator={false}
             contentContainerStyle={styles.modalScrollContent}
           >
-          {/* Sorting Section */}
-          <View style={styles.filterSection}>
-            <Text style={styles.filterSectionTitle}>Sorter etter</Text>
-            <View style={styles.filterOptionsGrid}>
-              <TouchableOpacity
-                style={[styles.sortOption, sortBy === 'newest' && styles.sortOptionActive]}
-                onPress={() => setSortBy('newest')}
-              >
-                <View style={[styles.radioCircle, sortBy === 'newest' && styles.radioCircleActive]}>
-                  {sortBy === 'newest' && <View style={styles.radioInner} />}
-                </View>
-                <Text
-                  style={[
-                    styles.sortOptionText,
-                    sortBy === 'newest' && styles.sortOptionTextActive,
-                  ]}
-                >
-                  Nyeste
-                </Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[styles.sortOption, sortBy === 'oldest' && styles.sortOptionActive]}
-                onPress={() => setSortBy('oldest')}
-              >
-                <View style={[styles.radioCircle, sortBy === 'oldest' && styles.radioCircleActive]}>
-                  {sortBy === 'oldest' && <View style={styles.radioInner} />}
-                </View>
-                <Text
-                  style={[
-                    styles.sortOptionText,
-                    sortBy === 'oldest' && styles.sortOptionTextActive,
-                  ]}
-                >
-                  Eldste
-                </Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[styles.sortOption, sortBy === 'priceLowToHigh' && styles.sortOptionActive]}
-                onPress={() => setSortBy('priceLowToHigh')}
-              >
-                <View
-                  style={[
-                    styles.radioCircle,
-                    sortBy === 'priceLowToHigh' && styles.radioCircleActive,
-                  ]}
-                >
-                  {sortBy === 'priceLowToHigh' && <View style={styles.radioInner} />}
-                </View>
-                <Text
-                  style={[
-                    styles.sortOptionText,
-                    sortBy === 'priceLowToHigh' && styles.sortOptionTextActive,
-                  ]}
-                >
-                  Pris: Lav → Høy
-                </Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[styles.sortOption, sortBy === 'priceHighToLow' && styles.sortOptionActive]}
-                onPress={() => setSortBy('priceHighToLow')}
-              >
-                <View
-                  style={[
-                    styles.radioCircle,
-                    sortBy === 'priceHighToLow' && styles.radioCircleActive,
-                  ]}
-                >
-                  {sortBy === 'priceHighToLow' && <View style={styles.radioInner} />}
-                </View>
-                <Text
-                  style={[
-                    styles.sortOptionText,
-                    sortBy === 'priceHighToLow' && styles.sortOptionTextActive,
-                  ]}
-                >
-                  Pris: Høy → Lav
-                </Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[styles.sortOption, sortBy === 'date' && styles.sortOptionActive]}
-                onPress={() => setSortBy('date')}
-              >
-                <View style={[styles.radioCircle, sortBy === 'date' && styles.radioCircleActive]}>
-                  {sortBy === 'date' && <View style={styles.radioInner} />}
-                </View>
-                <Text
-                  style={[styles.sortOptionText, sortBy === 'date' && styles.sortOptionTextActive]}
-                >
-                  Hentingsdato
-                </Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-
-          {/* Divider */}
-          <View style={styles.sectionDivider} />
-
-          {/* City Search with Autocomplete */}
-          <View style={styles.filterSection}>
-            <Text style={styles.filterSectionTitle}>By</Text>
-            <View style={styles.searchInputContainer}>
-              <Ionicons name="search-outline" size={20} color={colors.text.secondary} />
-              <TextInput
-                style={styles.searchInput}
-                placeholder="Søk etter by..."
-                value={filterState.citySearch}
-                onChangeText={setCitySearch}
-                placeholderTextColor={colors.text.secondary}
-              />
-              {filterState.citySearch && (
-                <TouchableOpacity onPress={() => setCitySearch('')}>
-                  <Ionicons name="close-circle" size={20} color={colors.text.secondary} />
-                </TouchableOpacity>
-              )}
-            </View>
-            <View style={styles.filterOptionsGrid}>
-              <TouchableOpacity
-                style={[styles.filterOption, !filterState.city && styles.filterOptionActive]}
-                onPress={() => {
-                  setCity('');
-                  setCitySearch('');
-                }}
-              >
-                <Text
-                  style={[
-                    styles.filterOptionText,
-                    !filterState.city && styles.filterOptionTextActive,
-                  ]}
-                >
-                  Alle byer
-                </Text>
-              </TouchableOpacity>
-              {cities
-                .filter(city => city.toLowerCase().includes(filterState.citySearch.toLowerCase()))
-                .map(city => (
-                  <TouchableOpacity
-                    key={city}
-                    style={[
-                      styles.filterOption,
-                      filterState.city === city && styles.filterOptionActive,
-                    ]}
-                    onPress={() => {
-                      setCity(city);
-                      setCitySearch(city);
-                    }}
-                  >
-                    <Text
-                      style={[
-                        styles.filterOptionText,
-                        filterState.city === city && styles.filterOptionTextActive,
-                      ]}
-                    >
-                      {city}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-            </View>
-          </View>
-
-          {/* Cargo Type Tags */}
-          <View style={styles.filterSection}>
-            <Text style={styles.filterSectionTitle}>Type</Text>
-            <View style={styles.filterOptionsGrid}>
-              <TouchableOpacity
-                style={[styles.filterOption, !filterState.cargo_type && styles.filterOptionActive]}
-                onPress={() => setCargoType('')}
-              >
-                <Text
-                  style={[
-                    styles.filterOptionText,
-                    !filterState.cargo_type && styles.filterOptionTextActive,
-                  ]}
-                >
-                  Alle typer
-                </Text>
-              </TouchableOpacity>
-              {[
-                'construction',
-                'automotive',
-                'furniture',
-                'electronics',
-                'food',
-                'clothing',
-                'other',
-              ].map(type => (
+            {/* Sorting Section */}
+            <View style={styles.filterSection}>
+              <Text style={styles.filterSectionTitle}>Sorter etter</Text>
+              <View style={styles.filterOptionsGrid}>
                 <TouchableOpacity
-                  key={type}
+                  style={[styles.sortOption, sortBy === 'newest' && styles.sortOptionActive]}
+                  onPress={() => setSortBy('newest')}
+                >
+                  <View
+                    style={[styles.radioCircle, sortBy === 'newest' && styles.radioCircleActive]}
+                  >
+                    {sortBy === 'newest' && <View style={styles.radioInner} />}
+                  </View>
+                  <Text
+                    style={[
+                      styles.sortOptionText,
+                      sortBy === 'newest' && styles.sortOptionTextActive,
+                    ]}
+                  >
+                    Nyeste
+                  </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[styles.sortOption, sortBy === 'oldest' && styles.sortOptionActive]}
+                  onPress={() => setSortBy('oldest')}
+                >
+                  <View
+                    style={[styles.radioCircle, sortBy === 'oldest' && styles.radioCircleActive]}
+                  >
+                    {sortBy === 'oldest' && <View style={styles.radioInner} />}
+                  </View>
+                  <Text
+                    style={[
+                      styles.sortOptionText,
+                      sortBy === 'oldest' && styles.sortOptionTextActive,
+                    ]}
+                  >
+                    Eldste
+                  </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
                   style={[
-                    styles.filterOption,
-                    filterState.cargo_type === type && styles.filterOptionActive,
+                    styles.sortOption,
+                    sortBy === 'priceLowToHigh' && styles.sortOptionActive,
                   ]}
-                  onPress={() => setCargoType(type)}
+                  onPress={() => setSortBy('priceLowToHigh')}
+                >
+                  <View
+                    style={[
+                      styles.radioCircle,
+                      sortBy === 'priceLowToHigh' && styles.radioCircleActive,
+                    ]}
+                  >
+                    {sortBy === 'priceLowToHigh' && <View style={styles.radioInner} />}
+                  </View>
+                  <Text
+                    style={[
+                      styles.sortOptionText,
+                      sortBy === 'priceLowToHigh' && styles.sortOptionTextActive,
+                    ]}
+                  >
+                    Pris: Lav → Høy
+                  </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[
+                    styles.sortOption,
+                    sortBy === 'priceHighToLow' && styles.sortOptionActive,
+                  ]}
+                  onPress={() => setSortBy('priceHighToLow')}
+                >
+                  <View
+                    style={[
+                      styles.radioCircle,
+                      sortBy === 'priceHighToLow' && styles.radioCircleActive,
+                    ]}
+                  >
+                    {sortBy === 'priceHighToLow' && <View style={styles.radioInner} />}
+                  </View>
+                  <Text
+                    style={[
+                      styles.sortOptionText,
+                      sortBy === 'priceHighToLow' && styles.sortOptionTextActive,
+                    ]}
+                  >
+                    Pris: Høy → Lav
+                  </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[styles.sortOption, sortBy === 'date' && styles.sortOptionActive]}
+                  onPress={() => setSortBy('date')}
+                >
+                  <View style={[styles.radioCircle, sortBy === 'date' && styles.radioCircleActive]}>
+                    {sortBy === 'date' && <View style={styles.radioInner} />}
+                  </View>
+                  <Text
+                    style={[
+                      styles.sortOptionText,
+                      sortBy === 'date' && styles.sortOptionTextActive,
+                    ]}
+                  >
+                    Hentingsdato
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            {/* Divider */}
+            <View style={styles.sectionDivider} />
+
+            {/* City Search with Autocomplete */}
+            <View style={styles.filterSection}>
+              <Text style={styles.filterSectionTitle}>By</Text>
+              <View style={styles.searchInputContainer}>
+                <Ionicons name="search-outline" size={20} color={colors.text.secondary} />
+                <TextInput
+                  style={styles.searchInput}
+                  placeholder="Søk etter by..."
+                  value={filterState.citySearch}
+                  onChangeText={setCitySearch}
+                  placeholderTextColor={colors.text.secondary}
+                />
+                {filterState.citySearch && (
+                  <TouchableOpacity onPress={() => setCitySearch('')}>
+                    <Ionicons name="close-circle" size={20} color={colors.text.secondary} />
+                  </TouchableOpacity>
+                )}
+              </View>
+              <View style={styles.filterOptionsGrid}>
+                <TouchableOpacity
+                  style={[styles.filterOption, !filterState.city && styles.filterOptionActive]}
+                  onPress={() => {
+                    setCity('');
+                    setCitySearch('');
+                  }}
                 >
                   <Text
                     style={[
                       styles.filterOptionText,
-                      filterState.cargo_type === type && styles.filterOptionTextActive,
+                      !filterState.city && styles.filterOptionTextActive,
                     ]}
                   >
-                    {t(type)}
+                    Alle byer
                   </Text>
                 </TouchableOpacity>
-              ))}
-            </View>
-          </View>
-
-          {/* Price Range */}
-          <View style={styles.filterSection}>
-            <Text style={styles.filterSectionTitle}>Pris (NOK)</Text>
-            <View style={styles.rangeInputContainer}>
-              <View style={styles.rangeInputWrapper}>
-                <Text style={styles.rangeLabel}>Fra</Text>
-                <TextInput
-                  style={styles.rangeInput}
-                  placeholder="0"
-                  value={filterState.priceRange.min}
-                  onChangeText={text => setPriceRange({ ...filterState.priceRange, min: text })}
-                  keyboardType="numeric"
-                  placeholderTextColor={colors.text.secondary}
-                />
-              </View>
-              <View style={styles.rangeSeparator} />
-              <View style={styles.rangeInputWrapper}>
-                <Text style={styles.rangeLabel}>Til</Text>
-                <TextInput
-                  style={styles.rangeInput}
-                  placeholder="50000"
-                  value={filterState.priceRange.max}
-                  onChangeText={text => setPriceRange({ ...filterState.priceRange, max: text })}
-                  keyboardType="numeric"
-                  placeholderTextColor={colors.text.secondary}
-                />
+                {cities
+                  .filter(city => city.toLowerCase().includes(filterState.citySearch.toLowerCase()))
+                  .map(city => (
+                    <TouchableOpacity
+                      key={city}
+                      style={[
+                        styles.filterOption,
+                        filterState.city === city && styles.filterOptionActive,
+                      ]}
+                      onPress={() => {
+                        setCity(city);
+                        setCitySearch(city);
+                      }}
+                    >
+                      <Text
+                        style={[
+                          styles.filterOptionText,
+                          filterState.city === city && styles.filterOptionTextActive,
+                        ]}
+                      >
+                        {city}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
               </View>
             </View>
-          </View>
 
-          {/* Date Picker */}
-          <View style={styles.filterSection}>
-            <Text style={styles.filterSectionTitle}>Dato (hentingsdato)</Text>
-            <TouchableOpacity style={styles.datePickerButton}>
-              <Ionicons name="calendar-outline" size={20} color={colors.text.primary} />
-              <Text style={styles.datePickerText}>{filterState.pickupDate || 'Velg dato'}</Text>
-              <Ionicons name="chevron-forward" size={20} color={colors.text.secondary} />
+            {/* Cargo Type Tags */}
+            <View style={styles.filterSection}>
+              <Text style={styles.filterSectionTitle}>Type</Text>
+              <View style={styles.filterOptionsGrid}>
+                <TouchableOpacity
+                  style={[
+                    styles.filterOption,
+                    !filterState.cargo_type && styles.filterOptionActive,
+                  ]}
+                  onPress={() => setCargoType('')}
+                >
+                  <Text
+                    style={[
+                      styles.filterOptionText,
+                      !filterState.cargo_type && styles.filterOptionTextActive,
+                    ]}
+                  >
+                    Alle typer
+                  </Text>
+                </TouchableOpacity>
+                {[
+                  'construction',
+                  'automotive',
+                  'furniture',
+                  'electronics',
+                  'food',
+                  'clothing',
+                  'other',
+                ].map(type => (
+                  <TouchableOpacity
+                    key={type}
+                    style={[
+                      styles.filterOption,
+                      filterState.cargo_type === type && styles.filterOptionActive,
+                    ]}
+                    onPress={() => setCargoType(type)}
+                  >
+                    <Text
+                      style={[
+                        styles.filterOptionText,
+                        filterState.cargo_type === type && styles.filterOptionTextActive,
+                      ]}
+                    >
+                      {t(type)}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
+
+            {/* Price Range */}
+            <View style={styles.filterSection}>
+              <Text style={styles.filterSectionTitle}>Pris (NOK)</Text>
+              <View style={styles.rangeInputContainer}>
+                <View style={styles.rangeInputWrapper}>
+                  <Text style={styles.rangeLabel}>Fra</Text>
+                  <TextInput
+                    style={styles.rangeInput}
+                    placeholder="0"
+                    value={filterState.priceRange.min}
+                    onChangeText={text => setPriceRange({ ...filterState.priceRange, min: text })}
+                    keyboardType="numeric"
+                    placeholderTextColor={colors.text.secondary}
+                  />
+                </View>
+                <View style={styles.rangeSeparator} />
+                <View style={styles.rangeInputWrapper}>
+                  <Text style={styles.rangeLabel}>Til</Text>
+                  <TextInput
+                    style={styles.rangeInput}
+                    placeholder="50000"
+                    value={filterState.priceRange.max}
+                    onChangeText={text => setPriceRange({ ...filterState.priceRange, max: text })}
+                    keyboardType="numeric"
+                    placeholderTextColor={colors.text.secondary}
+                  />
+                </View>
+              </View>
+            </View>
+
+            {/* Date Picker */}
+            <View style={styles.filterSection}>
+              <Text style={styles.filterSectionTitle}>Dato (hentingsdato)</Text>
+              <TouchableOpacity style={styles.datePickerButton}>
+                <Ionicons name="calendar-outline" size={20} color={colors.text.primary} />
+                <Text style={styles.datePickerText}>{filterState.pickupDate || 'Velg dato'}</Text>
+                <Ionicons name="chevron-forward" size={20} color={colors.text.secondary} />
+              </TouchableOpacity>
+            </View>
+
+            {/* Weight Range */}
+            <View style={styles.filterSection}>
+              <Text style={styles.filterSectionTitle}>Vekt (kg)</Text>
+              <View style={styles.rangeInputContainer}>
+                <View style={styles.rangeInputWrapper}>
+                  <Text style={styles.rangeLabel}>Min</Text>
+                  <TextInput
+                    style={styles.rangeInput}
+                    placeholder="0"
+                    value={filterState.weightRange.min}
+                    onChangeText={text => setWeightRange({ ...filterState.weightRange, min: text })}
+                    keyboardType="numeric"
+                    placeholderTextColor={colors.text.secondary}
+                  />
+                </View>
+                <View style={styles.rangeSeparator} />
+                <View style={styles.rangeInputWrapper}>
+                  <Text style={styles.rangeLabel}>Maks</Text>
+                  <TextInput
+                    style={styles.rangeInput}
+                    placeholder="1000"
+                    value={filterState.weightRange.max}
+                    onChangeText={text => setWeightRange({ ...filterState.weightRange, max: text })}
+                    keyboardType="numeric"
+                    placeholderTextColor={colors.text.secondary}
+                  />
+                </View>
+              </View>
+            </View>
+
+            {/* Extra padding at bottom for sticky bar */}
+            <View style={{ height: 120 }} />
+          </ScrollView>
+
+          {/* Sticky Action Bar at Bottom */}
+          <View style={styles.stickyActionBar}>
+            <TouchableOpacity
+              onPress={() => {
+                resetFilters();
+              }}
+            >
+              <Text style={styles.resetButtonText}>Tilbakestill</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity style={styles.ctaButton} onPress={closeFilterSheet}>
+              <Text style={styles.ctaButtonText}>Vis treff ({requests.length})</Text>
             </TouchableOpacity>
           </View>
-
-          {/* Weight Range */}
-          <View style={styles.filterSection}>
-            <Text style={styles.filterSectionTitle}>Vekt (kg)</Text>
-            <View style={styles.rangeInputContainer}>
-              <View style={styles.rangeInputWrapper}>
-                <Text style={styles.rangeLabel}>Min</Text>
-                <TextInput
-                  style={styles.rangeInput}
-                  placeholder="0"
-                  value={filterState.weightRange.min}
-                  onChangeText={text => setWeightRange({ ...filterState.weightRange, min: text })}
-                  keyboardType="numeric"
-                  placeholderTextColor={colors.text.secondary}
-                />
-              </View>
-              <View style={styles.rangeSeparator} />
-              <View style={styles.rangeInputWrapper}>
-                <Text style={styles.rangeLabel}>Maks</Text>
-                <TextInput
-                  style={styles.rangeInput}
-                  placeholder="1000"
-                  value={filterState.weightRange.max}
-                  onChangeText={text => setWeightRange({ ...filterState.weightRange, max: text })}
-                  keyboardType="numeric"
-                  placeholderTextColor={colors.text.secondary}
-                />
-              </View>
-            </View>
-          </View>
-
-          {/* Extra padding at bottom for sticky bar */}
-          <View style={{ height: 120 }} />
-        </ScrollView>
-
-        {/* Sticky Action Bar at Bottom */}
-        <View style={styles.stickyActionBar}>
-          <TouchableOpacity
-            onPress={() => {
-              resetFilters();
-            }}
-          >
-            <Text style={styles.resetButtonText}>Tilbakestill</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.ctaButton} onPress={closeFilterSheet}>
-            <Text style={styles.ctaButtonText}>Vis treff ({requests.length})</Text>
-          </TouchableOpacity>
         </View>
-      </View>
       </Modal>
     </View>
   );

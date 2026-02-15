@@ -29,6 +29,7 @@ This document details the implementation of Vipps payment integration for the Tr
 **Base URL**: `https://api.vipps.no`
 
 **Authentication**:
+
 ```typescript
 headers: {
   'client_id': process.env.VIPPS_CLIENT_ID,
@@ -95,7 +96,7 @@ export const initiateVippsPayment = functions.https.onCall(async (data, context)
   const response = await fetch('https://api.vipps.no/ecomm/v2/payments', {
     method: 'POST',
     headers: {
-      'Authorization': `Bearer ${accessToken}`,
+      Authorization: `Bearer ${accessToken}`,
       'Content-Type': 'application/json',
       'Ocp-Apim-Subscription-Key': process.env.VIPPS_SUBSCRIPTION_KEY,
     },
@@ -205,6 +206,7 @@ const handlePayment = async () => {
 ### Payment Hold
 
 When a bid is accepted:
+
 1. Customer initiates Vipps payment
 2. Payment is "reserved" (authorized but not captured)
 3. Funds are held by Vipps until capture
@@ -213,6 +215,7 @@ When a bid is accepted:
 ### Payment Release
 
 When delivery is confirmed:
+
 1. Customer signs delivery confirmation
 2. Cloud Function captures the payment
 3. Funds are transferred to carrier
@@ -222,6 +225,7 @@ When delivery is confirmed:
 ### Refund Process
 
 If delivery is disputed:
+
 1. Admin reviews the dispute
 2. Partial or full refund is initiated via Vipps API
 3. Funds are returned to customer
@@ -239,26 +243,23 @@ export const refundVippsPayment = functions.https.onCall(async (data, context) =
   const accessToken = await getVippsAccessToken();
 
   // Initiate refund
-  const response = await fetch(
-    `https://api.vipps.no/ecomm/v2/payments/${orderId}/refund`,
-    {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${accessToken}`,
-        'Content-Type': 'application/json',
-        'Ocp-Apim-Subscription-Key': process.env.VIPPS_SUBSCRIPTION_KEY,
+  const response = await fetch(`https://api.vipps.no/ecomm/v2/payments/${orderId}/refund`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      'Content-Type': 'application/json',
+      'Ocp-Apim-Subscription-Key': process.env.VIPPS_SUBSCRIPTION_KEY,
+    },
+    body: JSON.stringify({
+      merchantInfo: {
+        merchantSerialNumber: process.env.VIPPS_MERCHANT_SERIAL_NUMBER,
       },
-      body: JSON.stringify({
-        merchantInfo: {
-          merchantSerialNumber: process.env.VIPPS_MERCHANT_SERIAL_NUMBER,
-        },
-        transaction: {
-          amount: amount * 100,
-          transactionText: `Refund: ${reason}`,
-        },
-      }),
-    }
-  );
+      transaction: {
+        amount: amount * 100,
+        transactionText: `Refund: ${reason}`,
+      },
+    }),
+  });
 
   return { success: true };
 });
@@ -279,7 +280,7 @@ export const refundVippsPayment = functions.https.onCall(async (data, context) =
 function verifyVippsWebhook(req: functions.https.Request): boolean {
   const signature = req.headers['x-vipps-signature'];
   const payload = JSON.stringify(req.body);
-  
+
   const expectedSignature = crypto
     .createHmac('sha256', process.env.VIPPS_WEBHOOK_SECRET!)
     .update(payload)
@@ -303,6 +304,7 @@ function verifyVippsWebhook(req: functions.https.Request): boolean {
 **Test API**: `https://apitest.vipps.no`
 
 **Test Credentials**:
+
 ```
 Client ID: test_client_id
 Client Secret: test_client_secret
@@ -312,6 +314,7 @@ Subscription Key: test_subscription_key
 ### Test Cards
 
 Vipps provides a test app for simulation:
+
 - Download Vipps Test app
 - Use test phone number: 90000000
 - Test various scenarios (success, failure, timeout)
@@ -385,16 +388,19 @@ Vipps provides a test app for simulation:
 ### Common Issues
 
 **Payment Fails to Initiate**
+
 - Check API credentials
 - Verify phone number format
 - Ensure sufficient funds
 
 **Webhook Not Received**
+
 - Verify webhook URL configuration
 - Check firewall settings
 - Review Vipps dashboard
 
 **Refund Fails**
+
 - Ensure payment was captured
 - Verify refund amount doesn't exceed payment
 - Check refund timeframe (30 days)

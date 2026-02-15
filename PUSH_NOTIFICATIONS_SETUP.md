@@ -82,17 +82,17 @@ import * as Notifications from 'expo-notifications';
 
 async function registerForPushNotifications() {
   const { status } = await Notifications.requestPermissionsAsync();
-  
+
   if (status !== 'granted') {
     alert('Push notification permissions not granted');
     return;
   }
 
   const token = await Notifications.getExpoPushTokenAsync();
-  
+
   // Store token in Firestore
   await firestore.doc(`users/${userId}`).update({
-    fcmToken: token.data
+    fcmToken: token.data,
   });
 }
 ```
@@ -151,6 +151,7 @@ eas build --platform android --profile preview
 ### 3. Firebase Console
 
 Test notifications directly from Firebase Console:
+
 1. Go to Cloud Messaging
 2. Send test message
 3. Enter FCM token

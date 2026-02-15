@@ -209,7 +209,8 @@ export function useCargoRequests({ activeTab, filters, sortBy, userId }: UseCarg
     refetch,
   } = useInfiniteQuery({
     queryKey,
-    queryFn: ({ pageParam }) => fetchCargoRequestsPage({ activeTab, filters, sortBy, userId }, pageParam ?? null),
+    queryFn: ({ pageParam }) =>
+      fetchCargoRequestsPage({ activeTab, filters, sortBy, userId }, pageParam ?? null),
     initialPageParam: null,
     getNextPageParam: lastPage => (lastPage.hasMore ? lastPage.lastVisible : undefined),
     staleTime: 5 * 60 * 1000,

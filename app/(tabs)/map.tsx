@@ -255,15 +255,17 @@ export default function MapScreen() {
               description={item.order.cargo_title}
               onPress={() => handleOrderPress(item.order.id)}
             >
-              <View
-                style={[styles.marker, { backgroundColor: getStatusColor(item.order.status) }]}
-              >
+              <View style={[styles.marker, { backgroundColor: getStatusColor(item.order.status) }]}>
                 <Ionicons name="location-outline" size={14} color={theme.iconColors.white} />
               </View>
             </Marker>
           )}
           renderCluster={(cluster, onPress) => (
-            <Marker key={`cluster-${cluster.clusterId}`} coordinate={cluster.coordinate} onPress={onPress}>
+            <Marker
+              key={`cluster-${cluster.clusterId}`}
+              coordinate={cluster.coordinate}
+              onPress={onPress}
+            >
               <View style={styles.clusterMarker}>
                 <Text style={styles.clusterText}>{cluster.pointCount}</Text>
               </View>

@@ -23,6 +23,7 @@ The app uses a cohesive warm orange color scheme that conveys trust, energy, and
 ### Spacing System
 
 Consistent spacing using multiples of 4:
+
 - XS: 4px
 - SM: 8px
 - MD: 16px
@@ -33,17 +34,20 @@ Consistent spacing using multiples of 4:
 ## iOS-Native Styled Components
 
 ### IOSButton
+
 - Rounded corners (12px border radius)
 - Clear visual feedback on press
 - Variants: primary, secondary, outlined, text
 - Minimum touch target: 48px height
 
 ### IOSTypography
+
 - System font for native feel
 - Proper line heights for readability
 - Consistent heading hierarchy
 
 ### IOSActionSheet
+
 - Bottom sheet modal matching iOS design
 - Semi-transparent overlay
 - Destructive action styling (red)
@@ -54,6 +58,7 @@ Consistent spacing using multiples of 4:
 ### 1. Image Loading
 
 **LazyImage Component**
+
 ```typescript
 - Progressive loading with placeholder
 - Error handling with fallback UI
@@ -64,6 +69,7 @@ Consistent spacing using multiples of 4:
 ### 2. List Rendering
 
 **FlatList Optimization**
+
 ```typescript
 - VirtualizedList for large datasets
 - keyExtractor for stable IDs
@@ -76,6 +82,7 @@ Consistent spacing using multiples of 4:
 ### 3. Navigation
 
 **Expo Router Benefits**
+
 - File-based routing (no manual configuration)
 - Automatic code splitting
 - Deep linking built-in
@@ -84,6 +91,7 @@ Consistent spacing using multiples of 4:
 ### 4. State Management
 
 **Context API + Firestore Real-time**
+
 - Minimal re-renders with proper context separation
 - Real-time updates without polling
 - Optimistic UI updates for better perceived performance
@@ -91,6 +99,7 @@ Consistent spacing using multiples of 4:
 ### 5. Network Optimization
 
 **Firestore Queries**
+
 ```typescript
 - Indexed queries for fast reads
 - Pagination with limit()
@@ -99,6 +108,7 @@ Consistent spacing using multiples of 4:
 ```
 
 **Redis Caching**
+
 ```typescript
 - Cache frequently accessed data
 - 1-hour expiration for user profiles
@@ -130,12 +140,14 @@ Consistent spacing using multiples of 4:
 ### 2. Error Handling
 
 **ErrorBoundary**
+
 - Catches React errors gracefully
 - User-friendly error messages
 - Retry functionality
 - Error logging for debugging
 
 **NetworkStatusBar**
+
 - Persistent indicator when offline
 - Automatic retry when online
 - Queue operations for when connection restored
@@ -143,12 +155,14 @@ Consistent spacing using multiples of 4:
 ### 3. Form UX
 
 **AddressInput**
+
 - GPS location button for quick input
 - Address autocomplete (future enhancement)
 - Clear validation messages
 - Inline error display
 
 **Input Fields**
+
 - Clear labels above inputs
 - Placeholder text for guidance
 - Auto-focus on mount where appropriate
@@ -157,12 +171,14 @@ Consistent spacing using multiples of 4:
 ### 4. Navigation UX
 
 **Tab Bar**
+
 - Clear icons for each section
 - Badge for unread messages/notifications
 - Active state highlighting
 - Smooth transitions
 
 **Stack Navigation**
+
 - Proper back button placement
 - Gesture navigation support
 - Modal sheets for contextual actions
@@ -170,12 +186,14 @@ Consistent spacing using multiples of 4:
 ### 5. Feedback Mechanisms
 
 **Toast Notifications**
+
 - Success/Error/Warning/Info types
 - Color-coded for quick recognition
 - Auto-dismiss after 3 seconds
 - Non-intrusive placement
 
 **NotificationBanner**
+
 - Actionable push notifications
 - Swipe to dismiss
 - Tap to navigate to content
@@ -193,6 +211,7 @@ Consistent spacing using multiples of 4:
 ### 1. Native Animations
 
 Using `react-native-reanimated`:
+
 - Runs on native thread (60 FPS)
 - Smooth transitions and gestures
 - Hardware acceleration

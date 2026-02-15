@@ -78,7 +78,9 @@ export default function CreateRequestScreen() {
   const [loading, setLoading] = useState(false);
   const [touchedFields, setTouchedFields] = useState<Record<string, boolean>>({});
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
-  const [distanceInfo, setDistanceInfo] = useState<{ distance: string; duration: string } | null>(null);
+  const [distanceInfo, setDistanceInfo] = useState<{ distance: string; duration: string } | null>(
+    null
+  );
   const [showPickupDate, setShowPickupDate] = useState(false);
   const [showDeliveryDate, setShowDeliveryDate] = useState(false);
   const [showCargoTypeMenu, setShowCargoTypeMenu] = useState(false);
@@ -585,315 +587,320 @@ export default function CreateRequestScreen() {
         keyExtractor={item => item.key}
         renderItem={() => (
           <View>
-        {/* Title */}
-        <View style={styles.fieldContainer}>
-          <Text style={styles.fieldLabel} accessibilityRole="header">Tittel</Text>
-          <TextInput
-            testID="cargo-title-input"
-            accessibilityLabel="Tittel på lastforespørsel"
-            accessibilityHint="Skriv inn en beskrivende tittel for lasten din"
-            style={styles.textInput}
-            value={formData.title}
-            onChangeText={value => {
-              updateFormData('title', value);
-              clearDistanceIfNeeded('title');
-            }}
-            onBlur={() => handleBlur('title')}
-            placeholder=""
-            autoComplete="off"
-            returnKeyType="next"
-          />
-        </View>
-
-        {/* Description */}
-        <View style={styles.fieldContainer}>
-          <Text style={styles.fieldLabel} accessibilityRole="header">Beskrivelse</Text>
-          <TextInput
-            testID="cargo-description-input"
-            accessibilityLabel="Beskrivelse av last"
-            accessibilityHint="Skriv inn en detaljert beskrivelse av lasten"
-            style={[styles.textInput, styles.textArea]}
-            value={formData.description}
-            onChangeText={value => {
-              updateFormData('description', value);
-              clearDistanceIfNeeded('description');
-            }}
-            onBlur={() => handleBlur('description')}
-            multiline
-            numberOfLines={4}
-            textAlignVertical="top"
-            placeholder=""
-            autoComplete="off"
-            returnKeyType="next"
-          />
-        </View>
-
-        {/* Cargo Type */}
-        <View style={styles.fieldContainer}>
-          <Text style={styles.fieldLabel}>Lasttype</Text>
-          <TouchableOpacity
-            style={styles.dropdownButton}
-            onPress={() => setShowCargoTypeMenu(true)}
-            accessibilityRole="button"
-            accessibilityLabel="Velg lasttype"
-            accessibilityHint="Åpner meny for å velge lasttype"
-          >
-            <Text style={[
-              styles.dropdownText,
-              !formData.cargo_type && styles.dropdownPlaceholder
-            ]}>
-              {formData.cargo_type 
-                ? CARGO_TYPES.find(t => t.id === formData.cargo_type)?.label 
-                : 'Velg lasttype'}
-            </Text>
-            <Ionicons name="chevron-down" size={20} color="#6B7280" />
-          </TouchableOpacity>
-        </View>
-
-        {/* From Address */}
-        <View style={styles.fieldContainer}>
-          <Text style={styles.fieldLabel}>Fra</Text>
-          <GooglePlacesAutocomplete
-            ref={fromAddressRef}
-            placeholder="Søk etter adresse..."
-            onPress={handleFromAddressSelect}
-            query={{
-              key: process.env.EXPO_PUBLIC_GOOGLE_PLACES_API_KEY,
-              language: 'no',
-              components: 'country:no',
-            }}
-            fetchDetails={true}
-            enablePoweredByContainer={false}
-            styles={{
-              container: styles.placesContainer,
-              textInput: styles.placesTextInput,
-            }}
-            textInputProps={{
-              onChangeText: (text: string) => {
-                fromAddressTextRef.current = text;
-                if (text !== formData.from_address) {
-                  clearDistanceIfNeeded('from_address');
-                }
-              },
-              onBlur: () => handleBlur('from_address'),
-            }}
-          />
-        </View>
-
-        {/* To Address */}
-        <View style={styles.fieldContainer}>
-          <Text style={styles.fieldLabel}>Til</Text>
-          <GooglePlacesAutocomplete
-            ref={toAddressRef}
-            placeholder="Søk etter adresse..."
-            onPress={handleToAddressSelect}
-            query={{
-              key: process.env.EXPO_PUBLIC_GOOGLE_PLACES_API_KEY,
-              language: 'no',
-              components: 'country:no',
-            }}
-            fetchDetails={true}
-            enablePoweredByContainer={false}
-            styles={{
-              container: styles.placesContainer,
-              textInput: styles.placesTextInput,
-            }}
-            textInputProps={{
-              onChangeText: (text: string) => {
-                toAddressTextRef.current = text;
-                if (text !== formData.to_address) {
-                  clearDistanceIfNeeded('to_address');
-                }
-              },
-              onBlur: () => handleBlur('to_address'),
-            }}
-          />
-        </View>
-
-        {/* Dates */}
-        <View style={styles.dateRow}>
-          <View style={[styles.fieldContainer, { flex: 1, marginRight: 8 }]}>
-            <Text style={styles.fieldLabel}>Hentedato</Text>
-            <TouchableOpacity style={styles.dateInput} onPress={() => setShowPickupDate(true)}>
+            {/* Title */}
+            <View style={styles.fieldContainer}>
+              <Text style={styles.fieldLabel} accessibilityRole="header">
+                Tittel
+              </Text>
               <TextInput
-                style={styles.dateTextInput}
-                value={formData.pickup_date.toLocaleDateString('no-NO')}
-                editable={false}
-                placeholder="dd.mm.åååå"
+                testID="cargo-title-input"
+                accessibilityLabel="Tittel på lastforespørsel"
+                accessibilityHint="Skriv inn en beskrivende tittel for lasten din"
+                style={styles.textInput}
+                value={formData.title}
+                onChangeText={value => {
+                  updateFormData('title', value);
+                  clearDistanceIfNeeded('title');
+                }}
+                onBlur={() => handleBlur('title')}
+                placeholder=""
+                autoComplete="off"
+                returnKeyType="next"
               />
-              <Ionicons name="calendar-outline" size={20} color="#6B7280" />
-            </TouchableOpacity>
-          </View>
-
-          <View style={[styles.fieldContainer, { flex: 1, marginLeft: 8 }]}>
-            <Text style={styles.fieldLabel}>Leveringsdato</Text>
-            <TouchableOpacity style={styles.dateInput} onPress={() => setShowDeliveryDate(true)}>
-              <TextInput
-                style={styles.dateTextInput}
-                value={formData.delivery_date.toLocaleDateString('no-NO')}
-                editable={false}
-                placeholder="dd.mm.åååå"
-              />
-              <Ionicons name="calendar-outline" size={20} color="#6B7280" />
-            </TouchableOpacity>
-          </View>
-        </View>
-
-        {/* Dimensions */}
-        <View style={styles.fieldContainer}>
-          <Text style={styles.fieldLabel}>Dimensjoner (L × B × H)</Text>
-          <View style={styles.dimensionRow}>
-            <TextInput
-              style={[styles.textInput, styles.dimensionInput]}
-              value={formData.length}
-              onChangeText={value => {
-                updateFormData('length', value);
-                clearDistanceIfNeeded('length');
-              }}
-              onBlur={() => handleBlur('length')}
-              placeholder="L (cm)"
-              placeholderTextColor="#9CA3AF"
-              keyboardType="numeric"
-            />
-            <TextInput
-              style={[styles.textInput, styles.dimensionInput]}
-              value={formData.width}
-              onChangeText={value => {
-                updateFormData('width', value);
-                clearDistanceIfNeeded('width');
-              }}
-              onBlur={() => handleBlur('width')}
-              placeholder="B (cm)"
-              placeholderTextColor="#9CA3AF"
-              keyboardType="numeric"
-            />
-            <TextInput
-              style={[styles.textInput, styles.dimensionInput]}
-              value={formData.height}
-              onChangeText={value => {
-                updateFormData('height', value);
-                clearDistanceIfNeeded('height');
-              }}
-              onBlur={() => handleBlur('height')}
-              placeholder="H (cm)"
-              placeholderTextColor="#9CA3AF"
-              keyboardType="numeric"
-            />
-          </View>
-        </View>
-
-        {/* Weight */}
-        <View style={styles.fieldContainer}>
-          <Text style={styles.fieldLabel}>Vekt (kg)</Text>
-          <TextInput
-            style={[styles.textInput, { borderColor: '#E5E7EB' }]}
-            value={formData.weight}
-            onChangeText={value => {
-              updateFormData('weight', value);
-              clearDistanceIfNeeded('weight');
-            }}
-            onBlur={() => handleBlur('weight')}
-            placeholder=""
-            keyboardType="numeric"
-          />
-        </View>
-
-        {/* Images */}
-        <View style={styles.fieldContainer}>
-          <Text style={styles.fieldLabel}>Bilder (maks 5)</Text>
-          <TouchableOpacity style={styles.imageUploadArea} onPress={pickImages}>
-            <View style={styles.imageUploadContent}>
-              <Ionicons name="image-outline" size={32} color="#9CA3AF" />
-              <Text style={styles.imageUploadText}>Legg til bilder ({images.length}/5)</Text>
             </View>
-          </TouchableOpacity>
 
-          {images.length > 0 && (
-            <View style={styles.imageGrid}>
-              {images.map((uri, index) => (
-                <View key={index} style={styles.imageGridItem}>
-                  <LazyImage uri={uri} style={styles.imagePreview} containerStyle={styles.imageGridItem} />
-                  <TouchableOpacity
-                    style={styles.removeImageButton}
-                    onPress={() => removeImage(index)}
-                  >
-                    <Ionicons name="close-circle" size={24} color="#EF4444" />
-                  </TouchableOpacity>
+            {/* Description */}
+            <View style={styles.fieldContainer}>
+              <Text style={styles.fieldLabel} accessibilityRole="header">
+                Beskrivelse
+              </Text>
+              <TextInput
+                testID="cargo-description-input"
+                accessibilityLabel="Beskrivelse av last"
+                accessibilityHint="Skriv inn en detaljert beskrivelse av lasten"
+                style={[styles.textInput, styles.textArea]}
+                value={formData.description}
+                onChangeText={value => {
+                  updateFormData('description', value);
+                  clearDistanceIfNeeded('description');
+                }}
+                onBlur={() => handleBlur('description')}
+                multiline
+                numberOfLines={4}
+                textAlignVertical="top"
+                placeholder=""
+                autoComplete="off"
+                returnKeyType="next"
+              />
+            </View>
+
+            {/* Cargo Type */}
+            <View style={styles.fieldContainer}>
+              <Text style={styles.fieldLabel}>Lasttype</Text>
+              <TouchableOpacity
+                style={styles.dropdownButton}
+                onPress={() => setShowCargoTypeMenu(true)}
+                accessibilityRole="button"
+                accessibilityLabel="Velg lasttype"
+                accessibilityHint="Åpner meny for å velge lasttype"
+              >
+                <Text
+                  style={[styles.dropdownText, !formData.cargo_type && styles.dropdownPlaceholder]}
+                >
+                  {formData.cargo_type
+                    ? CARGO_TYPES.find(t => t.id === formData.cargo_type)?.label
+                    : 'Velg lasttype'}
+                </Text>
+                <Ionicons name="chevron-down" size={20} color="#6B7280" />
+              </TouchableOpacity>
+            </View>
+
+            {/* From Address */}
+            <View style={styles.fieldContainer}>
+              <Text style={styles.fieldLabel}>Fra</Text>
+              <GooglePlacesAutocomplete
+                ref={fromAddressRef}
+                placeholder="Søk etter adresse..."
+                onPress={handleFromAddressSelect}
+                query={{
+                  key: process.env.EXPO_PUBLIC_GOOGLE_PLACES_API_KEY,
+                  language: 'no',
+                  components: 'country:no',
+                }}
+                fetchDetails={true}
+                enablePoweredByContainer={false}
+                styles={{
+                  container: styles.placesContainer,
+                  textInput: styles.placesTextInput,
+                }}
+                textInputProps={{
+                  onChangeText: (text: string) => {
+                    fromAddressTextRef.current = text;
+                    if (text !== formData.from_address) {
+                      clearDistanceIfNeeded('from_address');
+                    }
+                  },
+                  onBlur: () => handleBlur('from_address'),
+                }}
+              />
+            </View>
+
+            {/* To Address */}
+            <View style={styles.fieldContainer}>
+              <Text style={styles.fieldLabel}>Til</Text>
+              <GooglePlacesAutocomplete
+                ref={toAddressRef}
+                placeholder="Søk etter adresse..."
+                onPress={handleToAddressSelect}
+                query={{
+                  key: process.env.EXPO_PUBLIC_GOOGLE_PLACES_API_KEY,
+                  language: 'no',
+                  components: 'country:no',
+                }}
+                fetchDetails={true}
+                enablePoweredByContainer={false}
+                styles={{
+                  container: styles.placesContainer,
+                  textInput: styles.placesTextInput,
+                }}
+                textInputProps={{
+                  onChangeText: (text: string) => {
+                    toAddressTextRef.current = text;
+                    if (text !== formData.to_address) {
+                      clearDistanceIfNeeded('to_address');
+                    }
+                  },
+                  onBlur: () => handleBlur('to_address'),
+                }}
+              />
+            </View>
+
+            {/* Dates */}
+            <View style={styles.dateRow}>
+              <View style={[styles.fieldContainer, { flex: 1, marginRight: 8 }]}>
+                <Text style={styles.fieldLabel}>Hentedato</Text>
+                <TouchableOpacity style={styles.dateInput} onPress={() => setShowPickupDate(true)}>
+                  <TextInput
+                    style={styles.dateTextInput}
+                    value={formData.pickup_date.toLocaleDateString('no-NO')}
+                    editable={false}
+                    placeholder="dd.mm.åååå"
+                  />
+                  <Ionicons name="calendar-outline" size={20} color="#6B7280" />
+                </TouchableOpacity>
+              </View>
+
+              <View style={[styles.fieldContainer, { flex: 1, marginLeft: 8 }]}>
+                <Text style={styles.fieldLabel}>Leveringsdato</Text>
+                <TouchableOpacity
+                  style={styles.dateInput}
+                  onPress={() => setShowDeliveryDate(true)}
+                >
+                  <TextInput
+                    style={styles.dateTextInput}
+                    value={formData.delivery_date.toLocaleDateString('no-NO')}
+                    editable={false}
+                    placeholder="dd.mm.åååå"
+                  />
+                  <Ionicons name="calendar-outline" size={20} color="#6B7280" />
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            {/* Dimensions */}
+            <View style={styles.fieldContainer}>
+              <Text style={styles.fieldLabel}>Dimensjoner (L × B × H)</Text>
+              <View style={styles.dimensionRow}>
+                <TextInput
+                  style={[styles.textInput, styles.dimensionInput]}
+                  value={formData.length}
+                  onChangeText={value => {
+                    updateFormData('length', value);
+                    clearDistanceIfNeeded('length');
+                  }}
+                  onBlur={() => handleBlur('length')}
+                  placeholder="L (cm)"
+                  placeholderTextColor="#9CA3AF"
+                  keyboardType="numeric"
+                />
+                <TextInput
+                  style={[styles.textInput, styles.dimensionInput]}
+                  value={formData.width}
+                  onChangeText={value => {
+                    updateFormData('width', value);
+                    clearDistanceIfNeeded('width');
+                  }}
+                  onBlur={() => handleBlur('width')}
+                  placeholder="B (cm)"
+                  placeholderTextColor="#9CA3AF"
+                  keyboardType="numeric"
+                />
+                <TextInput
+                  style={[styles.textInput, styles.dimensionInput]}
+                  value={formData.height}
+                  onChangeText={value => {
+                    updateFormData('height', value);
+                    clearDistanceIfNeeded('height');
+                  }}
+                  onBlur={() => handleBlur('height')}
+                  placeholder="H (cm)"
+                  placeholderTextColor="#9CA3AF"
+                  keyboardType="numeric"
+                />
+              </View>
+            </View>
+
+            {/* Weight */}
+            <View style={styles.fieldContainer}>
+              <Text style={styles.fieldLabel}>Vekt (kg)</Text>
+              <TextInput
+                style={[styles.textInput, { borderColor: '#E5E7EB' }]}
+                value={formData.weight}
+                onChangeText={value => {
+                  updateFormData('weight', value);
+                  clearDistanceIfNeeded('weight');
+                }}
+                onBlur={() => handleBlur('weight')}
+                placeholder=""
+                keyboardType="numeric"
+              />
+            </View>
+
+            {/* Images */}
+            <View style={styles.fieldContainer}>
+              <Text style={styles.fieldLabel}>Bilder (maks 5)</Text>
+              <TouchableOpacity style={styles.imageUploadArea} onPress={pickImages}>
+                <View style={styles.imageUploadContent}>
+                  <Ionicons name="image-outline" size={32} color="#9CA3AF" />
+                  <Text style={styles.imageUploadText}>Legg til bilder ({images.length}/5)</Text>
                 </View>
-              ))}
+              </TouchableOpacity>
+
+              {images.length > 0 && (
+                <View style={styles.imageGrid}>
+                  {images.map((uri, index) => (
+                    <View key={index} style={styles.imageGridItem}>
+                      <LazyImage
+                        uri={uri}
+                        style={styles.imagePreview}
+                        containerStyle={styles.imageGridItem}
+                      />
+                      <TouchableOpacity
+                        style={styles.removeImageButton}
+                        onPress={() => removeImage(index)}
+                      >
+                        <Ionicons name="close-circle" size={24} color="#EF4444" />
+                      </TouchableOpacity>
+                    </View>
+                  ))}
+                </View>
+              )}
             </View>
-          )}
-        </View>
 
-        {/* Price Type */}
-        <View style={styles.fieldContainer}>
-          <Text style={styles.fieldLabel}>Prismodell</Text>
-          <TouchableOpacity
-            style={styles.dropdownButton}
-            onPress={() => setShowPriceTypeMenu(true)}
-            accessibilityRole="button"
-            accessibilityLabel="Velg prismodell"
-            accessibilityHint="Åpner meny for å velge prismodell"
-          >
-            <Text style={[
-              styles.dropdownText,
-              !formData.price_type && styles.dropdownPlaceholder
-            ]}>
-              {formData.price_type 
-                ? PRICE_TYPES.find(t => t.id === formData.price_type)?.label 
-                : 'Velg prismodell'}
-            </Text>
-            <Ionicons name="chevron-down" size={20} color="#6B7280" />
-          </TouchableOpacity>
-        </View>
+            {/* Price Type */}
+            <View style={styles.fieldContainer}>
+              <Text style={styles.fieldLabel}>Prismodell</Text>
+              <TouchableOpacity
+                style={styles.dropdownButton}
+                onPress={() => setShowPriceTypeMenu(true)}
+                accessibilityRole="button"
+                accessibilityLabel="Velg prismodell"
+                accessibilityHint="Åpner meny for å velge prismodell"
+              >
+                <Text
+                  style={[styles.dropdownText, !formData.price_type && styles.dropdownPlaceholder]}
+                >
+                  {formData.price_type
+                    ? PRICE_TYPES.find(t => t.id === formData.price_type)?.label
+                    : 'Velg prismodell'}
+                </Text>
+                <Ionicons name="chevron-down" size={20} color="#6B7280" />
+              </TouchableOpacity>
+            </View>
 
-        {/* Price - ALWAYS VISIBLE */}
-        <View style={styles.fieldContainer}>
-          <Text style={styles.fieldLabel}>Foreslått pris (NOK)</Text>
-          <TextInput
-            style={[
-              styles.textInputNeutral,
-              formData.price_type === 'negotiable' && styles.textInputDisabled
-            ]}
-            placeholder="0"
-            value={formData.price}
-            onChangeText={value => updateFormData('price', value)}
-            onBlur={() => handleBlur('price')}
-            keyboardType="numeric"
-            editable={formData.price_type === 'fixed'}
-          />
-          {formData.price_type === 'negotiable' && (
-            <Text style={styles.fieldHint}>
-              Pris kan forhandles med transportør
-            </Text>
-          )}
-          {fieldErrors.price ? (
-            <Text style={styles.errorText}>{fieldErrors.price}</Text>
-          ) : null}
-        </View>
+            {/* Price - ALWAYS VISIBLE */}
+            <View style={styles.fieldContainer}>
+              <Text style={styles.fieldLabel}>Foreslått pris (NOK)</Text>
+              <TextInput
+                style={[
+                  styles.textInputNeutral,
+                  formData.price_type === 'negotiable' && styles.textInputDisabled,
+                ]}
+                placeholder="0"
+                value={formData.price}
+                onChangeText={value => updateFormData('price', value)}
+                onBlur={() => handleBlur('price')}
+                keyboardType="numeric"
+                editable={formData.price_type === 'fixed'}
+              />
+              {formData.price_type === 'negotiable' && (
+                <Text style={styles.fieldHint}>Pris kan forhandles med transportør</Text>
+              )}
+              {fieldErrors.price ? <Text style={styles.errorText}>{fieldErrors.price}</Text> : null}
+            </View>
 
-        {/* Bottom Action Buttons */}
-        <View style={styles.bottomActions}>
-          <TouchableOpacity
-            style={styles.cancelButton}
-            onPress={() => router.push('/(tabs)/home')}
-          >
-            <Text style={styles.cancelButtonText}>Avbryt</Text>
-          </TouchableOpacity>
-          
-          <TouchableOpacity
-            style={[styles.publishButton, loading && styles.publishButtonDisabled]}
-            onPress={handleSubmit}
-            disabled={loading}
-          >
-            <Text style={styles.publishButtonText}>
-              {loading ? 'Publiserer...' : 'Publiser last'}
-            </Text>
-          </TouchableOpacity>
-        </View>
+            {/* Bottom Action Buttons */}
+            <View style={styles.bottomActions}>
+              <TouchableOpacity
+                style={styles.cancelButton}
+                onPress={() => router.push('/(tabs)/home')}
+              >
+                <Text style={styles.cancelButtonText}>Avbryt</Text>
+              </TouchableOpacity>
 
-        {/* Bottom spacing for tab bar */}
-        <View style={{ height: 80 }} />
+              <TouchableOpacity
+                style={[styles.publishButton, loading && styles.publishButtonDisabled]}
+                onPress={handleSubmit}
+                disabled={loading}
+              >
+                <Text style={styles.publishButtonText}>
+                  {loading ? 'Publiserer...' : 'Publiser last'}
+                </Text>
+              </TouchableOpacity>
+            </View>
+
+            {/* Bottom spacing for tab bar */}
+            <View style={{ height: 80 }} />
           </View>
         )}
       />
@@ -939,7 +946,7 @@ export default function CreateRequestScreen() {
           activeOpacity={1}
           onPress={() => setShowCargoTypeMenu(false)}
         >
-          <View 
+          <View
             style={styles.menuContainer}
             accessible={true}
             accessibilityRole="menu"
@@ -951,7 +958,7 @@ export default function CreateRequestScreen() {
                 <Ionicons name="close" size={24} color="#6B7280" />
               </TouchableOpacity>
             </View>
-            
+
             {CARGO_TYPES.map(type => (
               <TouchableOpacity
                 key={type.id}
@@ -962,7 +969,7 @@ export default function CreateRequestScreen() {
                 accessibilityState={{ selected: formData.cargo_type === type.id }}
                 style={[
                   styles.menuItem,
-                  formData.cargo_type === type.id && styles.menuItemSelected
+                  formData.cargo_type === type.id && styles.menuItemSelected,
                 ]}
                 onPress={() => {
                   updateFormData('cargo_type', type.id);
@@ -971,10 +978,12 @@ export default function CreateRequestScreen() {
                   triggerHapticFeedback.light();
                 }}
               >
-                <Text style={[
-                  styles.menuItemText,
-                  formData.cargo_type === type.id && styles.menuItemTextSelected
-                ]}>
+                <Text
+                  style={[
+                    styles.menuItemText,
+                    formData.cargo_type === type.id && styles.menuItemTextSelected,
+                  ]}
+                >
                   {type.label}
                 </Text>
                 {formData.cargo_type === type.id && (
@@ -998,7 +1007,7 @@ export default function CreateRequestScreen() {
           activeOpacity={1}
           onPress={() => setShowPriceTypeMenu(false)}
         >
-          <View 
+          <View
             style={styles.menuContainer}
             accessible={true}
             accessibilityRole="menu"
@@ -1010,13 +1019,13 @@ export default function CreateRequestScreen() {
                 <Ionicons name="close" size={24} color="#6B7280" />
               </TouchableOpacity>
             </View>
-            
+
             {PRICE_TYPES.map(type => (
               <TouchableOpacity
                 key={type.id}
                 style={[
                   styles.menuItem,
-                  formData.price_type === type.id && styles.menuItemSelected
+                  formData.price_type === type.id && styles.menuItemSelected,
                 ]}
                 onPress={() => {
                   updateFormData('price_type', type.id);
@@ -1028,10 +1037,12 @@ export default function CreateRequestScreen() {
                 accessibilityLabel={type.label}
                 accessibilityState={{ selected: formData.price_type === type.id }}
               >
-                <Text style={[
-                  styles.menuItemText,
-                  formData.price_type === type.id && styles.menuItemTextSelected
-                ]}>
+                <Text
+                  style={[
+                    styles.menuItemText,
+                    formData.price_type === type.id && styles.menuItemTextSelected,
+                  ]}
+                >
                   {type.label}
                 </Text>
                 {formData.price_type === type.id && (
