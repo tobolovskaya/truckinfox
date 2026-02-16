@@ -232,9 +232,8 @@ export default function MessagesScreen() {
         activeOpacity={0.7}
       >
         <Avatar
-          image={item.other_user_avatar}
+          photoURL={item.other_user_avatar}
           size={56}
-          name={item.other_user_name}
         />
 
         <View style={styles.conversationContent}>
