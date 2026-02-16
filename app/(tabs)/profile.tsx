@@ -36,18 +36,24 @@ export default function ProfileScreen() {
       id: 'edit',
       icon: 'person-outline',
       label: 'Edit Profile',
-      onPress: () => {},
+      onPress: () => router.push('/profile/edit'),
     },
     {
-      id: 'settings',
-      icon: 'settings-outline',
-      label: 'Settings',
-      onPress: () => {},
+      id: 'security',
+      icon: 'shield-checkmark-outline',
+      label: 'Security',
+      onPress: () => router.push('/profile/security'),
     },
     {
       id: 'payments',
       icon: 'wallet-outline',
       label: 'Payment History',
+      onPress: () => router.push('/profile/payments'),
+    },
+    {
+      id: 'settings',
+      icon: 'settings-outline',
+      label: 'Settings',
       onPress: () => {},
     },
     {
@@ -71,7 +77,7 @@ export default function ProfileScreen() {
           <View style={styles.avatar}>
             <Ionicons name="person" size={40} color={colors.primary} />
           </View>
-          <Text style={styles.userName}>{user?.full_name || 'User'}</Text>
+          <Text style={styles.userName}>{user?.displayName || 'User'}</Text>
           <Text style={styles.userEmail}>{user?.email}</Text>
         </View>
 
