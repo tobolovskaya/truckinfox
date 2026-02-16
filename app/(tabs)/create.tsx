@@ -23,7 +23,16 @@ import { db, storage } from '../../lib/firebase';
 import { trackCargoCreated } from '../../utils/analytics';
 import { sanitizeInput, sanitizeNumber } from '../../utils/sanitization';
 import { colors, spacing, fontSize, fontWeight, borderRadius } from '../../lib/sharedStyles';
-import { collection, addDoc, updateDoc, doc, getDocs, orderBy, query, where } from 'firebase/firestore';
+import {
+  collection,
+  addDoc,
+  updateDoc,
+  doc,
+  getDocs,
+  orderBy,
+  query,
+  where,
+} from 'firebase/firestore';
 import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 import { useRouter } from 'expo-router';
 import { triggerHapticFeedback } from '../../utils/haptics';
@@ -97,9 +106,6 @@ export default function CreateRequestScreen() {
   const [touchedFields, setTouchedFields] = useState<Record<string, boolean>>({});
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [liveValidation, setLiveValidation] = useState(false);
-  const [_distanceInfo, setDistanceInfo] = useState<{ distance: string; duration: string } | null>(
-    null
-  );
   const [showPickupDate, setShowPickupDate] = useState(false);
   const [showDeliveryDate, setShowDeliveryDate] = useState(false);
   const [showCargoTypeMenu, setShowCargoTypeMenu] = useState(false);
@@ -173,7 +179,6 @@ export default function CreateRequestScreen() {
 
   const clearDistanceIfNeeded = (field: string) => {
     if (field === 'from_address' || field === 'to_address') {
-      setDistanceInfo(null);
       setFormData(prev => ({ ...prev, distance_km: null }));
     }
   };
@@ -299,12 +304,7 @@ export default function CreateRequestScreen() {
     }
 
     return (
-      <Ionicons
-        name="checkmark-circle"
-        size={18}
-        color={colors.success}
-        style={styles.validIcon}
-      />
+      <Ionicons name="checkmark-circle" size={18} color={colors.success} style={styles.validIcon} />
     );
   };
 
@@ -439,14 +439,10 @@ export default function CreateRequestScreen() {
     }
 
     return new Promise(resolve => {
-      Alert.alert(
-        'Duplikat?',
-        'Du har allerede en lignende forespørsel. Vil du fortsette?',
-        [
-          { text: 'Nei', style: 'cancel', onPress: () => resolve(false) },
-          { text: 'Ja', onPress: () => resolve(true) },
-        ]
-      );
+      Alert.alert('Duplikat?', 'Du har allerede en lignende forespørsel. Vil du fortsette?', [
+        { text: 'Nei', style: 'cancel', onPress: () => resolve(false) },
+        { text: 'Ja', onPress: () => resolve(true) },
+      ]);
     });
   };
 
@@ -492,7 +488,7 @@ export default function CreateRequestScreen() {
 
         try {
           triggerHapticFeedback.light();
-        } catch (_error) {
+        } catch {
           // Haptic feedback not available
         }
       }
@@ -506,7 +502,7 @@ export default function CreateRequestScreen() {
     setImages(images.filter((_, i) => i !== index));
     try {
       triggerHapticFeedback.light();
-    } catch (_error) {
+    } catch {
       // Haptic feedback not available
     }
   };
@@ -689,17 +685,16 @@ export default function CreateRequestScreen() {
 
       if (formData.to_lat && formData.to_lng) {
         try {
-          const distance = await calculateDistance({ lat, lng }, {
-            lat: formData.to_lat,
-            lng: formData.to_lng,
-          });
+          const distance = await calculateDistance(
+            { lat, lng },
+            {
+              lat: formData.to_lat,
+              lng: formData.to_lng,
+            }
+          );
           if (distance) {
-            setDistanceInfo({
-              distance: distance.distance.text,
-              duration: distance.duration.text,
-            });
-            const distanceKm = distance.distance.value / 1000;
-            updateFormData('distance_km', distanceKm);
+            const nextDistanceKm = distance.distance.value / 1000;
+            updateFormData('distance_km', nextDistanceKm);
           }
         } catch (error) {
           console.error('Distance calculation failed:', error);
@@ -727,12 +722,8 @@ export default function CreateRequestScreen() {
             { lat, lng }
           );
           if (distance) {
-            setDistanceInfo({
-              distance: distance.distance.text,
-              duration: distance.duration.text,
-            });
-            const distanceKm = distance.distance.value / 1000;
-            updateFormData('distance_km', distanceKm);
+            const nextDistanceKm = distance.distance.value / 1000;
+            updateFormData('distance_km', nextDistanceKm);
           }
         } catch (error) {
           console.error('Distance calculation failed:', error);
@@ -1001,10 +992,7 @@ export default function CreateRequestScreen() {
               <Text style={styles.fieldLabel}>Vekt (kg)</Text>
               <View style={styles.inputWrapper}>
                 <TextInput
-                  style={[
-                    styles.textInput,
-                    ...getInputValidationStyles('weight', formData.weight),
-                  ]}
+                  style={[styles.textInput, ...getInputValidationStyles('weight', formData.weight)]}
                   value={formData.weight}
                   onChangeText={value => {
                     updateFormData('weight', value);
@@ -1065,9 +1053,7 @@ export default function CreateRequestScreen() {
                     <View key={key} style={styles.progressRow}>
                       <Text style={styles.progressLabel}>{key.replace('_', ' ')}</Text>
                       <View style={styles.progressBarBackground}>
-                        <View
-                          style={[styles.progressBarFill, { width: `${progress}%` }]}
-                        />
+                        <View style={[styles.progressBarFill, { width: `${progress}%` }]} />
                       </View>
                       <Text style={styles.progressText}>{Math.round(progress)}%</Text>
                     </View>

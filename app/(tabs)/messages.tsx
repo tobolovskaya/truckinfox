@@ -7,7 +7,6 @@ import {
   TouchableOpacity,
   TextInput,
   RefreshControl,
-  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -15,30 +14,43 @@ import { useRouter } from 'expo-router';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTranslation } from 'react-i18next';
 import { db } from '../../lib/firebase';
-import {
-  collection,
-  query,
-  where,
-  orderBy,
-  onSnapshot,
-  limit,
-  Timestamp,
-} from 'firebase/firestore';
+import { collection, query, where, orderBy, onSnapshot, limit } from 'firebase/firestore';
 import { batchFetchUsers, batchFetchRequests } from '../../utils/batchFetch';
 import Avatar from '../../components/Avatar';
 import { SkeletonLoader } from '../../components/SkeletonLoader';
 import { colors, spacing, fontSize, fontWeight, borderRadius } from '../../lib/sharedStyles';
 import { formatDistanceToNow } from 'date-fns';
 
-interface Message {
+type FirestoreTimestamp = {
+  toDate?: () => Date;
+};
+
+interface FirestoreMessage {
   id: string;
-  content: string;
-  sender_id: string;
-  receiver_id: string;
-  request_id: string;
-  created_at: any;
-  read_at?: any;
+  content?: string;
+  sender_id?: string;
+  receiver_id?: string;
+  request_id?: string;
+  created_at?: FirestoreTimestamp | Date | string | null;
+  read_at?: FirestoreTimestamp | Date | string | null;
 }
+
+const parseTimestamp = (value?: FirestoreTimestamp | Date | string | null) => {
+  if (!value) {
+    return new Date();
+  }
+  if (typeof value === 'object' && 'toDate' in value && typeof value.toDate === 'function') {
+    return value.toDate();
+  }
+  if (value instanceof Date) {
+    return value;
+  }
+  if (typeof value === 'string') {
+    const parsed = new Date(value);
+    return isNaN(parsed.getTime()) ? new Date() : parsed;
+  }
+  return new Date();
+};
 
 interface Conversation {
   id: string;
@@ -96,15 +108,25 @@ export default function MessagesScreen() {
       );
 
       const [sentSnapshot, receivedSnapshot] = await Promise.all([
-        new Promise<any[]>(resolve => {
+        new Promise<FirestoreMessage[]>(resolve => {
           const unsubscribe = onSnapshot(messagesQuery, snapshot => {
-            resolve(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+            resolve(
+              snapshot.docs.map(doc => ({
+                id: doc.id,
+                ...(doc.data() as Omit<FirestoreMessage, 'id'>),
+              }))
+            );
             unsubscribe();
           });
         }),
-        new Promise<any[]>(resolve => {
+        new Promise<FirestoreMessage[]>(resolve => {
           const unsubscribe = onSnapshot(receivedQuery, snapshot => {
-            resolve(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+            resolve(
+              snapshot.docs.map(doc => ({
+                id: doc.id,
+                ...(doc.data() as Omit<FirestoreMessage, 'id'>),
+              }))
+            );
             unsubscribe();
           });
         }),
@@ -124,6 +146,9 @@ export default function MessagesScreen() {
       const requestIdsSet = new Set<string>();
 
       allMessages.forEach(msg => {
+        if (!msg.sender_id || !msg.receiver_id || !msg.request_id) {
+          return;
+        }
         const otherUserId = msg.sender_id === user.uid ? msg.receiver_id : msg.sender_id;
         userIdsSet.add(otherUserId);
         requestIdsSet.add(msg.request_id);
@@ -139,6 +164,10 @@ export default function MessagesScreen() {
       const conversationsMap = new Map<string, Conversation>();
 
       allMessages.forEach(msg => {
+        if (!msg.sender_id || !msg.receiver_id || !msg.request_id) {
+          return;
+        }
+
         const otherUserId = msg.sender_id === user.uid ? msg.receiver_id : msg.sender_id;
         const conversationKey = `${msg.request_id}_${otherUserId}`;
 
@@ -161,7 +190,7 @@ export default function MessagesScreen() {
             request_id: msg.request_id,
             request_title: request.title || 'Cargo Request',
             last_message: msg.content || '',
-            last_message_time: msg.created_at?.toDate?.() || new Date(),
+            last_message_time: parseTimestamp(msg.created_at),
             unread_count: msg.receiver_id === user.uid && !msg.read_at ? 1 : 0,
             is_last_message_mine: msg.sender_id === user.uid,
           });

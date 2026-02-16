@@ -3,16 +3,11 @@ import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert } from 'rea
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
-import {
-  colors,
-  spacing,
-  fontSize,
-  fontWeight,
-  borderRadius,
-  shadows,
-} from '../../lib/sharedStyles';
+import { colors, spacing, fontSize, fontWeight } from '../../lib/sharedStyles';
 import { useAuth } from '../../contexts/AuthContext';
 import Avatar from '../../components/Avatar';
+
+type IoniconName = React.ComponentProps<typeof Ionicons>['name'];
 
 export default function ProfileScreen() {
   const router = useRouter();
@@ -37,7 +32,12 @@ export default function ProfileScreen() {
     ]);
   };
 
-  const menuItems = [
+  const menuItems: Array<{
+    id: string;
+    icon: IoniconName;
+    label: string;
+    onPress: () => void;
+  }> = [
     {
       id: 'edit',
       icon: 'person-outline',
@@ -100,7 +100,7 @@ export default function ProfileScreen() {
               accessibilityRole="button"
               accessibilityLabel={item.label}
             >
-              <Ionicons name={item.icon as any} size={24} color={colors.text.secondary} />
+              <Ionicons name={item.icon} size={24} color={colors.text.secondary} />
               <Text style={styles.menuItemText}>{item.label}</Text>
               <Ionicons name="chevron-forward" size={20} color={colors.text.tertiary} />
             </TouchableOpacity>
