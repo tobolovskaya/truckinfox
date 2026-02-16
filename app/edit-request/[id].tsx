@@ -1,20 +1,25 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import {
   ActivityIndicator,
   Alert,
-  ScrollView,
+  Modal,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { KeyboardAwareFlatList } from 'react-native-keyboard-aware-scroll-view';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTranslation } from 'react-i18next';
-import { db } from '../../lib/firebase';
+import { useToast } from '../../contexts/ToastContext';
+import { db, storage } from '../../lib/firebase';
+import { sanitizeInput, sanitizeNumber } from '../../utils/sanitization';
+import { triggerHapticFeedback } from '../../utils/haptics';
+import { SuccessAnimation } from '../../components/SuccessAnimation';
 import {
   collection,
   doc,
@@ -25,26 +30,40 @@ import {
   updateDoc,
   where,
 } from 'firebase/firestore';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import DateTimePicker from '@react-native-community/datetimepicker';
-import { theme } from '../../theme/theme';
-import { colors, spacing, fontSize, fontWeight, borderRadius, shadows } from '../../lib/sharedStyles';
+import * as ImagePicker from 'expo-image-picker';
+import { manipulateAsync, SaveFormat } from 'expo-image-manipulator';
+import AddressInput from '../../components/AddressInput';
+import { calculateDistance } from '../../utils/googlePlaces';
+import { geohashForLocation } from 'geofire-common';
+import { fetchWithTimeout } from '../../utils/fetchWithTimeout';
+import { LazyImage } from '../../components/LazyImage';
+import { colors, spacing, fontSize, fontWeight, borderRadius } from '../../lib/sharedStyles';
 
 const CARGO_TYPES = [
-  { id: 'furniture', icon: 'bed-outline' },
-  { id: 'electronics', icon: 'phone-portrait-outline' },
-  { id: 'construction', icon: 'construct-outline' },
-  { id: 'automotive', icon: 'car-outline' },
-  { id: 'boats', icon: 'boat-outline' },
-  { id: 'campingvogn', icon: 'home-outline' },
-  { id: 'machinery', icon: 'build-outline' },
-  { id: 'other', icon: 'cube-outline' },
+  { id: 'automotive', label: 'Bil/Motor' },
+  { id: 'construction', label: 'Byggemateriale' },
+  { id: 'boats', label: 'Båter' },
+  { id: 'electronics', label: 'Elektronikk' },
+  { id: 'campingvogn', label: 'Campingvogn' },
+  { id: 'machinery', label: 'Maskineri' },
+  { id: 'furniture', label: 'Møbler' },
+  { id: 'other', label: 'Annet' },
 ];
 
 const PRICE_TYPES = [
-  { id: 'fixed', icon: 'pricetag-outline' },
-  { id: 'negotiable', icon: 'chatbubble-outline' },
-  { id: 'auction', icon: 'trending-up-outline' },
+  { id: 'negotiable', label: 'Kan forhandles' },
+  { id: 'fixed', label: 'Fast pris' },
 ];
+
+const CARGO_LIMITS = {
+  weight: { min: 1, max: 25000 },
+  dimension: { min: 1, max: 1200 },
+  volume: { max: 40 },
+} as const;
+
+const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
 interface CargoRequest {
   id: string;
@@ -52,15 +71,24 @@ interface CargoRequest {
   description: string;
   cargo_type: string;
   weight: number;
-  dimensions: string;
+  dimensions?: string;
+  length?: number;
+  width?: number;
+  height?: number;
   from_address: string;
   to_address: string;
+  from_lat?: number | null;
+  from_lng?: number | null;
+  to_lat?: number | null;
+  to_lng?: number | null;
+  distance_km?: number | null;
   pickup_date: string;
   delivery_date: string;
   price: number;
   price_type: string;
   status: string;
   user_id: string;
+  images?: string[];
   bids: any[];
 }
 
@@ -68,24 +96,46 @@ export default function EditRequestScreen() {
   const { id } = useLocalSearchParams();
   const { user } = useAuth();
   const { t } = useTranslation();
+  const toast = useToast();
   const router = useRouter();
+  const insets = useSafeAreaInsets();
 
   const [request, setRequest] = useState<CargoRequest | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [showPickupDate, setShowPickupDate] = useState(false);
   const [showDeliveryDate, setShowDeliveryDate] = useState(false);
+  const [showCargoTypeMenu, setShowCargoTypeMenu] = useState(false);
+  const [showPriceTypeMenu, setShowPriceTypeMenu] = useState(false);
+  const [showSuccessAnimation, setShowSuccessAnimation] = useState(false);
+  const [touchedFields, setTouchedFields] = useState<Record<string, boolean>>({});
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const [_distanceInfo, setDistanceInfo] = useState<{ distance: string; duration: string } | null>(
+    null
+  );
+  const [images, setImages] = useState<string[]>([]);
+  const [originalImages, setOriginalImages] = useState<string[]>([]);
+
+  const fromAddressTextRef = useRef('');
+  const toAddressTextRef = useRef('');
 
   const [formData, setFormData] = useState({
     title: '',
     description: '',
     cargo_type: '',
     weight: '',
-    dimensions: '',
+    length: '',
+    width: '',
+    height: '',
     from_address: '',
     to_address: '',
+    from_lat: null as number | null,
+    from_lng: null as number | null,
+    to_lat: null as number | null,
+    to_lng: null as number | null,
+    distance_km: null as number | null,
     pickup_date: new Date(),
-    delivery_date: new Date(Date.now() + 24 * 60 * 60 * 1000),
+    delivery_date: new Date(Date.now() + MS_PER_DAY),
     price_type: '',
     price: '',
   });
@@ -95,19 +145,190 @@ export default function EditRequestScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  const clearDistanceIfNeeded = (field: string) => {
+    if (field === 'from_address' || field === 'to_address') {
+      setDistanceInfo(null);
+      setFormData(prev => ({ ...prev, distance_km: null }));
+    }
+  };
+
+  const validateField = (field: string, value: unknown): string => {
+    switch (field) {
+      case 'title':
+        if (!value || !value.toString().trim()) return 'Tittel er påkrevd';
+        if (value.toString().trim().length < 3) return 'Tittel må være minst 3 tegn';
+        if (value.toString().trim().length > 100) return 'Tittel kan ikke være lengre enn 100 tegn';
+        return '';
+
+      case 'description':
+        if (!value || !value.toString().trim()) return 'Beskrivelse er påkrevd';
+        if (value.toString().trim().length < 10) return 'Beskrivelse må være minst 10 tegn';
+        if (value.toString().trim().length > 500)
+          return 'Beskrivelse kan ikke være lengre enn 500 tegn';
+        return '';
+
+      case 'cargo_type':
+        if (!value) return 'Lasttype er påkrevd';
+        return '';
+
+      case 'weight': {
+        if (!value || value.toString().trim() === '') return 'Vekt er påkrevd';
+        const weight = Number(value);
+        if (isNaN(weight)) return 'Vekt må være et tall';
+        if (weight < CARGO_LIMITS.weight.min || weight > CARGO_LIMITS.weight.max)
+          return `Vekt må være mellom ${CARGO_LIMITS.weight.min} og ${CARGO_LIMITS.weight.max} kg`;
+        return '';
+      }
+
+      case 'length':
+      case 'width':
+      case 'height': {
+        if (value && value.toString().trim()) {
+          const dim = Number(value);
+          if (isNaN(dim) || dim < CARGO_LIMITS.dimension.min || dim > CARGO_LIMITS.dimension.max) {
+            return `Dimensjon må være mellom ${CARGO_LIMITS.dimension.min} og ${CARGO_LIMITS.dimension.max} cm`;
+          }
+        }
+        return '';
+      }
+
+      case 'from_address':
+        if (!value || !value.toString().trim()) return 'Fra-adresse er påkrevd';
+        if (value.toString().trim().length < 3) return 'Fra-adresse må være minst 3 tegn';
+        return '';
+
+      case 'to_address':
+        if (!value || !value.toString().trim()) return 'Til-adresse er påkrevd';
+        if (value.toString().trim().length < 3) return 'Til-adresse må være minst 3 tegn';
+        return '';
+
+      case 'price_type':
+        if (!value) return 'Pristype er påkrevd';
+        return '';
+
+      case 'price':
+        if (formData.price_type === 'fixed') {
+          if (!value || value.toString().trim() === '') return 'Pris er påkrevd for fast pris';
+          const price = Number(value);
+          if (isNaN(price)) return 'Pris må være et tall';
+          if (price <= 0) return 'Pris må være større enn 0';
+          if (price > 1000000) return 'Pris kan ikke være større enn 1 000 000 NOK';
+        }
+        return '';
+
+      default:
+        return '';
+    }
+  };
+
+  const updateFormData = (field: string, value: unknown) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+
+    if (touchedFields[field]) {
+      const error = validateField(field, value);
+      setFieldErrors(prev => ({ ...prev, [field]: error }));
+    }
+  };
+
+  const handleBlur = (field: string) => {
+    setTouchedFields(prev => ({ ...prev, [field]: true }));
+    const error = validateField(field, formData[field as keyof typeof formData]);
+    setFieldErrors(prev => ({ ...prev, [field]: error }));
+  };
+
+  const validateDimensions = (): boolean => {
+    const weight = Number(formData.weight);
+
+    if (weight < CARGO_LIMITS.weight.min || weight > CARGO_LIMITS.weight.max) {
+      toast.error(
+        `Vekt må være mellom ${CARGO_LIMITS.weight.min} og ${CARGO_LIMITS.weight.max} kg`
+      );
+      triggerHapticFeedback.error();
+      return false;
+    }
+
+    if (formData.length && formData.width && formData.height) {
+      const length = Number(formData.length);
+      const width = Number(formData.width);
+      const height = Number(formData.height);
+
+      for (const dim of [length, width, height]) {
+        if (isNaN(dim) || dim < CARGO_LIMITS.dimension.min || dim > CARGO_LIMITS.dimension.max) {
+          toast.error(
+            `Dimensjoner må være mellom ${CARGO_LIMITS.dimension.min} og ${CARGO_LIMITS.dimension.max} cm`
+          );
+          triggerHapticFeedback.error();
+          return false;
+        }
+      }
+
+      const volume = (length * width * height) / 1000000;
+      if (volume > CARGO_LIMITS.volume.max) {
+        toast.error(
+          `Lastevolum (${volume.toFixed(2)} m³) overstiger maksimum (${CARGO_LIMITS.volume.max} m³)`
+        );
+        triggerHapticFeedback.error();
+        return false;
+      }
+    }
+
+    return true;
+  };
+
+  const validateForm = () => {
+    const fieldsToValidate = [
+      'title',
+      'description',
+      'cargo_type',
+      'weight',
+      'from_address',
+      'to_address',
+      'price_type',
+      'price',
+    ];
+    const newErrors: { [key: string]: string } = {};
+    const newTouched: { [key: string]: boolean } = {};
+
+    fieldsToValidate.forEach(field => {
+      newTouched[field] = true;
+      const error = validateField(field, formData[field as keyof typeof formData]);
+      if (error) {
+        newErrors[field] = error;
+      }
+    });
+
+    setTouchedFields(newTouched);
+    setFieldErrors(newErrors);
+
+    const firstError = Object.values(newErrors).find(error => error);
+    if (firstError) {
+      toast.error(firstError);
+      triggerHapticFeedback.error();
+      return false;
+    }
+
+    if (!validateDimensions()) {
+      return false;
+    }
+
+    return true;
+  };
+
   const fetchRequest = async () => {
     try {
       const requestRef = doc(db, 'cargo_requests', id as string);
       const requestSnap = await getDoc(requestRef);
 
       if (!requestSnap.exists()) {
-        throw new Error(t('requestNotFound'));
+        toast.error(t('requestNotFound'));
+        router.back();
+        return;
       }
 
       const data = { id: requestSnap.id, ...requestSnap.data() } as CargoRequest;
 
       if (data.user_id !== user?.uid) {
-        Alert.alert(t('error'), t('editOwnRequestOnly'));
+        toast.error(t('editOwnRequestOnly'));
         router.back();
         return;
       }
@@ -120,124 +341,333 @@ export default function EditRequestScreen() {
       const bidsSnap = await getDocs(bidsQuery);
 
       if (!bidsSnap.empty) {
-        Alert.alert(t('error'), t('editNotAllowedAcceptedBids'));
+        toast.error(t('editNotAllowedAcceptedBids'));
         router.back();
         return;
       }
 
       setRequest(data);
+
+      // Parse dimensions if available
+      let length = '',
+        width = '',
+        height = '';
+      if (data.dimensions && data.dimensions.includes('x')) {
+        const parts = data.dimensions.split('x').map(p => p.trim());
+        if (parts.length === 3) {
+          [length, width, height] = parts;
+        }
+      }
+
       setFormData({
         title: data.title,
         description: data.description,
         cargo_type: data.cargo_type,
         weight: data.weight.toString(),
-        dimensions: data.dimensions || '',
+        length,
+        width,
+        height,
         from_address: data.from_address,
         to_address: data.to_address,
+        from_lat: data.from_lat ?? null,
+        from_lng: data.from_lng ?? null,
+        to_lat: data.to_lat ?? null,
+        to_lng: data.to_lng ?? null,
+        distance_km: data.distance_km ?? null,
         pickup_date: new Date(data.pickup_date),
         delivery_date: new Date(data.delivery_date),
         price_type: data.price_type,
         price: data.price.toString(),
       });
+
+      if (data.images) {
+        setImages(data.images);
+        setOriginalImages(data.images);
+      }
     } catch (error) {
       console.error('Error fetching request:', error);
-      Alert.alert(t('error'), t('failedToLoadRequest'));
+      toast.error(t('failedToLoadRequest'));
       router.back();
     } finally {
       setLoading(false);
     }
   };
 
-  const updateFormData = (field: string, value: string | Date) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+  const compressImage = async (uri: string) => {
+    try {
+      const manipResult = await manipulateAsync(uri, [{ resize: { width: 1200 } }], {
+        compress: 0.7,
+        format: SaveFormat.JPEG,
+      });
+      return manipResult.uri;
+    } catch (error) {
+      console.error('Error compressing image:', error);
+      return uri;
+    }
   };
 
-  const validateForm = () => {
-    if (!formData.title.trim()) {
-      Alert.alert(t('error'), t('titleRequired'));
-      return false;
+  const pickImages = async () => {
+    try {
+      const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
+
+      if (!permissionResult.granted) {
+        toast.warning('Vi trenger tilgang til bildene dine for å laste opp bilder');
+        return;
+      }
+
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ['images'],
+        allowsMultipleSelection: true,
+        quality: 0.8,
+        selectionLimit: 5,
+      });
+
+      if (!result.canceled && result.assets) {
+        const newImages = result.assets.map(asset => asset.uri);
+        const remainingSlots = 5 - images.length;
+        const imagesToAdd = newImages.slice(0, remainingSlots);
+
+        if (newImages.length > remainingSlots) {
+          toast.info('Du kan bare laste opp maksimalt 5 bilder');
+        }
+
+        setImages([...images, ...imagesToAdd]);
+
+        try {
+          triggerHapticFeedback.light();
+        } catch (_error) {
+          // Haptic feedback not available
+        }
+      }
+    } catch (error) {
+      console.error('Error picking images:', error);
+      toast.error('Kunne ikke laste bilder');
     }
-    if (!formData.description.trim()) {
-      Alert.alert(t('error'), t('descriptionRequired'));
-      return false;
+  };
+
+  const removeImage = (index: number) => {
+    setImages(images.filter((_, i) => i !== index));
+    try {
+      triggerHapticFeedback.light();
+    } catch (_error) {
+      // Haptic feedback not available
     }
-    if (!formData.cargo_type) {
-      Alert.alert(t('error'), t('cargoTypeRequired'));
-      return false;
+  };
+
+  const uploadImages = async (requestId: string): Promise<string[]> => {
+    const uploadedUrls: string[] = [];
+
+    for (let i = 0; i < images.length; i++) {
+      const uri = images[i];
+
+      // If it's already a URL, keep it
+      if (uri.startsWith('http')) {
+        uploadedUrls.push(uri);
+        continue;
+      }
+
+      try {
+        const compressedUri = await compressImage(uri);
+        const ext = uri.split('.').pop() || 'jpg';
+        const fileName = `request-images/${requestId}_${i}_${Date.now()}.${ext}`;
+
+        try {
+          const storageRef = ref(storage, fileName);
+          const response = await fetchWithTimeout(
+            compressedUri,
+            {
+              method: 'GET',
+            },
+            15000
+          );
+          const blob = await response.blob();
+          await uploadBytes(storageRef, blob, {
+            contentType: 'image/jpeg',
+          });
+
+          const downloadURL = await getDownloadURL(storageRef);
+          uploadedUrls.push(downloadURL);
+        } catch (error) {
+          console.error(`Error uploading image ${i}:`, error);
+          continue;
+        }
+      } catch (error) {
+        console.error(`Error processing image ${i}:`, error);
+      }
     }
-    if (!formData.weight || isNaN(Number(formData.weight))) {
-      Alert.alert(t('error'), t('weightRequired'));
-      return false;
-    }
-    if (!formData.from_address.trim()) {
-      Alert.alert(t('error'), t('fromAddressRequired'));
-      return false;
-    }
-    if (!formData.to_address.trim()) {
-      Alert.alert(t('error'), t('toAddressRequired'));
-      return false;
-    }
-    if (!formData.price_type) {
-      Alert.alert(t('error'), t('priceTypeRequired'));
-      return false;
-    }
-    if (formData.price_type === 'fixed' && (!formData.price || isNaN(Number(formData.price)))) {
-      Alert.alert(t('error'), t('priceRequired'));
-      return false;
-    }
-    return true;
+
+    return uploadedUrls;
   };
 
   const handleSave = async () => {
-    if (!validateForm()) return;
+    if (!validateForm()) {
+      triggerHapticFeedback.error();
+      return;
+    }
 
+    triggerHapticFeedback.medium();
     setSaving(true);
     try {
+      let from_geohash = null;
+      let to_geohash = null;
+
+      if (formData.from_lat && formData.from_lng) {
+        from_geohash = geohashForLocation([formData.from_lat, formData.from_lng]);
+      }
+
+      if (formData.to_lat && formData.to_lng) {
+        to_geohash = geohashForLocation([formData.to_lat, formData.to_lng]);
+      }
+
+      let dimensions = null;
+      if (formData.length && formData.width && formData.height) {
+        dimensions = `${formData.length} x ${formData.width} x ${formData.height}`;
+      }
+
       const requestRef = doc(db, 'cargo_requests', id as string);
-      await updateDoc(requestRef, {
-        title: formData.title.trim(),
-        description: formData.description.trim(),
+
+      const updateData: any = {
+        title: sanitizeInput(formData.title.trim(), 200),
+        description: sanitizeInput(formData.description.trim(), 2000),
         cargo_type: formData.cargo_type,
-        weight: Number(formData.weight),
-        dimensions: formData.dimensions.trim() || null,
-        from_address: formData.from_address.trim(),
-        to_address: formData.to_address.trim(),
+        weight: sanitizeNumber(formData.weight, 0, 100000),
+        dimensions: dimensions ? sanitizeInput(dimensions, 100) : null,
+        from_address: sanitizeInput(formData.from_address.trim(), 300),
+        to_address: sanitizeInput(formData.to_address.trim(), 300),
+        from_lat: formData.from_lat,
+        from_lng: formData.from_lng,
+        to_lat: formData.to_lat,
+        to_lng: formData.to_lng,
+        from_geohash,
+        to_geohash,
+        distance_km: formData.distance_km,
         pickup_date: formData.pickup_date.toISOString(),
         delivery_date: formData.delivery_date.toISOString(),
         price_type: formData.price_type,
-        price: formData.price_type === 'fixed' ? Number(formData.price) : 0,
+        price: formData.price_type === 'fixed' ? sanitizeNumber(formData.price, 0, 1000000) : 0,
         updated_at: serverTimestamp(),
-      });
+      };
 
-      Alert.alert(t('success'), t('requestUpdated'), [
-        {
-          text: t('ok'),
-          onPress: () => router.back(),
-        },
-      ]);
+      // Handle images if changed
+      if (images.length > 0) {
+        const imageUrls = await uploadImages(id as string);
+        if (imageUrls.length > 0) {
+          updateData.images = imageUrls;
+        }
+      } else if (originalImages.length > 0) {
+        // Remove images if all were deleted
+        updateData.images = [];
+      }
+
+      await updateDoc(requestRef, updateData);
+
+      // Success feedback
+      triggerHapticFeedback.success();
+      setShowSuccessAnimation(true);
+
+      toast.success(t('requestUpdated'));
+
+      setTimeout(() => {
+        router.back();
+      }, 500);
     } catch (error: any) {
-      Alert.alert(t('error'), error.message);
+      console.error('Error updating request:', error);
+      toast.error(error.message || t('error'));
+      triggerHapticFeedback.error();
     } finally {
       setSaving(false);
     }
   };
 
+  const handleFromAddressSelect = async (
+    address: string,
+    coordinates?: { lat: number; lng: number }
+  ) => {
+    clearDistanceIfNeeded('from_address');
+    updateFormData('from_address', address);
+    setTouchedFields(prev => ({ ...prev, from_address: true }));
+    const error = validateField('from_address', address);
+    setFieldErrors(prev => ({ ...prev, from_address: error }));
+
+    if (coordinates) {
+      updateFormData('from_lat', coordinates.lat);
+      updateFormData('from_lng', coordinates.lng);
+      fromAddressTextRef.current = address;
+
+      if (formData.to_lat && formData.to_lng) {
+        try {
+          const distance = await calculateDistance(coordinates, {
+            lat: formData.to_lat,
+            lng: formData.to_lng,
+          });
+          if (distance) {
+            setDistanceInfo({
+              distance: distance.distance.text,
+              duration: distance.duration.text,
+            });
+            const distanceKm = distance.distance.value / 1000;
+            updateFormData('distance_km', distanceKm);
+          }
+        } catch (error) {
+          console.error('Distance calculation failed:', error);
+        }
+      }
+    }
+  };
+
+  const handleToAddressSelect = async (
+    address: string,
+    coordinates?: { lat: number; lng: number }
+  ) => {
+    clearDistanceIfNeeded('to_address');
+    updateFormData('to_address', address);
+    setTouchedFields(prev => ({ ...prev, to_address: true }));
+    const error = validateField('to_address', address);
+    setFieldErrors(prev => ({ ...prev, to_address: error }));
+
+    if (coordinates) {
+      updateFormData('to_lat', coordinates.lat);
+      updateFormData('to_lng', coordinates.lng);
+      toAddressTextRef.current = address;
+
+      if (formData.from_lat && formData.from_lng) {
+        try {
+          const distance = await calculateDistance(
+            { lat: formData.from_lat, lng: formData.from_lng },
+            coordinates
+          );
+          if (distance) {
+            setDistanceInfo({
+              distance: distance.distance.text,
+              duration: distance.duration.text,
+            });
+            const distanceKm = distance.distance.value / 1000;
+            updateFormData('distance_km', distanceKm);
+          }
+        } catch (error) {
+          console.error('Distance calculation failed:', error);
+        }
+      }
+    }
+  };
+
   if (loading) {
     return (
-      <SafeAreaView style={styles.container}>
+      <View style={styles.container}>
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={theme.iconColors.primary} />
+          <ActivityIndicator size="large" color={colors.primary} />
           <Text style={styles.loadingText}>{t('loading')}</Text>
         </View>
-      </SafeAreaView>
+      </View>
     );
   }
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
+    <View style={styles.container}>
+      {/* Header */}
+      <View style={[styles.header, { paddingTop: insets.top + 16 }]}>
         <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-          <Ionicons name="arrow-back" size={24} color={theme.iconColors.dark} />
+          <Ionicons name="arrow-back" size={24} color={colors.text.primary} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>{t('editRequestTitle')}</Text>
         <TouchableOpacity
@@ -246,223 +676,316 @@ export default function EditRequestScreen() {
           disabled={saving}
         >
           {saving ? (
-            <ActivityIndicator size="small" color={theme.iconColors.white} />
+            <ActivityIndicator size="small" color={colors.white} />
           ) : (
             <Text style={styles.saveButtonText}>{t('save')}</Text>
           )}
         </TouchableOpacity>
       </View>
 
-      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>{t('basicInformation')}</Text>
+      <KeyboardAwareFlatList
+        contentContainerStyle={styles.scrollContent}
+        keyboardShouldPersistTaps="handled"
+        enableOnAndroid
+        extraScrollHeight={100}
+        enableResetScrollToCoords={false}
+        data={[{ key: 'form' }]}
+        keyExtractor={item => item.key}
+        renderItem={() => (
+          <View>
+            {/* Title */}
+            <View style={styles.fieldContainer}>
+              <Text style={styles.fieldLabel}>Tittel</Text>
+              <TextInput
+                style={styles.textInput}
+                value={formData.title}
+                onChangeText={value => {
+                  updateFormData('title', value);
+                  clearDistanceIfNeeded('title');
+                }}
+                onBlur={() => handleBlur('title')}
+                placeholder=""
+                autoComplete="off"
+                returnKeyType="next"
+              />
+            </View>
 
-          <View style={styles.inputContainer}>
-            <Text style={styles.label}>{t('title')} *</Text>
-            <TextInput
-              style={styles.input}
-              placeholder={t('enterTitle')}
-              value={formData.title}
-              onChangeText={value => updateFormData('title', value)}
-              placeholderTextColor="#9CA3AF"
-            />
-          </View>
+            {/* Description */}
+            <View style={styles.fieldContainer}>
+              <Text style={styles.fieldLabel}>Beskrivelse</Text>
+              <TextInput
+                style={[styles.textInput, styles.textArea]}
+                value={formData.description}
+                onChangeText={value => {
+                  updateFormData('description', value);
+                  clearDistanceIfNeeded('description');
+                }}
+                onBlur={() => handleBlur('description')}
+                multiline
+                numberOfLines={4}
+                textAlignVertical="top"
+                placeholder=""
+                autoComplete="off"
+                returnKeyType="next"
+              />
+            </View>
 
-          <View style={styles.inputContainer}>
-            <Text style={styles.label}>{t('description')} *</Text>
-            <TextInput
-              style={[styles.input, styles.textArea]}
-              placeholder={t('enterDescription')}
-              value={formData.description}
-              onChangeText={value => updateFormData('description', value)}
-              multiline
-              numberOfLines={4}
-              textAlignVertical="top"
-              placeholderTextColor="#9CA3AF"
-            />
-          </View>
-        </View>
-
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>{t('cargoType')} *</Text>
-          <View style={styles.cargoTypeGrid}>
-            {CARGO_TYPES.map(type => (
+            {/* Cargo Type */}
+            <View style={styles.fieldContainer}>
+              <Text style={styles.fieldLabel}>Lasttype</Text>
               <TouchableOpacity
-                key={type.id}
-                style={[
-                  styles.cargoTypeCard,
-                  formData.cargo_type === type.id && styles.cargoTypeCardActive,
-                ]}
-                onPress={() => updateFormData('cargo_type', type.id)}
+                style={styles.dropdownButton}
+                onPress={() => setShowCargoTypeMenu(true)}
               >
-                <Ionicons
-                  name={type.icon as any}
-                  size={24}
-                  color={formData.cargo_type === type.id ? '#FF7043' : '#616161'}
-                />
                 <Text
-                  style={[
-                    styles.cargoTypeText,
-                    formData.cargo_type === type.id && styles.cargoTypeTextActive,
-                  ]}
+                  style={[styles.dropdownText, !formData.cargo_type && styles.dropdownPlaceholder]}
                 >
-                  {t(type.id)}
+                  {formData.cargo_type
+                    ? CARGO_TYPES.find(t => t.id === formData.cargo_type)?.label
+                    : 'Velg lasttype'}
                 </Text>
+                <Ionicons name="chevron-down" size={20} color="#6B7280" />
               </TouchableOpacity>
-            ))}
-          </View>
-        </View>
-
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>{t('cargoDetails')}</Text>
-
-          <View style={styles.row}>
-            <View style={[styles.inputContainer, { flex: 1, marginRight: 8 }]}>
-              <Text style={styles.label}>{t('weight')} (kg) *</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="0"
-                value={formData.weight}
-                onChangeText={value => updateFormData('weight', value)}
-                keyboardType="numeric"
-                placeholderTextColor="#9CA3AF"
-              />
             </View>
-            <View style={[styles.inputContainer, { flex: 1, marginLeft: 8 }]}>
-              <Text style={styles.label}>{t('dimensions')}</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="L x W x H"
-                value={formData.dimensions}
-                onChangeText={value => updateFormData('dimensions', value)}
-                placeholderTextColor="#9CA3AF"
-              />
-            </View>
-          </View>
-        </View>
 
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>{t('route')}</Text>
-
-          <View style={styles.inputContainer}>
-            <Text style={styles.label}>{t('fromAddress')} *</Text>
-            <View style={styles.addressInputContainer}>
-              <Ionicons
-                name="location-outline"
-                size={20}
-                color={theme.iconColors.success}
-                style={styles.addressIcon}
-              />
-              <TextInput
-                style={styles.addressInput}
-                placeholder={t('enterFromAddress')}
+            {/* From Address */}
+            <View style={styles.fieldContainer}>
+              <Text style={styles.fieldLabel}>Fra</Text>
+              <AddressInput
+                placeholder="Søk etter adresse..."
                 value={formData.from_address}
-                onChangeText={value => updateFormData('from_address', value)}
-                placeholderTextColor="#9CA3AF"
+                onAddressSelect={handleFromAddressSelect}
+                onChangeText={(text: string) => {
+                  fromAddressTextRef.current = text;
+                  updateFormData('from_address', text);
+                  if (text !== formData.from_address) {
+                    clearDistanceIfNeeded('from_address');
+                  }
+                }}
               />
+              {fieldErrors.from_address && touchedFields.from_address && (
+                <Text style={styles.errorText}>{fieldErrors.from_address}</Text>
+              )}
             </View>
-          </View>
 
-          <View style={styles.inputContainer}>
-            <Text style={styles.label}>{t('toAddress')} *</Text>
-            <View style={styles.addressInputContainer}>
-              <Ionicons
-                name="location-outline"
-                size={20}
-                color={theme.iconColors.error}
-                style={styles.addressIcon}
-              />
-              <TextInput
-                style={styles.addressInput}
-                placeholder={t('enterToAddress')}
+            {/* To Address */}
+            <View style={styles.fieldContainer}>
+              <Text style={styles.fieldLabel}>Til</Text>
+              <AddressInput
+                placeholder="Søk etter adresse..."
                 value={formData.to_address}
-                onChangeText={value => updateFormData('to_address', value)}
-                placeholderTextColor="#9CA3AF"
+                onAddressSelect={handleToAddressSelect}
+                onChangeText={(text: string) => {
+                  toAddressTextRef.current = text;
+                  updateFormData('to_address', text);
+                  if (text !== formData.to_address) {
+                    clearDistanceIfNeeded('to_address');
+                  }
+                }}
+              />
+              {fieldErrors.to_address && touchedFields.to_address && (
+                <Text style={styles.errorText}>{fieldErrors.to_address}</Text>
+              )}
+            </View>
+
+            {/* Dates */}
+            <View style={styles.dateRow}>
+              <View style={[styles.fieldContainer, { flex: 1, marginRight: 8 }]}>
+                <Text style={styles.fieldLabel}>Hentedato</Text>
+                <TouchableOpacity style={styles.dateInput} onPress={() => setShowPickupDate(true)}>
+                  <TextInput
+                    style={styles.dateTextInput}
+                    value={formData.pickup_date.toLocaleDateString('no-NO')}
+                    editable={false}
+                    placeholder="dd.mm.åååå"
+                  />
+                  <Ionicons name="calendar-outline" size={20} color="#6B7280" />
+                </TouchableOpacity>
+              </View>
+
+              <View style={[styles.fieldContainer, { flex: 1, marginLeft: 8 }]}>
+                <Text style={styles.fieldLabel}>Leveringsdato</Text>
+                <TouchableOpacity
+                  style={styles.dateInput}
+                  onPress={() => setShowDeliveryDate(true)}
+                >
+                  <TextInput
+                    style={styles.dateTextInput}
+                    value={formData.delivery_date.toLocaleDateString('no-NO')}
+                    editable={false}
+                    placeholder="dd.mm.åååå"
+                  />
+                  <Ionicons name="calendar-outline" size={20} color="#6B7280" />
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            {/* Dimensions */}
+            <View style={styles.fieldContainer}>
+              <Text style={styles.fieldLabel}>Dimensjoner (L × B × H)</Text>
+              <View style={styles.dimensionRow}>
+                <TextInput
+                  style={[styles.textInput, styles.dimensionInput]}
+                  value={formData.length}
+                  onChangeText={value => {
+                    updateFormData('length', value);
+                    clearDistanceIfNeeded('length');
+                  }}
+                  onBlur={() => handleBlur('length')}
+                  placeholder="L (cm)"
+                  placeholderTextColor="#9CA3AF"
+                  keyboardType="numeric"
+                />
+                <TextInput
+                  style={[styles.textInput, styles.dimensionInput]}
+                  value={formData.width}
+                  onChangeText={value => {
+                    updateFormData('width', value);
+                    clearDistanceIfNeeded('width');
+                  }}
+                  onBlur={() => handleBlur('width')}
+                  placeholder="B (cm)"
+                  placeholderTextColor="#9CA3AF"
+                  keyboardType="numeric"
+                />
+                <TextInput
+                  style={[styles.textInput, styles.dimensionInput]}
+                  value={formData.height}
+                  onChangeText={value => {
+                    updateFormData('height', value);
+                    clearDistanceIfNeeded('height');
+                  }}
+                  onBlur={() => handleBlur('height')}
+                  placeholder="H (cm)"
+                  placeholderTextColor="#9CA3AF"
+                  keyboardType="numeric"
+                />
+              </View>
+            </View>
+
+            {/* Weight */}
+            <View style={styles.fieldContainer}>
+              <Text style={styles.fieldLabel}>Vekt (kg)</Text>
+              <TextInput
+                style={[styles.textInput, { borderColor: colors.border.default }]}
+                value={formData.weight}
+                onChangeText={value => {
+                  updateFormData('weight', value);
+                  clearDistanceIfNeeded('weight');
+                }}
+                onBlur={() => handleBlur('weight')}
+                placeholder=""
+                keyboardType="numeric"
               />
             </View>
-          </View>
-        </View>
 
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>{t('dates')}</Text>
-
-          <View style={styles.row}>
-            <View style={[styles.inputContainer, { flex: 1, marginRight: 8 }]}>
-              <Text style={styles.label}>{t('pickupDate')} *</Text>
-              <TouchableOpacity style={styles.dateButton} onPress={() => setShowPickupDate(true)}>
-                <Ionicons name="calendar-outline" size={20} color={theme.iconColors.gray.primary} />
-                <Text style={styles.dateText}>{formData.pickup_date.toLocaleDateString()}</Text>
+            {/* Images */}
+            <View style={styles.fieldContainer}>
+              <Text style={styles.fieldLabel}>Bilder (maks 5)</Text>
+              <TouchableOpacity style={styles.imageUploadArea} onPress={pickImages}>
+                <View style={styles.imageUploadContent}>
+                  <Ionicons name="image-outline" size={32} color="#9CA3AF" />
+                  <Text style={styles.imageUploadText}>Legg til bilder ({images.length}/5)</Text>
+                </View>
               </TouchableOpacity>
+
+              {images.length > 0 && (
+                <View style={styles.imageGrid}>
+                  {images.map((uri, index) => (
+                    <View key={index} style={styles.imageGridItem}>
+                      <LazyImage
+                        uri={uri}
+                        style={styles.imagePreview}
+                        containerStyle={styles.imageGridItem}
+                      />
+                      <TouchableOpacity
+                        style={styles.removeImageButton}
+                        onPress={() => removeImage(index)}
+                      >
+                        <Ionicons name="close-circle" size={24} color="#EF4444" />
+                      </TouchableOpacity>
+                    </View>
+                  ))}
+                </View>
+              )}
             </View>
 
-            <View style={[styles.inputContainer, { flex: 1, marginLeft: 8 }]}>
-              <Text style={styles.label}>{t('deliveryDate')}</Text>
-              <TouchableOpacity style={styles.dateButton} onPress={() => setShowDeliveryDate(true)}>
-                <Ionicons name="calendar-outline" size={20} color={theme.iconColors.gray.primary} />
-                <Text style={styles.dateText}>{formData.delivery_date.toLocaleDateString()}</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>{t('pricing')} *</Text>
-
-          <View style={styles.priceTypeContainer}>
-            {PRICE_TYPES.map(type => (
+            {/* Price Type */}
+            <View style={styles.fieldContainer}>
+              <Text style={styles.fieldLabel}>Prismodell</Text>
               <TouchableOpacity
-                key={type.id}
-                style={[
-                  styles.priceTypeCard,
-                  formData.price_type === type.id && styles.priceTypeCardActive,
-                ]}
-                onPress={() => updateFormData('price_type', type.id)}
+                style={styles.dropdownButton}
+                onPress={() => setShowPriceTypeMenu(true)}
               >
-                <Ionicons
-                  name={type.icon as any}
-                  size={20}
-                  color={formData.price_type === type.id ? '#FF7043' : '#616161'}
-                />
                 <Text
-                  style={[
-                    styles.priceTypeText,
-                    formData.price_type === type.id && styles.priceTypeTextActive,
-                  ]}
+                  style={[styles.dropdownText, !formData.price_type && styles.dropdownPlaceholder]}
                 >
-                  {t(type.id)}
+                  {formData.price_type
+                    ? PRICE_TYPES.find(t => t.id === formData.price_type)?.label
+                    : 'Velg prismodell'}
                 </Text>
+                <Ionicons name="chevron-down" size={20} color="#6B7280" />
               </TouchableOpacity>
-            ))}
-          </View>
+            </View>
 
-          {formData.price_type === 'fixed' && (
-            <View style={styles.inputContainer}>
-              <Text style={styles.label}>{t('price')} (NOK) *</Text>
+            {/* Price - ALWAYS VISIBLE */}
+            <View style={styles.fieldContainer}>
+              <Text style={styles.fieldLabel}>Foreslått pris (NOK)</Text>
               <TextInput
-                style={styles.input}
+                style={[
+                  styles.textInputNeutral,
+                  formData.price_type === 'negotiable' && styles.textInputDisabled,
+                ]}
                 placeholder="0"
                 value={formData.price}
                 onChangeText={value => updateFormData('price', value)}
+                onBlur={() => handleBlur('price')}
                 keyboardType="numeric"
-                placeholderTextColor="#9CA3AF"
+                editable={formData.price_type === 'fixed'}
               />
+              {formData.price_type === 'negotiable' && (
+                <Text style={styles.fieldHint}>Pris kan forhandles med transportør</Text>
+              )}
+              {fieldErrors.price ? <Text style={styles.errorText}>{fieldErrors.price}</Text> : null}
             </View>
-          )}
-        </View>
-      </ScrollView>
 
+            {/* Bottom Action Buttons */}
+            <View style={styles.bottomActions}>
+              <TouchableOpacity style={styles.cancelButton} onPress={() => router.back()}>
+                <Text style={styles.cancelButtonText}>Avbryt</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.publishButton, saving && styles.publishButtonDisabled]}
+                onPress={handleSave}
+                disabled={saving}
+              >
+                {saving ? (
+                  <ActivityIndicator color={colors.white} />
+                ) : (
+                  <Text style={styles.publishButtonText}>Lagre endringer</Text>
+                )}
+              </TouchableOpacity>
+            </View>
+
+            {/* Bottom spacing */}
+            <View style={{ height: 80 }} />
+          </View>
+        )}
+      />
+
+      {/* Date Pickers */}
       {showPickupDate && (
         <DateTimePicker
           value={formData.pickup_date}
           mode="date"
           display="default"
-          onChange={(event, selectedDate) => {
+          onChange={(_event, selectedDate) => {
             setShowPickupDate(false);
             if (selectedDate) {
               updateFormData('pickup_date', selectedDate);
             }
           }}
-          minimumDate={new Date()}
         />
       )}
 
@@ -471,23 +994,131 @@ export default function EditRequestScreen() {
           value={formData.delivery_date}
           mode="date"
           display="default"
-          onChange={(event, selectedDate) => {
+          onChange={(_event, selectedDate) => {
             setShowDeliveryDate(false);
             if (selectedDate) {
               updateFormData('delivery_date', selectedDate);
             }
           }}
-          minimumDate={formData.pickup_date}
         />
       )}
-    </SafeAreaView>
+
+      {/* Cargo Type Modal Menu */}
+      <Modal
+        visible={showCargoTypeMenu}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowCargoTypeMenu(false)}
+      >
+        <TouchableOpacity
+          style={styles.menuOverlay}
+          activeOpacity={1}
+          onPress={() => setShowCargoTypeMenu(false)}
+        >
+          <View style={styles.menuContainer} onStartShouldSetResponder={() => true}>
+            <View style={styles.menuHeader}>
+              <Text style={styles.menuTitle}>Velg lasttype</Text>
+              <TouchableOpacity onPress={() => setShowCargoTypeMenu(false)}>
+                <Ionicons name="close" size={24} color="#6B7280" />
+              </TouchableOpacity>
+            </View>
+
+            {CARGO_TYPES.map(type => (
+              <TouchableOpacity
+                key={type.id}
+                style={[
+                  styles.menuItem,
+                  formData.cargo_type === type.id && styles.menuItemSelected,
+                ]}
+                onPress={() => {
+                  updateFormData('cargo_type', type.id);
+                  handleBlur('cargo_type');
+                  setShowCargoTypeMenu(false);
+                  triggerHapticFeedback.light();
+                }}
+              >
+                <Text
+                  style={[
+                    styles.menuItemText,
+                    formData.cargo_type === type.id && styles.menuItemTextSelected,
+                  ]}
+                >
+                  {type.label}
+                </Text>
+                {formData.cargo_type === type.id && (
+                  <Ionicons name="checkmark" size={20} color="#10B981" />
+                )}
+              </TouchableOpacity>
+            ))}
+          </View>
+        </TouchableOpacity>
+      </Modal>
+
+      {/* Price Type Modal Menu */}
+      <Modal
+        visible={showPriceTypeMenu}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowPriceTypeMenu(false)}
+      >
+        <TouchableOpacity
+          style={styles.menuOverlay}
+          activeOpacity={1}
+          onPress={() => setShowPriceTypeMenu(false)}
+        >
+          <View style={styles.menuContainer} onStartShouldSetResponder={() => true}>
+            <View style={styles.menuHeader}>
+              <Text style={styles.menuTitle}>Velg prismodell</Text>
+              <TouchableOpacity onPress={() => setShowPriceTypeMenu(false)}>
+                <Ionicons name="close" size={24} color="#6B7280" />
+              </TouchableOpacity>
+            </View>
+
+            {PRICE_TYPES.map(type => (
+              <TouchableOpacity
+                key={type.id}
+                style={[
+                  styles.menuItem,
+                  formData.price_type === type.id && styles.menuItemSelected,
+                ]}
+                onPress={() => {
+                  updateFormData('price_type', type.id);
+                  handleBlur('price_type');
+                  setShowPriceTypeMenu(false);
+                  triggerHapticFeedback.light();
+                }}
+              >
+                <Text
+                  style={[
+                    styles.menuItemText,
+                    formData.price_type === type.id && styles.menuItemTextSelected,
+                  ]}
+                >
+                  {type.label}
+                </Text>
+                {formData.price_type === type.id && (
+                  <Ionicons name="checkmark" size={20} color="#10B981" />
+                )}
+              </TouchableOpacity>
+            ))}
+          </View>
+        </TouchableOpacity>
+      </Modal>
+
+      {/* Success Animation Overlay */}
+      <SuccessAnimation
+        visible={showSuccessAnimation}
+        type="confetti"
+        onAnimationEnd={() => setShowSuccessAnimation(false)}
+      />
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.surfaceVariant,
+    backgroundColor: '#F5F5F5',
   },
   loadingContainer: {
     flex: 1,
@@ -501,10 +1132,10 @@ const styles = StyleSheet.create({
   },
   header: {
     flexDirection: 'row',
-    alignItems: 'center',
     justifyContent: 'space-between',
+    alignItems: 'center',
     paddingHorizontal: spacing.xl,
-    paddingVertical: spacing.lg,
+    paddingBottom: spacing.lg,
     backgroundColor: colors.white,
     borderBottomWidth: 1,
     borderBottomColor: colors.border.light,
@@ -512,9 +1143,8 @@ const styles = StyleSheet.create({
   backButton: {
     width: 40,
     height: 40,
-    borderRadius: borderRadius.full,
     justifyContent: 'center',
-    alignItems: 'center',
+    alignItems: 'flex-start',
   },
   headerTitle: {
     fontSize: fontSize.xl,
@@ -522,13 +1152,12 @@ const styles = StyleSheet.create({
     color: colors.text.primary,
     flex: 1,
     textAlign: 'center',
-    marginHorizontal: spacing.lg,
   },
   saveButton: {
     backgroundColor: colors.primary,
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.sm,
-    borderRadius: borderRadius.sm,
+    borderRadius: borderRadius.md,
     minWidth: 60,
     alignItems: 'center',
   },
@@ -540,138 +1169,214 @@ const styles = StyleSheet.create({
     fontSize: fontSize.sm,
     fontWeight: fontWeight.semibold,
   },
-  scrollView: {
-    flex: 1,
+  scrollContent: {
+    padding: spacing.lg,
   },
-  section: {
-    backgroundColor: colors.white,
-    marginHorizontal: spacing.xl,
-    marginTop: spacing.xl,
-    borderRadius: borderRadius.lg,
-    padding: spacing.xl,
-    ...shadows.md,
+  fieldContainer: {
+    marginBottom: spacing.xxl,
   },
-  sectionTitle: {
-    fontSize: fontSize.lg,
-    fontWeight: fontWeight.bold,
-    color: colors.text.primary,
-    marginBottom: spacing.lg,
-  },
-  inputContainer: {
-    marginBottom: spacing.lg,
-  },
-  label: {
-    fontSize: fontSize.sm,
-    fontWeight: fontWeight.semibold,
-    color: colors.text.primary,
-    marginBottom: spacing.sm,
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: colors.border.medium,
-    borderRadius: borderRadius.sm,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
+  fieldLabel: {
     fontSize: fontSize.md,
-    color: colors.text.primary,
+    fontWeight: '500',
+    color: '#1F2937',
+    marginBottom: spacing.xs,
+  },
+  textInput: {
+    borderWidth: 2,
+    borderColor: colors.primary,
+    borderRadius: borderRadius.md,
+    padding: spacing.md,
+    fontSize: fontSize.md,
     backgroundColor: colors.white,
+    color: '#1F2937',
+  },
+  textInputNeutral: {
+    borderWidth: 1,
+    borderColor: colors.border.default,
+    borderRadius: borderRadius.md,
+    padding: spacing.md,
+    fontSize: fontSize.md,
+    backgroundColor: colors.white,
+    color: '#1F2937',
   },
   textArea: {
-    height: 100,
-    textAlignVertical: 'top',
+    minHeight: 100,
+    borderColor: colors.border.default,
   },
-  row: {
+  dateRow: {
     flexDirection: 'row',
+    marginBottom: spacing.xl,
   },
-  cargoTypeGrid: {
+  dateInput: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: colors.border.default,
+    borderRadius: borderRadius.sm,
+    padding: spacing.sm,
+    backgroundColor: colors.white,
+  },
+  dateTextInput: {
+    flex: 1,
+    fontSize: fontSize.md,
+    color: '#1F2937',
+  },
+  dimensionRow: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  dimensionInput: {
+    flex: 1,
+    borderColor: colors.border.default,
+  },
+  imageUploadArea: {
+    borderWidth: 2,
+    borderColor: colors.border.default,
+    borderStyle: 'dashed',
+    borderRadius: borderRadius.md,
+    padding: spacing.xxxl,
+    alignItems: 'center',
+    backgroundColor: colors.backgroundLight,
+  },
+  imageUploadContent: {
+    alignItems: 'center',
+  },
+  imageUploadText: {
+    marginTop: spacing.xs,
+    fontSize: fontSize.sm,
+    color: '#6B7280',
+  },
+  imageGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: spacing.md,
-  },
-  cargoTypeCard: {
-    width: '30%',
-    aspectRatio: 1,
-    borderWidth: 2,
-    borderColor: colors.border.light,
-    borderRadius: borderRadius.md,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: colors.white,
-  },
-  cargoTypeCardActive: {
-    borderColor: colors.primary,
-    backgroundColor: colors.backgroundPrimary,
-  },
-  cargoTypeText: {
-    fontSize: fontSize.xs,
-    fontWeight: fontWeight.semibold,
-    color: colors.text.secondary,
+    gap: 12,
     marginTop: spacing.sm,
-    textAlign: 'center',
   },
-  cargoTypeTextActive: {
-    color: colors.primary,
-  },
-  addressInputContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: colors.border.medium,
+  imageGridItem: {
+    width: 80,
+    height: 80,
     borderRadius: borderRadius.sm,
+    overflow: 'hidden',
+  },
+  imagePreview: {
+    width: '100%',
+    height: '100%',
+  },
+  removeImageButton: {
+    position: 'absolute',
+    top: 4,
+    right: 4,
+  },
+  bottomActions: {
+    flexDirection: 'row',
+    gap: 12,
+    padding: spacing.md,
     backgroundColor: colors.white,
+    borderTopWidth: 1,
+    borderTopColor: colors.border.default,
   },
-  addressIcon: {
-    marginLeft: spacing.md,
-  },
-  addressInput: {
+  cancelButton: {
     flex: 1,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.md,
-    fontSize: fontSize.md,
-    color: colors.text.primary,
-  },
-  dateButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: colors.border.medium,
-    borderRadius: borderRadius.sm,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
-    backgroundColor: colors.white,
-  },
-  dateText: {
-    fontSize: fontSize.md,
-    color: colors.text.primary,
-    marginLeft: spacing.sm,
-  },
-  priceTypeContainer: {
-    flexDirection: 'row',
-    gap: spacing.md,
-    marginBottom: spacing.lg,
-  },
-  priceTypeCard: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 2,
-    borderColor: colors.border.light,
+    padding: spacing.md,
     borderRadius: borderRadius.md,
-    paddingVertical: spacing.lg,
+    backgroundColor: '#F3F4F6',
+    alignItems: 'center',
+  },
+  cancelButtonText: {
+    fontSize: fontSize.md,
+    fontWeight: '600',
+    color: '#6B7280',
+  },
+  publishButton: {
+    flex: 1,
+    padding: spacing.md,
+    borderRadius: borderRadius.md,
+    backgroundColor: colors.primary,
+    alignItems: 'center',
+  },
+  publishButtonDisabled: {
+    opacity: 0.6,
+  },
+  publishButtonText: {
+    fontSize: fontSize.md,
+    fontWeight: '600',
+    color: '#FFFFFF',
+  },
+  errorText: {
+    marginTop: spacing.xxxs,
+    fontSize: fontSize.sm,
+    color: colors.error,
+  },
+  dropdownButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    borderWidth: 1,
+    borderColor: colors.border.default,
+    borderRadius: borderRadius.sm,
+    padding: spacing.sm,
     backgroundColor: colors.white,
   },
-  priceTypeCardActive: {
-    borderColor: colors.primary,
-    backgroundColor: colors.backgroundPrimary,
+  dropdownText: {
+    fontSize: fontSize.md,
+    color: '#1F2937',
+    flex: 1,
   },
-  priceTypeText: {
+  dropdownPlaceholder: {
+    color: colors.text.tertiary,
+  },
+  textInputDisabled: {
+    backgroundColor: colors.backgroundLight,
+    color: colors.text.tertiary,
+  },
+  fieldHint: {
     fontSize: fontSize.sm,
-    fontWeight: fontWeight.semibold,
-    color: colors.text.secondary,
-    marginLeft: spacing.sm,
+    color: '#6B7280',
+    marginTop: spacing.xxxs,
   },
-  priceTypeTextActive: {
-    color: colors.primary,
+  menuOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'flex-end',
+  },
+  menuContainer: {
+    backgroundColor: colors.white,
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
+    paddingBottom: 34,
+    maxHeight: '70%',
+  },
+  menuHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border.default,
+  },
+  menuTitle: {
+    fontSize: fontSize.lg,
+    fontWeight: '600',
+    color: '#1F2937',
+  },
+  menuItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F3F4F6',
+  },
+  menuItemSelected: {
+    backgroundColor: '#F0FDF4',
+  },
+  menuItemText: {
+    fontSize: fontSize.md,
+    color: '#1F2937',
+  },
+  menuItemTextSelected: {
+    color: colors.success,
+    fontWeight: '600',
   },
 });
+
