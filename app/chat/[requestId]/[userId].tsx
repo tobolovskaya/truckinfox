@@ -38,6 +38,7 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import * as ImagePicker from 'expo-image-picker';
 import * as DocumentPicker from 'expo-document-picker';
+import { generateChatId } from '../../../utils/chatManagement';
 import { theme } from '../../../theme/theme';
 import {
   colors,
@@ -258,10 +259,11 @@ export default function ChatScreen() {
         return;
       }
 
-      // Set up real-time listener for messages
-      const chatId = `${requestId}_${user.uid < userId! ? user.uid : userId}_${user.uid < userId! ? userId : user.uid}`;
+      // Set up real-time listener for messages (flat structure)
+      const chatId = generateChatId(requestId, user.uid, userId!);
       const messagesQuery = query(
-        collection(db, 'chats', chatId, 'messages'),
+        collection(db, 'messages'),
+        where('chat_id', '==', chatId),
         orderBy('created_at', 'asc')
       );
 
@@ -311,19 +313,22 @@ export default function ChatScreen() {
 
     setSending(true);
     try {
-      // Create deterministic chat ID
-      const chatId = `${requestId}_${user.uid < userId! ? user.uid : userId}_${user.uid < userId! ? userId : user.uid}`;
+      // Create deterministic chat ID (sorted user IDs)
+      const chatId = generateChatId(requestId, user.uid, userId!);
 
-      // Add message to Firebase
-      await addDoc(collection(db, 'chats', chatId, 'messages'), {
+      // Add message to flat messages collection
+      await addDoc(collection(db, 'messages'), {
+        chat_id: chatId,
+        request_id: requestId,
         content: sanitizedMessage,
         sender_id: user.uid,
         receiver_id: userId,
-        request_id: requestId,
         sender_name: user.displayName || 'Unknown',
         sender_type: user.user_type || 'customer',
         created_at: serverTimestamp(),
-        delivered_at: serverTimestamp(), // Mark as delivered immediately
+        delivered_at: serverTimestamp(),
+        read: false,
+        delivered: true,
       });
 
       setNewMessage('');
@@ -341,11 +346,12 @@ export default function ChatScreen() {
     if (!user?.uid || !userId || !requestId) return;
 
     try {
-      const chatId = `${requestId}_${user.uid < userId! ? user.uid : userId}_${user.uid < userId! ? userId : user.uid}`;
+      const chatId = generateChatId(requestId, user.uid, userId!);
       const messagesQuery = query(
-        collection(db, 'chats', chatId, 'messages'),
+        collection(db, 'messages'),
+        where('chat_id', '==', chatId),
         where('receiver_id', '==', user.uid),
-        where('read_at', '==', null)
+        where('read', '==', false)
       );
 
       const unreadMessagesSnapshot = await getDocs(messagesQuery);
@@ -353,6 +359,7 @@ export default function ChatScreen() {
       // Mark all unread messages as read
       const updatePromises = unreadMessagesSnapshot.docs.map(messageDoc =>
         updateDoc(messageDoc.ref, {
+          read: true,
           read_at: serverTimestamp(),
         })
       );

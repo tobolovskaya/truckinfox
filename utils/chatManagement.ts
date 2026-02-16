@@ -2,6 +2,33 @@
  * Chat Management Utilities
  *
  * Functions for creating and managing chats between customers and carriers.
+ * 
+ * ## Message Structure (Flat Collection)
+ * 
+ * Messages are stored in a flat `messages` collection with the following structure:
+ * ```
+ * messages/{messageId} {
+ *   id: string,
+ *   chat_id: string,           // "${requestId}_${userId1}_${userId2}" (sorted)
+ *   request_id: string,
+ *   sender_id: string,
+ *   receiver_id: string,
+ *   content: string,
+ *   sender_name: string,
+ *   sender_type: string,
+ *   created_at: Timestamp,
+ *   delivered_at: Timestamp,
+ *   read_at: Timestamp | null,
+ *   read: boolean,
+ *   delivered: boolean
+ * }
+ * ```
+ * 
+ * ## Firestore Indexes Required
+ * - chat_id (Ascending) + created_at (Ascending)
+ * - receiver_id (Ascending) + read (Ascending) + created_at (Descending)
+ * - receiver_id (Ascending) + read_at (Ascending) + created_at (Descending)
+ * - request_id (Ascending) + created_at (Descending)
  */
 
 import { doc, setDoc, getDoc, serverTimestamp, updateDoc } from 'firebase/firestore';
@@ -40,8 +67,8 @@ export async function createChat(
   carrierId: string
 ): Promise<string> {
   try {
-    // Generate deterministic chat ID
-    const chatId = `${requestId}_${customerId}_${carrierId}`;
+    // Generate deterministic chat ID (with sorted user IDs)
+    const chatId = generateChatId(requestId, customerId, carrierId);
 
     console.log('Creating chat:', { chatId, requestId, customerId, carrierId });
 
@@ -96,7 +123,7 @@ export async function getOrCreateChat(
   customerId: string,
   carrierId: string
 ): Promise<string> {
-  const chatId = `${requestId}_${customerId}_${carrierId}`;
+  const chatId = generateChatId(requestId, customerId, carrierId);
 
   try {
     const chatRef = doc(db, 'chats', chatId);
@@ -239,7 +266,7 @@ export async function chatExists(
   carrierId: string
 ): Promise<boolean> {
   try {
-    const chatId = `${requestId}_${customerId}_${carrierId}`;
+    const chatId = generateChatId(requestId, customerId, carrierId);
     const chatRef = doc(db, 'chats', chatId);
     const chatSnap = await getDoc(chatRef);
 
@@ -251,13 +278,19 @@ export async function chatExists(
 }
 
 /**
- * Generate chat ID from request and user IDs
+ * Generate chat ID from request and user IDs (with sorted user IDs for consistency)
  *
  * @param requestId - The cargo request ID
- * @param customerId - The customer's user ID
- * @param carrierId - The carrier's user ID
- * @returns The chat ID
+ * @param userId1 - First user ID
+ * @param userId2 - Second user ID
+ * @returns The chat ID with sorted user IDs
+ * 
+ * @example
+ * generateChatId('req123', 'userA', 'userB') // 'req123_userA_userB'
+ * generateChatId('req123', 'userB', 'userA') // 'req123_userA_userB' (same result)
  */
-export function generateChatId(requestId: string, customerId: string, carrierId: string): string {
-  return `${requestId}_${customerId}_${carrierId}`;
+export function generateChatId(requestId: string, userId1: string, userId2: string): string {
+  // Sort user IDs to ensure consistent chat ID regardless of order
+  const sortedUsers = [userId1, userId2].sort();
+  return `${requestId}_${sortedUsers[0]}_${sortedUsers[1]}`;
 }

@@ -56,18 +56,23 @@ service cloud.firestore {
         (isOwner(resource.data.carrierId) || isOwner(resource.data.carrier_id));
     }
     
-    // Messages collection
+    // Messages collection (flat structure)
     match /messages/{messageId} {
-      allow read: if isAuthenticated() && 
-        (isOwner(resource.data.senderId) || isOwner(resource.data.receiverId) ||
-         isOwner(resource.data.sender_id) || isOwner(resource.data.receiver_id));
+      allow read: if isAuthenticated() && (
+        request.auth.uid == resource.data.sender_id ||
+        request.auth.uid == resource.data.receiver_id
+      );
+      
       allow create: if isAuthenticated() &&
-        (isOwner(request.resource.data.senderId) || isOwner(request.resource.data.sender_id));
-      allow update, delete: if isAuthenticated() &&
-        (isOwner(resource.data.senderId) || isOwner(resource.data.sender_id));
+        request.auth.uid == request.resource.data.sender_id;
+      
+      // Allow receiver to update read and delivered fields only
+      allow update: if isAuthenticated() &&
+        request.auth.uid == resource.data.receiver_id &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['read', 'delivered', 'read_at', 'delivered_at']);
     }
     
-    // Chats collection
+    // Chats collection (metadata only, messages moved to flat structure)
     match /chats/{chatId} {
       allow read: if isAuthenticated() && 
         (request.auth.uid in resource.data.participants ||
@@ -81,18 +86,6 @@ service cloud.firestore {
         (request.auth.uid in resource.data.participants ||
          request.auth.uid == resource.data.customer_id ||
          request.auth.uid == resource.data.carrier_id);
-      
-      // Messages subcollection
-      match /messages/{messageId} {
-        // Allow read if user is part of the chat (extracted from chatId pattern)
-        allow read: if isAuthenticated();
-        allow create: if isAuthenticated() &&
-          request.auth.uid == request.resource.data.sender_id;
-        // Allow receiver to update read_at and delivered_at fields only
-        allow update: if isAuthenticated() &&
-          request.auth.uid == resource.data.receiver_id &&
-          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['read_at', 'delivered_at']);
-      }
     }
     
     // Reviews collection
