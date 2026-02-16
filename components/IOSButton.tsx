@@ -20,7 +20,7 @@ interface IOSButtonProps {
   size?: 'small' | 'medium' | 'large';
   disabled?: boolean;
   loading?: boolean;
-  icon?: keyof typeof Ionicons.glyphMap;
+  icon?: string;
   iconPosition?: 'left' | 'right';
   style?: ViewStyle;
   textStyle?: TextStyle;
@@ -55,7 +55,7 @@ export function IOSButton({
 
   const getButtonStyle = (): ViewStyle => {
     const baseStyle: ViewStyle = {
-      borderRadius: 10, // Updated to match ui.txt spec
+      borderRadius: borderRadius.md,
       justifyContent: 'center',
       alignItems: 'center',
       flexDirection: iconPosition === 'right' ? 'row-reverse' : 'row',
@@ -64,19 +64,19 @@ export function IOSButton({
     // Size variants
     const sizeStyles: Record<string, ViewStyle> = {
       small: {
-        paddingVertical: 10,
-        paddingHorizontal: 16,
-        minHeight: 44, // Minimum 44pt touch target (Apple HIG)
-      },
-      medium: {
         paddingVertical: 12,
         paddingHorizontal: 20,
-        minHeight: 48, // Updated to match ui.txt spec
+        minHeight: 44,
+      },
+      medium: {
+        paddingVertical: 14,
+        paddingHorizontal: 24,
+        minHeight: 52,
       },
       large: {
-        paddingVertical: 16,
-        paddingHorizontal: 24,
-        minHeight: 50,
+        paddingVertical: 18,
+        paddingHorizontal: 32,
+        minHeight: 58,
       },
     };
 
@@ -87,9 +87,9 @@ export function IOSButton({
         ...sizeStyles[size],
       },
       secondary: {
-        backgroundColor: disabled ? '#FAFAFA' : '#FFFFFF', // Updated to match ui.txt spec
+        backgroundColor: disabled ? '#F9FAFB' : '#FFFFFF',
         borderWidth: 1,
-        borderColor: disabled ? '#E0E0E0' : theme.iconColors.primary,
+        borderColor: disabled ? colors.border.light : colors.border.default,
         ...sizeStyles[size],
       },
       destructive: {
@@ -120,15 +120,18 @@ export function IOSButton({
     const sizeTextStyles: Record<string, TextStyle> = {
       small: {
         fontSize: 14,
-        fontWeight: '600',
+        fontWeight: '500',
+        letterSpacing: 0.2,
       },
       medium: {
-        fontSize: 17,
-        fontWeight: '600',
+        fontSize: 16,
+        fontWeight: '500',
+        letterSpacing: 0.3,
       },
       large: {
-        fontSize: 19,
-        fontWeight: '600',
+        fontSize: 18,
+        fontWeight: '500',
+        letterSpacing: 0.4,
       },
     };
 
@@ -172,9 +175,9 @@ export function IOSButton({
 
     return (
       <Ionicons
-        name={icon}
+        name={icon as any}
         size={getIconSize()}
-        color={getTextStyle().color}
+        color={getTextStyle().color as string}
         style={{
           marginRight: iconPosition === 'left' ? 8 : 0,
           marginLeft: iconPosition === 'right' ? 8 : 0,

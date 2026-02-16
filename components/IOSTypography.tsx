@@ -17,7 +17,7 @@ interface IOSTextProps extends TextProps {
     | 'caption1'
     | 'caption2';
   color?: 'primary' | 'secondary' | 'tertiary' | 'quaternary' | 'system' | 'accent' | 'destructive';
-  weight?: 'regular' | 'medium' | 'semibold' | 'bold';
+  weight?: 'light' | 'regular' | 'medium' | 'semibold' | 'bold';
   numberOfLines?: number;
 }
 

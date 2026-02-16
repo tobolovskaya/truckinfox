@@ -21,8 +21,8 @@ export const theme = {
 
     // Surface colors
     surface: '#FFFFFF',
-    surfaceVariant: '#FAFAFA', // Light gray background
-    background: '#FAFAFA', // Light gray background
+    surfaceVariant: '#F9FAFB', // Lighter gray background for minimalist feel
+    background: '#F9FAFB', // Lighter gray background
 
     // Error colors
     error: '#F44336',
@@ -96,62 +96,65 @@ export const theme = {
     pill: 999,
   },
 
-  // iOS-style typography scale
+  // iOS-style typography scale (Minimalist)
   typography: {
     largeTitle: {
       fontSize: 34,
-      fontWeight: '700',
-      lineHeight: 41,
+      fontWeight: '300',
+      lineHeight: 44,
+      letterSpacing: -0.5,
     },
     title1: {
       fontSize: 28,
-      fontWeight: '700',
-      lineHeight: 34,
+      fontWeight: '300',
+      lineHeight: 36,
+      letterSpacing: -0.4,
     },
     title2: {
       fontSize: 22,
-      fontWeight: '600', // H1 spec
-      lineHeight: 28,
+      fontWeight: '400',
+      lineHeight: 30,
+      letterSpacing: -0.3,
     },
     title3: {
       fontSize: 20,
-      fontWeight: '500', // H2 spec
-      lineHeight: 25,
+      fontWeight: '500',
+      lineHeight: 28,
     },
     headline: {
       fontSize: 16,
-      fontWeight: '500', // H3 spec
-      lineHeight: 22,
+      fontWeight: '500',
+      lineHeight: 24,
     },
     body: {
-      fontSize: 14,
-      fontWeight: '400', // Body spec
-      lineHeight: 20,
+      fontSize: 15,
+      fontWeight: '400',
+      lineHeight: 24,
     },
     callout: {
       fontSize: 16,
       fontWeight: '400',
-      lineHeight: 21,
+      lineHeight: 24,
     },
     subhead: {
-      fontSize: 15,
+      fontSize: 14,
       fontWeight: '400',
-      lineHeight: 20,
+      lineHeight: 22,
     },
     footnote: {
       fontSize: 13,
       fontWeight: '400',
-      lineHeight: 18,
+      lineHeight: 20,
     },
     caption1: {
       fontSize: 12,
-      fontWeight: '400', // Caption spec
-      lineHeight: 16,
+      fontWeight: '400',
+      lineHeight: 18,
     },
     caption2: {
       fontSize: 11,
       fontWeight: '400',
-      lineHeight: 13,
+      lineHeight: 16,
     },
   },
 

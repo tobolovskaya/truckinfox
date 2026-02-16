@@ -13,18 +13,18 @@ export const colors = {
   surfaceVariant: theme.colors.surfaceVariant,
 
   text: {
-    primary: '#212121', // Updated to match ui.txt
-    secondary: '#616161', // Updated to match ui.txt
+    primary: '#1A1A1A',
+    secondary: '#6B7280',
     tertiary: '#9CA3AF',
-    disabled: '#E0E0E0', // Updated to match ui.txt
-    dark: '#212121',
+    disabled: '#D1D5DB',
+    dark: '#1A1A1A',
   },
 
   border: {
-    light: '#E0E0E0', // Updated to match ui.txt
-    default: '#E0E0E0', // Updated to match ui.txt
+    light: '#F3F4F6',
+    default: '#E5E7EB',
     dark: '#9CA3AF',
-    medium: '#E0E0E0', // Updated to match ui.txt
+    medium: '#D1D5DB',
   },
 
   status: {
@@ -52,20 +52,20 @@ export const colors = {
 };
 
 export const spacing = {
-  xs: 4,
-  sm: 8,
-  md: 12, // 8-12px as per ui.txt margin spec
-  lg: 16, // Updated to match ui.txt padding spec
-  xl: 20,
-  xxl: 24,
-  xxxl: 32,
+  xs: 6,
+  sm: 12,
+  md: 16,
+  lg: 24,
+  xl: 32,
+  xxl: 40,
+  xxxl: 48,
 };
 
 export const borderRadius = {
-  sm: 8,
-  md: 10, // Updated to match ui.txt button spec
-  lg: 12, // Updated to match ui.txt card spec
-  xl: 20,
+  sm: 6,
+  md: 12,
+  lg: 16,
+  xl: 24,
   full: 999,
 };
 
@@ -81,6 +81,7 @@ export const fontSize = {
 };
 
 export const fontWeight = {
+  light: '300' as const,
   regular: '400' as const,
   normal: '400' as const,
   medium: '500' as const,
@@ -88,71 +89,71 @@ export const fontWeight = {
   bold: '700' as const,
 };
 
-// Enhanced typography system for consistency
+// Enhanced typography system for minimalist design
 export const typography = {
-  h1: { fontSize: 32, fontWeight: '700' as const, lineHeight: 40 },
-  h2: { fontSize: 24, fontWeight: '600' as const, lineHeight: 32 },
-  h3: { fontSize: 20, fontWeight: '600' as const, lineHeight: 28 },
-  body: { fontSize: 16, fontWeight: '400' as const, lineHeight: 24 },
-  caption: { fontSize: 14, fontWeight: '400' as const, lineHeight: 20 },
-  small: { fontSize: 12, fontWeight: '400' as const, lineHeight: 16 },
+  h1: { fontSize: 32, fontWeight: '300' as const, lineHeight: 44, letterSpacing: -0.5 },
+  h2: { fontSize: 24, fontWeight: '400' as const, lineHeight: 34, letterSpacing: -0.3 },
+  h3: { fontSize: 20, fontWeight: '500' as const, lineHeight: 30 },
+  body: { fontSize: 16, fontWeight: '400' as const, lineHeight: 26 },
+  caption: { fontSize: 14, fontWeight: '400' as const, lineHeight: 22 },
+  small: { fontSize: 12, fontWeight: '400' as const, lineHeight: 18 },
 } as const;
 
 export const shadows = {
   sm: Platform.select({
     ios: {
       shadowColor: colors.black,
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.1,
-      shadowRadius: 4,
+      shadowOffset: { width: 0, height: 1 },
+      shadowOpacity: 0.05,
+      shadowRadius: 3,
     },
     android: {
-      elevation: 2,
+      elevation: 1,
     },
     default: {
-      boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
+      boxShadow: '0 1px 3px rgba(0, 0, 0, 0.05)',
     },
   }),
   md: Platform.select({
     ios: {
       shadowColor: colors.black,
-      shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.15,
-      shadowRadius: 8,
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.08,
+      shadowRadius: 6,
     },
     android: {
-      elevation: 4,
+      elevation: 2,
     },
     default: {
-      boxShadow: '0 4px 8px rgba(0, 0, 0, 0.15)',
+      boxShadow: '0 2px 6px rgba(0, 0, 0, 0.08)',
     },
   }),
   lg: Platform.select({
     ios: {
       shadowColor: colors.black,
-      shadowOffset: { width: 0, height: 8 },
-      shadowOpacity: 0.2,
-      shadowRadius: 16,
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.1,
+      shadowRadius: 12,
     },
     android: {
-      elevation: 8,
+      elevation: 4,
     },
     default: {
-      boxShadow: '0 8px 16px rgba(0, 0, 0, 0.2)',
+      boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
     },
   }),
   primary: Platform.select({
     ios: {
       shadowColor: colors.primary,
-      shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.3,
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.15,
       shadowRadius: 8,
     },
     android: {
-      elevation: 8,
+      elevation: 3,
     },
     default: {
-      boxShadow: `0 4px 8px ${colors.primary}33`,
+      boxShadow: `0 2px 8px ${colors.primary}22`,
     },
   }),
 };
@@ -171,12 +172,14 @@ export const commonStyles = StyleSheet.create({
 
   headerTitle: {
     fontSize: fontSize.xxl,
-    fontWeight: fontWeight.bold,
+    fontWeight: fontWeight.light,
     color: colors.text.primary,
+    letterSpacing: -0.5,
   },
 
   headerSubtitle: {
     fontSize: fontSize.md,
+    fontWeight: fontWeight.regular,
     color: colors.text.secondary,
     marginTop: spacing.xs,
   },
@@ -204,13 +207,13 @@ export const commonStyles = StyleSheet.create({
     backgroundColor: colors.white,
     borderRadius: borderRadius.lg,
     padding: spacing.lg,
-    ...shadows.md,
+    ...shadows.sm,
   },
 
   cardLight: {
     backgroundColor: colors.white,
     borderRadius: borderRadius.md,
-    padding: spacing.md,
+    padding: spacing.lg,
     borderWidth: 1,
     borderColor: colors.border.light,
   },
