@@ -15,7 +15,7 @@ export default function HomeScreen() {
       <View style={styles.header}>
         <View>
           <Text style={styles.welcomeText}>Welcome back!</Text>
-          <Text style={styles.userName}>{user?.name || 'User'}</Text>
+          <Text style={styles.userName}>{user?.displayName || 'User'}</Text>
         </View>
         <TouchableOpacity
           style={styles.notificationButton}
