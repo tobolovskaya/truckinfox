@@ -2,21 +2,23 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { colors, spacing, fontSize, fontWeight, borderRadius, shadows } from '../../lib/sharedStyles';
 import { useAuth } from '../../contexts/AuthContext';
 
 export default function ProfileScreen() {
   const router = useRouter();
   const { user, signOut } = useAuth();
+  const { t } = useTranslation();
 
   const handleSignOut = async () => {
     Alert.alert(
-      'Sign Out',
-      'Are you sure you want to sign out?',
+      t('signOut'),
+      t('confirmSignOut'),
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: t('cancel'), style: 'cancel' },
         {
-          text: 'Sign Out',
+          text: t('signOut'),
           style: 'destructive',
           onPress: async () => {
             try {
@@ -106,11 +108,11 @@ export default function ProfileScreen() {
           style={styles.signOutButton}
           onPress={handleSignOut}
           accessibilityRole="button"
-          accessibilityLabel="Sign Out"
+          accessibilityLabel={t('signOut')}
           accessibilityHint="Double tap to log out of your account"
         >
           <Ionicons name="log-out-outline" size={24} color="#F44336" />
-          <Text style={styles.signOutButtonText}>Sign Out</Text>
+          <Text style={styles.signOutButtonText}>{t('signOut')}</Text>
         </TouchableOpacity>
 
         {/* Version */}

@@ -88,7 +88,7 @@ export default function SecurityScreen() {
     {
       id: 'change-password',
       icon: 'key-outline',
-      title: t('changePassword') || 'Change Password',
+      title: t('changePassword'),
       subtitle: 'Update your password regularly for security',
       iconColor: colors.primary,
       onPress: () => {
@@ -99,7 +99,7 @@ export default function SecurityScreen() {
     {
       id: 'two-factor',
       icon: 'shield-checkmark-outline',
-      title: 'Two-Factor Authentication',
+      title: t('twoFactorAuth'),
       subtitle: 'Add an extra layer of security',
       iconColor: colors.success,
       onPress: () => {
@@ -151,7 +151,7 @@ export default function SecurityScreen() {
         >
           <Ionicons name="arrow-back" size={24} color={colors.text.primary} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>{t('security') || 'Security'}</Text>
+        <Text style={styles.headerTitle}>{t('security')}</Text>
         <View style={styles.headerRight} />
       </View>
 
@@ -173,7 +173,7 @@ export default function SecurityScreen() {
 
         {/* Security Options */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>{t('securitySettings') || 'Security Settings'}</Text>
+          <Text style={styles.sectionTitle}>{t('securitySettings')}</Text>
           <View style={styles.card}>
             {securityOptions.map((option, index) => (
               <TouchableOpacity
@@ -202,7 +202,7 @@ export default function SecurityScreen() {
 
         {/* Sign Out Options */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>{t('accountActions') || 'Account Actions'}</Text>
+          <Text style={styles.sectionTitle}>{t('accountActions')}</Text>
           <View style={styles.card}>
             {signOutOptions.map((option, index) => (
               <TouchableOpacity
@@ -237,8 +237,7 @@ export default function SecurityScreen() {
         <View style={styles.warningCard}>
           <Ionicons name="information-circle" size={20} color={colors.warning} />
           <Text style={styles.warningText}>
-            {t('securityWarning') ||
-              'Signing out from all devices will require you to log in again on each device.'}
+            {t('securityWarning')}
           </Text>
         </View>
       </ScrollView>
