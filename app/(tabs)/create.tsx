@@ -29,7 +29,7 @@ import { triggerHapticFeedback } from '../../utils/haptics';
 import { SuccessAnimation } from '../../components/SuccessAnimation';
 import { useDebouncedCallback } from 'use-debounce';
 import DateTimePicker from '@react-native-community/datetimepicker';
-import AddressInput from '../../components/AddressInput';
+import { AddressAutocomplete } from '../../components/AddressAutocomplete';
 import { calculateDistance } from '../../utils/googlePlaces';
 import { geohashForLocation } from 'geofire-common';
 import { fetchWithTimeout } from '../../utils/fetchWithTimeout';
@@ -270,6 +270,11 @@ export default function CreateRequestScreen() {
   const getInputValidationStyles = (field: string, value: unknown) => {
     const { showValidation, error, isValid } = getValidationState(field, value);
     return [showValidation && error && styles.textInputError, isValid && styles.textInputValid];
+  };
+
+  const getFieldError = (field: string, value: unknown) => {
+    const { showValidation, error } = getValidationState(field, value);
+    return showValidation ? error : undefined;
   };
 
   const renderFieldError = (field: string, value: unknown) => {
@@ -623,24 +628,21 @@ export default function CreateRequestScreen() {
     }
   };
 
-  const handleFromAddressSelect = async (
-    address: string,
-    coordinates?: { lat: number; lng: number }
-  ) => {
+  const handleFromAddressSelect = async (address: string, lat?: number, lng?: number) => {
     clearDistanceIfNeeded('from_address');
     updateFormData('from_address', address);
     setTouchedFields(prev => ({ ...prev, from_address: true }));
     const error = validateField('from_address', address);
     setFieldErrors(prev => ({ ...prev, from_address: error }));
 
-    if (coordinates) {
-      updateFormData('from_lat', coordinates.lat);
-      updateFormData('from_lng', coordinates.lng);
+    if (lat !== undefined && lng !== undefined) {
+      updateFormData('from_lat', lat);
+      updateFormData('from_lng', lng);
       fromAddressTextRef.current = address;
 
       if (formData.to_lat && formData.to_lng) {
         try {
-          const distance = await calculateDistance(coordinates, {
+          const distance = await calculateDistance({ lat, lng }, {
             lat: formData.to_lat,
             lng: formData.to_lng,
           });
@@ -659,26 +661,23 @@ export default function CreateRequestScreen() {
     }
   };
 
-  const handleToAddressSelect = async (
-    address: string,
-    coordinates?: { lat: number; lng: number }
-  ) => {
+  const handleToAddressSelect = async (address: string, lat?: number, lng?: number) => {
     clearDistanceIfNeeded('to_address');
     updateFormData('to_address', address);
     setTouchedFields(prev => ({ ...prev, to_address: true }));
     const error = validateField('to_address', address);
     setFieldErrors(prev => ({ ...prev, to_address: error }));
 
-    if (coordinates) {
-      updateFormData('to_lat', coordinates.lat);
-      updateFormData('to_lng', coordinates.lng);
+    if (lat !== undefined && lng !== undefined) {
+      updateFormData('to_lat', lat);
+      updateFormData('to_lng', lng);
       toAddressTextRef.current = address;
 
       if (formData.from_lat && formData.from_lng) {
         try {
           const distance = await calculateDistance(
             { lat: formData.from_lat, lng: formData.from_lng },
-            coordinates
+            { lat, lng }
           );
           if (distance) {
             setDistanceInfo({
@@ -810,38 +809,38 @@ export default function CreateRequestScreen() {
 
             {/* From Address */}
             <View style={styles.fieldContainer}>
-              <Text style={styles.fieldLabel}>Fra</Text>
-              <AddressInput
-                placeholder="Søk etter adresse..."
+              <AddressAutocomplete
                 value={formData.from_address}
-                onAddressSelect={handleFromAddressSelect}
-                onChangeText={(text: string) => {
+                label="Fra adresse"
+                placeholder="Skriv inn startsted..."
+                error={getFieldError('from_address', formData.from_address)}
+                onChangeText={text => {
                   fromAddressTextRef.current = text;
                   updateFormData('from_address', text);
                   if (text !== formData.from_address) {
                     clearDistanceIfNeeded('from_address');
                   }
                 }}
+                onSelect={(address, lat, lng) => handleFromAddressSelect(address, lat, lng)}
               />
-              {renderFieldError('from_address', formData.from_address)}
             </View>
 
             {/* To Address */}
             <View style={styles.fieldContainer}>
-              <Text style={styles.fieldLabel}>Til</Text>
-              <AddressInput
-                placeholder="Søk etter adresse..."
+              <AddressAutocomplete
                 value={formData.to_address}
-                onAddressSelect={handleToAddressSelect}
-                onChangeText={(text: string) => {
+                label="Til adresse"
+                placeholder="Skriv inn destinasjon..."
+                error={getFieldError('to_address', formData.to_address)}
+                onChangeText={text => {
                   toAddressTextRef.current = text;
                   updateFormData('to_address', text);
                   if (text !== formData.to_address) {
                     clearDistanceIfNeeded('to_address');
                   }
                 }}
+                onSelect={(address, lat, lng) => handleToAddressSelect(address, lat, lng)}
               />
-              {renderFieldError('to_address', formData.to_address)}
             </View>
 
             {/* Dates */}
