@@ -1736,7 +1736,7 @@ const styles = StyleSheet.create({
     color: colors.status.error,
     fontSize: fontSize.xs,
     fontWeight: fontWeight.medium,
-    spacing.xxs
+    marginTop: spacing.xxs,
     marginLeft: spacing.xs,
   },
   successText: {
