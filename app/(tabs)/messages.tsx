@@ -19,6 +19,7 @@ import { collection, query, where, orderBy, getDocs, doc, getDoc } from 'firebas
 import { useRouter } from 'expo-router';
 import { triggerHapticFeedback } from '../../utils/haptics';
 import { theme } from '../../theme/theme';
+import { batchFetchUsers, batchFetchRequests } from '../../utils/batchFetch';
 import { EmptyState } from '../../components/EmptyState';
 import {
   colors,
@@ -92,6 +93,23 @@ function MessagesScreen() {
         ...receiverSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })),
       ];
 
+      // Extract unique user IDs and request IDs for batch fetching
+      const otherUserIds = new Set<string>();
+      const requestIds = new Set<string>();
+
+      for (const message of userMessages as any[]) {
+        const otherUserId =
+          message.sender_id === user.uid ? message.receiver_id : message.sender_id;
+        otherUserIds.add(otherUserId);
+        requestIds.add(message.request_id);
+      }
+
+      // ✅ Batch fetch users and requests (optimized - no N+1 problem)
+      const [usersCache, requestsCache] = await Promise.all([
+        batchFetchUsers(Array.from(otherUserIds)),
+        batchFetchRequests(Array.from(requestIds)),
+      ]);
+
       // Group messages by conversation and get latest message
       const conversationMap = new Map();
 
@@ -101,46 +119,30 @@ function MessagesScreen() {
         const key = `${message.request_id}-${otherUserId}`;
 
         if (!conversationMap.has(key)) {
-          // Fetch other user data
-          let otherUser = null;
-          try {
-            const userRef = doc(db, 'users', otherUserId);
-            const userSnap = await getDoc(userRef);
-            if (userSnap.exists()) {
-              otherUser = { id: userSnap.id, ...userSnap.data() };
-            }
-          } catch (err) {
-            console.error('Error fetching user:', err);
-          }
+          // Fast lookup from cache (no database queries!)
+          const otherUser = usersCache.get(otherUserId) || {
+            id: otherUserId,
+            full_name: 'Unknown User',
+            user_type: 'customer',
+            rating: 0,
+          };
 
-          // Fetch cargo request data
-          let cargoRequest = null;
-          try {
-            const requestRef = doc(db, 'cargo_requests', message.request_id);
-            const requestSnap = await getDoc(requestRef);
-            if (requestSnap.exists()) {
-              cargoRequest = requestSnap.data();
-            }
-          } catch (err) {
-            console.error('Error fetching request:', err);
-          }
+          const cargoRequest = requestsCache.get(message.request_id) || {
+            title: 'Unknown Request',
+            cargo_type: 'other',
+          };
 
           conversationMap.set(key, {
             id: key,
             request_id: message.request_id,
-            other_user: otherUser || {
-              id: otherUserId,
-              full_name: 'Unknown User',
-              user_type: 'customer',
-              rating: 0,
-            },
+            other_user: otherUser,
             last_message: {
               content: message.content,
               created_at: message.created_at,
               sender_id: message.sender_id,
             },
             unread_count: 0, // Would need separate query for this
-            cargo_request: cargoRequest || { title: 'Unknown Request', cargo_type: 'other' },
+            cargo_request: cargoRequest,
           });
         }
       }
