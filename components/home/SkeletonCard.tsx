@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { View, StyleSheet } from 'react-native';
+import { StyleSheet, View, StyleProp, ViewStyle } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -51,9 +51,9 @@ const SkeletonBox = ({
   );
 };
 
-export const SkeletonCard = () => {
+export const SkeletonCard = ({ cardStyle }: { cardStyle?: StyleProp<ViewStyle> }) => {
   return (
-    <View style={styles.requestCard}>
+    <View style={[styles.requestCard, cardStyle]}>
       {/* Photo skeleton */}
       <View style={styles.photoSection}>
         <SkeletonBox width="100%" height={180} style={{ borderRadius: 0 }} />

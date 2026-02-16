@@ -1,5 +1,13 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import React, { useMemo } from 'react';
+import {
+  FlatList,
+  RefreshControl,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  useWindowDimensions,
+  View,
+} from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import {
@@ -11,65 +19,133 @@ import {
   shadows,
 } from '../../lib/sharedStyles';
 import { useAuth } from '../../contexts/AuthContext';
+import { useCargoRequests } from '../../hooks/useCargoRequests';
+import { RequestCard } from '../../components/home/RequestCard';
+import { SkeletonCard } from '../../components/home/SkeletonCard';
+import { useTranslation } from 'react-i18next';
 
 export default function HomeScreen() {
   const router = useRouter();
   const { user } = useAuth();
+  const { t } = useTranslation();
+  const { width } = useWindowDimensions();
+  const filters = useMemo(
+    () => ({
+      city: '',
+      cargo_type: '',
+      price_min: '',
+      price_max: '',
+      price_type: '',
+    }),
+    []
+  );
+
+  const { requests, loading, refreshing, refresh } = useCargoRequests({
+    activeTab: 'all',
+    filters,
+    sortBy: 'newest',
+    userId: user?.uid,
+  });
+
+  const horizontalPadding = width < 360 ? spacing.md : spacing.lg;
+  const gridGap = width < 360 ? spacing.sm : spacing.md;
+  const cardWidth = Math.floor((width - horizontalPadding * 2 - gridGap) / 2);
+  const skeletonItems = useMemo(
+    () => Array.from({ length: 4 }, (_, index) => ({ id: `skeleton-${index}` })),
+    []
+  );
+
+  const completedCount = useMemo(
+    () => requests.filter(request => request.status === 'completed').length,
+    [requests]
+  );
+
+  const handleOpenRequest = (requestId: string) => {
+    router.push(`/request-details/${requestId}`);
+  };
 
   return (
     <View style={styles.container}>
       {/* Header */}
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingHorizontal: horizontalPadding }]}>
         <View>
-          <Text style={styles.welcomeText}>Welcome back!</Text>
+          <Text style={styles.welcomeText}>{t('welcomeBack')}</Text>
           <Text style={styles.userName}>{user?.displayName || 'User'}</Text>
         </View>
         <TouchableOpacity
           style={styles.notificationButton}
           onPress={() => router.push('/notifications')}
           accessibilityRole="button"
-          accessibilityLabel="Notifications"
-          accessibilityHint="View your notifications"
+          accessibilityLabel={t('notifications')}
+          accessibilityHint={t('viewNotifications')}
         >
           <Ionicons name="notifications-outline" size={24} color={colors.text.primary} />
         </TouchableOpacity>
       </View>
 
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        {/* Overview Stats */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Overview</Text>
-          <View style={styles.statsGrid}>
-            <View style={styles.statCard}>
-              <Ionicons name="document-text-outline" size={32} color={colors.primary} />
-              <Text style={styles.statValue}>0</Text>
-              <Text style={styles.statLabel}>Active Requests</Text>
+      <FlatList
+        data={loading ? skeletonItems : requests}
+        keyExtractor={(item, index) => ('id' in item ? item.id : `request-${index}`)}
+        numColumns={2}
+        columnWrapperStyle={{ gap: gridGap }}
+        contentContainerStyle={{
+          paddingHorizontal: horizontalPadding,
+          paddingBottom: spacing.xl,
+          rowGap: gridGap,
+        }}
+        showsVerticalScrollIndicator={false}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} />}
+        ListHeaderComponent={
+          <View style={styles.headerSection}>
+            <Text style={styles.sectionTitle}>{t('overview')}</Text>
+            <View style={styles.statsGrid}>
+              <View style={styles.statCard}>
+                <Ionicons name="document-text-outline" size={32} color={colors.primary} />
+                <Text style={styles.statValue}>{requests.length}</Text>
+                <Text style={styles.statLabel}>{t('activeRequests')}</Text>
+              </View>
+              <View style={styles.statCard}>
+                <Ionicons name="checkmark-circle-outline" size={32} color="#4CAF50" />
+                <Text style={styles.statValue}>{completedCount}</Text>
+                <Text style={styles.statLabel}>{t('completed')}</Text>
+              </View>
             </View>
-            <View style={styles.statCard}>
-              <Ionicons name="checkmark-circle-outline" size={32} color="#4CAF50" />
-              <Text style={styles.statValue}>0</Text>
-              <Text style={styles.statLabel}>Completed</Text>
-            </View>
+            <Text style={styles.sectionTitle}>{t('latestRequests')}</Text>
           </View>
-        </View>
-
-        {/* Empty State */}
-        <View style={styles.emptyState}>
-          <Ionicons name="cube-outline" size={64} color={colors.text.tertiary} />
-          <Text style={styles.emptyTitle}>No cargo requests yet</Text>
-          <Text style={styles.emptyText}>Create your first cargo request to get started</Text>
-          <TouchableOpacity
-            style={styles.createButton}
-            onPress={() => router.push('/(tabs)/create')}
-            accessibilityRole="button"
-            accessibilityLabel="Create Request"
-            accessibilityHint="Double tap to create a new cargo request"
-          >
-            <Ionicons name="add" size={20} color={colors.white} />
-            <Text style={styles.createButtonText}>Create Request</Text>
-          </TouchableOpacity>
-        </View>
-      </ScrollView>
+        }
+        ListEmptyComponent={
+          !loading ? (
+            <View style={styles.emptyState}>
+              <Ionicons name="cube-outline" size={64} color={colors.text.tertiary} />
+              <Text style={styles.emptyTitle}>{t('noCargoRequestsYet')}</Text>
+              <Text style={styles.emptyText}>{t('createFirstCargoRequest')}</Text>
+              <TouchableOpacity
+                style={styles.createButton}
+                onPress={() => router.push('/(tabs)/create')}
+                accessibilityRole="button"
+                accessibilityLabel={t('createRequest')}
+                accessibilityHint={t('createRequestHint')}
+              >
+                <Ionicons name="add" size={20} color={colors.white} />
+                <Text style={styles.createButtonText}>{t('createRequest')}</Text>
+              </TouchableOpacity>
+            </View>
+          ) : null
+        }
+        renderItem={({ item }) =>
+          loading ? (
+            <SkeletonCard cardStyle={{ width: cardWidth, marginBottom: gridGap }} />
+          ) : (
+            <RequestCard
+              request={item}
+              onPress={() => handleOpenRequest(item.id)}
+              showFavorite={false}
+              compact
+              cardStyle={{ width: cardWidth, marginBottom: gridGap }}
+            />
+          )
+        }
+      />
     </View>
   );
 }
@@ -83,7 +159,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: spacing.lg,
     paddingTop: spacing.xxl + spacing.lg,
     paddingBottom: spacing.lg,
     backgroundColor: colors.white,
@@ -104,11 +179,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  content: {
-    flex: 1,
-  },
-  section: {
-    padding: spacing.lg,
+  headerSection: {
+    paddingTop: spacing.lg,
+    paddingBottom: spacing.md,
   },
   sectionTitle: {
     fontSize: fontSize.lg,
