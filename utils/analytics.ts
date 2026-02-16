@@ -196,3 +196,124 @@ export const trackUserRegistered = (params: {
 export const trackUserLogin = (params: { login_method?: string }) => {
   logEvent(AnalyticsEvents.USER_LOGGED_IN, params);
 };
+
+/**
+ * Helper functions for categorizing analytics data
+ */
+
+/**
+ * Categorize weight into ranges for analytics
+ */
+export const getWeightCategory = (weight: number): string => {
+  if (weight < 100) return 'under_100kg';
+  if (weight < 500) return '100_500kg';
+  if (weight < 1000) return '500_1000kg';
+  if (weight < 5000) return '1_5_tons';
+  if (weight < 10000) return '5_10_tons';
+  return 'over_10_tons';
+};
+
+/**
+ * Categorize price into ranges for analytics
+ */
+export const getPriceRange = (price: number): string => {
+  if (price < 500) return 'under_500';
+  if (price < 1000) return '500_1000';
+  if (price < 2500) return '1000_2500';
+  if (price < 5000) return '2500_5000';
+  if (price < 10000) return '5000_10000';
+  return 'over_10000';
+};
+
+/**
+ * Categorize distance into ranges for analytics
+ */
+export const getDistanceRange = (distanceKm: number): string => {
+  if (distanceKm < 50) return 'under_50km';
+  if (distanceKm < 100) return '50_100km';
+  if (distanceKm < 250) return '100_250km';
+  if (distanceKm < 500) return '250_500km';
+  if (distanceKm < 1000) return '500_1000km';
+  return 'over_1000km';
+};
+
+/**
+ * Extract city name from full address string
+ */
+export const extractCity = (address: string): string => {
+  if (!address) return 'unknown';
+  
+  // Try to extract city from address (format: "Street, City, Country" or "City, Country")
+  const parts = address.split(',').map(part => part.trim());
+  
+  // If multiple parts, second-to-last is usually the city
+  if (parts.length >= 2) {
+    return parts[parts.length - 2].toLowerCase();
+  }
+  
+  // If only one part, use it as city
+  return parts[0].toLowerCase();
+};
+
+/**
+ * Comprehensive cargo creation tracking with categorized data
+ */
+export const trackCargoCreated = async (params: {
+  cargo_type: string;
+  weight?: number;
+  price?: number;
+  pricing_model: string;
+  from_address: string;
+  to_address: string;
+  distance_km?: number;
+}) => {
+  const analyticsParams: Record<string, any> = {
+    cargo_type: params.cargo_type,
+    pricing_model: params.pricing_model,
+    from_city: extractCity(params.from_address),
+    to_city: extractCity(params.to_address),
+  };
+
+  // Add weight category if weight is provided
+  if (params.weight !== undefined && params.weight > 0) {
+    analyticsParams.weight_category = getWeightCategory(params.weight);
+    analyticsParams.weight = params.weight;
+  }
+
+  // Add price range if price is provided
+  if (params.price !== undefined && params.price > 0) {
+    analyticsParams.price_range = getPriceRange(params.price);
+    analyticsParams.price = params.price;
+  }
+
+  // Add distance range if distance is provided
+  if (params.distance_km !== undefined && params.distance_km > 0) {
+    analyticsParams.distance_range = getDistanceRange(params.distance_km);
+    analyticsParams.distance_km = params.distance_km;
+  }
+
+  logEvent('cargo_created', analyticsParams);
+};
+
+/**
+ * Track when user opens a chat conversation
+ */
+export const trackChatOpened = async (params: {
+  request_id: string;
+  other_user_type: 'customer' | 'carrier';
+  chat_id: string;
+}) => {
+  logEvent('chat_opened', params);
+};
+
+/**
+ * Track when user sends a message
+ */
+export const trackMessageSent = async (params: {
+  chat_id: string;
+  message_length: number;
+  has_attachment: boolean;
+  request_id?: string;
+}) => {
+  logEvent('message_sent', params);
+};

@@ -17,7 +17,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useAuth } from '../../../contexts/AuthContext';
 import { useTranslation } from 'react-i18next';
 import { sanitizeMessage } from '../../../utils/sanitization';
-import { trackTypingDetected } from '../../../utils/analytics';
+import { trackTypingDetected, trackChatOpened, trackMessageSent } from '../../../utils/analytics';
 import { startTrace, PerformanceTraces } from '../../../utils/performance';
 import { db } from '../../../lib/firebase';
 import {
@@ -247,6 +247,14 @@ export default function ChatScreen() {
           user_type: userData.user_type || userData.role || 'customer',
           rating: userData.rating || 0,
         });
+
+        // Track chat opened
+        const chatId = generateChatId(requestId!, user!.uid, userId!);
+        trackChatOpened({
+          request_id: requestId!,
+          other_user_type: userData.user_type || userData.role || 'customer',
+          chat_id: chatId,
+        });
       }
     } catch (error) {
       console.error('Error fetching chat data:', error);
@@ -331,6 +339,14 @@ export default function ChatScreen() {
         delivered_at: serverTimestamp(),
         read: false,
         delivered: true,
+      });
+
+      // Track message sent
+      trackMessageSent({
+        chat_id: chatId,
+        message_length: sanitizedMessage.length,
+        has_attachment: false,
+        request_id: requestId,
       });
 
       setNewMessage('');

@@ -19,7 +19,7 @@ import { useTranslation } from 'react-i18next';
 import { useToast } from '../../contexts/ToastContext';
 import { useNotifications } from '../../hooks/useNotifications';
 import { db, storage } from '../../lib/firebase';
-import { trackCargoRequestCreated } from '../../utils/analytics';
+import { trackCargoCreated } from '../../utils/analytics';
 import { sanitizeInput, sanitizeNumber } from '../../utils/sanitization';
 import { colors, spacing, fontSize, fontWeight, borderRadius } from '../../lib/sharedStyles';
 import { collection, addDoc, updateDoc, doc } from 'firebase/firestore';
@@ -488,12 +488,14 @@ export default function CreateRequestScreen() {
 
       const request = { id: requestRef.id };
 
-      trackCargoRequestCreated({
+      trackCargoCreated({
         cargo_type: formData.cargo_type,
-        pricing_model: formData.price_type,
+        weight: formData.weight ? Number(formData.weight) : undefined,
         price: formData.price_type === 'fixed' ? Number(formData.price) : undefined,
-        from_city: formData.from_address,
-        to_city: formData.to_address,
+        pricing_model: formData.price_type,
+        from_address: formData.from_address,
+        to_address: formData.to_address,
+        distance_km: formData.distance_km || undefined,
       });
 
       if (images.length > 0 && request) {

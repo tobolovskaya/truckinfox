@@ -155,27 +155,26 @@ export const RequestCard = React.memo<RequestCardProps>(
       >
         {/* Photo Section with Overlays */}
         <View style={styles.photoSection}>
-          {request.images && request.images.length > 0 ? (
-            <LazyImage
-              uri={request.images[0]}
-              style={styles.cardPhoto}
-              containerStyle={styles.cardPhoto}
-              resizeMode="cover"
-              placeholderIcon={getCategoryIcon(request.cargo_type) as any}
-              placeholderSize={48}
-              showErrorText={false}
-            />
-          ) : (
-            <View style={styles.photoPlaceholder}>
-              <View style={styles.placeholderIconContainer}>
-                <Ionicons
-                  name={getCategoryIcon(request.cargo_type) as any}
-                  size={36}
-                  color="#9E9E9E"
-                />
+          <LazyImage
+            uri={request.images?.[0] || ''}
+            style={styles.cardPhoto}
+            containerStyle={styles.cardPhoto}
+            resizeMode="cover"
+            placeholderIcon={getCategoryIcon(request.cargo_type) as any}
+            placeholderSize={48}
+            showErrorText={false}
+            fallback={
+              <View style={styles.photoPlaceholder}>
+                <View style={styles.placeholderIconContainer}>
+                  <Ionicons
+                    name={getCategoryIcon(request.cargo_type) as any}
+                    size={36}
+                    color="#9E9E9E"
+                  />
+                </View>
               </View>
-            </View>
-          )}
+            }
+          />
 
           {/* Heart Button - Top Right */}
           <TouchableOpacity
