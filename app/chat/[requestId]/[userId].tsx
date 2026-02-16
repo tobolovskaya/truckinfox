@@ -334,7 +334,7 @@ export default function ChatScreen() {
         sender_id: user.uid,
         receiver_id: userId,
         sender_name: user.displayName || 'Unknown',
-        sender_type: user.user_type || 'customer',
+        sender_type: 'customer',
         created_at: serverTimestamp(),
         delivered_at: serverTimestamp(),
         read: false,
@@ -554,7 +554,7 @@ export default function ChatScreen() {
     }
 
     const result = await ImagePicker.launchCameraAsync({
-      mediaTypes: [ImagePicker.MediaType.Images],
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: true,
       aspect: [4, 3],
       quality: 0.8,
@@ -567,7 +567,7 @@ export default function ChatScreen() {
 
   const openImagePicker = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: [ImagePicker.MediaType.Images, ImagePicker.MediaType.Videos],
+      mediaTypes: ImagePicker.MediaTypeOptions.All,
       allowsEditing: true,
       aspect: [4, 3],
       quality: 0.8,

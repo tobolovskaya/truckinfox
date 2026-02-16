@@ -7,7 +7,6 @@ import {
   TextInput,
   Alert,
   Image,
-  ScrollView,
   ActivityIndicator,
 } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
@@ -23,7 +22,11 @@ import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { triggerHapticFeedback } from '../../utils/haptics';
 import DateTimePicker from '@react-native-community/datetimepicker';
-import { GooglePlacesAutocomplete } from '../../lib/GooglePlacesAutocomplete';
+import {
+  GooglePlacesAutocomplete,
+  GooglePlacesData,
+  GooglePlacesDetails,
+} from '../../lib/GooglePlacesAutocomplete';
 import { calculateDistance } from '../../utils/googlePlaces';
 import { theme } from '../../theme/theme';
 import {
@@ -919,7 +922,7 @@ export default function EditRequestScreen() {
                 />
                 <GooglePlacesAutocomplete
                   placeholder={t('enterFromAddress')}
-                  onPress={async (data, details) => {
+                  onPress={async (data: GooglePlacesData, details?: GooglePlacesDetails | null) => {
                     clearDistanceIfNeeded('from_address');
                     updateFormData('from_address', data.description);
                     handleFieldBlur('from_address');
@@ -1098,7 +1101,7 @@ export default function EditRequestScreen() {
                 />
                 <GooglePlacesAutocomplete
                   placeholder={t('enterToAddress')}
-                  onPress={async (data, details) => {
+                  onPress={async (data: GooglePlacesData, details?: GooglePlacesDetails | null) => {
                     clearDistanceIfNeeded('to_address');
                     updateFormData('to_address', data.description);
                     handleFieldBlur('to_address');
