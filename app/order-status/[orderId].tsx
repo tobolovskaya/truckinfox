@@ -8,7 +8,6 @@ import {
   Alert,
   ActivityIndicator,
   Image,
-  ImageStyle,
   Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -27,6 +26,7 @@ import {
   getDocs,
   serverTimestamp,
   onSnapshot,
+  Timestamp,
 } from 'firebase/firestore';
 import { theme } from '../../theme/theme';
 import {
@@ -76,8 +76,16 @@ interface Order {
   }[];
   delivery_photos?: string[];
   delivery_signature?: string;
-  delivery_time?: any;
+  delivery_time?: Timestamp | Date | { seconds: number } | null;
 }
+
+type EscrowPayment = {
+  id: string;
+  status?: string;
+  vipps_order_id?: string;
+};
+
+type IoniconName = keyof typeof Ionicons.glyphMap;
 
 export default function OrderStatusScreen() {
   const { orderId } = useLocalSearchParams();
@@ -95,7 +103,6 @@ export default function OrderStatusScreen() {
   const [signatureModalVisible, setSignatureModalVisible] = useState(false);
   const [signature, setSignature] = useState<string | null>(null);
   const [uploadingProof, setUploadingProof] = useState(false);
-  const [photoErrors, setPhotoErrors] = useState<Record<number, boolean>>({});
   const [signatureError, setSignatureError] = useState(false);
 
   // Ensure orderId is a string
@@ -126,7 +133,10 @@ export default function OrderStatusScreen() {
       async docSnap => {
         if (docSnap.exists()) {
           console.log('Order updated in real-time:', docSnap.data());
-          const orderData = { id: docSnap.id, ...docSnap.data() } as any;
+          const orderData = {
+            id: docSnap.id,
+            ...(docSnap.data() as Omit<Order, 'id'>),
+          };
 
           // If we already have order data with related info, merge it
           if (order) {
@@ -156,10 +166,10 @@ export default function OrderStatusScreen() {
       escrowQuery,
       querySnap => {
         console.log('Escrow payments updated in real-time');
-        const escrowPayments = querySnap.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data(),
-        })) as any;
+        const escrowPayments: EscrowPayment[] = querySnap.docs.map(docSnap => ({
+          id: docSnap.id,
+          ...(docSnap.data() as Omit<EscrowPayment, 'id'>),
+        }));
 
         setOrder(prevOrder => {
           if (!prevOrder) return null;
@@ -198,7 +208,10 @@ export default function OrderStatusScreen() {
         return;
       }
 
-      const orderData = { id: orderSnap.id, ...orderSnap.data() } as any;
+      const orderData = {
+        id: orderSnap.id,
+        ...(orderSnap.data() as Omit<Order, 'id'>),
+      };
 
       // Fetch cargo request
       if (orderData.request_id) {
@@ -233,12 +246,16 @@ export default function OrderStatusScreen() {
         where('order_id', '==', orderIdString)
       );
       const escrowSnap = await getDocs(escrowQuery);
-      orderData.escrow_payments = escrowSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      orderData.escrow_payments = escrowSnap.docs.map(docSnap => ({
+        id: docSnap.id,
+        ...(docSnap.data() as Omit<EscrowPayment, 'id'>),
+      }));
 
       setOrder(orderData);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error fetching order:', error);
-      Alert.alert(t('error'), error.message || 'Failed to load order details');
+      const message = error instanceof Error ? error.message : 'Failed to load order details';
+      Alert.alert(t('error'), message);
     } finally {
       setLoading(false);
     }
@@ -255,7 +272,7 @@ export default function OrderStatusScreen() {
       }
 
       const result = await ImagePicker.launchCameraAsync({
-        mediaTypes: [ImagePicker.MediaType.Images],
+        mediaTypes: [ImagePicker.MediaTypeOptions.Images],
         allowsEditing: true,
         aspect: [4, 3],
         quality: 0.8,
@@ -264,7 +281,7 @@ export default function OrderStatusScreen() {
       if (!result.canceled && result.assets[0]) {
         setDeliveryPhotos([...deliveryPhotos, result.assets[0].uri]);
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error taking photo:', error);
       Alert.alert(t('error'), 'Failed to take photo');
     }
@@ -280,7 +297,7 @@ export default function OrderStatusScreen() {
       }
 
       const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: [ImagePicker.MediaType.Images],
+        mediaTypes: [ImagePicker.MediaTypeOptions.Images],
         allowsEditing: true,
         aspect: [4, 3],
         quality: 0.8,
@@ -291,7 +308,7 @@ export default function OrderStatusScreen() {
         const newPhotos = result.assets.map(asset => asset.uri);
         setDeliveryPhotos([...deliveryPhotos, ...newPhotos]);
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error picking photo:', error);
       Alert.alert(t('error'), 'Failed to pick photo');
     }
@@ -362,9 +379,10 @@ export default function OrderStatusScreen() {
           onPress: () => router.replace('/(tabs)/orders'),
         },
       ]);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error submitting delivery proof:', error);
-      Alert.alert(t('error'), error.message || 'Failed to submit delivery proof');
+      const message = error instanceof Error ? error.message : 'Failed to submit delivery proof';
+      Alert.alert(t('error'), message);
     } finally {
       setUploadingProof(false);
     }
@@ -403,7 +421,7 @@ export default function OrderStatusScreen() {
           [
             {
               text: 'Leave Review',
-              onPress: () => router.push(`/review/${orderIdString}` as any),
+              onPress: () => router.push(`/review/${orderIdString}`),
             },
             {
               text: 'Skip',
@@ -412,7 +430,7 @@ export default function OrderStatusScreen() {
             },
           ]
         );
-      } catch (escrowError: any) {
+      } catch (escrowError: unknown) {
         // If fund release fails, still allow the user to continue
         // Admin can manually process the payout
         console.error('Error releasing funds:', escrowError);
@@ -422,7 +440,7 @@ export default function OrderStatusScreen() {
           [
             {
               text: 'Leave Review',
-              onPress: () => router.push(`/review/${orderIdString}` as any),
+              onPress: () => router.push(`/review/${orderIdString}`),
             },
             {
               text: 'Skip',
@@ -432,8 +450,9 @@ export default function OrderStatusScreen() {
           ]
         );
       }
-    } catch (error: any) {
-      Alert.alert(t('error'), error.message);
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : t('error');
+      Alert.alert(t('error'), message);
     } finally {
       setConfirming(false);
     }
@@ -449,8 +468,8 @@ export default function OrderStatusScreen() {
     return colors[status] || '#616161'; // Text secondary
   };
 
-  const getStatusIcon = (status: string) => {
-    const icons: { [key: string]: string } = {
+  const getStatusIcon = (status: string): IoniconName => {
+    const icons: Record<string, IoniconName> = {
       active: 'time-outline',
       in_transit: 'car-outline',
       delivered: 'checkmark-circle-outline',
@@ -459,8 +478,8 @@ export default function OrderStatusScreen() {
     return icons[status] || 'help-circle-outline';
   };
 
-  const getCargoTypeIcon = (type: string) => {
-    const icons: { [key: string]: string } = {
+  const getCargoTypeIcon = (type: string): IoniconName => {
+    const icons: Record<string, IoniconName> = {
       furniture: 'bed-outline',
       electronics: 'phone-portrait-outline',
       construction: 'construct-outline',
@@ -471,6 +490,18 @@ export default function OrderStatusScreen() {
       other: 'cube-outline',
     };
     return icons[type] || 'cube-outline';
+  };
+
+  const getDeliveryTime = (value: Order['delivery_time']) => {
+    if (!value) return null;
+    if (value instanceof Date) return value;
+    if (typeof value === 'object' && 'toDate' in value && typeof value.toDate === 'function') {
+      return value.toDate();
+    }
+    if (typeof value === 'object' && 'seconds' in value && typeof value.seconds === 'number') {
+      return new Date(value.seconds * 1000);
+    }
+    return null;
   };
 
   const isCustomer = order?.customer_id === user?.uid;
@@ -521,7 +552,7 @@ export default function OrderStatusScreen() {
           <View style={styles.statusHeader}>
             <View style={[styles.statusIcon, { backgroundColor: getStatusColor(order.status) }]}>
               <Ionicons
-                name={getStatusIcon(order.status) as any}
+                name={getStatusIcon(order.status)}
                 size={24}
                 color={theme.iconColors.white}
               />
@@ -546,7 +577,7 @@ export default function OrderStatusScreen() {
             <>
               <View style={styles.orderHeader}>
                 <Ionicons
-                  name={getCargoTypeIcon(order.cargo_requests.cargo_type) as any}
+                  name={getCargoTypeIcon(order.cargo_requests.cargo_type)}
                   size={20}
                   color={theme.iconColors.primary}
                 />
@@ -800,12 +831,12 @@ export default function OrderStatusScreen() {
               />
             </View>
 
-            {order.delivery_time && (
+            {getDeliveryTime(order.delivery_time) && (
               <View style={styles.deliveryTimeInfo}>
                 <Ionicons name="time-outline" size={16} color={theme.iconColors.gray.primary} />
                 <Text style={styles.deliveryTimeText}>
                   {t('deliveredAt')}:{' '}
-                  {new Date(order.delivery_time.seconds * 1000).toLocaleString()}
+                  {getDeliveryTime(order.delivery_time)?.toLocaleString()}
                 </Text>
               </View>
             )}
