@@ -294,7 +294,11 @@ export default function RequestDetailsScreen() {
       const data = await response.json();
 
       if (data.routes && data.routes.length > 0) {
-        const coordinates = data.routes[0].geometry.coordinates;
+        const coordinates = data.routes[0].geometry?.coordinates;
+        if (!coordinates || !Array.isArray(coordinates)) {
+          console.warn('Invalid route coordinates received from Mapbox');
+          return;
+        }
         // Convert [lng, lat] to {latitude, longitude}
         const routePoints = coordinates.map((coord: number[]) => ({
           latitude: coord[1],

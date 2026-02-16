@@ -237,8 +237,13 @@ export default function ChatScreen() {
 
   const fetchChatData = async () => {
     try {
+      if (!userId) {
+        console.log('Missing userId for fetchChatData');
+        return;
+      }
+
       // Fetch chat user info from Firebase
-      const userDoc = await getDoc(doc(db, 'users', userId!));
+      const userDoc = await getDoc(doc(db, 'users', userId));
       if (userDoc.exists()) {
         const userData = userDoc.data();
         setChatUser({
@@ -249,12 +254,14 @@ export default function ChatScreen() {
         });
 
         // Track chat opened
-        const chatId = generateChatId(requestId!, user!.uid, userId!);
-        trackChatOpened({
-          request_id: requestId!,
-          other_user_type: userData.user_type || userData.role || 'customer',
-          chat_id: chatId,
-        });
+        if (requestId && user?.uid) {
+          const chatId = generateChatId(requestId, user.uid, userId);
+          trackChatOpened({
+            request_id: requestId,
+            other_user_type: userData.user_type || userData.role || 'customer',
+            chat_id: chatId,
+          });
+        }
       }
     } catch (error) {
       console.error('Error fetching chat data:', error);
@@ -270,7 +277,7 @@ export default function ChatScreen() {
       }
 
       // Set up real-time listener for messages (flat structure)
-      const chatId = generateChatId(requestId, user.uid, userId!);
+      const chatId = generateChatId(requestId, user.uid, userId);
       const messagesQuery = query(
         collection(db, 'messages'),
         where('chat_id', '==', chatId),
@@ -324,7 +331,7 @@ export default function ChatScreen() {
     setSending(true);
     try {
       // Create deterministic chat ID (sorted user IDs)
-      const chatId = generateChatId(requestId, user.uid, userId!);
+      const chatId = generateChatId(requestId, user.uid, userId);
 
       // Add message to flat messages collection
       await addDoc(collection(db, 'messages'), {
@@ -364,7 +371,7 @@ export default function ChatScreen() {
     if (!user?.uid || !userId || !requestId) return;
 
     try {
-      const chatId = generateChatId(requestId, user.uid, userId!);
+      const chatId = generateChatId(requestId, user.uid, userId);
       const messagesQuery = query(
         collection(db, 'messages'),
         where('chat_id', '==', chatId),

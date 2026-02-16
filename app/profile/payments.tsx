@@ -1,1 +1,24 @@
+import React from 'react';
+import { View, Text, StyleSheet } from 'react-native';
 import { colors, spacing, fontSize, fontWeight, borderRadius } from '../lib/sharedStyles';
+
+export default function PaymentsScreen() {
+  return (
+    <View style={styles.container}>
+      <Text style={styles.text}>Payment History Screen - Coming Soon</Text>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: colors.white,
+  },
+  text: {
+    fontSize: fontSize.lg,
+    color: colors.text.secondary,
+  },
+});
