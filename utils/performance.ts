@@ -12,15 +12,53 @@ export const startTrace = (traceName: string) => {
       const traceInstance = trace(performance, traceName);
       traceInstance.start();
       console.log(`⚡ Performance trace started: ${traceName}`);
-      return traceInstance;
+      
+      let stopped = false;
+      
+      // Return a wrapper with safe stop method
+      return {
+        stop: () => {
+          if (!stopped) {
+            try {
+              traceInstance.stop();
+              stopped = true;
+              console.log(`⚡ Performance trace stopped: ${traceName}`);
+            } catch (error) {
+              console.debug(`Performance trace already stopped: ${traceName}`);
+            }
+          }
+        },
+        putAttribute: (attribute: string, value: string) => {
+          try {
+            if (!stopped) {
+              traceInstance.putAttribute(attribute, value);
+            }
+          } catch (error) {
+            console.debug('Error setting trace attribute:', error);
+          }
+        },
+        putMetric: (metricName: string, value: number) => {
+          try {
+            if (!stopped) {
+              traceInstance.putMetric(metricName, value);
+            }
+          } catch (error) {
+            console.debug('Error setting trace metric:', error);
+          }
+        },
+      };
     } else {
       // For native platforms, just log
       const startTime = Date.now();
+      let stopped = false;
       console.log(`⚡ Performance trace (console only): ${traceName}`);
       return {
         stop: () => {
-          const duration = Date.now() - startTime;
-          console.log(`⚡ Performance trace stopped: ${traceName} (${duration}ms)`);
+          if (!stopped) {
+            const duration = Date.now() - startTime;
+            console.log(`⚡ Performance trace stopped: ${traceName} (${duration}ms)`);
+            stopped = true;
+          }
         },
         putAttribute: () => {},
         putMetric: () => {},

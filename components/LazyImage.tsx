@@ -18,7 +18,7 @@ interface LazyImageProps {
   style?: StyleProp<ImageStyle>;
   containerStyle?: StyleProp<ViewStyle>;
   resizeMode?: 'cover' | 'contain' | 'stretch' | 'center';
-  placeholderIcon?: keyof typeof Ionicons.glyphMap;
+  placeholderIcon?: string;
   placeholderSize?: number;
   showErrorText?: boolean;
 }
@@ -35,15 +35,27 @@ export const LazyImage: React.FC<LazyImageProps> = ({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const traceRef = useRef<ReturnType<typeof startTrace>>(null);
+  const traceStoppedRef = useRef(false);
+
+  // Helper function to safely stop trace only once
+  const stopTrace = () => {
+    if (traceRef.current && !traceStoppedRef.current) {
+      try {
+        traceRef.current.stop();
+        traceStoppedRef.current = true;
+      } catch (err) {
+        // Silently handle if trace is already stopped
+        console.debug('Trace already stopped or unavailable');
+      }
+    }
+  };
 
   // Start performance trace when component mounts
   useEffect(() => {
     traceRef.current = startTrace(PerformanceTraces.IMAGE_LOAD_TIME);
     return () => {
       // Stop trace on unmount if still running
-      if (traceRef.current && loading) {
-        traceRef.current.stop();
-      }
+      stopTrace();
     };
   }, []);
 
@@ -57,7 +69,7 @@ export const LazyImage: React.FC<LazyImageProps> = ({
 
       {error ? (
         <View style={styles.errorPlaceholder}>
-          <Ionicons name={placeholderIcon} size={placeholderSize} color={colors.text.tertiary} />
+          <Ionicons name={placeholderIcon as any} size={placeholderSize} color={colors.text.tertiary} />
           {showErrorText && <Text style={styles.errorText}>Image unavailable</Text>}
         </View>
       ) : (
@@ -66,15 +78,13 @@ export const LazyImage: React.FC<LazyImageProps> = ({
           style={[style, { opacity: loading ? 0 : 1 }]}
           onLoad={() => {
             setLoading(false);
-            // Stop performance trace
-            traceRef.current?.stop();
+            stopTrace();
           }}
           onError={() => {
             console.log('LazyImage: Failed to load image:', uri);
             setLoading(false);
             setError(true);
-            // Stop performance trace
-            traceRef.current?.stop();
+            stopTrace();
           }}
           resizeMode={resizeMode}
         />
