@@ -26,7 +26,7 @@ import {
 } from 'firebase/firestore';
 import { batchFetchUsers, batchFetchRequests } from '../../utils/batchFetch';
 import Avatar from '../../components/Avatar';
-import SkeletonLoader from '../../components/SkeletonLoader';
+import { SkeletonLoader } from '../../components/SkeletonLoader';
 import { colors, spacing, fontSize, fontWeight, borderRadius } from '../../lib/sharedStyles';
 import { formatDistanceToNow } from 'date-fns';
 
@@ -232,7 +232,7 @@ export default function MessagesScreen() {
         activeOpacity={0.7}
       >
         <Avatar
-          imageUrl={item.other_user_avatar}
+          image={item.other_user_avatar}
           size={56}
           name={item.other_user_name}
         />
@@ -390,7 +390,7 @@ const styles = StyleSheet.create({
     borderBottomColor: colors.border.light,
   },
   unreadCard: {
-    backgroundColor: colors.primaryVeryLight,
+    backgroundColor: colors.primaryLight,
   },
   conversationContent: {
     flex: 1,
