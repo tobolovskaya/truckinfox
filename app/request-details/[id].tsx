@@ -33,6 +33,7 @@ import {
   where,
   orderBy,
   addDoc,
+  deleteDoc,
   serverTimestamp,
   runTransaction,
 } from 'firebase/firestore';
@@ -106,6 +107,7 @@ export default function RequestDetailsScreen() {
   const [showSuccessAnimation, setShowSuccessAnimation] = useState(false);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [showImageGallery, setShowImageGallery] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   const flatListRef = useRef(null);
 
@@ -384,6 +386,68 @@ export default function RequestDetailsScreen() {
     setShowImageGallery(false);
   };
 
+  const handleEdit = () => {
+    if (!request) return;
+    
+    // Check if request has accepted bids
+    const hasAcceptedBid = bids.some(bid => bid.status === 'accepted');
+    if (hasAcceptedBid) {
+      Alert.alert(
+        t('error'),
+        t('cannotEditAcceptedRequest') || 'Cannot edit request with accepted bids'
+      );
+      return;
+    }
+
+    triggerHapticFeedback.light();
+    router.push(`/edit-request/${id}`);
+  };
+
+  const handleDelete = () => {
+    Alert.alert(
+      t('confirmDelete') || 'Delete Request',
+      t('confirmDeleteMessage') ||
+        'Are you sure you want to delete this request? This action cannot be undone.',
+      [
+        { text: t('cancel'), style: 'cancel' },
+        {
+          text: t('delete'),
+          style: 'destructive',
+          onPress: confirmDelete,
+        },
+      ]
+    );
+  };
+
+  const confirmDelete = async () => {
+    setDeleting(true);
+    triggerHapticFeedback.medium();
+
+    try {
+      // Delete all bids for this request
+      const bidsQuery = query(collection(db, 'bids'), where('request_id', '==', id));
+      const bidsSnap = await getDocs(bidsQuery);
+      
+      const deletePromises = bidsSnap.docs.map(bidDoc => deleteDoc(bidDoc.ref));
+      await Promise.all(deletePromises);
+
+      // Delete the cargo request
+      await deleteDoc(doc(db, 'cargo_requests', id as string));
+
+      triggerHapticFeedback.success();
+      toast.success(t('requestDeleted') || 'Request deleted successfully');
+      
+      // Navigate back to home
+      router.back();
+    } catch (error) {
+      console.error('Error deleting request:', error);
+      toast.error(t('failedToDelete') || 'Failed to delete request');
+      triggerHapticFeedback.error();
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   const formatDate = (dateString: string) => {
     if (!dateString) return '';
     const date = new Date(dateString);
@@ -418,7 +482,31 @@ export default function RequestDetailsScreen() {
               <Ionicons name="arrow-back" size={24} color={colors.text.primary} />
             </TouchableOpacity>
             <Text style={styles.headerTitle}>{t('requestDetails')}</Text>
-            <View style={styles.backButton} />
+            
+            {isCustomer ? (
+              <View style={styles.headerActions}>
+                <TouchableOpacity
+                  style={styles.headerButton}
+                  onPress={handleEdit}
+                  disabled={deleting}
+                >
+                  <Ionicons name="create-outline" size={22} color={colors.primary} />
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.headerButton}
+                  onPress={handleDelete}
+                  disabled={deleting}
+                >
+                  {deleting ? (
+                    <ActivityIndicator size="small" color={colors.error} />
+                  ) : (
+                    <Ionicons name="trash-outline" size={22} color={colors.error} />
+                  )}
+                </TouchableOpacity>
+              </View>
+            ) : (
+              <View style={styles.backButton} />
+            )}
           </View>
         );
 
@@ -810,6 +898,17 @@ const styles = StyleSheet.create({
     borderBottomColor: colors.border.light,
   },
   backButton: {
+    width: 44,
+    height: 44,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  headerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+  },
+  headerButton: {
     width: 44,
     height: 44,
     justifyContent: 'center',

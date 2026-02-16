@@ -74,6 +74,7 @@
   "editNotAllowedAcceptedBids": "Cannot edit request with accepted bids",
   "failedToLoadRequest": "Failed to load request",
   "requestUpdated": "Request updated successfully",
+  "requestDeleted": "Request deleted successfully",
   "save": "Save",
   "requests": "Requests",
   "create": "Create",

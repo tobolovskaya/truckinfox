@@ -74,6 +74,7 @@
   "editNotAllowedAcceptedBids": "Kan ikke redigere forespørsel med aksepterte bud",
   "failedToLoadRequest": "Kunne ikke laste forespørsel",
   "requestUpdated": "Forespørsel oppdatert",
+  "requestDeleted": "Forespørsel slettet",
   "save": "Lagre",
   "requests": "Forespørsler",
   "create": "Opprett",
