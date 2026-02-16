@@ -1767,7 +1767,7 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     borderColor: colors.border.light,
     borderRadius: 25,
-    spacing.sm
+    paddingHorizontal: spacing.sm,
     paddingVertical: spacing.sm,
     ...shadows.sm,
   },
