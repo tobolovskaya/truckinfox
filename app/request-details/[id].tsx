@@ -388,7 +388,6 @@ export default function RequestDetailsScreen() {
 
   const handleEdit = () => {
     if (!request) return;
-    
     // Check if request has accepted bids
     const hasAcceptedBid = bids.some(bid => bid.status === 'accepted');
     if (hasAcceptedBid) {
@@ -427,7 +426,6 @@ export default function RequestDetailsScreen() {
       // Delete all bids for this request
       const bidsQuery = query(collection(db, 'bids'), where('request_id', '==', id));
       const bidsSnap = await getDocs(bidsQuery);
-      
       const deletePromises = bidsSnap.docs.map(bidDoc => deleteDoc(bidDoc.ref));
       await Promise.all(deletePromises);
 
@@ -436,7 +434,6 @@ export default function RequestDetailsScreen() {
 
       triggerHapticFeedback.success();
       toast.success(t('requestDeleted') || 'Request deleted successfully');
-      
       // Navigate back to home
       router.back();
     } catch (error) {
@@ -482,7 +479,6 @@ export default function RequestDetailsScreen() {
               <Ionicons name="arrow-back" size={24} color={colors.text.primary} />
             </TouchableOpacity>
             <Text style={styles.headerTitle}>{t('requestDetails')}</Text>
-            
             {isCustomer ? (
               <View style={styles.headerActions}>
                 <TouchableOpacity
