@@ -22,7 +22,7 @@ export default function IndexScreen() {
       // User is signed in and not in tab group, redirect to home
       router.replace('/(tabs)/home');
     }
-  }, [user, loading, segments]);
+  }, [user, loading, segments, router]);
 
   // Show loading indicator while checking auth state
   if (loading) {
