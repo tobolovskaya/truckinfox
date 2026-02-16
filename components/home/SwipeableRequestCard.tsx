@@ -1,46 +1,17 @@
 import React, { useRef } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
+import { Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import { Swipeable } from 'react-native-gesture-handler';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
-import { RequestCard } from './RequestCard';
+import { RequestCard, type CargoRequest } from './RequestCard';
 import { colors, spacing, fontSize } from '../../lib/sharedStyles';
 import { triggerHapticFeedback } from '../../utils/haptics';
 
-interface CargoRequest {
-  id: string;
-  title: string;
-  description: string;
-  cargo_type: string;
-  weight: number;
-  dimensions?: string;
-  from_address: string;
-  to_address: string;
-  pickup_date: string;
-  delivery_date?: string;
-  price: number;
-  price_type: string;
-  status: string;
-  created_at: string;
-  user_id: string;
-  distance?: number;
-  users: {
-    full_name: string;
-    user_type: string;
-    rating: number;
-    avatar_url?: string;
-  };
-  bids: any[];
-  is_favorite?: boolean;
-  user_favorites?: { id: string; user_id: string }[];
-  images?: string[];
-}
-
 interface SwipeableRequestCardProps {
   request: CargoRequest;
-  onPress: (request: CargoRequest) => void;
-  onToggleFavorite: (requestId: string) => void;
-  onDelete?: (requestId: string) => void;
+  onPress: (_request: CargoRequest) => void;
+  onToggleFavorite: (_requestId: string) => void;
+  onDelete?: (_requestId: string) => void;
   showDeleteAction?: boolean;
   isOwner?: boolean;
 }

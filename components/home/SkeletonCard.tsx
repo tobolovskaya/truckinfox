@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import { StyleSheet, View, StyleProp, ViewStyle } from 'react-native';
 import Animated, {
+  type AnimatedStyleProp,
   useSharedValue,
   useAnimatedStyle,
   withRepeat,
@@ -16,7 +17,7 @@ const SkeletonBox = ({
 }: {
   width: number | string;
   height: number;
-  style?: any;
+  style?: AnimatedStyleProp<ViewStyle>;
 }) => {
   const opacity = useSharedValue(0.3);
 
@@ -35,20 +36,16 @@ const SkeletonBox = ({
     opacity: opacity.value,
   }));
 
-  return (
-    <Animated.View
-      style={[
-        {
-          width,
-          height,
-          backgroundColor: colors.border.light,
-          borderRadius: borderRadius.sm,
-        },
-        style,
-        animatedStyle,
-      ]}
-    />
-  );
+  const baseStyle: ViewStyle = {
+    width,
+    height,
+    backgroundColor: colors.border.light,
+    borderRadius: borderRadius.sm,
+  };
+
+  const combinedStyle: AnimatedStyleProp<ViewStyle> = [baseStyle, style, animatedStyle];
+
+  return <Animated.View style={combinedStyle} />;
 };
 
 export const SkeletonCard = ({ cardStyle }: { cardStyle?: StyleProp<ViewStyle> }) => {
