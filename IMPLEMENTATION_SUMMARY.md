@@ -259,10 +259,10 @@ Fixed 8 bugs discovered during post-deployment testing:
   - `receiver_id` (ASC) + `created_at` (DESC)
 - **Impact**: Messages list now loads correctly without errors
 
-11. **Missing Route Exports** (7 route files)
+11. **Missing Route Exports** (6 route files)
 
 - **Issue**: Empty placeholder files causing "missing default export" warnings
-- **Files**: forgot-password.tsx, register.tsx, sign-in.tsx, dashboard.tsx, map.tsx, edit.tsx, payments.tsx
+- **Files**: forgot-password.tsx, register.tsx, sign-in.tsx, map.tsx, edit.tsx, payments.tsx
 - **Fix**: Added placeholder components with "Coming Soon" message
 - **Impact**: No more route warnings, clean console output
 

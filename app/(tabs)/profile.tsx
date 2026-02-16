@@ -12,6 +12,7 @@ import {
   shadows,
 } from '../../lib/sharedStyles';
 import { useAuth } from '../../contexts/AuthContext';
+import Avatar from '../../components/Avatar';
 
 export default function ProfileScreen() {
   const router = useRouter();
@@ -79,9 +80,12 @@ export default function ProfileScreen() {
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         {/* Profile Card */}
         <View style={styles.profileCard}>
-          <View style={styles.avatar}>
-            <Ionicons name="person" size={40} color={colors.primary} />
-          </View>
+          <Avatar
+            photoURL={user?.photoURL}
+            size={80}
+            backgroundColor={`${colors.primary}15`}
+            iconColor={colors.primary}
+          />
           <Text style={styles.userName}>{user?.displayName || 'User'}</Text>
           <Text style={styles.userEmail}>{user?.email}</Text>
         </View>
@@ -146,15 +150,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: spacing.xl,
     marginBottom: spacing.lg,
-  },
-  avatar: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: `${colors.primary}15`,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: spacing.md,
   },
   userName: {
     fontSize: fontSize.xl,
