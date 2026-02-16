@@ -74,7 +74,10 @@ export default function MessagesScreen() {
    * - 10x faster for 20+ conversations
    */
   const fetchConversations = useCallback(async () => {
-    if (!user?.uid) return;
+    if (!user?.uid) {
+      setLoading(false);
+      return;
+    }
 
     try {
       // 1. Fetch all messages involving this user
