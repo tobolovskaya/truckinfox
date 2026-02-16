@@ -36,7 +36,7 @@ export default function LoginScreen() {
   const [rememberMe, setRememberMe] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  const { signIn } = useAuth();
+  const { signIn, signInWithGoogle, signInWithApple } = useAuth();
   const router = useRouter();
   const { t } = useTranslation();
 
@@ -82,36 +82,44 @@ export default function LoginScreen() {
     }
   };
 
-  const handleSocialLogin = async (_provider: 'google' | 'facebook' | 'apple') => {
+  const handleSocialLogin = async (provider: 'google' | 'apple') => {
     try {
       setLoading(true);
-      // TODO: Implement Firebase OAuth
-      // Firebase OAuth requires different setup than Supabase
-      Alert.alert(t('comingSoon'), 'Social login will be available soon');
+      let result;
+
+      if (provider === 'google') {
+        result = await signInWithGoogle();
+      } else if (provider === 'apple') {
+        if (Platform.OS !== 'ios') {
+          Alert.alert(t('error'), t('appleSignInIosOnly'));
+          return;
+        }
+        result = await signInWithApple();
+      }
+
+      if (result.success) {
+        // Track social login
+        await trackUserLogin({
+          login_method: provider,
+        });
+
+        router.replace('/(tabs)');
+      } else {
+        // Show error unless it was a cancellation
+        if (!result.error?.includes('cancelled') && !result.error?.includes('canceled')) {
+          Alert.alert(t('error'), result.error || t('authenticationFailed'));
+        }
+      }
     } catch (error: any) {
-      Alert.alert(t('error'), error.message || 'Authentication failed');
+      console.error(`${provider} Sign In error:`, error);
+      Alert.alert(t('error'), error.message || t('authenticationFailed'));
     } finally {
       setLoading(false);
     }
   };
 
   const handleAppleLogin = async () => {
-    if (Platform.OS !== 'ios') {
-      Alert.alert(t('error'), 'Apple Sign In is only available on iOS');
-      return;
-    }
-
-    try {
-      setLoading(true);
-      // TODO: Implement Firebase Apple Sign In
-      Alert.alert(t('comingSoon'), 'Apple Sign In will be available soon');
-    } catch (error: any) {
-      if (error.code !== 'ERR_CANCELED') {
-        Alert.alert(t('error'), error.message || 'Apple Sign In failed');
-      }
-    } finally {
-      setLoading(false);
-    }
+    await handleSocialLogin('apple');
   };
 
   return (
@@ -243,13 +251,6 @@ export default function LoginScreen() {
               disabled={loading}
             >
               <Ionicons name="logo-google" size={24} color="#4285F4" />
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.socialButton}
-              onPress={() => handleSocialLogin('facebook')}
-              disabled={loading}
-            >
-              <Ionicons name="logo-facebook" size={24} color="#1877F2" />
             </TouchableOpacity>
             {Platform.OS === 'ios' ? (
               <TouchableOpacity

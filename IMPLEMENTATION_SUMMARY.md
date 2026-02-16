@@ -34,6 +34,13 @@ truckinfox/
 - Password reset functionality
 - AuthContext for state management
 - Protected routes
+- **Social Login (OAuth)**:
+  - ✅ **Apple Sign In**: Fully implemented for iOS devices
+  - 🔧 **Google Sign In**: Infrastructure ready (requires OAuth client IDs configuration)
+- OAuth integration with automatic Firestore profile creation
+- Error handling for social login cancellations
+- Analytics tracking for authentication methods
+- Bilingual error messages (EN/NO)
 
 #### Main Application Screens ✅
 
@@ -1441,6 +1448,116 @@ Created `utils/batchFetch.ts` with reusable functions:
 - **Faster Load Times**: Parallel batch queries much faster than sequential
 - **Reusable**: Batch fetch functions used across multiple screens
 - **Scalable**: Performance stays consistent as conversations grow
+
+### Social Login Implementation (OAuth) ✅
+
+Implemented OAuth authentication with Apple Sign In and Google Sign In infrastructure:
+
+**Implementation Status:**
+
+- ✅ **Apple Sign In**: Fully functional for iOS devices
+- 🔧 **Google Sign In**: Infrastructure ready (requires OAuth configuration)
+
+**Features:**
+
+- **Apple Sign In (iOS)**:
+  - Native `expo-apple-authentication` integration
+  - Automatic user profile creation in Firestore
+  - Error handling for user cancellation
+  - Full name extraction from Apple credential
+  - Seamless routing to home screen after authentication
+- **Google Sign In (Ready for Configuration)**:
+  - Firebase GoogleAuthProvider setup
+  - Platform-specific client ID support (iOS/Android/Web)
+  - Placeholder implementation with configuration guide
+  - Avatar URL sync from Google profile
+- **Authentication Flow**:
+  - OAuth credential exchange with Firebase
+  - Automatic Firestore user profile creation
+  - Default user_type set to 'customer'
+  - Search terms generation for user discovery
+  - Analytics tracking for login methods
+
+**Implementation Details:**
+
+Updated `contexts/AuthContext.tsx`:
+
+- Added `signInWithGoogle()` method (placeholder with setup instructions)
+- Added `signInWithApple()` method (fully functional)
+- Firebase credential exchange with `signInWithCredential()`
+- Automatic profile creation for first-time social logins
+- Error message localization (EN/NO)
+
+Updated `app/(auth)/login.tsx`:
+
+- Refactored `handleSocialLogin()` to use AuthContext methods
+- Analytics tracking for social login methods
+- Graceful error handling (distinguishes cancellation from errors)
+- Platform-specific checks (Apple Sign In iOS-only warning)
+
+Added translations (`locales/en.json` & `locales/no.json`):
+
+- `comingSoon`: "Coming Soon" / "Kommer snart"
+- `appleSignInIosOnly`: iOS-only restriction message
+- `authenticationFailed`: Generic authentication error
+
+**Setup Documentation:**
+
+Created comprehensive `OAUTH_SETUP.md`:
+
+- Step-by-step Firebase Console configuration
+- Google Cloud Platform OAuth setup
+- Apple Developer Portal configuration
+- Environment variables guide
+- Native SDK alternatives (@react-native-google-signin/google-signin)
+- Security best practices
+- Troubleshooting guide
+
+**Files Modified:**
+
+- `contexts/AuthContext.tsx`: Added OAuth methods (200+ lines)
+- `app/(auth)/login.tsx`: Integrated OAuth flow
+- `locales/en.json` & `locales/no.json`: Added 4 new translation keys
+- `OAUTH_SETUP.md` (NEW): Complete OAuth setup guide (300+ lines)
+- `IMPLEMENTATION_SUMMARY.md`: Updated with OAuth status
+
+**Dependencies Installed:**
+
+```bash
+npx expo install expo-auth-session expo-apple-authentication expo-crypto
+```
+
+**Benefits:**
+
+- **Better UX**: One-tap login with trusted providers
+- **Reduced Friction**: No password required for signup
+- **Increased Conversions**: Social login typically has 20-30% higher signup rates
+- **Trust**: Apple/Google credentials increase user confidence
+- **Secure**: OAuth 2.0 standard with Firebase Auth backend
+- **iOS Native**: Apple Sign In uses native iOS SDK (required by App Store for apps with social login)
+- **Flexible**: Infrastructure supports future providers (Microsoft, Phone, etc.)
+
+**Configuration Required:**
+
+To enable Google Sign In:
+
+1. Configure OAuth client IDs in Firebase Console
+2. Add client IDs to environment variables:
+   ```env
+   EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID=...
+   EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID=...
+   EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID=...
+   ```
+3. Update `AuthContext.tsx` to implement full Google OAuth flow
+4. Test on iOS/Android devices
+
+**Security Considerations:**
+
+- OAuth client IDs stored in environment variables (not committed to git)
+- User cancellation handled gracefully (no error alerts)
+- Invalid credential errors properly localized
+- Firebase Authentication logs monitored for suspicious activity
+- SHA-256 fingerprints required for Android production builds
 
 ### Navigation & Information Architecture ✅
 

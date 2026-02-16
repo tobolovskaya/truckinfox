@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
+import { Platform } from 'react-native';
 import { FirebaseError } from 'firebase/app';
 import {
   User,
@@ -7,10 +8,18 @@ import {
   signOut as firebaseSignOut,
   onAuthStateChanged,
   updateProfile,
+  GoogleAuthProvider,
+  signInWithCredential,
+  OAuthProvider,
 } from 'firebase/auth';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
+import * as Google from 'expo-auth-session/providers/google';
+import * as AppleAuthentication from 'expo-apple-authentication';
+import * as WebBrowser from 'expo-web-browser';
 import { auth, db } from '../lib/firebase';
 import { generateSearchTerms } from '../utils/search';
+
+WebBrowser.maybeCompleteAuthSession();
 
 // Strict TypeScript interfaces for auth data
 export interface SignUpData {
@@ -36,6 +45,8 @@ interface AuthContextType {
   signUp: (userData: SignUpData) => Promise<AuthResult<User>>;
   signOut: () => Promise<AuthResult>;
   signOutAllDevices: () => Promise<AuthResult>;
+  signInWithGoogle: () => Promise<AuthResult<User>>;
+  signInWithApple: () => Promise<AuthResult<User>>;
 }
 
 // Input validation helpers
@@ -227,6 +238,121 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const signInWithGoogle = async (): Promise<AuthResult<User>> => {
+    try {
+      // Note: For production, you need to configure Google OAuth in Firebase Console
+      // and add your OAuth client IDs to environment variables
+      return {
+        success: false,
+        error:
+          'Google Sign In requires additional setup. Please configure OAuth client IDs in Firebase Console and add them to your environment variables (EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID, etc.)',
+      };
+
+      // TODO: Uncomment when OAuth is configured:
+      // const clientId = Platform.select({
+      //   ios: process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID,
+      //   android: process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID,
+      //   default: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID,
+      // });
+      //
+      // if (!clientId) {
+      //   return { success: false, error: 'Google OAuth not configured' };
+      // }
+      //
+      // ... Google OAuth flow implementation
+    } catch (error) {
+      console.error('Google Sign In error:', error);
+      return {
+        success: false,
+        error: getAuthErrorMessage(error),
+      };
+    }
+  };
+
+  const signInWithApple = async (): Promise<AuthResult<User>> => {
+    try {
+      if (Platform.OS !== 'ios') {
+        return {
+          success: false,
+          error: 'Apple Sign In is only available on iOS',
+        };
+      }
+
+      // Check if Apple Sign In is available
+      const isAvailable = await AppleAuthentication.isAvailableAsync();
+      if (!isAvailable) {
+        return {
+          success: false,
+          error: 'Apple Sign In is not available on this device',
+        };
+      }
+
+      const appleCredential = await AppleAuthentication.signInAsync({
+        requestedScopes: [
+          AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
+          AppleAuthentication.AppleAuthenticationScope.EMAIL,
+        ],
+      });
+
+      const { identityToken } = appleCredential;
+      if (!identityToken) {
+        return {
+          success: false,
+          error: 'Apple Sign In failed to return identity token',
+        };
+      }
+
+      // Create Firebase credential
+      const provider = new OAuthProvider('apple.com');
+      const credential = provider.credential({
+        idToken: identityToken,
+      });
+
+      const userCredential = await signInWithCredential(auth, credential);
+
+      // Check if user profile exists in Firestore
+      const userDoc = await getDoc(doc(db, 'users', userCredential.user.uid));
+
+      if (!userDoc.exists()) {
+        // Create user profile for first-time Apple sign in
+        const fullName =
+          appleCredential.fullName?.givenName && appleCredential.fullName?.familyName
+            ? `${appleCredential.fullName.givenName} ${appleCredential.fullName.familyName}`
+            : userCredential.user.displayName || 'Apple User';
+
+        await setDoc(doc(db, 'users', userCredential.user.uid), {
+          email: appleCredential.email || userCredential.user.email || '',
+          full_name: fullName,
+          phone: '',
+          user_type: 'customer', // Default to customer
+          search_terms: generateSearchTerms(fullName),
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        });
+      }
+
+      return {
+        success: true,
+        data: userCredential.user,
+      };
+    } catch (error: any) {
+      console.error('Apple Sign In error:', error);
+
+      // Handle user cancellation gracefully
+      if (error.code === 'ERR_CANCELED') {
+        return {
+          success: false,
+          error: 'Apple Sign In was cancelled',
+        };
+      }
+
+      return {
+        success: false,
+        error: getAuthErrorMessage(error),
+      };
+    }
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -236,6 +362,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         signUp,
         signOut,
         signOutAllDevices,
+        signInWithGoogle,
+        signInWithApple,
       }}
     >
       {children}
