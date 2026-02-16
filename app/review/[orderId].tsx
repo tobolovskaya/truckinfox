@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -42,6 +42,7 @@ interface Order {
   id: string;
   customer_id: string;
   carrier_id: string;
+  request_id?: string;
   status: string;
   cargo_requests: {
     title: string;
@@ -66,27 +67,30 @@ export default function ReviewScreen() {
   const [rating, setRating] = useState(0);
   const [comment, setComment] = useState('');
 
-  useEffect(() => {
-    fetchOrder();
-  }, []);
-
-  const fetchOrder = async () => {
+  const fetchOrder = useCallback(async () => {
     try {
-      const orderRef = doc(db, 'orders', orderId as string);
+      if (!orderId || typeof orderId !== 'string') {
+        throw new Error('Invalid order ID');
+      }
+
+      const orderRef = doc(db, 'orders', orderId);
       const orderSnap = await getDoc(orderRef);
 
       if (!orderSnap.exists()) {
         throw new Error('Order not found');
       }
 
-      const orderData = { id: orderSnap.id, ...orderSnap.data() } as any;
+      const orderData: Order = {
+        id: orderSnap.id,
+        ...(orderSnap.data() as Omit<Order, 'id'>),
+      };
 
       // Fetch cargo request data
       if (orderData.request_id) {
         const requestRef = doc(db, 'cargo_requests', orderData.request_id);
         const requestSnap = await getDoc(requestRef);
         if (requestSnap.exists()) {
-          orderData.cargo_requests = requestSnap.data();
+          orderData.cargo_requests = requestSnap.data() as Order['cargo_requests'];
         }
       }
 
@@ -95,7 +99,7 @@ export default function ReviewScreen() {
         const customerRef = doc(db, 'users', orderData.customer_id);
         const customerSnap = await getDoc(customerRef);
         if (customerSnap.exists()) {
-          orderData.customer = customerSnap.data();
+          orderData.customer = customerSnap.data() as Order['customer'];
         }
       }
 
@@ -104,18 +108,23 @@ export default function ReviewScreen() {
         const carrierRef = doc(db, 'users', orderData.carrier_id);
         const carrierSnap = await getDoc(carrierRef);
         if (carrierSnap.exists()) {
-          orderData.carrier = carrierSnap.data();
+          orderData.carrier = carrierSnap.data() as Order['carrier'];
         }
       }
 
       setOrder(orderData);
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Error fetching order:', error);
-      Alert.alert(t('error'), 'Failed to load order details');
+      const message = error instanceof Error ? error.message : 'Failed to load order details';
+      Alert.alert(t('error'), message);
     } finally {
       setLoading(false);
     }
-  };
+  }, [orderId, t]);
+
+  useEffect(() => {
+    fetchOrder();
+  }, [fetchOrder]);
 
   const submitReview = async () => {
     if (rating === 0) {
@@ -171,9 +180,10 @@ export default function ReviewScreen() {
           onPress: () => router.back(),
         },
       ]);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error submitting review:', error);
-      Alert.alert(t('error'), error.message);
+      const message = error instanceof Error ? error.message : t('error');
+      Alert.alert(t('error'), message);
     } finally {
       setSubmitting(false);
     }
