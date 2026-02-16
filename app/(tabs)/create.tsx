@@ -378,7 +378,7 @@ export default function CreateRequestScreen() {
 
         try {
           triggerHapticFeedback.light();
-        } catch {
+        } catch (_error) {
           // Haptic feedback not available
         }
       }
@@ -392,7 +392,7 @@ export default function CreateRequestScreen() {
     setImages(images.filter((_, i) => i !== index));
     try {
       triggerHapticFeedback.light();
-    } catch {
+    } catch (_error) {
       // Haptic feedback not available
     }
   };

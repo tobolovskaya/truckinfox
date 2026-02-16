@@ -119,13 +119,14 @@ export default function EditRequestScreen() {
         if (!value) return 'Lasttype er påkrevd';
         return '';
 
-      case 'weight':
+      case 'weight': {
         if (!value || value.toString().trim() === '') return 'Vekt er påkrevd';
         const weight = Number(value);
         if (isNaN(weight)) return 'Vekt må være et tall';
         if (weight <= 0) return 'Vekt må være større enn 0';
         if (weight > 50000) return 'Vekt kan ikke være større enn 50000 kg';
         return '';
+      }
 
       case 'dimensions':
         if (value && value.toString().trim().length > 50)

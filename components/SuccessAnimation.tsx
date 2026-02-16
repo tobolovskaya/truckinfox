@@ -89,14 +89,20 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
 };
 
 const ConfettiParticles: React.FC = () => {
-  const particles = Array.from({ length: 20 }).map((_, i) => ({
-    id: i,
-    anim: useRef(new Animated.Value(0)).current,
-    x: Math.random() * 300 - 150,
-    y: Math.random() * -100 - 50,
-    color: ['#FF7043', '#4CAF50', '#2196F3', '#FFC107', '#E91E63'][Math.floor(Math.random() * 5)],
-    size: Math.random() * 6 + 4,
-  }));
+  const particles = useMemo(
+    () =>
+      Array.from({ length: 20 }).map((_, i) => ({
+        id: i,
+        anim: new Animated.Value(0),
+        x: Math.random() * 300 - 150,
+        y: Math.random() * -100 - 50,
+        color: ['#FF7043', '#4CAF50', '#2196F3', '#FFC107', '#E91E63'][
+          Math.floor(Math.random() * 5)
+        ],
+        size: Math.random() * 6 + 4,
+      })),
+    []
+  );
 
   useEffect(() => {
     Animated.stagger(
