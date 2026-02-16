@@ -93,7 +93,7 @@ export default function CreateRequestScreen() {
   const [showSuccessAnimation, setShowSuccessAnimation] = useState(false);
   const [touchedFields, setTouchedFields] = useState<Record<string, boolean>>({});
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
-  const [distanceInfo, setDistanceInfo] = useState<{ distance: string; duration: string } | null>(
+  const [_distanceInfo, setDistanceInfo] = useState<{ distance: string; duration: string } | null>(
     null
   );
   const [showPickupDate, setShowPickupDate] = useState(false);
@@ -509,7 +509,7 @@ export default function CreateRequestScreen() {
       // Success feedback
       triggerHapticFeedback.success();
       setShowSuccessAnimation(true);
-      
+
       toast.success(t('requestCreated'));
 
       await AsyncStorage.removeItem(DRAFT_KEY);
@@ -530,7 +530,10 @@ export default function CreateRequestScreen() {
     }
   };
 
-  const handleFromAddressSelect = async (address: string, coordinates?: { lat: number; lng: number }) => {
+  const handleFromAddressSelect = async (
+    address: string,
+    coordinates?: { lat: number; lng: number }
+  ) => {
     clearDistanceIfNeeded('from_address');
     updateFormData('from_address', address);
     setTouchedFields(prev => ({ ...prev, from_address: true }));
@@ -563,7 +566,10 @@ export default function CreateRequestScreen() {
     }
   };
 
-  const handleToAddressSelect = async (address: string, coordinates?: { lat: number; lng: number }) => {
+  const handleToAddressSelect = async (
+    address: string,
+    coordinates?: { lat: number; lng: number }
+  ) => {
     clearDistanceIfNeeded('to_address');
     updateFormData('to_address', address);
     setTouchedFields(prev => ({ ...prev, to_address: true }));
@@ -1094,7 +1100,7 @@ export default function CreateRequestScreen() {
           </View>
         </TouchableOpacity>
       </Modal>
-      
+
       {/* Success Animation Overlay */}
       <SuccessAnimation
         visible={showSuccessAnimation}
@@ -1366,4 +1372,3 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
 });
-

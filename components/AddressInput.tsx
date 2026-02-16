@@ -238,4 +238,3 @@ const styles = StyleSheet.create({
     marginTop: spacing.xxs,
   },
 });
-

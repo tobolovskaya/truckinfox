@@ -2,9 +2,9 @@
  * Chat Management Utilities
  *
  * Functions for creating and managing chats between customers and carriers.
- * 
+ *
  * ## Message Structure (Flat Collection)
- * 
+ *
  * Messages are stored in a flat `messages` collection with the following structure:
  * ```
  * messages/{messageId} {
@@ -23,7 +23,7 @@
  *   delivered: boolean
  * }
  * ```
- * 
+ *
  * ## Firestore Indexes Required
  * - chat_id (Ascending) + created_at (Ascending)
  * - receiver_id (Ascending) + read (Ascending) + created_at (Descending)
@@ -284,7 +284,7 @@ export async function chatExists(
  * @param userId1 - First user ID
  * @param userId2 - Second user ID
  * @returns The chat ID with sorted user IDs
- * 
+ *
  * @example
  * generateChatId('req123', 'userA', 'userB') // 'req123_userA_userB'
  * generateChatId('req123', 'userB', 'userA') // 'req123_userA_userB' (same result)

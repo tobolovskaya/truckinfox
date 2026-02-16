@@ -155,10 +155,17 @@ export async function searchUsers(
     return [];
   }
 
-  const { collection, query, where, getDocs, orderBy, limit: firestoreLimit } = await import('firebase/firestore');
+  const {
+    collection,
+    query,
+    where,
+    getDocs,
+    orderBy,
+    limit: firestoreLimit,
+  } = await import('firebase/firestore');
 
   const normalizedQuery = normalizeSearchQuery(searchQuery);
-  
+
   try {
     const usersQuery = query(
       collection(db, 'users'),
@@ -168,7 +175,7 @@ export async function searchUsers(
     );
 
     const snapshot = await getDocs(usersQuery);
-    
+
     return snapshot.docs.map(doc => ({
       id: doc.id,
       ...doc.data(),
@@ -205,10 +212,17 @@ export async function searchCargoRequests(
     return [];
   }
 
-  const { collection, query, where, getDocs, orderBy, limit: firestoreLimit } = await import('firebase/firestore');
+  const {
+    collection,
+    query,
+    where,
+    getDocs,
+    orderBy,
+    limit: firestoreLimit,
+  } = await import('firebase/firestore');
 
   const normalizedQuery = normalizeSearchQuery(searchQuery);
-  
+
   try {
     const requestsQuery = query(
       collection(db, 'cargo_requests'),
@@ -219,7 +233,7 @@ export async function searchCargoRequests(
     );
 
     const snapshot = await getDocs(requestsQuery);
-    
+
     return snapshot.docs.map(doc => ({
       id: doc.id,
       ...doc.data(),
@@ -229,4 +243,3 @@ export async function searchCargoRequests(
     return [];
   }
 }
-

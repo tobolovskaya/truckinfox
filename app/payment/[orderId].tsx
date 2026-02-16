@@ -370,7 +370,6 @@ export default function PaymentScreen() {
 
         {/* 2. Payment Breakdown */}
         <ScreenSection title={t('paymentBreakdown')}>
-
           <View style={styles.paymentRow}>
             <Text style={styles.paymentLabel}>{t('carrierPayment')}:</Text>
             <Text style={styles.paymentAmount}>{order.carrier_amount} NOK</Text>

@@ -242,15 +242,15 @@ export const getDistanceRange = (distanceKm: number): string => {
  */
 export const extractCity = (address: string): string => {
   if (!address) return 'unknown';
-  
+
   // Try to extract city from address (format: "Street, City, Country" or "City, Country")
   const parts = address.split(',').map(part => part.trim());
-  
+
   // If multiple parts, second-to-last is usually the city
   if (parts.length >= 2) {
     return parts[parts.length - 2].toLowerCase();
   }
-  
+
   // If only one part, use it as city
   return parts[0].toLowerCase();
 };

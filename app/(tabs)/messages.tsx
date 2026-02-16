@@ -67,7 +67,7 @@ export default function MessagesScreen() {
 
   /**
    * ✅ OPTIMIZED: Batch fetch to avoid N+1 query problem
-   * 
+   *
    * Performance Impact:
    * - Before: 1 + 2N queries (1 messages query + N users + N requests)
    * - After: 1 + ~N/5 queries (1 messages query + batches)
@@ -96,14 +96,14 @@ export default function MessagesScreen() {
       );
 
       const [sentSnapshot, receivedSnapshot] = await Promise.all([
-        new Promise<any[]>((resolve) => {
-          const unsubscribe = onSnapshot(messagesQuery, (snapshot) => {
+        new Promise<any[]>(resolve => {
+          const unsubscribe = onSnapshot(messagesQuery, snapshot => {
             resolve(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
             unsubscribe();
           });
         }),
-        new Promise<any[]>((resolve) => {
-          const unsubscribe = onSnapshot(receivedQuery, (snapshot) => {
+        new Promise<any[]>(resolve => {
+          const unsubscribe = onSnapshot(receivedQuery, snapshot => {
             resolve(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
             unsubscribe();
           });
@@ -123,7 +123,7 @@ export default function MessagesScreen() {
       const userIdsSet = new Set<string>();
       const requestIdsSet = new Set<string>();
 
-      allMessages.forEach((msg) => {
+      allMessages.forEach(msg => {
         const otherUserId = msg.sender_id === user.uid ? msg.receiver_id : msg.sender_id;
         userIdsSet.add(otherUserId);
         requestIdsSet.add(msg.request_id);
@@ -138,7 +138,7 @@ export default function MessagesScreen() {
       // 4. Group messages by conversation (unique request_id + other_user_id)
       const conversationsMap = new Map<string, Conversation>();
 
-      allMessages.forEach((msg) => {
+      allMessages.forEach(msg => {
         const otherUserId = msg.sender_id === user.uid ? msg.receiver_id : msg.sender_id;
         const conversationKey = `${msg.request_id}_${otherUserId}`;
 
@@ -149,7 +149,7 @@ export default function MessagesScreen() {
         if (!otherUser || !request) return;
 
         const existingConversation = conversationsMap.get(conversationKey);
-        
+
         if (!existingConversation) {
           // Create new conversation entry
           conversationsMap.set(conversationKey, {
@@ -201,7 +201,7 @@ export default function MessagesScreen() {
 
     const query = searchQuery.toLowerCase();
     const filtered = conversations.filter(
-      (conv) =>
+      conv =>
         conv.other_user_name.toLowerCase().includes(query) ||
         conv.request_title.toLowerCase().includes(query) ||
         conv.last_message.toLowerCase().includes(query)
@@ -234,10 +234,7 @@ export default function MessagesScreen() {
         onPress={() => handleConversationPress(item)}
         activeOpacity={0.7}
       >
-        <Avatar
-          photoURL={item.other_user_avatar}
-          size={56}
-        />
+        <Avatar photoURL={item.other_user_avatar} size={56} />
 
         <View style={styles.conversationContent}>
           <View style={styles.conversationHeader}>
@@ -263,10 +260,7 @@ export default function MessagesScreen() {
               />
             )}
             <Text
-              style={[
-                styles.lastMessage,
-                unreadBadge && styles.unreadMessage,
-              ]}
+              style={[styles.lastMessage, unreadBadge && styles.unreadMessage]}
               numberOfLines={1}
             >
               {item.last_message}
@@ -312,7 +306,12 @@ export default function MessagesScreen() {
 
       {conversations.length > 0 && (
         <View style={styles.searchContainer}>
-          <Ionicons name="search" size={20} color={colors.text.tertiary} style={styles.searchIcon} />
+          <Ionicons
+            name="search"
+            size={20}
+            color={colors.text.tertiary}
+            style={styles.searchIcon}
+          />
           <TextInput
             style={styles.searchInput}
             placeholder={t('searchMessages')}
@@ -330,7 +329,7 @@ export default function MessagesScreen() {
 
       <FlatList
         data={filteredConversations}
-        keyExtractor={(item) => item.id}
+        keyExtractor={item => item.id}
         renderItem={renderConversation}
         contentContainerStyle={filteredConversations.length === 0 && styles.emptyContainer}
         ListEmptyComponent={renderEmptyState}

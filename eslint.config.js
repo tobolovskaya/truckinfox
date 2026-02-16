@@ -24,6 +24,7 @@ export default [
         __dirname: 'readonly',
         module: 'readonly',
         require: 'readonly',
+        exports: 'readonly',
         setTimeout: 'readonly',
         clearTimeout: 'readonly',
         setInterval: 'readonly',
@@ -35,6 +36,13 @@ export default [
         expect: 'readonly',
         beforeEach: 'readonly',
         afterEach: 'readonly',
+        __DEV__: 'readonly',
+        fetch: 'readonly',
+        Response: 'readonly',
+        Request: 'readonly',
+        RequestInit: 'readonly',
+        AbortController: 'readonly',
+        React: 'readonly',
       },
     },
     plugins: {
@@ -60,6 +68,14 @@ export default [
     },
   },
   {
-    ignores: ['node_modules/**', '.expo/**', 'dist/**', 'build/**', 'coverage/**', '*.config.js'],
+    ignores: [
+      'node_modules/**',
+      '.expo/**',
+      'dist/**',
+      'build/**',
+      'coverage/**',
+      '*.config.js',
+      'functions/lib/**',
+    ],
   },
 ];

@@ -13,7 +13,14 @@ import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { colors, spacing, fontSize, fontWeight, borderRadius, shadows } from '../../lib/sharedStyles';
+import {
+  colors,
+  spacing,
+  fontSize,
+  fontWeight,
+  borderRadius,
+  shadows,
+} from '../../lib/sharedStyles';
 import { useAuth } from '../../contexts/AuthContext';
 
 export default function SecurityScreen() {
@@ -24,63 +31,55 @@ export default function SecurityScreen() {
   const [loading, setLoading] = useState(false);
 
   const handleSignOut = async () => {
-    Alert.alert(
-      t('signOut'),
-      t('confirmSignOut'),
-      [
-        { text: t('cancel'), style: 'cancel' },
-        {
-          text: t('signOut'),
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              setLoading(true);
-              const result = await signOut();
-              if (result.success) {
-                router.replace('/(auth)/login');
-              } else {
-                Alert.alert(t('error'), result.error || t('somethingWentWrong'));
-              }
-            } catch (error) {
-              console.error('Sign out error:', error);
-              Alert.alert(t('error'), t('somethingWentWrong'));
-            } finally {
-              setLoading(false);
+    Alert.alert(t('signOut'), t('confirmSignOut'), [
+      { text: t('cancel'), style: 'cancel' },
+      {
+        text: t('signOut'),
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            setLoading(true);
+            const result = await signOut();
+            if (result.success) {
+              router.replace('/(auth)/login');
+            } else {
+              Alert.alert(t('error'), result.error || t('somethingWentWrong'));
             }
-          },
+          } catch (error) {
+            console.error('Sign out error:', error);
+            Alert.alert(t('error'), t('somethingWentWrong'));
+          } finally {
+            setLoading(false);
+          }
         },
-      ]
-    );
+      },
+    ]);
   };
 
   const handleSignOutAllDevices = async () => {
-    Alert.alert(
-      t('signOutAllDevices'),
-      t('signOutAllConfirm'),
-      [
-        { text: t('cancel'), style: 'cancel' },
-        {
-          text: t('signOut'),
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              setLoading(true);
-              const result = await signOutAllDevices();
-              if (result.success) {
-                router.replace('/(auth)/login');
-              } else {
-                Alert.alert(t('error'), result.error || t('somethingWentWrong'));
-              }
-            } catch (error) {
-              console.error('Sign out all devices error:', error);
-              Alert.alert(t('error'), t('somethingWentWrong'));
-            } finally {
-              setLoading(false);
+    Alert.alert(t('signOutAllDevices'), t('signOutAllConfirm'), [
+      { text: t('cancel'), style: 'cancel' },
+      {
+        text: t('signOut'),
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            setLoading(true);
+            const result = await signOutAllDevices();
+            if (result.success) {
+              router.replace('/(auth)/login');
+            } else {
+              Alert.alert(t('error'), result.error || t('somethingWentWrong'));
             }
-          },
+          } catch (error) {
+            console.error('Sign out all devices error:', error);
+            Alert.alert(t('error'), t('somethingWentWrong'));
+          } finally {
+            setLoading(false);
+          }
         },
-      ]
-    );
+      },
+    ]);
   };
 
   const securityOptions = [
@@ -235,9 +234,7 @@ export default function SecurityScreen() {
         {/* Warning Card */}
         <View style={styles.warningCard}>
           <Ionicons name="information-circle" size={20} color={colors.warning} />
-          <Text style={styles.warningText}>
-            {t('securityWarning')}
-          </Text>
+          <Text style={styles.warningText}>{t('securityWarning')}</Text>
         </View>
       </ScrollView>
     </View>

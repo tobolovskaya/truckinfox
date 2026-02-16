@@ -111,4 +111,3 @@ export const Caption2 = (props: Omit<IOSTextProps, 'variant'>) => (
 );
 
 const styles = StyleSheet.create({});
-

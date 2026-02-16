@@ -161,7 +161,11 @@ export const LazyImage: React.FC<LazyImageProps> = ({
 
       {error ? (
         <View style={styles.errorPlaceholder}>
-          <Ionicons name={placeholderIcon as any} size={placeholderSize} color={colors.text.tertiary} />
+          <Ionicons
+            name={placeholderIcon as any}
+            size={placeholderSize}
+            color={colors.text.tertiary}
+          />
           {showErrorText && <Text style={styles.errorText}>Image unavailable</Text>}
         </View>
       ) : (
@@ -221,4 +225,3 @@ const styles = StyleSheet.create({
     marginTop: spacing.xs,
   },
 });
-

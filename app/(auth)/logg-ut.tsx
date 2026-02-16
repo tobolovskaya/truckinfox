@@ -1,12 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  ActivityIndicator,
-  Alert,
-} from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -21,7 +14,6 @@ import {
   shadows,
   gradients,
 } from '../../lib/sharedStyles';
-import { theme } from '../../theme/theme';
 
 export default function LoggUtScreen() {
   const router = useRouter();
@@ -55,33 +47,29 @@ export default function LoggUtScreen() {
   };
 
   const handleSignOutAll = async () => {
-    Alert.alert(
-      t('signOutAllDevices'),
-      t('signOutAllConfirm'),
-      [
-        { text: t('cancel'), style: 'cancel' },
-        {
-          text: t('signOut'),
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              setSigningOutAll(true);
-              const result = await signOutAllDevices();
-              if (result.success) {
-                router.replace('/(auth)/login');
-              } else {
-                Alert.alert(t('error'), result.error || t('somethingWentWrong'));
-              }
-            } catch (error) {
-              console.error('Sign out all error:', error);
-              Alert.alert(t('error'), t('somethingWentWrong'));
-            } finally {
-              setSigningOutAll(false);
+    Alert.alert(t('signOutAllDevices'), t('signOutAllConfirm'), [
+      { text: t('cancel'), style: 'cancel' },
+      {
+        text: t('signOut'),
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            setSigningOutAll(true);
+            const result = await signOutAllDevices();
+            if (result.success) {
+              router.replace('/(auth)/login');
+            } else {
+              Alert.alert(t('error'), result.error || t('somethingWentWrong'));
             }
-          },
+          } catch (error) {
+            console.error('Sign out all error:', error);
+            Alert.alert(t('error'), t('somethingWentWrong'));
+          } finally {
+            setSigningOutAll(false);
+          }
         },
-      ]
-    );
+      },
+    ]);
   };
 
   const handleCancel = () => {
@@ -166,9 +154,7 @@ export default function LoggUtScreen() {
         {/* Info Text */}
         <View style={styles.infoCard}>
           <Ionicons name="information-circle-outline" size={20} color={colors.info} />
-          <Text style={styles.infoText}>
-            {t('signOutInfo')}
-          </Text>
+          <Text style={styles.infoText}>{t('signOutInfo')}</Text>
         </View>
       </View>
     </LinearGradient>

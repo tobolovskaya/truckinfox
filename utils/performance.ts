@@ -12,9 +12,9 @@ export const startTrace = (traceName: string) => {
       const traceInstance = trace(performance, traceName);
       traceInstance.start();
       console.log(`⚡ Performance trace started: ${traceName}`);
-      
+
       let stopped = false;
-      
+
       // Return a wrapper with safe stop method
       return {
         stop: () => {

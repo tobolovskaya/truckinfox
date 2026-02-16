@@ -3,7 +3,14 @@ import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert } from 'rea
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
-import { colors, spacing, fontSize, fontWeight, borderRadius, shadows } from '../../lib/sharedStyles';
+import {
+  colors,
+  spacing,
+  fontSize,
+  fontWeight,
+  borderRadius,
+  shadows,
+} from '../../lib/sharedStyles';
 import { useAuth } from '../../contexts/AuthContext';
 
 export default function ProfileScreen() {
@@ -12,25 +19,21 @@ export default function ProfileScreen() {
   const { t } = useTranslation();
 
   const handleSignOut = async () => {
-    Alert.alert(
-      t('signOut'),
-      t('confirmSignOut'),
-      [
-        { text: t('cancel'), style: 'cancel' },
-        {
-          text: t('signOut'),
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await signOut();
-              router.replace('/(auth)/login');
-            } catch (error) {
-              console.error('Sign out error:', error);
-            }
-          },
+    Alert.alert(t('signOut'), t('confirmSignOut'), [
+      { text: t('cancel'), style: 'cancel' },
+      {
+        text: t('signOut'),
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            await signOut();
+            router.replace('/(auth)/login');
+          } catch (error) {
+            console.error('Sign out error:', error);
+          }
         },
-      ]
-    );
+      },
+    ]);
   };
 
   const menuItems = [
@@ -88,10 +91,7 @@ export default function ProfileScreen() {
           {menuItems.map((item, index) => (
             <TouchableOpacity
               key={item.id}
-              style={[
-                styles.menuItem,
-                index === menuItems.length - 1 && styles.menuItemLast,
-              ]}
+              style={[styles.menuItem, index === menuItems.length - 1 && styles.menuItemLast]}
               onPress={item.onPress}
               accessibilityRole="button"
               accessibilityLabel={item.label}
@@ -207,4 +207,3 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.xl,
   },
 });
-

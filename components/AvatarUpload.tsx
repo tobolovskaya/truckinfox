@@ -263,4 +263,3 @@ const styles = StyleSheet.create({
     fontWeight: fontWeight.semibold,
   },
 });
-

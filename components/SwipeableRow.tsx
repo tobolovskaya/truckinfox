@@ -276,4 +276,3 @@ export const SwipeActions = {
     onPress,
   }),
 };
-

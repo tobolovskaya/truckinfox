@@ -66,11 +66,19 @@ export const SkeletonCard = () => {
         <SkeletonBox width="60%" height={20} style={{ marginBottom: 12 }} />
 
         {/* Category badge */}
-        <SkeletonBox width={80} height={20} style={{ borderRadius: borderRadius.md, marginBottom: 8 }} />
+        <SkeletonBox
+          width={80}
+          height={20}
+          style={{ borderRadius: borderRadius.md, marginBottom: 8 }}
+        />
 
         {/* Route */}
         <View style={styles.routeContainer}>
-          <SkeletonBox width={16} height={16} style={{ borderRadius: borderRadius.sm, marginRight: 6 }} />
+          <SkeletonBox
+            width={16}
+            height={16}
+            style={{ borderRadius: borderRadius.sm, marginRight: 6 }}
+          />
           <SkeletonBox width="80%" height={16} />
         </View>
 
@@ -101,4 +109,3 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
 });
-

@@ -364,7 +364,7 @@ export default function RequestDetailsScreen() {
 
       setBidAmount('');
       fetchBids();
-      
+
       // Show success animation and haptic feedback
       triggerHapticFeedback.success();
       setShowSuccessAnimation(true);
@@ -1164,11 +1164,7 @@ export default function RequestDetailsScreen() {
 
                 {/* Route Line */}
                 {routeCoordinates.length > 0 && (
-                  <Polyline
-                    coordinates={routeCoordinates}
-                    strokeColor="#FF7043"
-                    strokeWidth={4}
-                  />
+                  <Polyline coordinates={routeCoordinates} strokeColor="#FF7043" strokeWidth={4} />
                 )}
               </MapView>
               <TouchableOpacity style={styles.openMapButton} onPress={openInMaps}>
@@ -1217,7 +1213,7 @@ export default function RequestDetailsScreen() {
           </TouchableOpacity>
         </View>
       )}
-      
+
       {/* Success Animation Overlay */}
       <SuccessAnimation
         visible={showSuccessAnimation}

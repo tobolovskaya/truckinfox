@@ -233,4 +233,3 @@ export const LinkButton = (props: Omit<IOSButtonProps, 'variant'>) => (
 );
 
 const styles = StyleSheet.create({});
-

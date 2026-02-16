@@ -38,16 +38,16 @@ interface ScreenHeaderProps {
 /**
  * Standardized screen header component
  * Ensures consistent header design across all screens
- * 
+ *
  * Features:
  * - 44pt touch targets (Apple HIG compliant)
  * - Consistent spacing and typography
  * - Safe area handling
  * - Haptic feedback on interactions
  * - Optional back button, right actions, badges
- * 
+ *
  * @example
- * <ScreenHeader 
+ * <ScreenHeader
  *   title="Settings"
  *   showBackButton
  *   rightAction={{ icon: 'settings-outline', onPress: handleSettings }}
@@ -70,7 +70,7 @@ export function ScreenHeader({
     if (Platform.OS === 'ios') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
-    
+
     if (onBackPress) {
       onBackPress();
     } else {
@@ -111,7 +111,11 @@ export function ScreenHeader({
 
         {/* Center: Title or Custom Content */}
         <View style={styles.centerSection}>
-          {customCenter || <Text style={styles.title} numberOfLines={1}>{title}</Text>}
+          {customCenter || (
+            <Text style={styles.title} numberOfLines={1}>
+              {title}
+            </Text>
+          )}
         </View>
 
         {/* Right: Action Buttons */}
@@ -123,11 +127,7 @@ export function ScreenHeader({
               accessibilityRole="button"
               accessibilityLabel={secondaryRightAction.label}
             >
-              <Ionicons
-                name={secondaryRightAction.icon}
-                size={24}
-                color={colors.text.primary}
-              />
+              <Ionicons name={secondaryRightAction.icon} size={24} color={colors.text.primary} />
             </TouchableOpacity>
           )}
 
@@ -240,4 +240,3 @@ const styles = StyleSheet.create({
     width: TOUCH_TARGET.MIN,
   },
 });
-

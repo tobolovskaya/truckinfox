@@ -26,13 +26,13 @@ interface ScreenSectionProps {
 /**
  * Standardized screen section component
  * Ensures consistent content sections across all screens
- * 
+ *
  * Features:
  * - Consistent spacing and borders
  * - Optional title and subtitle
  * - Elevation/shadow support
  * - Configurable padding and margins
- * 
+ *
  * @example
  * <ScreenSection title="Profile Information" subtitle="Update your details">
  *   <InputField />

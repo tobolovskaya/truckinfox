@@ -3,7 +3,13 @@ import React from 'react';
 import { TextInput, View, StyleSheet, Text } from 'react-native';
 
 // Mock GooglePlacesAutocomplete for web
-export const GooglePlacesAutocomplete = ({ placeholder, onPress, query, styles: customStyles, ...props }: any) => {
+export const GooglePlacesAutocomplete = ({
+  placeholder,
+  onPress,
+  query,
+  styles: customStyles,
+  ...props
+}: any) => {
   const [value, setValue] = React.useState('');
 
   return (

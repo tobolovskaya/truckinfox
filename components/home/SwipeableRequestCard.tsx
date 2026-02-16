@@ -4,7 +4,7 @@ import { Swipeable } from 'react-native-gesture-handler';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { RequestCard } from './RequestCard';
-import { colors, spacing } from '../../lib/sharedStyles';
+import { colors, spacing, fontSize } from '../../lib/sharedStyles';
 import { triggerHapticFeedback } from '../../utils/haptics';
 
 interface CargoRequest {
@@ -145,4 +145,3 @@ const styles = StyleSheet.create({
     marginTop: spacing.xxxs,
   },
 });
-
