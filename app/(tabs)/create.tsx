@@ -27,6 +27,7 @@ import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { useRouter } from 'expo-router';
 import { triggerHapticFeedback } from '../../utils/haptics';
 import { SuccessAnimation } from '../../components/SuccessAnimation';
+import { useDebouncedCallback } from 'use-debounce';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import AddressInput from '../../components/AddressInput';
 import { calculateDistance } from '../../utils/googlePlaces';
@@ -93,6 +94,7 @@ export default function CreateRequestScreen() {
   const [showSuccessAnimation, setShowSuccessAnimation] = useState(false);
   const [touchedFields, setTouchedFields] = useState<Record<string, boolean>>({});
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const [liveValidation, setLiveValidation] = useState(false);
   const [_distanceInfo, setDistanceInfo] = useState<{ distance: string; duration: string } | null>(
     null
   );
@@ -174,7 +176,11 @@ export default function CreateRequestScreen() {
     }
   };
 
-  const validateField = (field: string, value: unknown): string => {
+  const validateField = (
+    field: string,
+    value: unknown,
+    nextData: typeof formData = formData
+  ): string => {
     switch (field) {
       case 'title':
         if (!value || !value.toString().trim()) return 'Tittel er påkrevd';
@@ -229,7 +235,7 @@ export default function CreateRequestScreen() {
         return '';
 
       case 'price':
-        if (formData.price_type === 'fixed') {
+        if (nextData.price_type === 'fixed') {
           if (!value || value.toString().trim() === '') return 'Pris er påkrevd for fast pris';
           const price = Number(value);
           if (isNaN(price)) return 'Pris må være et tall';
@@ -243,13 +249,73 @@ export default function CreateRequestScreen() {
     }
   };
 
-  const updateFormData = (field: string, value: unknown) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
-
-    if (touchedFields[field]) {
-      const error = validateField(field, value);
+  const debouncedValidateField = useDebouncedCallback(
+    (field: string, value: unknown, nextData: typeof formData) => {
+      const error = validateField(field, value, nextData);
       setFieldErrors(prev => ({ ...prev, [field]: error }));
+    },
+    300
+  );
+
+  const getValidationState = (field: string, value: unknown) => {
+    const showValidation = liveValidation || Boolean(touchedFields[field]);
+    const error = fieldErrors[field];
+    const hasValue = value !== null && value !== undefined && String(value).trim() !== '';
+    const isValid = showValidation && !error && hasValue;
+
+    return { showValidation, error, isValid };
+  };
+
+  const getInputValidationStyles = (field: string, value: unknown) => {
+    const { showValidation, error, isValid } = getValidationState(field, value);
+    return [showValidation && error && styles.textInputError, isValid && styles.textInputValid];
+  };
+
+  const renderFieldError = (field: string, value: unknown) => {
+    const { showValidation, error } = getValidationState(field, value);
+    if (!showValidation || !error) {
+      return null;
     }
+
+    return (
+      <View style={styles.errorContainer}>
+        <Ionicons name="alert-circle" size={16} color={colors.error} />
+        <Text style={styles.errorText}>{error}</Text>
+      </View>
+    );
+  };
+
+  const renderValidIcon = (field: string, value: unknown) => {
+    const { isValid } = getValidationState(field, value);
+    if (!isValid) {
+      return null;
+    }
+
+    return (
+      <Ionicons
+        name="checkmark-circle"
+        size={18}
+        color={colors.success}
+        style={styles.validIcon}
+      />
+    );
+  };
+
+  const updateFormData = (field: string, value: unknown) => {
+    setFormData(prev => {
+      const nextData = { ...prev, [field]: value };
+      const shouldValidate = liveValidation || Boolean(touchedFields[field]);
+
+      if (shouldValidate) {
+        debouncedValidateField(field, value, nextData);
+      }
+
+      if (field === 'price_type' && (liveValidation || touchedFields.price)) {
+        debouncedValidateField('price', nextData.price, nextData);
+      }
+
+      return nextData;
+    });
   };
 
   const handleBlur = (field: string) => {
@@ -436,6 +502,9 @@ export default function CreateRequestScreen() {
   };
 
   const handleSubmit = async () => {
+    if (!liveValidation) {
+      setLiveValidation(true);
+    }
     if (!validateForm()) {
       triggerHapticFeedback.error();
       return;
@@ -639,21 +708,25 @@ export default function CreateRequestScreen() {
               <Text style={styles.fieldLabel} accessibilityRole="header">
                 Tittel
               </Text>
-              <TextInput
-                testID="cargo-title-input"
-                accessibilityLabel="Tittel på lastforespørsel"
-                accessibilityHint="Skriv inn en beskrivende tittel for lasten din"
-                style={styles.textInput}
-                value={formData.title}
-                onChangeText={value => {
-                  updateFormData('title', value);
-                  clearDistanceIfNeeded('title');
-                }}
-                onBlur={() => handleBlur('title')}
-                placeholder=""
-                autoComplete="off"
-                returnKeyType="next"
-              />
+              <View style={styles.inputWrapper}>
+                <TextInput
+                  testID="cargo-title-input"
+                  accessibilityLabel="Tittel på lastforespørsel"
+                  accessibilityHint="Skriv inn en beskrivende tittel for lasten din"
+                  style={[styles.textInput, ...getInputValidationStyles('title', formData.title)]}
+                  value={formData.title}
+                  onChangeText={value => {
+                    updateFormData('title', value);
+                    clearDistanceIfNeeded('title');
+                  }}
+                  onBlur={() => handleBlur('title')}
+                  placeholder=""
+                  autoComplete="off"
+                  returnKeyType="next"
+                />
+                {renderValidIcon('title', formData.title)}
+              </View>
+              {renderFieldError('title', formData.title)}
             </View>
 
             {/* Description */}
@@ -661,24 +734,32 @@ export default function CreateRequestScreen() {
               <Text style={styles.fieldLabel} accessibilityRole="header">
                 Beskrivelse
               </Text>
-              <TextInput
-                testID="cargo-description-input"
-                accessibilityLabel="Beskrivelse av last"
-                accessibilityHint="Skriv inn en detaljert beskrivelse av lasten"
-                style={[styles.textInput, styles.textArea]}
-                value={formData.description}
-                onChangeText={value => {
-                  updateFormData('description', value);
-                  clearDistanceIfNeeded('description');
-                }}
-                onBlur={() => handleBlur('description')}
-                multiline
-                numberOfLines={4}
-                textAlignVertical="top"
-                placeholder=""
-                autoComplete="off"
-                returnKeyType="next"
-              />
+              <View style={styles.inputWrapper}>
+                <TextInput
+                  testID="cargo-description-input"
+                  accessibilityLabel="Beskrivelse av last"
+                  accessibilityHint="Skriv inn en detaljert beskrivelse av lasten"
+                  style={[
+                    styles.textInput,
+                    styles.textArea,
+                    ...getInputValidationStyles('description', formData.description),
+                  ]}
+                  value={formData.description}
+                  onChangeText={value => {
+                    updateFormData('description', value);
+                    clearDistanceIfNeeded('description');
+                  }}
+                  onBlur={() => handleBlur('description')}
+                  multiline
+                  numberOfLines={4}
+                  textAlignVertical="top"
+                  placeholder=""
+                  autoComplete="off"
+                  returnKeyType="next"
+                />
+                {renderValidIcon('description', formData.description)}
+              </View>
+              {renderFieldError('description', formData.description)}
             </View>
 
             {/* Cargo Type */}
@@ -700,6 +781,7 @@ export default function CreateRequestScreen() {
                 </Text>
                 <Ionicons name="chevron-down" size={20} color="#6B7280" />
               </TouchableOpacity>
+              {renderFieldError('cargo_type', formData.cargo_type)}
             </View>
 
             {/* From Address */}
@@ -717,9 +799,7 @@ export default function CreateRequestScreen() {
                   }
                 }}
               />
-              {fieldErrors.from_address && touchedFields.from_address && (
-                <Text style={styles.errorText}>{fieldErrors.from_address}</Text>
-              )}
+              {renderFieldError('from_address', formData.from_address)}
             </View>
 
             {/* To Address */}
@@ -737,9 +817,7 @@ export default function CreateRequestScreen() {
                   }
                 }}
               />
-              {fieldErrors.to_address && touchedFields.to_address && (
-                <Text style={styles.errorText}>{fieldErrors.to_address}</Text>
-              )}
+              {renderFieldError('to_address', formData.to_address)}
             </View>
 
             {/* Dates */}
@@ -785,59 +863,90 @@ export default function CreateRequestScreen() {
             <View style={styles.fieldContainer}>
               <Text style={styles.fieldLabel}>Dimensjoner (L × B × H)</Text>
               <View style={styles.dimensionRow}>
-                <TextInput
-                  style={[styles.textInput, styles.dimensionInput]}
-                  value={formData.length}
-                  onChangeText={value => {
-                    updateFormData('length', value);
-                    clearDistanceIfNeeded('length');
-                  }}
-                  onBlur={() => handleBlur('length')}
-                  placeholder="L (cm)"
-                  placeholderTextColor="#9CA3AF"
-                  keyboardType="numeric"
-                />
-                <TextInput
-                  style={[styles.textInput, styles.dimensionInput]}
-                  value={formData.width}
-                  onChangeText={value => {
-                    updateFormData('width', value);
-                    clearDistanceIfNeeded('width');
-                  }}
-                  onBlur={() => handleBlur('width')}
-                  placeholder="B (cm)"
-                  placeholderTextColor="#9CA3AF"
-                  keyboardType="numeric"
-                />
-                <TextInput
-                  style={[styles.textInput, styles.dimensionInput]}
-                  value={formData.height}
-                  onChangeText={value => {
-                    updateFormData('height', value);
-                    clearDistanceIfNeeded('height');
-                  }}
-                  onBlur={() => handleBlur('height')}
-                  placeholder="H (cm)"
-                  placeholderTextColor="#9CA3AF"
-                  keyboardType="numeric"
-                />
+                <View style={[styles.inputWrapper, styles.dimensionInput]}>
+                  <TextInput
+                    style={[
+                      styles.textInput,
+                      styles.dimensionInput,
+                      ...getInputValidationStyles('length', formData.length),
+                    ]}
+                    value={formData.length}
+                    onChangeText={value => {
+                      updateFormData('length', value);
+                      clearDistanceIfNeeded('length');
+                    }}
+                    onBlur={() => handleBlur('length')}
+                    placeholder="L (cm)"
+                    placeholderTextColor="#9CA3AF"
+                    keyboardType="numeric"
+                  />
+                  {renderValidIcon('length', formData.length)}
+                </View>
+                <View style={[styles.inputWrapper, styles.dimensionInput]}>
+                  <TextInput
+                    style={[
+                      styles.textInput,
+                      styles.dimensionInput,
+                      ...getInputValidationStyles('width', formData.width),
+                    ]}
+                    value={formData.width}
+                    onChangeText={value => {
+                      updateFormData('width', value);
+                      clearDistanceIfNeeded('width');
+                    }}
+                    onBlur={() => handleBlur('width')}
+                    placeholder="B (cm)"
+                    placeholderTextColor="#9CA3AF"
+                    keyboardType="numeric"
+                  />
+                  {renderValidIcon('width', formData.width)}
+                </View>
+                <View style={[styles.inputWrapper, styles.dimensionInput]}>
+                  <TextInput
+                    style={[
+                      styles.textInput,
+                      styles.dimensionInput,
+                      ...getInputValidationStyles('height', formData.height),
+                    ]}
+                    value={formData.height}
+                    onChangeText={value => {
+                      updateFormData('height', value);
+                      clearDistanceIfNeeded('height');
+                    }}
+                    onBlur={() => handleBlur('height')}
+                    placeholder="H (cm)"
+                    placeholderTextColor="#9CA3AF"
+                    keyboardType="numeric"
+                  />
+                  {renderValidIcon('height', formData.height)}
+                </View>
               </View>
+              {renderFieldError('length', formData.length)}
+              {renderFieldError('width', formData.width)}
+              {renderFieldError('height', formData.height)}
             </View>
 
             {/* Weight */}
             <View style={styles.fieldContainer}>
               <Text style={styles.fieldLabel}>Vekt (kg)</Text>
-              <TextInput
-                style={[styles.textInput, { borderColor: colors.border.default }]}
-                value={formData.weight}
-                onChangeText={value => {
-                  updateFormData('weight', value);
-                  clearDistanceIfNeeded('weight');
-                }}
-                onBlur={() => handleBlur('weight')}
-                placeholder=""
-                keyboardType="numeric"
-              />
+              <View style={styles.inputWrapper}>
+                <TextInput
+                  style={[
+                    styles.textInput,
+                    ...getInputValidationStyles('weight', formData.weight),
+                  ]}
+                  value={formData.weight}
+                  onChangeText={value => {
+                    updateFormData('weight', value);
+                    clearDistanceIfNeeded('weight');
+                  }}
+                  onBlur={() => handleBlur('weight')}
+                  placeholder=""
+                  keyboardType="numeric"
+                />
+                {renderValidIcon('weight', formData.weight)}
+              </View>
+              {renderFieldError('weight', formData.weight)}
             </View>
 
             {/* Images */}
@@ -899,27 +1008,32 @@ export default function CreateRequestScreen() {
                 </Text>
                 <Ionicons name="chevron-down" size={20} color="#6B7280" />
               </TouchableOpacity>
+              {renderFieldError('price_type', formData.price_type)}
             </View>
 
             {/* Price - ALWAYS VISIBLE */}
             <View style={styles.fieldContainer}>
               <Text style={styles.fieldLabel}>Foreslått pris (NOK)</Text>
-              <TextInput
-                style={[
-                  styles.textInputNeutral,
-                  formData.price_type === 'negotiable' && styles.textInputDisabled,
-                ]}
-                placeholder="0"
-                value={formData.price}
-                onChangeText={value => updateFormData('price', value)}
-                onBlur={() => handleBlur('price')}
-                keyboardType="numeric"
-                editable={formData.price_type === 'fixed'}
-              />
+              <View style={styles.inputWrapper}>
+                <TextInput
+                  style={[
+                    styles.textInputNeutral,
+                    ...getInputValidationStyles('price', formData.price),
+                    formData.price_type === 'negotiable' && styles.textInputDisabled,
+                  ]}
+                  placeholder="0"
+                  value={formData.price}
+                  onChangeText={value => updateFormData('price', value)}
+                  onBlur={() => handleBlur('price')}
+                  keyboardType="numeric"
+                  editable={formData.price_type === 'fixed'}
+                />
+                {formData.price_type === 'fixed' && renderValidIcon('price', formData.price)}
+              </View>
               {formData.price_type === 'negotiable' && (
                 <Text style={styles.fieldHint}>Pris kan forhandles med transportør</Text>
               )}
-              {fieldErrors.price ? <Text style={styles.errorText}>{fieldErrors.price}</Text> : null}
+              {renderFieldError('price', formData.price)}
             </View>
 
             {/* Bottom Action Buttons */}
@@ -1173,6 +1287,17 @@ const styles = StyleSheet.create({
     backgroundColor: colors.white,
     color: '#1F2937',
   },
+  inputWrapper: {
+    position: 'relative',
+  },
+  textInputError: {
+    borderColor: colors.error,
+    borderWidth: 2,
+  },
+  textInputValid: {
+    borderColor: colors.success,
+    borderWidth: 1,
+  },
   textInputNeutral: {
     borderWidth: 1,
     borderColor: colors.border.default,
@@ -1296,9 +1421,19 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
   },
   errorText: {
-    marginTop: spacing.xxxs,
     fontSize: fontSize.sm,
     color: colors.error,
+  },
+  errorContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    marginTop: spacing.xs,
+  },
+  validIcon: {
+    position: 'absolute',
+    right: spacing.md,
+    top: spacing.md,
   },
   dropdownButton: {
     flexDirection: 'row',
