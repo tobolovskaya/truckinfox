@@ -1,12 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-  RefreshControl,
-} from 'react-native';
+import React from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, spacing, fontSize, fontWeight, borderRadius, shadows } from '../../lib/sharedStyles';
@@ -15,41 +8,35 @@ import { useAuth } from '../../contexts/AuthContext';
 export default function HomeScreen() {
   const router = useRouter();
   const { user } = useAuth();
-  const [refreshing, setRefreshing] = useState(false);
-
-  const onRefresh = React.useCallback(() => {
-    setRefreshing(true);
-    setTimeout(() => setRefreshing(false), 1000);
-  }, []);
 
   const quickActions = [
     {
       id: 'create',
-      title: 'Create Request',
       icon: 'add-circle-outline',
+      label: 'Create Request',
       color: colors.primary,
-      route: '/(tabs)/create',
+      onPress: () => router.push('/(tabs)/create'),
     },
     {
       id: 'messages',
-      title: 'Messages',
       icon: 'chatbubbles-outline',
+      label: 'Messages',
       color: '#4CAF50',
-      route: '/(tabs)/messages',
+      onPress: () => router.push('/(tabs)/messages'),
     },
     {
       id: 'orders',
-      title: 'My Orders',
       icon: 'list-outline',
+      label: 'My Orders',
       color: '#2196F3',
-      route: '/(tabs)/orders',
+      onPress: () => router.push('/(tabs)/orders'),
     },
     {
       id: 'profile',
-      title: 'Profile',
       icon: 'person-outline',
+      label: 'Profile',
       color: '#9C27B0',
-      route: '/(tabs)/profile',
+      onPress: () => router.push('/(tabs)/profile'),
     },
   ];
 
@@ -58,24 +45,18 @@ export default function HomeScreen() {
       {/* Header */}
       <View style={styles.header}>
         <View>
-          <Text style={styles.greeting}>Welcome back!</Text>
-          <Text style={styles.username}>{user?.full_name || 'User'}</Text>
+          <Text style={styles.welcomeText}>Welcome back!</Text>
+          <Text style={styles.userName}>{user?.full_name || 'User'}</Text>
         </View>
         <TouchableOpacity
           style={styles.notificationButton}
-          onPress={() => router.push('/(tabs)/notifications')}
+          onPress={() => router.push('/notifications')}
         >
           <Ionicons name="notifications-outline" size={24} color={colors.text.primary} />
         </TouchableOpacity>
       </View>
 
-      <ScrollView
-        style={styles.content}
-        contentContainerStyle={styles.contentContainer}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />
-        }
-      >
+      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         {/* Quick Actions */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Quick Actions</Text>
@@ -83,29 +64,29 @@ export default function HomeScreen() {
             {quickActions.map((action) => (
               <TouchableOpacity
                 key={action.id}
-                style={styles.quickActionCard}
-                onPress={() => router.push(action.route as any)}
+                style={styles.actionCard}
+                onPress={action.onPress}
               >
-                <View style={[styles.quickActionIcon, { backgroundColor: `${action.color}15` }]}>
+                <View style={[styles.actionIcon, { backgroundColor: `${action.color}15` }]}>
                   <Ionicons name={action.icon as any} size={28} color={action.color} />
                 </View>
-                <Text style={styles.quickActionTitle}>{action.title}</Text>
+                <Text style={styles.actionLabel}>{action.label}</Text>
               </TouchableOpacity>
             ))}
           </View>
         </View>
 
-        {/* Stats */}
+        {/* Overview Stats */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Overview</Text>
           <View style={styles.statsGrid}>
             <View style={styles.statCard}>
-              <Ionicons name="document-text-outline" size={24} color={colors.primary} />
+              <Ionicons name="document-text-outline" size={32} color={colors.primary} />
               <Text style={styles.statValue}>0</Text>
               <Text style={styles.statLabel}>Active Requests</Text>
             </View>
             <View style={styles.statCard}>
-              <Ionicons name="checkmark-circle-outline" size={24} color="#4CAF50" />
+              <Ionicons name="checkmark-circle-outline" size={32} color="#4CAF50" />
               <Text style={styles.statValue}>0</Text>
               <Text style={styles.statLabel}>Completed</Text>
             </View>
@@ -115,16 +96,14 @@ export default function HomeScreen() {
         {/* Empty State */}
         <View style={styles.emptyState}>
           <Ionicons name="cube-outline" size={64} color={colors.text.tertiary} />
-          <Text style={styles.emptyStateTitle}>No cargo requests yet</Text>
-          <Text style={styles.emptyStateText}>
-            Create your first cargo request to get started
-          </Text>
+          <Text style={styles.emptyTitle}>No cargo requests yet</Text>
+          <Text style={styles.emptyText}>Create your first cargo request to get started</Text>
           <TouchableOpacity
-            style={styles.primaryButton}
+            style={styles.createButton}
             onPress={() => router.push('/(tabs)/create')}
           >
             <Ionicons name="add" size={20} color={colors.white} />
-            <Text style={styles.primaryButtonText}>Create Request</Text>
+            <Text style={styles.createButtonText}>Create Request</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -145,34 +124,28 @@ const styles = StyleSheet.create({
     paddingTop: spacing.xxl + spacing.lg,
     paddingBottom: spacing.lg,
     backgroundColor: colors.white,
-    ...shadows.small,
   },
-  greeting: {
+  welcomeText: {
     fontSize: fontSize.sm,
     color: colors.text.secondary,
-    marginBottom: spacing.xxxs,
   },
-  username: {
-    fontSize: fontSize.xl,
+  userName: {
+    fontSize: fontSize.xxl,
     fontWeight: fontWeight.bold,
     color: colors.text.primary,
+    marginTop: spacing.xxxs,
   },
   notificationButton: {
     width: 44,
     height: 44,
-    borderRadius: borderRadius.full,
-    backgroundColor: colors.background,
     justifyContent: 'center',
     alignItems: 'center',
   },
   content: {
     flex: 1,
   },
-  contentContainer: {
-    padding: spacing.lg,
-  },
   section: {
-    marginBottom: spacing.xl,
+    padding: spacing.lg,
   },
   sectionTitle: {
     fontSize: fontSize.lg,
@@ -183,30 +156,26 @@ const styles = StyleSheet.create({
   quickActionsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: spacing.md,
+    marginHorizontal: -spacing.xs,
   },
-  quickActionCard: {
-    flex: 1,
-    minWidth: '45%',
-    backgroundColor: colors.white,
+  actionCard: {
+    width: '50%',
+    padding: spacing.xs,
+  },
+  actionIcon: {
+    width: 60,
+    height: 60,
     borderRadius: borderRadius.lg,
-    padding: spacing.lg,
-    alignItems: 'center',
-    ...shadows.small,
-  },
-  quickActionIcon: {
-    width: 56,
-    height: 56,
-    borderRadius: borderRadius.full,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: spacing.sm,
+    backgroundColor: colors.background,
   },
-  quickActionTitle: {
+  actionLabel: {
     fontSize: fontSize.sm,
-    fontWeight: fontWeight.semibold,
     color: colors.text.primary,
     textAlign: 'center',
+    fontWeight: fontWeight.medium,
   },
   statsGrid: {
     flexDirection: 'row',
@@ -229,38 +198,37 @@ const styles = StyleSheet.create({
   statLabel: {
     fontSize: fontSize.xs,
     color: colors.text.secondary,
+    textAlign: 'center',
     marginTop: spacing.xxxs,
   },
   emptyState: {
-    backgroundColor: colors.white,
-    borderRadius: borderRadius.lg,
-    padding: spacing.xxxl,
     alignItems: 'center',
-    ...shadows.small,
+    padding: spacing.xl,
+    marginTop: spacing.lg,
   },
-  emptyStateTitle: {
+  emptyTitle: {
     fontSize: fontSize.lg,
     fontWeight: fontWeight.bold,
     color: colors.text.primary,
     marginTop: spacing.lg,
-    marginBottom: spacing.sm,
   },
-  emptyStateText: {
+  emptyText: {
     fontSize: fontSize.md,
     color: colors.text.secondary,
     textAlign: 'center',
-    marginBottom: spacing.xl,
+    marginTop: spacing.sm,
+    marginBottom: spacing.lg,
   },
-  primaryButton: {
+  createButton: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: colors.primary,
     paddingHorizontal: spacing.xl,
     paddingVertical: spacing.md,
     borderRadius: borderRadius.lg,
-    gap: spacing.sm,
+    gap: spacing.xs,
   },
-  primaryButtonText: {
+  createButtonText: {
     fontSize: fontSize.md,
     fontWeight: fontWeight.semibold,
     color: colors.white,

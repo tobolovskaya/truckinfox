@@ -207,9 +207,6 @@ firebase deploy --only functions
 # Recommended: Start with default settings (uses LAN)
 npx expo start
 
-# Clear cache if needed
-npx expo start --clear
-
 # For remote testing (may fail on restricted networks)
 npx expo start --tunnel
 ```
