@@ -534,7 +534,7 @@ export default function RequestDetailsScreen() {
               <View style={styles.infoItem}>
                 <Ionicons name="cube-outline" size={20} color={colors.primary} />
                 <Text style={styles.infoLabel}>Type</Text>
-                <Text style={styles.infoValue}>{request?.cargo_type}</Text>
+                <Text style={styles.infoValue}>{t(request?.cargo_type || '')}</Text>
               </View>
 
               <View style={styles.infoItem}>
