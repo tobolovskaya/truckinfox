@@ -825,7 +825,13 @@ export default function ProfileScreen() {
 
           {/* Language & Region */}
           <Text style={styles.subSectionTitle}>{t('languageRegion')}</Text>
-          <TouchableOpacity style={styles.settingRow} onPress={handleLanguageChange}>
+          <TouchableOpacity
+            style={styles.settingRow}
+            onPress={handleLanguageChange}
+            accessibilityRole="button"
+            accessibilityLabel={`Language: ${currentLanguage === 'no' ? 'Norwegian' : 'English'}`}
+            accessibilityHint="Double tap to change the app language"
+          >
             <View style={styles.settingLeft}>
               <Ionicons name="language-outline" size={20} color={theme.iconColors.gray.primary} />
               <Text style={styles.settingText}>{t('language')}</Text>
@@ -855,6 +861,9 @@ export default function ProfileScreen() {
               thumbColor={
                 profile?.show_phone_publicly ? sharedColors.white : sharedColors.badge.background
               }
+              accessibilityLabel="Show phone publicly"
+              accessibilityHint="Toggle to control whether others can see your phone number"
+              accessibilityRole="switch"
             />
           </View>
 
@@ -873,12 +882,21 @@ export default function ProfileScreen() {
               thumbColor={
                 profile?.show_email_publicly ? sharedColors.white : sharedColors.badge.background
               }
+              accessibilityLabel="Show email publicly"
+              accessibilityHint="Toggle to control whether others can see your email address"
+              accessibilityRole="switch"
             />
           </View>
 
           {/* Help & Support */}
           <Text style={styles.subSectionTitle}>{t('helpSupport')}</Text>
-          <TouchableOpacity style={styles.settingRow} onPress={() => {}}>
+          <TouchableOpacity
+            style={styles.settingRow}
+            onPress={() => {}}
+            accessibilityRole="button"
+            accessibilityLabel="About"
+            accessibilityHint="View information about the app"
+          >
             <View style={styles.settingLeft}>
               <Ionicons
                 name="information-circle-outline"
@@ -890,7 +908,13 @@ export default function ProfileScreen() {
             <Ionicons name="chevron-forward" size={16} color={theme.iconColors.gray.primary} />
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.settingRow} onPress={() => {}}>
+          <TouchableOpacity
+            style={styles.settingRow}
+            onPress={() => {}}
+            accessibilityRole="button"
+            accessibilityLabel="Terms of Service"
+            accessibilityHint="View the terms and conditions"
+          >
             <View style={styles.settingLeft}>
               <Ionicons
                 name="document-text-outline"
@@ -902,7 +926,13 @@ export default function ProfileScreen() {
             <Ionicons name="chevron-forward" size={16} color={theme.iconColors.gray.primary} />
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.settingRow} onPress={() => {}}>
+          <TouchableOpacity
+            style={styles.settingRow}
+            onPress={() => {}}
+            accessibilityRole="button"
+            accessibilityLabel="Privacy Policy"
+            accessibilityHint="View the privacy policy"
+          >
             <View style={styles.settingLeft}>
               <Ionicons
                 name="shield-checkmark-outline"
@@ -914,7 +944,13 @@ export default function ProfileScreen() {
             <Ionicons name="chevron-forward" size={16} color={theme.iconColors.gray.primary} />
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.settingRow} onPress={() => {}}>
+          <TouchableOpacity
+            style={styles.settingRow}
+            onPress={() => {}}
+            accessibilityRole="button"
+            accessibilityLabel="Contact Support"
+            accessibilityHint="Get help or contact customer support"
+          >
             <View style={styles.settingLeft}>
               <Ionicons
                 name="chatbubbles-outline"
@@ -1002,6 +1038,9 @@ export default function ProfileScreen() {
           <TouchableOpacity
             style={styles.paymentHistoryButton}
             onPress={() => router.push('/profile/payments' as any)}
+            accessibilityRole="button"
+            accessibilityLabel="Payment History"
+            accessibilityHint="View your past payments and transactions"
           >
             <Ionicons name="wallet-outline" size={20} color={theme.iconColors.info} />
             <Text style={styles.paymentHistoryButtonText}>{t('paymentHistory')}</Text>
@@ -1010,12 +1049,21 @@ export default function ProfileScreen() {
           <TouchableOpacity
             style={styles.securityButton}
             onPress={() => router.push('/profile/security' as any)}
+            accessibilityRole="button"
+            accessibilityLabel="Security Settings"
+            accessibilityHint="Manage your security and privacy settings"
           >
             <Ionicons name="shield-checkmark-outline" size={20} color={theme.iconColors.success} />
             <Text style={styles.securityButtonText}>Security Settings</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.signOutButton} onPress={handleSignOut}>
+          <TouchableOpacity
+            style={styles.signOutButton}
+            onPress={handleSignOut}
+            accessibilityRole="button"
+            accessibilityLabel="Sign Out"
+            accessibilityHint="Double tap to log out of your account"
+          >
             <Ionicons name="log-out-outline" size={20} color={theme.iconColors.error} />
             <Text style={styles.signOutButtonText}>{t('signOut')}</Text>
           </TouchableOpacity>

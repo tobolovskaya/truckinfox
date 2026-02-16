@@ -188,7 +188,14 @@ export default function LoginScreen() {
 
           {/* Remember Me & Forgot Password */}
           <View style={styles.optionsRow}>
-            <TouchableOpacity style={styles.rememberMe} onPress={() => setRememberMe(!rememberMe)}>
+            <TouchableOpacity
+              style={styles.rememberMe}
+              onPress={() => setRememberMe(!rememberMe)}
+              accessibilityRole="checkbox"
+              accessibilityLabel="Remember me"
+              accessibilityState={{ checked: rememberMe }}
+              accessibilityHint="Keep me logged in on this device"
+            >
               <View style={[styles.checkbox, rememberMe && styles.checkboxChecked]}>
                 {rememberMe && (
                   <Ionicons name="checkmark" size={16} color={theme.iconColors.white} />
@@ -196,7 +203,11 @@ export default function LoginScreen() {
               </View>
               <Text style={styles.rememberText}>{t('rememberMe')}</Text>
             </TouchableOpacity>
-            <TouchableOpacity>
+            <TouchableOpacity
+              accessibilityRole="button"
+              accessibilityLabel="Forgot password"
+              accessibilityHint="Reset your password"
+            >
               <Text style={styles.forgotPassword}>{t('forgotPassword')}</Text>
             </TouchableOpacity>
           </View>
@@ -206,6 +217,10 @@ export default function LoginScreen() {
             style={[styles.loginButton, loading && styles.loginButtonDisabled]}
             onPress={handleLogin}
             disabled={loading}
+            accessibilityRole="button"
+            accessibilityLabel="Log in"
+            accessibilityHint="Sign in to your account"
+            accessibilityState={{ disabled: loading }}
           >
             <Text style={styles.loginButtonText}>
               {loading ? t('signingIn') : t('signInButton')}
@@ -257,7 +272,12 @@ export default function LoginScreen() {
           {/* Sign Up Link */}
           <View style={styles.signUpContainer}>
             <Text style={styles.signUpText}>{t('noAccount')} </Text>
-            <TouchableOpacity onPress={() => router.push('/(auth)/register')}>
+            <TouchableOpacity
+              onPress={() => router.push('/(auth)/register')}
+              accessibilityRole="button"
+              accessibilityLabel="Sign up"
+              accessibilityHint="Create a new account"
+            >
               <Text style={styles.signUpLink}>{t('signUp')}</Text>
             </TouchableOpacity>
           </View>

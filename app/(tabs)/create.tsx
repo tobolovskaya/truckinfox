@@ -764,7 +764,14 @@ export default function CreateRequestScreen() {
             <View style={styles.dateRow}>
               <View style={[styles.fieldContainer, { flex: 1, marginRight: 8 }]}>
                 <Text style={styles.fieldLabel}>Hentedato</Text>
-                <TouchableOpacity style={styles.dateInput} onPress={() => setShowPickupDate(true)}>
+                <TouchableOpacity
+                  style={styles.dateInput}
+                  onPress={() => setShowPickupDate(true)}
+                  accessibilityRole="button"
+                  accessibilityLabel="Select pickup date"
+                  accessibilityHint="Choose when the cargo should be picked up"
+                  accessibilityValue={{ text: formData.pickup_date.toLocaleDateString('no-NO') }}
+                >
                   <TextInput
                     style={styles.dateTextInput}
                     value={formData.pickup_date.toLocaleDateString('no-NO')}
@@ -854,7 +861,13 @@ export default function CreateRequestScreen() {
             {/* Images */}
             <View style={styles.fieldContainer}>
               <Text style={styles.fieldLabel}>Bilder (maks 5)</Text>
-              <TouchableOpacity style={styles.imageUploadArea} onPress={pickImages}>
+              <TouchableOpacity
+                style={styles.imageUploadArea}
+                onPress={pickImages}
+                accessibilityRole="button"
+                accessibilityLabel={`Add images, ${images.length} of 5 selected`}
+                accessibilityHint="Select photos of your cargo"
+              >
                 <View style={styles.imageUploadContent}>
                   <Ionicons name="image-outline" size={32} color="#9CA3AF" />
                   <Text style={styles.imageUploadText}>Legg til bilder ({images.length}/5)</Text>
@@ -873,6 +886,9 @@ export default function CreateRequestScreen() {
                       <TouchableOpacity
                         style={styles.removeImageButton}
                         onPress={() => removeImage(index)}
+                        accessibilityRole="button"
+                        accessibilityLabel={`Remove image ${index + 1}`}
+                        accessibilityHint="Delete this photo"
                       >
                         <Ionicons name="close-circle" size={24} color="#EF4444" />
                       </TouchableOpacity>

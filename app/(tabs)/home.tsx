@@ -20,6 +20,9 @@ export default function HomeScreen() {
         <TouchableOpacity
           style={styles.notificationButton}
           onPress={() => router.push('/notifications')}
+          accessibilityRole="button"
+          accessibilityLabel="Notifications"
+          accessibilityHint="View your notifications"
         >
           <Ionicons name="notifications-outline" size={24} color={colors.text.primary} />
         </TouchableOpacity>
@@ -51,6 +54,9 @@ export default function HomeScreen() {
           <TouchableOpacity
             style={styles.createButton}
             onPress={() => router.push('/(tabs)/create')}
+            accessibilityRole="button"
+            accessibilityLabel="Create Request"
+            accessibilityHint="Double tap to create a new cargo request"
           >
             <Ionicons name="add" size={20} color={colors.white} />
             <Text style={styles.createButtonText}>Create Request</Text>
