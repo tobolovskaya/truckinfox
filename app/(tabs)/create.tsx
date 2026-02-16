@@ -23,7 +23,7 @@ import { trackCargoCreated } from '../../utils/analytics';
 import { sanitizeInput, sanitizeNumber } from '../../utils/sanitization';
 import { colors, spacing, fontSize, fontWeight, borderRadius } from '../../lib/sharedStyles';
 import { collection, addDoc, updateDoc, doc } from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 import { useRouter } from 'expo-router';
 import { triggerHapticFeedback } from '../../utils/haptics';
 import { SuccessAnimation } from '../../components/SuccessAnimation';
@@ -91,6 +91,7 @@ export default function CreateRequestScreen() {
   });
   const [images, setImages] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<Record<string, number>>({});
   const [showSuccessAnimation, setShowSuccessAnimation] = useState(false);
   const [touchedFields, setTouchedFields] = useState<Record<string, boolean>>({});
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
@@ -465,13 +466,15 @@ export default function CreateRequestScreen() {
 
   const uploadImages = async (requestId: string): Promise<string[]> => {
     const uploadedUrls: string[] = [];
+    setUploadProgress({});
 
     for (let i = 0; i < images.length; i++) {
       try {
         const uri = images[i];
         const compressedUri = await compressImage(uri);
         const ext = uri.split('.').pop() || 'jpg';
-        const fileName = `request-images/${requestId}_${i}_${Date.now()}.${ext}`;
+        const fileName = `request-images/${requestId}/${Date.now()}_${i}.${ext}`;
+        const imageKey = `image_${i + 1}`;
 
         try {
           const storageRef = ref(storage, fileName);
@@ -483,12 +486,31 @@ export default function CreateRequestScreen() {
             15000
           );
           const blob = await response.blob();
-          await uploadBytes(storageRef, blob, {
+          const uploadTask = uploadBytesResumable(storageRef, blob, {
             contentType: 'image/jpeg',
           });
 
-          const downloadURL = await getDownloadURL(storageRef);
-          uploadedUrls.push(downloadURL);
+          await new Promise<void>((resolve, reject) => {
+            uploadTask.on(
+              'state_changed',
+              snapshot => {
+                const progress = snapshot.totalBytes
+                  ? (snapshot.bytesTransferred / snapshot.totalBytes) * 100
+                  : 0;
+                setUploadProgress(prev => ({ ...prev, [imageKey]: progress }));
+              },
+              error => {
+                console.error(`Error uploading image ${i}:`, error);
+                reject(error);
+              },
+              async () => {
+                const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
+                uploadedUrls.push(downloadURL);
+                setUploadProgress(prev => ({ ...prev, [imageKey]: 100 }));
+                resolve();
+              }
+            );
+          });
         } catch (error) {
           console.error(`Error uploading image ${i}:`, error);
           continue;
@@ -497,6 +519,8 @@ export default function CreateRequestScreen() {
         console.error(`Error processing image ${i}:`, error);
       }
     }
+
+    setUploadProgress({});
 
     return uploadedUrls;
   };
@@ -987,6 +1011,23 @@ export default function CreateRequestScreen() {
                   ))}
                 </View>
               )}
+
+              {loading && Object.keys(uploadProgress).length > 0 && (
+                <View style={styles.uploadProgressContainer}>
+                  <Text style={styles.uploadProgressTitle}>Laster opp bilder...</Text>
+                  {Object.entries(uploadProgress).map(([key, progress]) => (
+                    <View key={key} style={styles.progressRow}>
+                      <Text style={styles.progressLabel}>{key.replace('_', ' ')}</Text>
+                      <View style={styles.progressBarBackground}>
+                        <View
+                          style={[styles.progressBarFill, { width: `${progress}%` }]}
+                        />
+                      </View>
+                      <Text style={styles.progressText}>{Math.round(progress)}%</Text>
+                    </View>
+                  ))}
+                </View>
+              )}
             </View>
 
             {/* Price Type */}
@@ -1375,6 +1416,48 @@ const styles = StyleSheet.create({
     height: 80,
     borderRadius: borderRadius.sm,
     overflow: 'hidden',
+  },
+  uploadProgressContainer: {
+    marginTop: spacing.md,
+    backgroundColor: colors.white,
+    borderRadius: borderRadius.md,
+    padding: spacing.md,
+    borderWidth: 1,
+    borderColor: colors.border.light,
+  },
+  uploadProgressTitle: {
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.semibold,
+    color: colors.text.primary,
+    marginBottom: spacing.sm,
+  },
+  progressRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    marginBottom: spacing.xs,
+  },
+  progressLabel: {
+    width: 70,
+    fontSize: fontSize.xs,
+    color: colors.text.secondary,
+  },
+  progressBarBackground: {
+    flex: 1,
+    height: 6,
+    backgroundColor: colors.border.light,
+    borderRadius: borderRadius.full,
+    overflow: 'hidden',
+  },
+  progressBarFill: {
+    height: '100%',
+    backgroundColor: colors.primary,
+  },
+  progressText: {
+    width: 40,
+    fontSize: fontSize.xs,
+    color: colors.text.secondary,
+    textAlign: 'right',
   },
   imagePreview: {
     width: '100%',
