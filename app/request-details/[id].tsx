@@ -129,7 +129,7 @@ export default function RequestDetailsScreen() {
   const [routeCoordinates, setRouteCoordinates] = useState<
     Array<{ latitude: number; longitude: number }>
   >([]);
-  const mapRef = useRef<MapView>(null);
+  const mapRef = useRef<any>(null);
   const [reviews, setReviews] = useState<Review[]>([]);
   const [userRating, setUserRating] = useState(0);
   const [reviewComment, setReviewComment] = useState('');
@@ -304,7 +304,7 @@ export default function RequestDetailsScreen() {
 
         // Fit map to show entire route
         setTimeout(() => {
-          if (mapRef.current && routePoints.length > 0) {
+          if (mapRef.current && routePoints.length > 0 && mapRef.current.fitToCoordinates) {
             mapRef.current.fitToCoordinates(routePoints, {
               edgePadding: { top: 50, right: 50, bottom: 50, left: 50 },
               animated: true,
@@ -1124,7 +1124,6 @@ export default function RequestDetailsScreen() {
           <TouchableOpacity onPress={() => setMapExpanded(!mapExpanded)} activeOpacity={0.9}>
             <View style={[styles.mapContainer, mapExpanded && styles.mapExpanded]}>
               <MapView
-                ref={mapRef}
                 style={styles.map}
                 initialRegion={
                   request?.from_lat && request?.from_lng && request?.to_lat && request?.to_lng
@@ -1141,20 +1140,12 @@ export default function RequestDetailsScreen() {
                         longitudeDelta: 15,
                       }
                 }
-                scrollEnabled={true}
-                zoomEnabled={true}
-                pitchEnabled={true}
-                rotateEnabled={false}
                 showsUserLocation={false}
-                showsMyLocationButton={false}
-                showsCompass={true}
-                showsScale={false}
               >
                 {/* Start Point */}
                 {request?.from_lat && request?.from_lng && (
                   <Marker
                     coordinate={{ latitude: request.from_lat, longitude: request.from_lng }}
-                    pinColor="#10B981"
                     title={request.from_address}
                   />
                 )}
@@ -1163,7 +1154,6 @@ export default function RequestDetailsScreen() {
                 {request?.to_lat && request?.to_lng && (
                   <Marker
                     coordinate={{ latitude: request.to_lat, longitude: request.to_lng }}
-                    pinColor="#EF4444"
                     title={request.to_address}
                   />
                 )}
@@ -1174,9 +1164,6 @@ export default function RequestDetailsScreen() {
                     coordinates={routeCoordinates}
                     strokeColor="#FF7043"
                     strokeWidth={4}
-                    strokeColors={['#FF7043']}
-                    lineCap="round"
-                    lineJoin="round"
                   />
                 )}
               </MapView>
