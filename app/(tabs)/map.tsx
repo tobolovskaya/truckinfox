@@ -21,26 +21,8 @@ import { collection, getDocs, query, where, QueryConstraint } from 'firebase/fir
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { theme } from '../../theme/theme';
-import SuperCluster from 'react-native-maps-super-cluster';
-
-// Platform-specific imports for maps
-let MapView: any;
-let Marker: any;
-let Polyline: any;
-
-if (Platform.OS === 'web') {
-  // Use web mock
-  const webMaps = require('../../mocks/react-native-maps.web.js');
-  MapView = webMaps.default;
-  Marker = webMaps.Marker;
-  Polyline = webMaps.Polyline;
-} else {
-  // Use native react-native-maps
-  const nativeMaps = require('react-native-maps');
-  MapView = nativeMaps.default;
-  Marker = nativeMaps.Marker;
-  Polyline = nativeMaps.Polyline;
-}
+import SuperCluster from '../../lib/MapSuperCluster';
+import MapView, { Marker, Polyline } from '../../lib/MapView';
 
 interface MapOrder {
   id: string;

@@ -38,7 +38,7 @@ import {
   writeBatch,
   runTransaction,
 } from 'firebase/firestore';
-import MapView, { Marker, Polyline } from 'react-native-maps';
+import MapView, { Marker, Polyline } from '../../lib/MapView';
 import { theme } from '../../theme/theme';
 import {
   colors,
