@@ -140,8 +140,9 @@ const styles = StyleSheet.create({
   },
   swipeActionText: {
     color: 'white',
-    fontSize: 12,
+    fontSize: fontSize.sm,
     fontWeight: '600',
-    marginTop: 4,
+    marginTop: spacing.xxxs,
   },
 });
+

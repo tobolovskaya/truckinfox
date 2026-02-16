@@ -32,7 +32,7 @@ export function IOSText({
   const getTypographyStyle = () => {
     const typography = theme.typography?.[variant] ||
       theme.typography?.body || {
-        fontSize: 17,
+        fontSize: fontSize.lg,
         lineHeight: 22,
         fontWeight: '400',
       };
@@ -111,3 +111,4 @@ export const Caption2 = (props: Omit<IOSTextProps, 'variant'>) => (
 );
 
 const styles = StyleSheet.create({});
+

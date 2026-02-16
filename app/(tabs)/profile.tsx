@@ -1086,7 +1086,7 @@ const styles = StyleSheet.create({
     right: 0,
     width: 24,
     height: 24,
-    borderRadius: 12,
+    borderRadius: borderRadius.md,
     backgroundColor: colors.primary,
     justifyContent: 'center',
     alignItems: 'center',
@@ -1100,7 +1100,7 @@ const styles = StyleSheet.create({
     fontSize: fontSize.xl,
     fontWeight: fontWeight.bold,
     color: colors.text.primary,
-    marginBottom: 2,
+    marginBottom: spacing.xxs,
   },
   userType: {
     fontSize: fontSize.sm,
@@ -1143,8 +1143,8 @@ const styles = StyleSheet.create({
     fontSize: fontSize.lg,
     fontWeight: fontWeight.bold,
     color: colors.text.primary,
-    marginTop: 6,
-    marginBottom: 2,
+    marginTop: spacing.xxxs,
+    marginBottom: spacing.xxs,
   },
   statLabel: {
     fontSize: fontSize.xs,
@@ -1175,7 +1175,7 @@ const styles = StyleSheet.create({
     fontSize: fontSize.lg,
     fontWeight: fontWeight.semibold,
     color: colors.text.primary,
-    marginTop: 2,
+    marginTop: spacing.xxs,
   },
   statisticsSection: {
     backgroundColor: colors.white,
@@ -1192,7 +1192,7 @@ const styles = StyleSheet.create({
     fontSize: fontSize.xl,
     fontWeight: fontWeight.bold,
     color: colors.text.primary,
-    marginBottom: 4,
+    marginBottom: spacing.xxxs,
   },
   memberSince: {
     fontSize: fontSize.sm,
@@ -1227,14 +1227,14 @@ const styles = StyleSheet.create({
   statIconContainer: {
     width: 40,
     height: 40,
-    borderRadius: 20,
+    borderRadius: borderRadius.xl,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: spacing.xs,
   },
   secondaryStatsContainer: {
     borderTopWidth: 1,
-    borderTopColor: '#E5E7EB',
+    borderTopColor: colors.border.default,
     paddingTop: spacing.md,
   },
   secondaryStatRow: {
@@ -1284,7 +1284,7 @@ const styles = StyleSheet.create({
     paddingTop: spacing.lg,
     marginTop: spacing.lg,
     borderTopWidth: 1,
-    borderTopColor: '#E5E7EB',
+    borderTopColor: colors.border.default,
     alignItems: 'center',
   },
   versionText: {
@@ -1371,7 +1371,7 @@ const styles = StyleSheet.create({
   settingDescription: {
     fontSize: fontSize.sm,
     color: colors.text.secondary,
-    marginTop: 2,
+    marginTop: spacing.xxs,
     lineHeight: spacing.lg,
   },
   settingRight: {
@@ -1397,7 +1397,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.primary,
     borderRadius: borderRadius.md,
-    paddingVertical: 14,
+    paddingVertical: spacing.sm,
     marginBottom: spacing.md,
   },
   editButtonText: {
@@ -1414,7 +1414,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: theme.iconColors.info,
     borderRadius: borderRadius.md,
-    paddingVertical: 14,
+    paddingVertical: spacing.sm,
     marginBottom: spacing.md,
   },
   paymentHistoryButtonText: {
@@ -1431,7 +1431,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.status.success,
     borderRadius: borderRadius.md,
-    paddingVertical: 14,
+    paddingVertical: spacing.sm,
     marginBottom: spacing.md,
   },
   securityButtonText: {
@@ -1448,7 +1448,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.status.error,
     borderRadius: borderRadius.md,
-    paddingVertical: 14,
+    paddingVertical: spacing.sm,
   },
   signOutButtonText: {
     fontSize: fontSize.lg,
@@ -1467,3 +1467,4 @@ const styles = StyleSheet.create({
     marginBottom: spacing.xs,
   },
 });
+

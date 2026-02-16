@@ -29,7 +29,7 @@ export function Onboarding({ visible, onComplete, userType = 'customer' }: Onboa
       description:
         t('onboarding.step1.description') ||
         'Legg ut din last med detaljer om henting, levering og vekt. Få tilbud fra verifiserte transportører.',
-      color: '#FF7043',
+      color: colors.primary,
     },
     {
       icon: 'pricetags-outline',
@@ -64,7 +64,7 @@ export function Onboarding({ visible, onComplete, userType = 'customer' }: Onboa
       description:
         t('onboarding.carrier.step1.description') ||
         'Bla gjennom aktive lastforespørsler. Filtrer etter sted, type og vekt.',
-      color: '#FF7043',
+      color: colors.primary,
     },
     {
       icon: 'cash-outline',
@@ -214,7 +214,7 @@ const styles = StyleSheet.create({
     marginBottom: spacing.xxl,
   },
   title: {
-    fontSize: 28,
+    fontSize: fontSize.xxxl,
     fontWeight: fontWeight.bold,
     color: colors.text.primary,
     textAlign: 'center',
@@ -234,7 +234,7 @@ const styles = StyleSheet.create({
   },
   indicator: {
     height: 8,
-    borderRadius: 4,
+    borderRadius: spacing.xxxs,
   },
   footer: {
     flexDirection: 'row',
@@ -272,3 +272,4 @@ const styles = StyleSheet.create({
     color: 'white',
   },
 });
+

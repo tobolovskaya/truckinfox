@@ -371,7 +371,7 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   sheet: {
-    backgroundColor: 'white',
+    backgroundColor: colors.white,
     borderTopLeftRadius: borderRadius.xl,
     borderTopRightRadius: borderRadius.xl,
     maxHeight: '90%',
@@ -430,7 +430,7 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.full,
     borderWidth: 1.5,
     borderColor: colors.primary,
-    backgroundColor: 'white',
+    backgroundColor: colors.white,
   },
   sortOptionActive: {
     backgroundColor: colors.primary,
@@ -458,7 +458,7 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.full,
     borderWidth: 1.5,
     borderColor: colors.border.light,
-    backgroundColor: 'white',
+    backgroundColor: colors.white,
   },
   chipActive: {
     backgroundColor: colors.primary,
@@ -513,7 +513,7 @@ const styles = StyleSheet.create({
     borderColor: colors.primary,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'white',
+    backgroundColor: colors.white,
   },
   applyButton: {
     flex: 1,
@@ -577,7 +577,7 @@ const styles = StyleSheet.create({
   dialogContent: {
     width: '100%',
     maxWidth: 400,
-    backgroundColor: 'white',
+    backgroundColor: colors.white,
     borderRadius: borderRadius.lg,
     padding: spacing.xl,
     ...(shadows.lg as any),
@@ -628,3 +628,4 @@ const styles = StyleSheet.create({
     color: 'white',
   },
 });
+

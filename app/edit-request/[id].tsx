@@ -1736,7 +1736,7 @@ const styles = StyleSheet.create({
     color: colors.status.error,
     fontSize: fontSize.xs,
     fontWeight: fontWeight.medium,
-    marginTop: 2,
+    spacing.xxs
     marginLeft: spacing.xs,
   },
   successText: {
@@ -1767,7 +1767,7 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     borderColor: colors.border.light,
     borderRadius: 25,
-    paddingHorizontal: 14,
+    spacing.sm
     paddingVertical: spacing.sm,
     ...shadows.sm,
   },
@@ -1811,7 +1811,7 @@ const styles = StyleSheet.create({
     fontSize: fontSize.xs + 1,
     color: colors.text.secondary,
     fontWeight: fontWeight.medium,
-    marginBottom: 2,
+    spacing.xxs
   },
   dateValue: {
     fontSize: fontSize.lg,
@@ -2050,9 +2050,9 @@ const styles = StyleSheet.create({
     elevation: 6,
   },
   helper: {
-    fontSize: 13,
+    fontSize.sm
     color: colors.text.secondary,
-    marginTop: 4,
+    spacing.xxxs
   },
   photoGrid: {
     flexDirection: 'row',
@@ -2096,15 +2096,15 @@ const styles = StyleSheet.create({
     backgroundColor: '#F9FAFB',
   },
   addPhotoTextGrid: {
-    fontSize: 13,
+    fontSize.sm
     color: '#616161',
-    marginTop: 8,
+    spacing.xs
     fontWeight: '600',
   },
   maxPhotosText: {
-    fontSize: 11,
+    fontSize.xs
     color: '#9CA3AF',
-    marginTop: 4,
+    spacing.xxxs
     fontWeight: '400',
   },
   loadingContainer: {

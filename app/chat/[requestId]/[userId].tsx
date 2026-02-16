@@ -937,11 +937,11 @@ const styles = StyleSheet.create({
     marginVertical: 2,
   },
   routeIcon: {
-    fontSize: 12,
+    fontSize.sm
     marginRight: 8,
   },
   routeLocation: {
-    fontSize: 13,
+    fontSize.sm
     color: '#616161',
     fontWeight: '500',
     flex: 1,
@@ -951,20 +951,20 @@ const styles = StyleSheet.create({
     paddingVertical: 2,
   },
   routeArrowText: {
-    fontSize: 14,
+    fontSize.sm
     color: '#9CA3AF',
     fontWeight: '600',
   },
   detailsButton: {
-    marginTop: 12,
+    spacing.sm
     paddingVertical: 8,
-    paddingHorizontal: 12,
+    spacing.sm
     backgroundColor: '#F97316',
     borderRadius: 8,
     alignSelf: 'flex-start',
   },
   detailsButtonText: {
-    fontSize: 12,
+    fontSize.sm
     color: 'white',
     fontWeight: '600',
   },
@@ -975,7 +975,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   messagesContent: {
-    padding: 16,
+    spacing.md
   },
   loadingContainer: {
     flex: 1,
@@ -984,7 +984,7 @@ const styles = StyleSheet.create({
     paddingVertical: 40,
   },
   loadingText: {
-    fontSize: 16,
+    fontSize.md
     color: '#616161',
   },
   emptyContainer: {
@@ -994,15 +994,15 @@ const styles = StyleSheet.create({
     paddingVertical: 60,
   },
   emptyText: {
-    fontSize: 16,
+    fontSize.md
     color: '#616161',
-    marginTop: 12,
+    spacing.sm
   },
   dateSeparator: {
     flexDirection: 'row',
     alignItems: 'center',
     marginVertical: 24,
-    marginHorizontal: 16,
+    spacing.md
   },
   dateLine: {
     flex: 1,
@@ -1010,10 +1010,10 @@ const styles = StyleSheet.create({
     backgroundColor: '#E5E7EB',
   },
   dateText: {
-    fontSize: 12,
+    fontSize.sm
     color: '#8E8E93',
-    backgroundColor: 'white',
-    paddingHorizontal: 12,
+    colors.white,
+    spacing.sm
     paddingVertical: 6,
     marginHorizontal: 12,
   },
@@ -1028,8 +1028,8 @@ const styles = StyleSheet.create({
   },
   messageBubble: {
     maxWidth: '75%',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    spacing.md
+    spacing.sm
     borderRadius: 24,
   },
   sentMessage: {
@@ -1044,9 +1044,9 @@ const styles = StyleSheet.create({
     flexDirection: 'column',
   },
   messageText: {
-    fontSize: 16,
+    fontSize.md
     lineHeight: 22,
-    marginBottom: 4,
+    spacing.xxxs
   },
   sentMessageText: {
     color: 'white',
@@ -1055,7 +1055,7 @@ const styles = StyleSheet.create({
     color: '#000000',
   },
   messageTime: {
-    fontSize: 10,
+    fontSize.xs
     alignSelf: 'flex-end',
   },
   sentMessageTime: {
@@ -1074,9 +1074,9 @@ const styles = StyleSheet.create({
     marginLeft: 2,
   },
   inputContainer: {
-    backgroundColor: 'white',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    colors.white,
+    spacing.md
+    spacing.sm
     borderTopWidth: 1,
     borderTopColor: '#E5E7EB',
     flexDirection: 'row',
@@ -1094,7 +1094,7 @@ const styles = StyleSheet.create({
     borderColor: '#E5E7EB',
   },
   attachIcon: {
-    fontSize: 18,
+    fontSize.lg
   },
   inputWrapper: {
     flex: 1,
@@ -1102,14 +1102,14 @@ const styles = StyleSheet.create({
     borderRadius: 24,
     borderWidth: 1,
     borderColor: '#E5E7EB',
-    paddingHorizontal: 16,
+    spacing.md
     paddingVertical: 8,
     marginRight: 8,
     minHeight: 40,
     justifyContent: 'center',
   },
   textInput: {
-    fontSize: 16,
+    fontSize.md
     color: '#212121',
     minHeight: 36,
     maxHeight: 100,
@@ -1133,7 +1133,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   sendButtonEmoji: {
-    fontSize: 16,
+    fontSize.md
   },
   sendButtonEmojiDisabled: {
     opacity: 0.5,
@@ -1149,10 +1149,10 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   typingIndicator: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    marginHorizontal: 16,
-    marginBottom: 8,
+    spacing.md
+    spacing.sm
+    spacing.md
+    spacing.xs
     backgroundColor: '#F3F4F6',
     borderRadius: 20,
     alignSelf: 'flex-start',

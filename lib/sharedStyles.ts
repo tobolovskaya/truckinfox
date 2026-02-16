@@ -8,16 +8,17 @@ export const colors = {
 
   background: theme.colors.background,
   backgroundPrimary: theme.colors.background,
-  backgroundLight: theme.colors.surfaceVariant,
+  backgroundLight: '#F9FAFB',        // Light gray background
+  backgroundVeryLight: '#FAFAFA',    // Very light background
   surface: theme.colors.surface,
   surfaceVariant: theme.colors.surfaceVariant,
 
   text: {
-    primary: '#1A1A1A',
-    secondary: '#6B7280',
+    primary: '#212121',      // Updated to match common usage
+    secondary: '#616161',    // Updated to match common usage
     tertiary: '#9CA3AF',
+    dark: '#374151',         // Medium dark text
     disabled: '#D1D5DB',
-    dark: '#1A1A1A',
   },
 
   border: {
@@ -52,13 +53,16 @@ export const colors = {
 };
 
 export const spacing = {
-  xs: 6,
-  sm: 12,
-  md: 16,
-  lg: 24,
-  xl: 32,
-  xxl: 40,
-  xxxl: 48,
+  xxs: 2,    // Micro spacing for tight elements
+  xxxs: 4,   // Extra small spacing
+  xs: 8,     // Small spacing (updated for consistency)
+  sm: 12,    // Small-medium spacing
+  md: 16,    // Medium spacing
+  lg: 20,    // Large spacing
+  xl: 24,    // Extra large spacing
+  xxl: 32,   // Extra extra large spacing
+  xxxl: 40,  // Huge spacing
+  huge: 48,  // Maximum spacing
 };
 
 export const borderRadius = {

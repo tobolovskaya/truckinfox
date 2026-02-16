@@ -33,9 +33,10 @@ export function IOSRefreshControl({
       titleColor="#8E8E93"
       {...(Platform.OS === 'android' && {
         colors: [tintColor],
-        progressBackgroundColor: '#FFFFFF',
+        progressbackgroundColor: colors.white,
       })}
       {...props}
     />
   );
 }
+

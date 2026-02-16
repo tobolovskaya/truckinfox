@@ -42,7 +42,7 @@ const SkeletonBox = ({
           width,
           height,
           backgroundColor: colors.border.light,
-          borderRadius: 8,
+          borderRadius: borderRadius.sm,
         },
         style,
         animatedStyle,
@@ -66,11 +66,11 @@ export const SkeletonCard = () => {
         <SkeletonBox width="60%" height={20} style={{ marginBottom: 12 }} />
 
         {/* Category badge */}
-        <SkeletonBox width={80} height={20} style={{ borderRadius: 12, marginBottom: 8 }} />
+        <SkeletonBox width={80} height={20} style={{ borderRadius: borderRadius.md, marginBottom: 8 }} />
 
         {/* Route */}
         <View style={styles.routeContainer}>
-          <SkeletonBox width={16} height={16} style={{ borderRadius: 8, marginRight: 6 }} />
+          <SkeletonBox width={16} height={16} style={{ borderRadius: borderRadius.sm, marginRight: 6 }} />
           <SkeletonBox width="80%" height={16} />
         </View>
 
@@ -84,7 +84,7 @@ export const SkeletonCard = () => {
 const styles = StyleSheet.create({
   requestCard: {
     backgroundColor: colors.white,
-    borderRadius: 12,
+    borderRadius: borderRadius.md,
     marginBottom: spacing.lg,
     ...shadows.md,
     overflow: 'hidden',
@@ -101,3 +101,4 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
 });
+

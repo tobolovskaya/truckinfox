@@ -216,8 +216,9 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   errorText: {
-    fontSize: 12,
+    fontSize: fontSize.sm,
     color: colors.text.tertiary,
     marginTop: spacing.xs,
   },
 });
+

@@ -452,7 +452,7 @@ const styles = StyleSheet.create({
   reviewDate: {
     fontSize: fontSize.xs,
     color: colors.text.tertiary,
-    marginTop: 2,
+    spacing.xxs
   },
   orderTitle: {
     fontSize: fontSize.sm,

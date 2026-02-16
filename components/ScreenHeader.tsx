@@ -221,17 +221,17 @@ const styles = StyleSheet.create({
     top: 6,
     right: 6,
     backgroundColor: colors.error,
-    borderRadius: 10,
+    borderRadius: borderRadius.sm,
     minWidth: 20,
     height: 20,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: 5,
+    paddingHorizontal: spacing.xxxs,
     borderWidth: 2,
     borderColor: colors.white,
   },
   badgeText: {
-    fontSize: 11,
+    fontSize: fontSize.xs,
     fontWeight: fontWeight.bold,
     color: colors.white,
     includeFontPadding: false,
@@ -240,3 +240,4 @@ const styles = StyleSheet.create({
     width: TOUCH_TARGET.MIN,
   },
 });
+

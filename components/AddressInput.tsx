@@ -235,6 +235,7 @@ const styles = StyleSheet.create({
   suggestionSecondaryText: {
     fontSize: fontSize.sm,
     color: colors.text.secondary,
-    marginTop: 2,
+    marginTop: spacing.xxs,
   },
 });
+

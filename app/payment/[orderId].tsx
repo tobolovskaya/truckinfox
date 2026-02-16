@@ -421,7 +421,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: 40,
+    spacing.xxxl
   },
   errorText: {
     fontSize: fontSize.lg,
@@ -504,7 +504,7 @@ const styles = StyleSheet.create({
     fontSize: fontSize.sm,
     color: colors.text.secondary,
     fontWeight: fontWeight.medium,
-    marginBottom: 2,
+    spacing.xxs
   },
   locationAddress: {
     fontSize: fontSize.md,

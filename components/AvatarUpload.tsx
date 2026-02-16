@@ -252,7 +252,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: spacing.sm,
     paddingHorizontal: spacing.md,
-    paddingVertical: 6,
+    paddingVertical: spacing.xxxs,
     borderRadius: 6,
     backgroundColor: '#FEF2F2',
   },
@@ -263,3 +263,4 @@ const styles = StyleSheet.create({
     fontWeight: fontWeight.semibold,
   },
 });
+

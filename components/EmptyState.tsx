@@ -111,7 +111,7 @@ const styles = StyleSheet.create({
     marginBottom: spacing.xl,
   },
   title: {
-    fontSize: 24,
+    fontSize: fontSize.xxl,
     fontWeight: fontWeight.bold,
     color: colors.text.primary,
     textAlign: 'center',
@@ -189,7 +189,7 @@ const styles = StyleSheet.create({
     height: 6,
     borderRadius: 3,
     backgroundColor: colors.primary,
-    marginTop: 7,
+    marginTop: spacing.xxxs,
     marginRight: spacing.sm,
   },
   tipText: {
@@ -199,3 +199,4 @@ const styles = StyleSheet.create({
     lineHeight: 20,
   },
 });
+

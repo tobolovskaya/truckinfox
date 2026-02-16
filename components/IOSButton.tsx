@@ -64,18 +64,18 @@ export function IOSButton({
     // Size variants
     const sizeStyles: Record<string, ViewStyle> = {
       small: {
-        paddingVertical: 12,
-        paddingHorizontal: 20,
+        paddingVertical: spacing.sm,
+        paddingHorizontal: spacing.lg,
         minHeight: 44,
       },
       medium: {
-        paddingVertical: 14,
-        paddingHorizontal: 24,
+        paddingVertical: spacing.sm,
+        paddingHorizontal: spacing.xl,
         minHeight: 52,
       },
       large: {
         paddingVertical: 18,
-        paddingHorizontal: 32,
+        paddingHorizontal: spacing.xxl,
         minHeight: 58,
       },
     };
@@ -102,7 +102,7 @@ export function IOSButton({
       },
       link: {
         backgroundColor: 'transparent',
-        paddingVertical: 4,
+        paddingVertical: spacing.xxxs,
         paddingHorizontal: 0,
         minHeight: 'auto' as any,
       },
@@ -119,17 +119,17 @@ export function IOSButton({
   const getTextStyle = (): TextStyle => {
     const sizeTextStyles: Record<string, TextStyle> = {
       small: {
-        fontSize: 14,
+        fontSize: fontSize.sm,
         fontWeight: '500',
         letterSpacing: 0.2,
       },
       medium: {
-        fontSize: 16,
+        fontSize: fontSize.md,
         fontWeight: '500',
         letterSpacing: 0.3,
       },
       large: {
-        fontSize: 18,
+        fontSize: fontSize.lg,
         fontWeight: '500',
         letterSpacing: 0.4,
       },
@@ -150,7 +150,7 @@ export function IOSButton({
       },
       link: {
         color: disabled ? theme.iconColors.ios.gray : theme.iconColors.ios.blue,
-        fontSize: 17,
+        fontSize: fontSize.lg,
         fontWeight: '400',
       },
     };
@@ -233,3 +233,4 @@ export const LinkButton = (props: Omit<IOSButtonProps, 'variant'>) => (
 );
 
 const styles = StyleSheet.create({});
+

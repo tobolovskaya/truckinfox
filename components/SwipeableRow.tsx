@@ -209,7 +209,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.xs,
   },
   actionIcon: {
-    marginBottom: 2,
+    marginBottom: spacing.xxs,
   },
   actionText: {
     fontSize: fontSize.xs,
@@ -271,8 +271,9 @@ export const SwipeActions = {
   message: (onPress: () => void): SwipeAction => ({
     text: 'Message',
     icon: 'chatbubble-outline',
-    backgroundColor: '#FF7043', // Primary orange
+    backgroundcolor: colors.primary, // Primary orange
     color: 'white',
     onPress,
   }),
 };
+

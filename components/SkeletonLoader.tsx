@@ -190,7 +190,7 @@ const styles = StyleSheet.create({
   listAvatar: {
     width: 48,
     height: 48,
-    borderRadius: 24,
+    borderRadius: borderRadius.xl,
   },
   listContent: {
     flex: 1,
@@ -207,7 +207,7 @@ const styles = StyleSheet.create({
   listBadge: {
     width: 24,
     height: 24,
-    borderRadius: 12,
+    borderRadius: borderRadius.md,
   },
 
   // Message skeleton
@@ -228,7 +228,7 @@ const styles = StyleSheet.create({
   messageAvatar: {
     width: 32,
     height: 32,
-    borderRadius: 16,
+    borderRadius: borderRadius.lg,
   },
   messageBubbleLeft: {
     height: 60,
@@ -258,7 +258,7 @@ const styles = StyleSheet.create({
   statIcon: {
     width: 40,
     height: 40,
-    borderRadius: 20,
+    borderRadius: borderRadius.xl,
   },
   statValue: {
     height: 24,
@@ -281,3 +281,4 @@ const styles = StyleSheet.create({
     width: '75%',
   },
 });
+
