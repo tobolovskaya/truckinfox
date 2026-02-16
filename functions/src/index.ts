@@ -295,3 +295,41 @@ export const scheduledNotifications = functions.pubsub
     await batch.commit();
     return null;
   });
+
+/**
+ * Cleanup old typing indicators
+ * Runs every 1 minute to remove stale typing indicators (>10 seconds old)
+ */
+export const cleanupTypingIndicators = functions.pubsub
+  .schedule('every 1 minutes')
+  .onRun(async context => {
+    try {
+      // Calculate cutoff timestamp (10 seconds ago)
+      const cutoff = admin.firestore.Timestamp.fromMillis(Date.now() - 10000); // 10 seconds ago
+
+      // Query old typing indicators
+      const oldIndicators = await admin
+        .firestore()
+        .collection('typing_indicators')
+        .where('timestamp', '<', cutoff)
+        .get();
+
+      if (oldIndicators.empty) {
+        console.log('No old typing indicators to clean up');
+        return null;
+      }
+
+      // Batch delete old indicators
+      const batch = admin.firestore().batch();
+      oldIndicators.docs.forEach(doc => {
+        batch.delete(doc.ref);
+      });
+
+      await batch.commit();
+      console.log(`✅ Cleaned up ${oldIndicators.size} old typing indicators`);
+      return null;
+    } catch (error) {
+      console.error('❌ Error cleaning up typing indicators:', error);
+      return null;
+    }
+  });

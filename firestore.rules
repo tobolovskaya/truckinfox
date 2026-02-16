@@ -129,11 +129,18 @@ service cloud.firestore {
 
     // Typing indicators
     match /typing_indicators/{indicatorId} {
-      allow read, write: if isAuthenticated();
+      // Anyone authenticated can read typing indicators
+      allow read: if isAuthenticated();
       
-      // Auto-delete old typing indicators (cleanup rule)
-      allow delete: if isAuthenticated() && 
-        resource.data.timestamp < request.time - duration.value(10, 's');
+      // Users can only write their own typing status
+      allow write: if isAuthenticated() && 
+        request.resource.data.userId == request.auth.uid;
+      
+      // Auto-delete old typing indicators after 10 seconds
+      allow delete: if isAuthenticated() && (
+        resource.data.timestamp < request.time - duration.value(10, 's') ||
+        isOwner(resource.data.userId)
+      );
     }
   }
 }

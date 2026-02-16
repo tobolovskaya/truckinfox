@@ -979,6 +979,81 @@ Implemented comprehensive real-time notifications with Firestore listeners:
 - Clear visual feedback for unread notifications
 - Battery-efficient with Firestore's optimized listeners
 
+### Security Rules & Data Cleanup ✅
+
+Implemented comprehensive security rules for typing indicators and automated cleanup:
+
+**Typing Indicators Security:**
+
+- **Read Access**: Any authenticated user can read typing indicators (needed for real-time updates)
+- **Write Access**: Users can only write their own typing status (enforced via `userId == auth.uid`)
+- **Delete Access**: Users can delete their own indicators OR system auto-deletes after 10 seconds
+- **Prevents Abuse**: Cannot impersonate other users' typing status
+
+**Firestore Rules:**
+
+```javascript
+match /typing_indicators/{indicatorId} {
+  // Anyone authenticated can read typing indicators
+  allow read: if isAuthenticated();
+  
+  // Users can only write their own typing status
+  allow write: if isAuthenticated() && 
+    request.resource.data.userId == request.auth.uid;
+  
+  // Auto-delete old typing indicators after 10 seconds
+  allow delete: if isAuthenticated() && (
+    resource.data.timestamp < request.time - duration.value(10, 's') ||
+    isOwner(resource.data.userId)
+  );
+}
+```
+
+**Automated Cleanup Function:**
+
+- **Schedule**: Runs every 1 minute via Cloud Scheduler
+- **Cutoff**: Removes indicators older than 10 seconds
+- **Batch Operations**: Efficient batch deletion for multiple documents
+- **Logging**: Console logs for monitoring cleanup operations
+- **Error Handling**: Graceful error handling with try-catch
+
+**Implementation:**
+
+```typescript
+export const cleanupTypingIndicators = functions.pubsub
+  .schedule('every 1 minutes')
+  .onRun(async context => {
+    const cutoff = admin.firestore.Timestamp.fromMillis(
+      Date.now() - 10000  // 10 seconds ago
+    );
+    
+    const oldIndicators = await admin.firestore()
+      .collection('typing_indicators')
+      .where('timestamp', '<', cutoff)
+      .get();
+    
+    const batch = admin.firestore().batch();
+    oldIndicators.docs.forEach(doc => batch.delete(doc.ref));
+    
+    await batch.commit();
+    console.log(`Cleaned up ${oldIndicators.size} old typing indicators`);
+  });
+```
+
+**Files Modified:**
+
+- `firestore.rules`: Enhanced typing_indicators security rules
+- `functions/src/index.ts`: Added cleanupTypingIndicators scheduled function
+
+**Benefits:**
+
+- **Security**: Prevents users from impersonating others' typing status
+- **Data Hygiene**: Automatically removes stale typing indicators
+- **Performance**: Keeps typing_indicators collection small and efficient
+- **Cost Optimization**: Reduces Firestore storage and read costs
+- **Reliability**: Scheduled cleanup ensures consistent data quality
+- **Monitoring**: Console logs provide visibility into cleanup operations
+
 ### Memory Leak Prevention & Performance ✅
 
 Fixed critical memory leaks in chat animations and improved performance:
