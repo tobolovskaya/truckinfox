@@ -937,11 +937,11 @@ const styles = StyleSheet.create({
     marginVertical: 2,
   },
   routeIcon: {
-    fontSize.sm
+    fontSize: fontSize.sm,
     marginRight: 8,
   },
   routeLocation: {
-    fontSize.sm
+    fontSize: fontSize.sm,
     color: '#616161',
     fontWeight: '500',
     flex: 1,
