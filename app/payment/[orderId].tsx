@@ -13,14 +13,13 @@ import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTranslation } from 'react-i18next';
-import { db, firebaseProjectId, firebaseApiKey } from '../../lib/firebase';
+import { db } from '../../lib/firebase';
 import { trackPaymentInitiated, trackPaymentCompleted } from '../../utils/analytics';
 import { fetchWithRetry } from '../../utils/fetchWithTimeout';
 import {
   doc,
   getDoc,
   collection,
-  addDoc,
   serverTimestamp,
   query,
   where,
@@ -61,6 +60,31 @@ interface Order {
   };
 }
 
+type EscrowPayment = {
+  id: string;
+  status?: string;
+  vipps_url?: string;
+  vipps_order_id?: string;
+};
+
+type EscrowPaymentRecord = {
+  id: string;
+  order_id: string;
+  customer_id: string;
+  carrier_id: string;
+  total_amount: number;
+  platform_fee: number;
+  carrier_amount: number;
+  status: string;
+  idempotency_key: string;
+  created_at: ReturnType<typeof serverTimestamp>;
+  request_id?: string;
+  bid_id?: string;
+};
+
+const firebaseProjectId = process.env.EXPO_PUBLIC_FIREBASE_PROJECT_ID || '';
+const firebaseApiKey = process.env.EXPO_PUBLIC_FIREBASE_API_KEY || '';
+
 export default function PaymentScreen() {
   const { orderId } = useLocalSearchParams();
   const { user } = useAuth();
@@ -90,14 +114,17 @@ export default function PaymentScreen() {
         throw new Error('Order not found');
       }
 
-      const orderData = { id: orderSnap.id, ...orderSnap.data() } as any;
+      const orderData: Order = {
+        id: orderSnap.id,
+        ...(orderSnap.data() as Omit<Order, 'id'>),
+      };
 
       // Fetch cargo request
       if (orderData.request_id) {
         const requestRef = doc(db, 'cargo_requests', orderData.request_id);
         const requestSnap = await getDoc(requestRef);
         if (requestSnap.exists()) {
-          orderData.cargo_requests = requestSnap.data();
+          orderData.cargo_requests = requestSnap.data() as Order['cargo_requests'];
         }
       }
 
@@ -106,7 +133,7 @@ export default function PaymentScreen() {
         const carrierRef = doc(db, 'users', orderData.carrier_id);
         const carrierSnap = await getDoc(carrierRef);
         if (carrierSnap.exists()) {
-          orderData.carrier = carrierSnap.data();
+          orderData.carrier = carrierSnap.data() as Order['carrier'];
         }
       }
 
@@ -139,7 +166,7 @@ export default function PaymentScreen() {
       const existingPaymentSnap = await getDocs(existingPaymentQuery);
 
       if (!existingPaymentSnap.empty) {
-        const existingPayment = existingPaymentSnap.docs[0].data();
+        const existingPayment = existingPaymentSnap.docs[0].data() as EscrowPayment;
         const existingPaymentId = existingPaymentSnap.docs[0].id;
 
         // If payment is already initiated with a Vipps URL, offer to continue
@@ -198,7 +225,7 @@ export default function PaymentScreen() {
 
       // Create escrow payment record with idempotency key
       const escrowRef = doc(collection(db, 'escrow_payments'));
-      const escrowData: any = {
+      const escrowData: EscrowPaymentRecord = {
         id: escrowRef.id,
         order_id: order.id,
         customer_id: user?.uid,
@@ -220,7 +247,7 @@ export default function PaymentScreen() {
       }
 
       await setDoc(escrowRef, escrowData);
-      const escrowPayment = { id: escrowRef.id, ...escrowData };
+      const escrowPayment = escrowData;
 
       // Track payment initiated
       trackPaymentInitiated({
@@ -281,9 +308,10 @@ export default function PaymentScreen() {
           },
         ]);
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Vipps payment error:', error);
-      Alert.alert(t('error'), error.message);
+      const message = error instanceof Error ? error.message : t('error');
+      Alert.alert(t('error'), message);
     } finally {
       setProcessing(false);
     }

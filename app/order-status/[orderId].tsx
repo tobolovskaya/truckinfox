@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, type ComponentProps } from 'react';
 import {
   View,
   Text,
@@ -8,6 +8,7 @@ import {
   Alert,
   ActivityIndicator,
   Image,
+  ImageStyle,
   Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -69,11 +70,7 @@ interface Order {
     full_name: string;
     phone: string;
   };
-  escrow_payments?: {
-    id: string;
-    status: string;
-    vipps_order_id: string;
-  }[];
+  escrow_payments?: EscrowPayment[];
   delivery_photos?: string[];
   delivery_signature?: string;
   delivery_time?: Timestamp | Date | { seconds: number } | null;
@@ -85,7 +82,7 @@ type EscrowPayment = {
   vipps_order_id?: string;
 };
 
-type IoniconName = keyof typeof Ionicons.glyphMap;
+type IoniconName = ComponentProps<typeof Ionicons>['name'];
 
 export default function OrderStatusScreen() {
   const { orderId } = useLocalSearchParams();
@@ -218,7 +215,7 @@ export default function OrderStatusScreen() {
         const requestRef = doc(db, 'cargo_requests', orderData.request_id);
         const requestSnap = await getDoc(requestRef);
         if (requestSnap.exists()) {
-          orderData.cargo_requests = requestSnap.data();
+          orderData.cargo_requests = requestSnap.data() as Order['cargo_requests'];
         }
       }
 
@@ -227,7 +224,7 @@ export default function OrderStatusScreen() {
         const customerRef = doc(db, 'users', orderData.customer_id);
         const customerSnap = await getDoc(customerRef);
         if (customerSnap.exists()) {
-          orderData.customer = customerSnap.data();
+          orderData.customer = customerSnap.data() as Order['customer'];
         }
       }
 
@@ -236,7 +233,7 @@ export default function OrderStatusScreen() {
         const carrierRef = doc(db, 'users', orderData.carrier_id);
         const carrierSnap = await getDoc(carrierRef);
         if (carrierSnap.exists()) {
-          orderData.carrier = carrierSnap.data();
+          orderData.carrier = carrierSnap.data() as Order['carrier'];
         }
       }
 
@@ -272,7 +269,7 @@ export default function OrderStatusScreen() {
       }
 
       const result = await ImagePicker.launchCameraAsync({
-        mediaTypes: [ImagePicker.MediaTypeOptions.Images],
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
         allowsEditing: true,
         aspect: [4, 3],
         quality: 0.8,
@@ -297,7 +294,7 @@ export default function OrderStatusScreen() {
       }
 
       const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: [ImagePicker.MediaTypeOptions.Images],
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
         allowsEditing: true,
         aspect: [4, 3],
         quality: 0.8,
@@ -529,6 +526,8 @@ export default function OrderStatusScreen() {
       </SafeAreaView>
     );
   }
+
+  const deliveryTime = getDeliveryTime(order.delivery_time);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -831,12 +830,11 @@ export default function OrderStatusScreen() {
               />
             </View>
 
-            {getDeliveryTime(order.delivery_time) && (
+            {deliveryTime && (
               <View style={styles.deliveryTimeInfo}>
                 <Ionicons name="time-outline" size={16} color={theme.iconColors.gray.primary} />
                 <Text style={styles.deliveryTimeText}>
-                  {t('deliveredAt')}:{' '}
-                  {getDeliveryTime(order.delivery_time)?.toLocaleString()}
+                  {t('deliveredAt')}: {deliveryTime.toLocaleString()}
                 </Text>
               </View>
             )}

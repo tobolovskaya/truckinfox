@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, type ComponentProps } from 'react';
 import {
   View,
   Text,
@@ -82,7 +82,17 @@ export default function SecurityScreen() {
     ]);
   };
 
-  const securityOptions = [
+  type IoniconName = ComponentProps<typeof Ionicons>['name'];
+  type SecurityOption = {
+    id: string;
+    icon: IoniconName;
+    title: string;
+    subtitle: string;
+    iconColor: string;
+    onPress: () => void;
+  };
+
+  const securityOptions: SecurityOption[] = [
     {
       id: 'change-password',
       icon: 'key-outline',
@@ -118,13 +128,13 @@ export default function SecurityScreen() {
     },
   ];
 
-  const signOutOptions = [
+  const signOutOptions: SecurityOption[] = [
     {
       id: 'sign-out',
       icon: 'log-out-outline',
       title: t('signOut'),
       subtitle: t('signOutThisDeviceSubtitle'),
-      iconColor: colors.warning,
+      iconColor: colors.status.warning,
       onPress: handleSignOut,
     },
     {
@@ -186,7 +196,7 @@ export default function SecurityScreen() {
                 accessibilityLabel={option.title}
               >
                 <View style={[styles.iconCircle, { backgroundColor: `${option.iconColor}15` }]}>
-                  <Ionicons name={option.icon as any} size={24} color={option.iconColor} />
+                  <Ionicons name={option.icon} size={24} color={option.iconColor} />
                 </View>
                 <View style={styles.optionContent}>
                   <Text style={styles.optionTitle}>{option.title}</Text>
@@ -215,7 +225,7 @@ export default function SecurityScreen() {
                 accessibilityLabel={option.title}
               >
                 <View style={[styles.iconCircle, { backgroundColor: `${option.iconColor}15` }]}>
-                  <Ionicons name={option.icon as any} size={24} color={option.iconColor} />
+                  <Ionicons name={option.icon} size={24} color={option.iconColor} />
                 </View>
                 <View style={styles.optionContent}>
                   <Text style={styles.optionTitle}>{option.title}</Text>
@@ -233,7 +243,7 @@ export default function SecurityScreen() {
 
         {/* Warning Card */}
         <View style={styles.warningCard}>
-          <Ionicons name="information-circle" size={20} color={colors.warning} />
+          <Ionicons name="information-circle" size={20} color={colors.status.warning} />
           <Text style={styles.warningText}>{t('securityWarning')}</Text>
         </View>
       </ScrollView>
@@ -360,12 +370,12 @@ const styles = StyleSheet.create({
   warningCard: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    backgroundColor: `${colors.warning}10`,
+    backgroundColor: `${colors.status.warning}10`,
     padding: spacing.md,
     marginHorizontal: spacing.lg,
     borderRadius: borderRadius.md,
     borderLeftWidth: 3,
-    borderLeftColor: colors.warning,
+    borderLeftColor: colors.status.warning,
   },
   warningText: {
     flex: 1,
