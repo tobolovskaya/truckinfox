@@ -7,7 +7,7 @@ admin.initializeApp();
 // Send notification when a new bid is placed
 export const onNewBid = functions.firestore
   .document('bids/{bidId}')
-  .onCreate(async (snap, context) => {
+  .onCreate(async (snap, _context) => {
     const bid = snap.data();
     const requestRef = admin.firestore().doc(`cargoRequests/${bid.requestId}`);
     const request = await requestRef.get();
@@ -302,7 +302,7 @@ export const scheduledNotifications = functions.pubsub
  */
 export const cleanupTypingIndicators = functions.pubsub
   .schedule('every 1 minutes')
-  .onRun(async context => {
+  .onRun(async _context => {
     try {
       // Calculate cutoff timestamp (10 seconds ago)
       const cutoff = admin.firestore.Timestamp.fromMillis(Date.now() - 10000); // 10 seconds ago
