@@ -23,7 +23,7 @@ import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { triggerHapticFeedback } from '../../utils/haptics';
 import DateTimePicker from '@react-native-community/datetimepicker';
-import { GooglePlacesAutocomplete } from 'react-native-google-places-autocomplete';
+import { GooglePlacesAutocomplete } from '../../lib/GooglePlacesAutocomplete';
 import { calculateDistance } from '../../utils/googlePlaces';
 import { theme } from '../../theme/theme';
 import {
