@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { colors, spacing, fontSize, fontWeight, borderRadius } from '../lib/sharedStyles';
+import { colors, spacing, fontSize, fontWeight, borderRadius } from '../../lib/sharedStyles';
 
 export default function EditProfileScreen() {
   return (
