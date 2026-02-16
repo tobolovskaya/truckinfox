@@ -1,7 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   Modal,
   StyleSheet,
   Text,
@@ -89,7 +88,7 @@ interface CargoRequest {
   status: string;
   user_id: string;
   images?: string[];
-  bids: any[];
+  bids: unknown[];
 }
 
 export default function EditRequestScreen() {
@@ -100,7 +99,6 @@ export default function EditRequestScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
 
-  const [request, setRequest] = useState<CargoRequest | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [showPickupDate, setShowPickupDate] = useState(false);
@@ -110,9 +108,6 @@ export default function EditRequestScreen() {
   const [showSuccessAnimation, setShowSuccessAnimation] = useState(false);
   const [touchedFields, setTouchedFields] = useState<Record<string, boolean>>({});
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
-  const [_distanceInfo, setDistanceInfo] = useState<{ distance: string; duration: string } | null>(
-    null
-  );
   const [images, setImages] = useState<string[]>([]);
   const [originalImages, setOriginalImages] = useState<string[]>([]);
 
@@ -147,7 +142,6 @@ export default function EditRequestScreen() {
 
   const clearDistanceIfNeeded = (field: string) => {
     if (field === 'from_address' || field === 'to_address') {
-      setDistanceInfo(null);
       setFormData(prev => ({ ...prev, distance_km: null }));
     }
   };
@@ -346,8 +340,6 @@ export default function EditRequestScreen() {
         return;
       }
 
-      setRequest(data);
-
       // Parse dimensions if available
       let length = '',
         width = '',
@@ -435,7 +427,7 @@ export default function EditRequestScreen() {
 
         try {
           triggerHapticFeedback.light();
-        } catch (_error) {
+        } catch {
           // Haptic feedback not available
         }
       }
@@ -449,7 +441,7 @@ export default function EditRequestScreen() {
     setImages(images.filter((_, i) => i !== index));
     try {
       triggerHapticFeedback.light();
-    } catch (_error) {
+    } catch {
       // Haptic feedback not available
     }
   };
@@ -526,7 +518,7 @@ export default function EditRequestScreen() {
 
       const requestRef = doc(db, 'cargo_requests', id as string);
 
-      const updateData: any = {
+      const updateData: Record<string, unknown> = {
         title: sanitizeInput(formData.title.trim(), 200),
         description: sanitizeInput(formData.description.trim(), 2000),
         cargo_type: formData.cargo_type,
@@ -570,9 +562,10 @@ export default function EditRequestScreen() {
       setTimeout(() => {
         router.back();
       }, 500);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error updating request:', error);
-      toast.error(error.message || t('error'));
+      const message = error instanceof Error ? error.message : t('error');
+      toast.error(message);
       triggerHapticFeedback.error();
     } finally {
       setSaving(false);
@@ -601,10 +594,6 @@ export default function EditRequestScreen() {
             lng: formData.to_lng,
           });
           if (distance) {
-            setDistanceInfo({
-              distance: distance.distance.text,
-              duration: distance.duration.text,
-            });
             const distanceKm = distance.distance.value / 1000;
             updateFormData('distance_km', distanceKm);
           }
@@ -637,10 +626,6 @@ export default function EditRequestScreen() {
             coordinates
           );
           if (distance) {
-            setDistanceInfo({
-              distance: distance.distance.text,
-              duration: distance.duration.text,
-            });
             const distanceKm = distance.distance.value / 1000;
             updateFormData('distance_km', distanceKm);
           }
@@ -1379,4 +1364,3 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
 });
-
