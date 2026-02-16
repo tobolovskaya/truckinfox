@@ -37,31 +37,31 @@ export default function ProfileScreen() {
     {
       id: 'edit',
       icon: 'person-outline',
-      label: 'Edit Profile',
+      label: t('editProfile'),
       onPress: () => router.push('/profile/edit'),
     },
     {
       id: 'security',
       icon: 'shield-checkmark-outline',
-      label: 'Security',
+      label: t('security'),
       onPress: () => router.push('/profile/security'),
     },
     {
       id: 'payments',
       icon: 'wallet-outline',
-      label: 'Payment History',
+      label: t('paymentHistory'),
       onPress: () => router.push('/profile/payments'),
     },
     {
       id: 'settings',
       icon: 'settings-outline',
-      label: 'Settings',
+      label: t('settings'),
       onPress: () => {},
     },
     {
       id: 'help',
       icon: 'help-circle-outline',
-      label: 'Help & Support',
+      label: t('helpSupport'),
       onPress: () => {},
     },
   ];
@@ -70,7 +70,7 @@ export default function ProfileScreen() {
     <View style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Profile</Text>
+        <Text style={styles.headerTitle}>{t('profile')}</Text>
       </View>
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>

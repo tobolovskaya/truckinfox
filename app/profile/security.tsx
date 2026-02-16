@@ -15,7 +15,6 @@ import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, spacing, fontSize, fontWeight, borderRadius, shadows } from '../../lib/sharedStyles';
 import { useAuth } from '../../contexts/AuthContext';
-import { theme } from '../../theme/theme';
 
 export default function SecurityScreen() {
   const router = useRouter();
@@ -89,7 +88,7 @@ export default function SecurityScreen() {
       id: 'change-password',
       icon: 'key-outline',
       title: t('changePassword'),
-      subtitle: 'Update your password regularly for security',
+      subtitle: t('changePasswordSubtitle'),
       iconColor: colors.primary,
       onPress: () => {
         // TODO: Navigate to change password screen
@@ -100,7 +99,7 @@ export default function SecurityScreen() {
       id: 'two-factor',
       icon: 'shield-checkmark-outline',
       title: t('twoFactorAuth'),
-      subtitle: 'Add an extra layer of security',
+      subtitle: t('twoFactorSubtitle'),
       iconColor: colors.success,
       onPress: () => {
         // TODO: Navigate to 2FA setup
@@ -110,8 +109,8 @@ export default function SecurityScreen() {
     {
       id: 'active-sessions',
       icon: 'phone-portrait-outline',
-      title: 'Active Sessions',
-      subtitle: 'Manage devices with access to your account',
+      title: t('activeSessions'),
+      subtitle: t('activeSessionsSubtitle'),
       iconColor: colors.info,
       onPress: () => {
         // TODO: Navigate to active sessions
@@ -125,7 +124,7 @@ export default function SecurityScreen() {
       id: 'sign-out',
       icon: 'log-out-outline',
       title: t('signOut'),
-      subtitle: 'Sign out from this device',
+      subtitle: t('signOutThisDeviceSubtitle'),
       iconColor: colors.warning,
       onPress: handleSignOut,
     },
@@ -133,7 +132,7 @@ export default function SecurityScreen() {
       id: 'sign-out-all',
       icon: 'exit-outline',
       title: t('signOutAllDevices'),
-      subtitle: 'Sign out from all devices',
+      subtitle: t('signOutAllDevicesSubtitle'),
       iconColor: colors.error,
       onPress: handleSignOutAllDevices,
     },
