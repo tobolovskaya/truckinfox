@@ -28,7 +28,7 @@ import { useRouter } from 'expo-router';
 import { triggerHapticFeedback } from '../../utils/haptics';
 import { SuccessAnimation } from '../../components/SuccessAnimation';
 import DateTimePicker from '@react-native-community/datetimepicker';
-import { GooglePlacesAutocomplete } from 'react-native-google-places-sdk';
+import AddressInput from '../../components/AddressInput';
 import { calculateDistance } from '../../utils/googlePlaces';
 import { geohashForLocation } from 'geofire-common';
 import { fetchWithTimeout } from '../../utils/fetchWithTimeout';
@@ -100,8 +100,6 @@ export default function CreateRequestScreen() {
   const [showDeliveryDate, setShowDeliveryDate] = useState(false);
   const [showCargoTypeMenu, setShowCargoTypeMenu] = useState(false);
   const [showPriceTypeMenu, setShowPriceTypeMenu] = useState(false);
-  const fromAddressRef = useRef<any>(null);
-  const toAddressRef = useRef<any>(null);
   const fromAddressTextRef = useRef('');
   const toAddressTextRef = useRef('');
   // Load draft on mount
@@ -532,18 +530,17 @@ export default function CreateRequestScreen() {
     }
   };
 
-  const handleFromAddressSelect = async (data: any, details: any) => {
+  const handleFromAddressSelect = async (address: string, coordinates?: { lat: number; lng: number }) => {
     clearDistanceIfNeeded('from_address');
-    updateFormData('from_address', data.description);
+    updateFormData('from_address', address);
     setTouchedFields(prev => ({ ...prev, from_address: true }));
-    const error = validateField('from_address', data.description);
+    const error = validateField('from_address', address);
     setFieldErrors(prev => ({ ...prev, from_address: error }));
 
-    if (details?.geometry?.location) {
-      const coordinates = details.geometry.location;
+    if (coordinates) {
       updateFormData('from_lat', coordinates.lat);
       updateFormData('from_lng', coordinates.lng);
-      fromAddressTextRef.current = data.description;
+      fromAddressTextRef.current = address;
 
       if (formData.to_lat && formData.to_lng) {
         try {
@@ -566,18 +563,17 @@ export default function CreateRequestScreen() {
     }
   };
 
-  const handleToAddressSelect = async (data: any, details: any) => {
+  const handleToAddressSelect = async (address: string, coordinates?: { lat: number; lng: number }) => {
     clearDistanceIfNeeded('to_address');
-    updateFormData('to_address', data.description);
+    updateFormData('to_address', address);
     setTouchedFields(prev => ({ ...prev, to_address: true }));
-    const error = validateField('to_address', data.description);
+    const error = validateField('to_address', address);
     setFieldErrors(prev => ({ ...prev, to_address: error }));
 
-    if (details?.geometry?.location) {
-      const coordinates = details.geometry.location;
+    if (coordinates) {
       updateFormData('to_lat', coordinates.lat);
       updateFormData('to_lng', coordinates.lng);
-      toAddressTextRef.current = data.description;
+      toAddressTextRef.current = address;
 
       if (formData.from_lat && formData.from_lng) {
         try {
@@ -703,61 +699,41 @@ export default function CreateRequestScreen() {
             {/* From Address */}
             <View style={styles.fieldContainer}>
               <Text style={styles.fieldLabel}>Fra</Text>
-              <GooglePlacesAutocomplete
-                ref={fromAddressRef}
+              <AddressInput
                 placeholder="Søk etter adresse..."
-                onPress={handleFromAddressSelect}
-                query={{
-                  key: process.env.EXPO_PUBLIC_GOOGLE_PLACES_API_KEY,
-                  language: 'no',
-                  components: 'country:no',
-                }}
-                fetchDetails={true}
-                enablePoweredByContainer={false}
-                styles={{
-                  container: styles.placesContainer,
-                  textInput: styles.placesTextInput,
-                }}
-                textInputProps={{
-                  onChangeText: (text: string) => {
-                    fromAddressTextRef.current = text;
-                    if (text !== formData.from_address) {
-                      clearDistanceIfNeeded('from_address');
-                    }
-                  },
-                  onBlur: () => handleBlur('from_address'),
+                value={formData.from_address}
+                onAddressSelect={handleFromAddressSelect}
+                onChangeText={(text: string) => {
+                  fromAddressTextRef.current = text;
+                  updateFormData('from_address', text);
+                  if (text !== formData.from_address) {
+                    clearDistanceIfNeeded('from_address');
+                  }
                 }}
               />
+              {fieldErrors.from_address && touchedFields.from_address && (
+                <Text style={styles.errorText}>{fieldErrors.from_address}</Text>
+              )}
             </View>
 
             {/* To Address */}
             <View style={styles.fieldContainer}>
               <Text style={styles.fieldLabel}>Til</Text>
-              <GooglePlacesAutocomplete
-                ref={toAddressRef}
+              <AddressInput
                 placeholder="Søk etter adresse..."
-                onPress={handleToAddressSelect}
-                query={{
-                  key: process.env.EXPO_PUBLIC_GOOGLE_PLACES_API_KEY,
-                  language: 'no',
-                  components: 'country:no',
-                }}
-                fetchDetails={true}
-                enablePoweredByContainer={false}
-                styles={{
-                  container: styles.placesContainer,
-                  textInput: styles.placesTextInput,
-                }}
-                textInputProps={{
-                  onChangeText: (text: string) => {
-                    toAddressTextRef.current = text;
-                    if (text !== formData.to_address) {
-                      clearDistanceIfNeeded('to_address');
-                    }
-                  },
-                  onBlur: () => handleBlur('to_address'),
+                value={formData.to_address}
+                onAddressSelect={handleToAddressSelect}
+                onChangeText={(text: string) => {
+                  toAddressTextRef.current = text;
+                  updateFormData('to_address', text);
+                  if (text !== formData.to_address) {
+                    clearDistanceIfNeeded('to_address');
+                  }
                 }}
               />
+              {fieldErrors.to_address && touchedFields.to_address && (
+                <Text style={styles.errorText}>{fieldErrors.to_address}</Text>
+              )}
             </View>
 
             {/* Dates */}
@@ -1302,7 +1278,7 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: spacing.md,
     borderRadius: borderRadius.md,
-    backgroundcolor: colors.primary,
+    backgroundColor: colors.primary,
     alignItems: 'center',
   },
   publishButtonDisabled: {
@@ -1312,17 +1288,6 @@ const styles = StyleSheet.create({
     fontSize: fontSize.md,
     fontWeight: '600',
     color: '#FFFFFF',
-  },
-  placesContainer: {
-    borderWidth: 1,
-    borderColor: colors.border.default,
-    borderRadius: borderRadius.sm,
-    backgroundColor: colors.white,
-  },
-  placesTextInput: {
-    height: 48,
-    fontSize: fontSize.md,
-    color: '#1F2937',
   },
   errorText: {
     marginTop: spacing.xxxs,
