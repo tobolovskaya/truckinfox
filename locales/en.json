@@ -95,6 +95,7 @@
   "activeRequests": "Active Requests",
   "carriers": "Carriers",
   "completed": "Completed",
+  "assigned": "Assigned",
   "recentRequests": "Recent Requests",
   "seeAll": "See All",
   "loading": "Loading...",

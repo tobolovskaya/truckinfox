@@ -55,8 +55,13 @@ export default function HomeScreen() {
     []
   );
 
-  const completedCount = useMemo(
-    () => requests.filter(request => request.status === 'completed').length,
+  const activeCount = useMemo(
+    () => requests.filter(request => request.status === 'active').length,
+    [requests]
+  );
+
+  const assignedCount = useMemo(
+    () => requests.filter(request => request.status === 'assigned').length,
     [requests]
   );
 
@@ -101,13 +106,13 @@ export default function HomeScreen() {
             <View style={styles.statsGrid}>
               <View style={styles.statCard}>
                 <Ionicons name="document-text-outline" size={32} color={colors.primary} />
-                <Text style={styles.statValue}>{requests.length}</Text>
+                <Text style={styles.statValue}>{activeCount}</Text>
                 <Text style={styles.statLabel}>{t('activeRequests')}</Text>
               </View>
               <View style={styles.statCard}>
                 <Ionicons name="checkmark-circle-outline" size={32} color="#4CAF50" />
-                <Text style={styles.statValue}>{completedCount}</Text>
-                <Text style={styles.statLabel}>{t('completed')}</Text>
+                <Text style={styles.statValue}>{assignedCount}</Text>
+                <Text style={styles.statLabel}>{t('assigned')}</Text>
               </View>
             </View>
             <Text style={styles.sectionTitle}>{t('latestRequests')}</Text>
