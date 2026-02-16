@@ -9,37 +9,6 @@ export default function HomeScreen() {
   const router = useRouter();
   const { user } = useAuth();
 
-  const quickActions = [
-    {
-      id: 'create',
-      icon: 'add-circle-outline',
-      label: 'Create Request',
-      color: colors.primary,
-      onPress: () => router.push('/(tabs)/create'),
-    },
-    {
-      id: 'messages',
-      icon: 'chatbubbles-outline',
-      label: 'Messages',
-      color: '#4CAF50',
-      onPress: () => router.push('/(tabs)/messages'),
-    },
-    {
-      id: 'orders',
-      icon: 'list-outline',
-      label: 'My Orders',
-      color: '#2196F3',
-      onPress: () => router.push('/(tabs)/orders'),
-    },
-    {
-      id: 'profile',
-      icon: 'person-outline',
-      label: 'Profile',
-      color: '#9C27B0',
-      onPress: () => router.push('/(tabs)/profile'),
-    },
-  ];
-
   return (
     <View style={styles.container}>
       {/* Header */}
@@ -57,25 +26,6 @@ export default function HomeScreen() {
       </View>
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        {/* Quick Actions */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Quick Actions</Text>
-          <View style={styles.quickActionsGrid}>
-            {quickActions.map((action) => (
-              <TouchableOpacity
-                key={action.id}
-                style={styles.actionCard}
-                onPress={action.onPress}
-              >
-                <View style={[styles.actionIcon, { backgroundColor: `${action.color}15` }]}>
-                  <Ionicons name={action.icon as any} size={28} color={action.color} />
-                </View>
-                <Text style={styles.actionLabel}>{action.label}</Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-        </View>
-
         {/* Overview Stats */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Overview</Text>
@@ -152,30 +102,6 @@ const styles = StyleSheet.create({
     fontWeight: fontWeight.bold,
     color: colors.text.primary,
     marginBottom: spacing.md,
-  },
-  quickActionsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    marginHorizontal: -spacing.xs,
-  },
-  actionCard: {
-    width: '50%',
-    padding: spacing.xs,
-  },
-  actionIcon: {
-    width: 60,
-    height: 60,
-    borderRadius: borderRadius.lg,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: spacing.sm,
-    backgroundColor: colors.background,
-  },
-  actionLabel: {
-    fontSize: fontSize.sm,
-    color: colors.text.primary,
-    textAlign: 'center',
-    fontWeight: fontWeight.medium,
   },
   statsGrid: {
     flexDirection: 'row',
