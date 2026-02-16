@@ -7,6 +7,7 @@ import {
   TextInput,
   Modal,
   ActivityIndicator,
+  Alert,
 } from 'react-native';
 import { KeyboardAwareFlatList } from 'react-native-keyboard-aware-scroll-view';
 import { Ionicons } from '@expo/vector-icons';
@@ -22,7 +23,7 @@ import { db, storage } from '../../lib/firebase';
 import { trackCargoCreated } from '../../utils/analytics';
 import { sanitizeInput, sanitizeNumber } from '../../utils/sanitization';
 import { colors, spacing, fontSize, fontWeight, borderRadius } from '../../lib/sharedStyles';
-import { collection, addDoc, updateDoc, doc } from 'firebase/firestore';
+import { collection, addDoc, updateDoc, doc, getDocs, orderBy, query, where } from 'firebase/firestore';
 import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 import { useRouter } from 'expo-router';
 import { triggerHapticFeedback } from '../../utils/haptics';
@@ -408,6 +409,47 @@ export default function CreateRequestScreen() {
     return true;
   };
 
+  const checkForDuplicates = async (): Promise<boolean> => {
+    if (!user?.uid) {
+      return true;
+    }
+
+    const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+
+    const recentRequests = await getDocs(
+      query(
+        collection(db, 'cargo_requests'),
+        where('user_id', '==', user.uid),
+        where('created_at', '>', since),
+        orderBy('created_at', 'desc')
+      )
+    );
+
+    const similar = recentRequests.docs.find(docSnapshot => {
+      const data = docSnapshot.data();
+      return (
+        data.from_address === formData.from_address &&
+        data.to_address === formData.to_address &&
+        Math.abs((data.weight ?? 0) - Number(formData.weight)) < 10
+      );
+    });
+
+    if (!similar) {
+      return true;
+    }
+
+    return new Promise(resolve => {
+      Alert.alert(
+        'Duplikat?',
+        'Du har allerede en lignende forespørsel. Vil du fortsette?',
+        [
+          { text: 'Nei', style: 'cancel', onPress: () => resolve(false) },
+          { text: 'Ja', onPress: () => resolve(true) },
+        ]
+      );
+    });
+  };
+
   const compressImage = async (uri: string) => {
     try {
       const manipResult = await manipulateAsync(uri, [{ resize: { width: 1200 } }], {
@@ -536,6 +578,11 @@ export default function CreateRequestScreen() {
     }
     if (!validateForm()) {
       triggerHapticFeedback.error();
+      return;
+    }
+
+    const shouldContinue = await checkForDuplicates();
+    if (!shouldContinue) {
       return;
     }
 
