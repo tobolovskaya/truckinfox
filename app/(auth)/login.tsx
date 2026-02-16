@@ -207,6 +207,7 @@ export default function LoginScreen() {
               accessibilityRole="button"
               accessibilityLabel="Forgot password"
               accessibilityHint="Reset your password"
+              onPress={() => router.push('/(auth)/forgot-password')}
             >
               <Text style={styles.forgotPassword}>{t('forgotPassword')}</Text>
             </TouchableOpacity>
