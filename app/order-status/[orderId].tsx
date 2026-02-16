@@ -905,7 +905,7 @@ const styles = StyleSheet.create({
   statusSubtitle: {
     fontSize: fontSize.sm,
     color: colors.text.secondary,
-    spacing.xxxs
+    marginTop: spacing.xxxs,
   },
   sectionTitle: {
     fontSize: fontSize.lg,
@@ -968,7 +968,7 @@ const styles = StyleSheet.create({
   participantPhone: {
     fontSize: fontSize.sm,
     color: colors.text.secondary,
-    spacing.xxs
+    marginTop: spacing.xxs,
   },
   paymentRow: {
     flexDirection: 'row',
@@ -1051,7 +1051,7 @@ const styles = StyleSheet.create({
     marginRight: 4,
   },
   liveText: {
-    fontSize.xs
+    fontSize: fontSize.xs,
     fontWeight: fontWeight.semibold,
     color: '#2E7D32',
     textTransform: 'uppercase',
@@ -1101,8 +1101,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#F3F4F6',
   },
   photoErrorText: {
-    spacing.xxxs
-    fontSize.xs
+    marginTop: spacing.xxxs,
+    fontSize: fontSize.xs,
     color: theme.iconColors.gray.secondary,
     textAlign: 'center',
   },
@@ -1148,8 +1148,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#F3F4F6',
   },
   signatureErrorText: {
-    spacing.xs
-    fontSize.sm
+    marginTop: spacing.xs,
+    fontSize: fontSize.sm,
     color: theme.iconColors.gray.secondary,
     textAlign: 'center',
   },

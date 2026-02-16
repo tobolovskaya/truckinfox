@@ -11,7 +11,7 @@ import {
   Animated,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { colors, spacing, borderRadius } from '../lib/sharedStyles';
+import { colors, spacing, borderRadius, fontSize } from '../lib/sharedStyles';
 import { startTrace, PerformanceTraces } from '../utils/performance';
 
 interface LazyImageProps {

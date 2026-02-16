@@ -1811,7 +1811,7 @@ const styles = StyleSheet.create({
     fontSize: fontSize.xs + 1,
     color: colors.text.secondary,
     fontWeight: fontWeight.medium,
-    spacing.xxs
+    marginBottom: spacing.xxs,
   },
   dateValue: {
     fontSize: fontSize.lg,
@@ -2050,9 +2050,9 @@ const styles = StyleSheet.create({
     elevation: 6,
   },
   helper: {
-    fontSize.sm
+    fontSize: fontSize.sm,
     color: colors.text.secondary,
-    spacing.xxxs
+    marginTop: spacing.xxxs,
   },
   photoGrid: {
     flexDirection: 'row',
@@ -2096,15 +2096,15 @@ const styles = StyleSheet.create({
     backgroundColor: '#F9FAFB',
   },
   addPhotoTextGrid: {
-    fontSize.sm
+    fontSize: fontSize.sm,
     color: '#616161',
-    spacing.xs
+    marginTop: spacing.xs,
     fontWeight: '600',
   },
   maxPhotosText: {
-    fontSize.xs
+    fontSize: fontSize.xs,
     color: '#9CA3AF',
-    spacing.xxxs
+    marginTop: spacing.xxxs,
     fontWeight: '400',
   },
   loadingContainer: {

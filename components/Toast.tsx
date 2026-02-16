@@ -1,1 +1,1 @@
-import { colors, spacing, fontSize, fontWeight, borderRadius } from '/lib/sharedStyles';
+import { colors, spacing, fontSize, fontWeight, borderRadius } from '../lib/sharedStyles';
