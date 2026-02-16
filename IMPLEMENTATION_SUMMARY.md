@@ -826,6 +826,134 @@ Implemented WhatsApp-style read receipts for real-time messaging:
 - Better communication flow
 - Industry-standard UX (WhatsApp-style)
 
+### Real-Time Notifications System ✅
+
+Implemented comprehensive real-time notifications with Firestore listeners:
+
+**Real-Time Updates:**
+
+- **`useNotifications` Hook**: Full real-time listener using `onSnapshot`
+- **`subscribeToNotifications()`**: Real-time listener for all notifications (max 50)
+- **`subscribeToUnreadCount()`**: Separate real-time listener for unread count badge
+- **Auto-Sync**: Notifications update instantly when new ones arrive
+- **Efficient Queries**: Composite indexes for fast `user_id` + `created_at` and `user_id` + `read` queries
+
+**Notification Actions:**
+
+- **`markAsRead(notificationId)`**: Mark individual notification as read
+- **`markAllAsRead()`**: Batch update all unread notifications
+- **Navigation**: Tap notification to navigate to related content (cargo request, order, bid)
+- **Pull-to-Refresh**: Manual refresh with skeleton loader
+
+**Notification Types:**
+
+1. **New Bid**: When carrier submits bid on your cargo request
+2. **Bid Accepted**: When customer accepts your bid
+3. **Payment Success**: When payment completes
+4. **Order Status Change**: When order status updates (pickup, in transit, delivered)
+
+**Implementation Details:**
+
+- `hooks/useNotifications.ts`: Real-time hook with `onSnapshot` listeners
+- `utils/notifications.ts`: 7 utility functions for managing notifications
+- `app/(tabs)/notifications.tsx`: Full notifications screen with real-time updates
+- Firestore indexes: `user_id` + `created_at` (DESC) and `user_id` + `read` (ASC)
+- Fixed field name consistency: `user_id` (snake_case) throughout
+- Deployed with `firebase deploy --only firestore:indexes`
+
+**Files Modified:**
+
+- `hooks/useNotifications.ts`: Already implemented with real-time listeners
+- `utils/notifications.ts`: Already has `subscribeToNotifications()` and `subscribeToUnreadCount()`
+- `firestore.indexes.json`: Fixed field name from `userId` → `user_id` for consistency
+- Deployed updated indexes to Firebase
+
+**Benefits:**
+
+- Instant notification updates without polling
+- Efficient Firestore queries with composite indexes
+- Reduced read operations (real-time listeners)
+- Professional notification experience
+- Clear visual feedback for unread notifications
+- Battery-efficient with Firestore's optimized listeners
+
+### Memory Leak Prevention & Performance ✅
+
+Fixed critical memory leaks in chat animations and improved performance:
+
+**Animation Cleanup:**
+
+- **Automatic Cleanup**: Removes animations for deleted messages
+- **Max Limit**: Caps animations at 100 to prevent unbounded growth
+- **Chat Switch Cleanup**: Clears all animations when switching between chats
+- **Memory Efficient**: Only keeps animations for currently visible messages
+
+**Implementation Details:**
+
+- Added `MAX_ANIMATIONS = 100` constant to limit animation storage
+- Created cleanup logic that removes animations for messages no longer in the array
+- Implemented pruning to keep only the most recent 100 message animations
+- Clear all animations when chat changes (requestId or userId changes)
+- Prevents memory leaks during long chat sessions
+
+**Before (Memory Leak):**
+
+```typescript
+// ❌ Animations never deleted, grows unbounded
+useEffect(() => {
+  messages.forEach(message => {
+    if (!messageAnimations.current[message.id]) {
+      messageAnimations.current[message.id] = new Animated.Value(0);
+      animateMessage(message.id);
+    }
+  });
+}, [messages]);
+```
+
+**After (Fixed):**
+
+```typescript
+// ✅ Cleanup old animations, limit max size
+useEffect(() => {
+  const MAX_ANIMATIONS = 100;
+  const currentMessageIds = new Set(messages.map(m => m.id));
+  
+  // Remove animations for deleted messages
+  Object.keys(messageAnimations.current).forEach(id => {
+    if (!currentMessageIds.has(id)) {
+      delete messageAnimations.current[id];
+    }
+  });
+  
+  // Keep only last MAX_ANIMATIONS
+  const animationKeys = Object.keys(messageAnimations.current);
+  if (animationKeys.length > MAX_ANIMATIONS) {
+    const toDelete = animationKeys.slice(0, animationKeys.length - MAX_ANIMATIONS);
+    toDelete.forEach(key => delete messageAnimations.current[key]);
+  }
+  
+  // Animate new messages
+  messages.forEach(message => {
+    if (!messageAnimations.current[message.id]) {
+      messageAnimations.current[message.id] = new Animated.Value(0);
+      animateMessage(message.id);
+    }
+  });
+}, [messages]);
+```
+
+**Files Modified:**
+
+- `app/chat/[requestId]/[userId].tsx`: Added animation cleanup logic
+
+**Benefits:**
+
+- Prevents memory leaks during long chat sessions
+- Bounded memory usage (max 100 animations)
+- Improved app stability and performance
+- Faster chat switching with cleanup
+- No lingering references from old messages
+
 ### Navigation & Information Architecture ✅
 
 Optimized bottom navigation for better UX:

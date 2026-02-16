@@ -10,6 +10,7 @@ import {
 } from 'firebase/auth';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { auth, db } from '../lib/firebase';
+import { generateSearchTerms } from '../utils/search';
 
 // Strict TypeScript interfaces for auth data
 export interface SignUpData {
@@ -169,13 +170,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       });
 
       // Create user profile in Firestore
+      const fullName = userData.fullName.trim();
       await setDoc(doc(db, 'users', userCredential.user.uid), {
         email: userData.email.trim().toLowerCase(),
-        full_name: userData.fullName.trim(),
+        full_name: fullName,
         phone: userData.phone.trim(),
         user_type: userData.userType,
         company_name: userData.companyName?.trim() || null,
         org_number: userData.orgNumber?.trim() || null,
+        search_terms: generateSearchTerms(fullName),
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       });

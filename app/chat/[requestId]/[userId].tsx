@@ -165,6 +165,8 @@ export default function ChatScreen() {
       if (unsubscribe) {
         unsubscribe();
       }
+      // Clear all message animations when chat changes
+      messageAnimations.current = {};
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [requestId, userId]);
@@ -491,6 +493,25 @@ export default function ChatScreen() {
 
   useEffect(() => {
     console.log('Messages updated:', messages.length);
+    
+    const MAX_ANIMATIONS = 100; // Limit to prevent memory leaks
+    const currentMessageIds = new Set(messages.map(m => m.id));
+    
+    // Cleanup animations for deleted messages
+    Object.keys(messageAnimations.current).forEach(id => {
+      if (!currentMessageIds.has(id)) {
+        delete messageAnimations.current[id];
+      }
+    });
+    
+    // Keep only last MAX_ANIMATIONS
+    const animationKeys = Object.keys(messageAnimations.current);
+    if (animationKeys.length > MAX_ANIMATIONS) {
+      const toDelete = animationKeys.slice(0, animationKeys.length - MAX_ANIMATIONS);
+      toDelete.forEach(key => delete messageAnimations.current[key]);
+    }
+    
+    // Animate new messages
     messages.forEach(message => {
       if (!messageAnimations.current[message.id]) {
         messageAnimations.current[message.id] = new Animated.Value(0);

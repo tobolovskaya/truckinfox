@@ -194,10 +194,29 @@ function MessagesScreen() {
       .slice(0, 2);
   };
 
-  const filteredConversations = conversations.filter(
-    conv =>
-      conv.other_user.full_name.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
-      conv.last_message.content.toLowerCase().includes(debouncedSearchQuery.toLowerCase())
+  // Client-side filtering is optimal for conversations because:
+  // 1. Users typically have < 100 active conversations (fast to filter)
+  // 2. Data is already in memory from batch fetch
+  // 3. No database round-trips on every keystroke
+  // 4. Real-time updates work seamlessly
+  //
+  // For larger datasets (1000+ items), use server-side search with:
+  // - Firestore: search_terms array + array-contains query
+  // - Algolia: Full-text search with typo tolerance
+  const filteredConversations = conversations.filter(conv => {
+    if (!debouncedSearchQuery) return true;
+    
+    const query = debouncedSearchQuery.toLowerCase();
+    const userName = conv.other_user.full_name.toLowerCase();
+    const messageContent = conv.last_message.content.toLowerCase();
+    const cargoTitle = conv.cargo_request.title.toLowerCase();
+    
+    return (
+      userName.includes(query) ||
+      messageContent.includes(query) ||
+      cargoTitle.includes(query)
+    );
+  });
   );
 
   return (
