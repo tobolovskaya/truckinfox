@@ -25,7 +25,7 @@ export const getRedisClient = (): Redis => {
   try {
     // Prefer REST API for Expo/mobile apps
     if (redisRestUrl && redisRestToken) {
-      console.log('✅ Using Upstash Redis REST API');
+      console.log('âœ… Using Upstash Redis REST API');
       useRestApi = true;
       upstashRedis = new UpstashRedis({
         url: redisRestUrl,
@@ -54,17 +54,17 @@ export const getRedisClient = (): Redis => {
 
     if (redis) {
       redis.on('error', err => {
-        console.error('❌ Redis connection error:', err.message);
+        console.error('âŒ Redis connection error:', err.message);
       });
 
       redis.on('connect', () => {
-        console.log('✅ Redis connected successfully');
+        console.log('âœ… Redis connected successfully');
       });
     }
 
     return redis!;
   } catch (error) {
-    console.error('❌ Failed to initialize Redis client:', error);
+    console.error('âŒ Failed to initialize Redis client:', error);
     throw error;
   }
 };
@@ -74,7 +74,7 @@ export const getRedisClient = (): Redis => {
 // Cache with expiration (in seconds)
 export const cacheSet = async (
   key: string,
-  value: any,
+  value: unknown,
   expirationInSeconds: number = 3600
 ): Promise<void> => {
   const serializedValue = JSON.stringify(value);
@@ -89,7 +89,7 @@ export const cacheSet = async (
 };
 
 // Get cached value
-export const cacheGet = async <T = any>(key: string): Promise<T | null> => {
+export const cacheGet = async <T = unknown>(key: string): Promise<T | null> => {
   let value: string | null = null;
 
   if (useRestApi && upstashRedis) {

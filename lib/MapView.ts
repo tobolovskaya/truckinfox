@@ -19,7 +19,7 @@ export interface LatLng {
 export interface MapViewProps extends ViewProps {
   initialRegion?: Region;
   region?: Region;
-  onRegionChange?: (region: Region) => void;
+  onRegionChange?: (_region: Region) => void;
   showsUserLocation?: boolean;
   children?: React.ReactNode;
 }

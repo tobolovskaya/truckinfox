@@ -16,4 +16,4 @@ export type LatLng = {
   longitude: number;
 };
 
-export type MapViewProps = any;
+export type MapViewProps = Record<string, unknown>;
