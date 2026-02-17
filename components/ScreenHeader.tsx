@@ -1,12 +1,11 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Platform } from 'react-native';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { colors, spacing, fontSize, fontWeight, borderRadius, shadows } from '../lib/sharedStyles';
 import { TOUCH_TARGET } from '../constants/touchTargets';
 import * as Haptics from 'expo-haptics';
-import { useResponsive } from '../utils/responsive';
 
 interface ScreenHeaderProps {
   /** Header title text */
@@ -66,28 +65,6 @@ export function ScreenHeader({
 }: ScreenHeaderProps) {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { getResponsiveValue } = useResponsive();
-
-  const horizontalPadding = getResponsiveValue({
-    small: spacing.md,
-    medium: spacing.lg,
-    large: spacing.xl,
-  });
-  const verticalPadding = getResponsiveValue({
-    small: spacing.sm,
-    medium: spacing.md,
-    large: spacing.lg,
-  });
-  const titleSize = getResponsiveValue({
-    small: fontSize.lg,
-    medium: fontSize.xl,
-    large: fontSize.xxl,
-  });
-  const touchSize = getResponsiveValue({
-    small: TOUCH_TARGET.MIN,
-    medium: TOUCH_TARGET.MIN,
-    large: TOUCH_TARGET.MIN + 4,
-  });
 
   const handleBackPress = () => {
     if (Platform.OS === 'ios') {
@@ -116,21 +93,12 @@ export function ScreenHeader({
         showBorder && styles.containerWithBorder,
       ]}
     >
-      <View
-        style={[
-          styles.content,
-          {
-            paddingHorizontal: horizontalPadding,
-            paddingVertical: verticalPadding,
-            minHeight: touchSize + verticalPadding * 2,
-          },
-        ]}
-      >
+      <View style={[styles.content]}>
         {/* Left: Back Button */}
-        <View style={[styles.leftSection, { width: touchSize }]}>
+        <View style={styles.leftSection}>
           {showBackButton && (
             <TouchableOpacity
-              style={[styles.backButton, { width: touchSize, height: touchSize }]}
+              style={styles.backButton}
               onPress={handleBackPress}
               accessibilityRole="button"
               accessibilityLabel="Go back"
@@ -144,17 +112,17 @@ export function ScreenHeader({
         {/* Center: Title or Custom Content */}
         <View style={styles.centerSection}>
           {customCenter || (
-            <Text style={[styles.title, { fontSize: titleSize }]} numberOfLines={1}>
+            <Text style={styles.title} numberOfLines={1}>
               {title}
             </Text>
           )}
         </View>
 
         {/* Right: Action Buttons */}
-        <View style={[styles.rightSection, { minWidth: touchSize }]}>
+        <View style={styles.rightSection}>
           {secondaryRightAction && (
             <TouchableOpacity
-              style={[styles.actionButton, { width: touchSize, height: touchSize }]}
+              style={styles.actionButton}
               onPress={() => handleRightAction(secondaryRightAction.onPress)}
               accessibilityRole="button"
               accessibilityLabel={secondaryRightAction.label}
@@ -165,7 +133,7 @@ export function ScreenHeader({
 
           {rightAction && (
             <TouchableOpacity
-              style={[styles.actionButton, { width: touchSize, height: touchSize }]}
+              style={styles.actionButton}
               onPress={() => handleRightAction(rightAction.onPress)}
               accessibilityRole="button"
               accessibilityLabel={rightAction.label}
@@ -182,9 +150,7 @@ export function ScreenHeader({
           )}
 
           {/* Placeholder for alignment when no right actions */}
-          {!rightAction && !secondaryRightAction && (
-            <View style={[styles.placeholder, { width: touchSize }]} />
-          )}
+          {!rightAction && !secondaryRightAction && <View style={styles.placeholder} />}
         </View>
       </View>
     </View>

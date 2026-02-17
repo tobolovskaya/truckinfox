@@ -8,6 +8,7 @@ import {
   Modal,
   ActivityIndicator,
   Alert,
+  useWindowDimensions,
 } from 'react-native';
 import { KeyboardAwareFlatList } from 'react-native-keyboard-aware-scroll-view';
 import { Ionicons } from '@expo/vector-icons';
@@ -78,6 +79,8 @@ export default function CreateRequestScreen() {
   const toast = useToast();
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { width } = useWindowDimensions();
+  const isSmallScreen = width < 360;
   const { unreadCount } = useNotifications();
   const [formData, setFormData] = useState({
     title: '',
@@ -735,8 +738,14 @@ export default function CreateRequestScreen() {
   return (
     <View style={styles.container}>
       {/* Header */}
-      <View style={[styles.header, { paddingTop: insets.top + 16 }]}>
-        <Text style={styles.headerTitle}>
+      <View
+        style={[
+          styles.header,
+          isSmallScreen && styles.headerCompact,
+          { paddingTop: insets.top + (isSmallScreen ? 8 : 16) },
+        ]}
+      >
+        <Text style={[styles.headerTitle, isSmallScreen && styles.headerTitleCompact]}>
           {t('createCargoRequest') || 'Opprett lastforespørsel'}
         </Text>
         <TouchableOpacity
@@ -755,7 +764,7 @@ export default function CreateRequestScreen() {
       </View>
 
       <KeyboardAwareFlatList
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[styles.scrollContent, isSmallScreen && styles.scrollContentCompact]}
         keyboardShouldPersistTaps="handled"
         enableOnAndroid
         extraScrollHeight={100}
@@ -765,8 +774,11 @@ export default function CreateRequestScreen() {
         renderItem={() => (
           <View>
             {/* Title */}
-            <View style={styles.fieldContainer}>
-              <Text style={styles.fieldLabel} accessibilityRole="header">
+            <View style={[styles.fieldContainer, isSmallScreen && styles.fieldContainerCompact]}>
+              <Text
+                style={[styles.fieldLabel, isSmallScreen && styles.fieldLabelCompact]}
+                accessibilityRole="header"
+              >
                 Tittel
               </Text>
               <View style={styles.inputWrapper}>
@@ -774,7 +786,11 @@ export default function CreateRequestScreen() {
                   testID="cargo-title-input"
                   accessibilityLabel="Tittel på lastforespørsel"
                   accessibilityHint="Skriv inn en beskrivende tittel for lasten din"
-                  style={[styles.textInput, ...getInputValidationStyles('title', formData.title)]}
+                  style={[
+                    styles.textInput,
+                    isSmallScreen && styles.textInputCompact,
+                    ...getInputValidationStyles('title', formData.title),
+                  ]}
                   value={formData.title}
                   onChangeText={value => {
                     updateFormData('title', value);
@@ -791,8 +807,11 @@ export default function CreateRequestScreen() {
             </View>
 
             {/* Description */}
-            <View style={styles.fieldContainer}>
-              <Text style={styles.fieldLabel} accessibilityRole="header">
+            <View style={[styles.fieldContainer, isSmallScreen && styles.fieldContainerCompact]}>
+              <Text
+                style={[styles.fieldLabel, isSmallScreen && styles.fieldLabelCompact]}
+                accessibilityRole="header"
+              >
                 Beskrivelse
               </Text>
               <View style={styles.inputWrapper}>
@@ -802,7 +821,9 @@ export default function CreateRequestScreen() {
                   accessibilityHint="Skriv inn en detaljert beskrivelse av lasten"
                   style={[
                     styles.textInput,
+                    isSmallScreen && styles.textInputCompact,
                     styles.textArea,
+                    isSmallScreen && styles.textAreaCompact,
                     ...getInputValidationStyles('description', formData.description),
                   ]}
                   value={formData.description}
@@ -824,17 +845,23 @@ export default function CreateRequestScreen() {
             </View>
 
             {/* Cargo Type */}
-            <View style={styles.fieldContainer}>
-              <Text style={styles.fieldLabel}>Lasttype</Text>
+            <View style={[styles.fieldContainer, isSmallScreen && styles.fieldContainerCompact]}>
+              <Text style={[styles.fieldLabel, isSmallScreen && styles.fieldLabelCompact]}>
+                Lasttype
+              </Text>
               <TouchableOpacity
-                style={styles.dropdownButton}
+                style={[styles.dropdownButton, isSmallScreen && styles.dropdownButtonCompact]}
                 onPress={() => setShowCargoTypeMenu(true)}
                 accessibilityRole="button"
                 accessibilityLabel="Velg lasttype"
                 accessibilityHint="Åpner meny for å velge lasttype"
               >
                 <Text
-                  style={[styles.dropdownText, !formData.cargo_type && styles.dropdownPlaceholder]}
+                  style={[
+                    styles.dropdownText,
+                    isSmallScreen && styles.dropdownTextCompact,
+                    !formData.cargo_type && styles.dropdownPlaceholder,
+                  ]}
                 >
                   {formData.cargo_type
                     ? CARGO_TYPES.find(t => t.id === formData.cargo_type)?.label
@@ -846,7 +873,7 @@ export default function CreateRequestScreen() {
             </View>
 
             {/* From Address */}
-            <View style={styles.fieldContainer}>
+            <View style={[styles.fieldContainer, isSmallScreen && styles.fieldContainerCompact]}>
               <AddressAutocomplete
                 value={formData.from_address}
                 label="Fra adresse"
@@ -864,7 +891,7 @@ export default function CreateRequestScreen() {
             </View>
 
             {/* To Address */}
-            <View style={styles.fieldContainer}>
+            <View style={[styles.fieldContainer, isSmallScreen && styles.fieldContainerCompact]}>
               <AddressAutocomplete
                 value={formData.to_address}
                 label="Til adresse"
@@ -882,11 +909,19 @@ export default function CreateRequestScreen() {
             </View>
 
             {/* Dates */}
-            <View style={styles.dateRow}>
-              <View style={[styles.fieldContainer, { flex: 1, marginRight: 8 }]}>
-                <Text style={styles.fieldLabel}>Hentedato</Text>
+            <View style={[styles.dateRow, isSmallScreen && styles.dateRowCompact]}>
+              <View
+                style={[
+                  styles.fieldContainer,
+                  isSmallScreen && styles.fieldContainerCompact,
+                  { flex: 1, marginRight: isSmallScreen ? 0 : 8 },
+                ]}
+              >
+                <Text style={[styles.fieldLabel, isSmallScreen && styles.fieldLabelCompact]}>
+                  Hentedato
+                </Text>
                 <TouchableOpacity
-                  style={styles.dateInput}
+                  style={[styles.dateInput, isSmallScreen && styles.dateInputCompact]}
                   onPress={() => setShowPickupDate(true)}
                   accessibilityRole="button"
                   accessibilityLabel="Select pickup date"
@@ -894,7 +929,7 @@ export default function CreateRequestScreen() {
                   accessibilityValue={{ text: formData.pickup_date.toLocaleDateString('no-NO') }}
                 >
                   <TextInput
-                    style={styles.dateTextInput}
+                    style={[styles.dateTextInput, isSmallScreen && styles.dateTextInputCompact]}
                     value={formData.pickup_date.toLocaleDateString('no-NO')}
                     editable={false}
                     placeholder="dd.mm.åååå"
@@ -903,14 +938,22 @@ export default function CreateRequestScreen() {
                 </TouchableOpacity>
               </View>
 
-              <View style={[styles.fieldContainer, { flex: 1, marginLeft: 8 }]}>
-                <Text style={styles.fieldLabel}>Leveringsdato</Text>
+              <View
+                style={[
+                  styles.fieldContainer,
+                  isSmallScreen && styles.fieldContainerCompact,
+                  { flex: 1, marginLeft: isSmallScreen ? 0 : 8 },
+                ]}
+              >
+                <Text style={[styles.fieldLabel, isSmallScreen && styles.fieldLabelCompact]}>
+                  Leveringsdato
+                </Text>
                 <TouchableOpacity
-                  style={styles.dateInput}
+                  style={[styles.dateInput, isSmallScreen && styles.dateInputCompact]}
                   onPress={() => setShowDeliveryDate(true)}
                 >
                   <TextInput
-                    style={styles.dateTextInput}
+                    style={[styles.dateTextInput, isSmallScreen && styles.dateTextInputCompact]}
                     value={formData.delivery_date.toLocaleDateString('no-NO')}
                     editable={false}
                     placeholder="dd.mm.åååå"
@@ -921,13 +964,16 @@ export default function CreateRequestScreen() {
             </View>
 
             {/* Dimensions */}
-            <View style={styles.fieldContainer}>
-              <Text style={styles.fieldLabel}>Dimensjoner (L × B × H)</Text>
-              <View style={styles.dimensionRow}>
+            <View style={[styles.fieldContainer, isSmallScreen && styles.fieldContainerCompact]}>
+              <Text style={[styles.fieldLabel, isSmallScreen && styles.fieldLabelCompact]}>
+                Dimensjoner (L × B × H)
+              </Text>
+              <View style={[styles.dimensionRow, isSmallScreen && styles.dimensionRowCompact]}>
                 <View style={[styles.inputWrapper, styles.dimensionInput]}>
                   <TextInput
                     style={[
                       styles.textInput,
+                      isSmallScreen && styles.textInputCompact,
                       styles.dimensionInput,
                       ...getInputValidationStyles('length', formData.length),
                     ]}
@@ -947,6 +993,7 @@ export default function CreateRequestScreen() {
                   <TextInput
                     style={[
                       styles.textInput,
+                      isSmallScreen && styles.textInputCompact,
                       styles.dimensionInput,
                       ...getInputValidationStyles('width', formData.width),
                     ]}
@@ -966,6 +1013,7 @@ export default function CreateRequestScreen() {
                   <TextInput
                     style={[
                       styles.textInput,
+                      isSmallScreen && styles.textInputCompact,
                       styles.dimensionInput,
                       ...getInputValidationStyles('height', formData.height),
                     ]}
@@ -988,11 +1036,17 @@ export default function CreateRequestScreen() {
             </View>
 
             {/* Weight */}
-            <View style={styles.fieldContainer}>
-              <Text style={styles.fieldLabel}>Vekt (kg)</Text>
+            <View style={[styles.fieldContainer, isSmallScreen && styles.fieldContainerCompact]}>
+              <Text style={[styles.fieldLabel, isSmallScreen && styles.fieldLabelCompact]}>
+                Vekt (kg)
+              </Text>
               <View style={styles.inputWrapper}>
                 <TextInput
-                  style={[styles.textInput, ...getInputValidationStyles('weight', formData.weight)]}
+                  style={[
+                    styles.textInput,
+                    isSmallScreen && styles.textInputCompact,
+                    ...getInputValidationStyles('weight', formData.weight),
+                  ]}
                   value={formData.weight}
                   onChangeText={value => {
                     updateFormData('weight', value);
@@ -1008,29 +1062,40 @@ export default function CreateRequestScreen() {
             </View>
 
             {/* Images */}
-            <View style={styles.fieldContainer}>
-              <Text style={styles.fieldLabel}>Bilder (maks 5)</Text>
+            <View style={[styles.fieldContainer, isSmallScreen && styles.fieldContainerCompact]}>
+              <Text style={[styles.fieldLabel, isSmallScreen && styles.fieldLabelCompact]}>
+                Bilder (maks 5)
+              </Text>
               <TouchableOpacity
-                style={styles.imageUploadArea}
+                style={[styles.imageUploadArea, isSmallScreen && styles.imageUploadAreaCompact]}
                 onPress={pickImages}
                 accessibilityRole="button"
                 accessibilityLabel={`Add images, ${images.length} of 5 selected`}
                 accessibilityHint="Select photos of your cargo"
               >
                 <View style={styles.imageUploadContent}>
-                  <Ionicons name="image-outline" size={32} color="#9CA3AF" />
-                  <Text style={styles.imageUploadText}>Legg til bilder ({images.length}/5)</Text>
+                  <Ionicons name="image-outline" size={isSmallScreen ? 28 : 32} color="#9CA3AF" />
+                  <Text
+                    style={[styles.imageUploadText, isSmallScreen && styles.imageUploadTextCompact]}
+                  >
+                    Legg til bilder ({images.length}/5)
+                  </Text>
                 </View>
               </TouchableOpacity>
 
               {images.length > 0 && (
-                <View style={styles.imageGrid}>
+                <View style={[styles.imageGrid, isSmallScreen && styles.imageGridCompact]}>
                   {images.map((uri, index) => (
-                    <View key={index} style={styles.imageGridItem}>
+                    <View
+                      key={index}
+                      style={[styles.imageGridItem, isSmallScreen && styles.imageGridItemCompact]}
+                    >
                       <LazyImage
                         uri={uri}
                         style={styles.imagePreview}
-                        containerStyle={styles.imageGridItem}
+                        containerStyle={
+                          isSmallScreen ? styles.imageGridItemCompact : styles.imageGridItem
+                        }
                       />
                       <TouchableOpacity
                         style={styles.removeImageButton}
@@ -1039,7 +1104,11 @@ export default function CreateRequestScreen() {
                         accessibilityLabel={`Remove image ${index + 1}`}
                         accessibilityHint="Delete this photo"
                       >
-                        <Ionicons name="close-circle" size={24} color="#EF4444" />
+                        <Ionicons
+                          name="close-circle"
+                          size={isSmallScreen ? 20 : 24}
+                          color="#EF4444"
+                        />
                       </TouchableOpacity>
                     </View>
                   ))}
@@ -1063,17 +1132,23 @@ export default function CreateRequestScreen() {
             </View>
 
             {/* Price Type */}
-            <View style={styles.fieldContainer}>
-              <Text style={styles.fieldLabel}>Prismodell</Text>
+            <View style={[styles.fieldContainer, isSmallScreen && styles.fieldContainerCompact]}>
+              <Text style={[styles.fieldLabel, isSmallScreen && styles.fieldLabelCompact]}>
+                Prismodell
+              </Text>
               <TouchableOpacity
-                style={styles.dropdownButton}
+                style={[styles.dropdownButton, isSmallScreen && styles.dropdownButtonCompact]}
                 onPress={() => setShowPriceTypeMenu(true)}
                 accessibilityRole="button"
                 accessibilityLabel="Velg prismodell"
                 accessibilityHint="Åpner meny for å velge prismodell"
               >
                 <Text
-                  style={[styles.dropdownText, !formData.price_type && styles.dropdownPlaceholder]}
+                  style={[
+                    styles.dropdownText,
+                    isSmallScreen && styles.dropdownTextCompact,
+                    !formData.price_type && styles.dropdownPlaceholder,
+                  ]}
                 >
                   {formData.price_type
                     ? PRICE_TYPES.find(t => t.id === formData.price_type)?.label
@@ -1085,12 +1160,15 @@ export default function CreateRequestScreen() {
             </View>
 
             {/* Price - ALWAYS VISIBLE */}
-            <View style={styles.fieldContainer}>
-              <Text style={styles.fieldLabel}>Foreslått pris (NOK)</Text>
+            <View style={[styles.fieldContainer, isSmallScreen && styles.fieldContainerCompact]}>
+              <Text style={[styles.fieldLabel, isSmallScreen && styles.fieldLabelCompact]}>
+                Foreslått pris (NOK)
+              </Text>
               <View style={styles.inputWrapper}>
                 <TextInput
                   style={[
                     styles.textInputNeutral,
+                    isSmallScreen && styles.textInputCompact,
                     ...getInputValidationStyles('price', formData.price),
                     formData.price_type === 'negotiable' && styles.textInputDisabled,
                   ]}
@@ -1104,22 +1182,30 @@ export default function CreateRequestScreen() {
                 {formData.price_type === 'fixed' && renderValidIcon('price', formData.price)}
               </View>
               {formData.price_type === 'negotiable' && (
-                <Text style={styles.fieldHint}>Pris kan forhandles med transportør</Text>
+                <Text style={[styles.fieldHint, isSmallScreen && styles.fieldHintCompact]}>
+                  Pris kan forhandles med transportør
+                </Text>
               )}
               {renderFieldError('price', formData.price)}
             </View>
 
             {/* Bottom Action Buttons */}
-            <View style={styles.bottomActions}>
+            <View style={[styles.bottomActions, isSmallScreen && styles.bottomActionsCompact]}>
               <TouchableOpacity
-                style={styles.cancelButton}
+                style={[styles.cancelButton, isSmallScreen && styles.cancelButtonCompact]}
                 onPress={() => router.push('/(tabs)/home')}
               >
-                <Text style={styles.cancelButtonText}>Avbryt</Text>
+                <Text style={[styles.cancelButtonText, isSmallScreen && styles.buttonTextCompact]}>
+                  Avbryt
+                </Text>
               </TouchableOpacity>
 
               <TouchableOpacity
-                style={[styles.publishButton, loading && styles.publishButtonDisabled]}
+                style={[
+                  styles.publishButton,
+                  isSmallScreen && styles.publishButtonCompact,
+                  loading && styles.publishButtonDisabled,
+                ]}
                 onPress={handleSubmit}
                 disabled={loading}
                 accessibilityLabel={loading ? 'Publiserer lastforespørsel' : 'Publiser last'}
@@ -1128,7 +1214,11 @@ export default function CreateRequestScreen() {
                 {loading ? (
                   <ActivityIndicator color={colors.white} accessibilityLabel="Publiserer" />
                 ) : (
-                  <Text style={styles.publishButtonText}>Publiser last</Text>
+                  <Text
+                    style={[styles.publishButtonText, isSmallScreen && styles.buttonTextCompact]}
+                  >
+                    Publiser last
+                  </Text>
                 )}
               </TouchableOpacity>
             </View>
@@ -1313,10 +1403,17 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: colors.border.light,
   },
+  headerCompact: {
+    paddingHorizontal: spacing.lg,
+    paddingBottom: spacing.md,
+  },
   headerTitle: {
     fontSize: fontSize.xl,
     fontWeight: fontWeight.bold,
     color: colors.text.primary,
+  },
+  headerTitleCompact: {
+    fontSize: fontSize.lg,
   },
   notificationButton: {
     position: 'relative',
@@ -1342,14 +1439,23 @@ const styles = StyleSheet.create({
   scrollContent: {
     padding: spacing.lg,
   },
+  scrollContentCompact: {
+    padding: spacing.md,
+  },
   fieldContainer: {
     marginBottom: spacing.xxl,
+  },
+  fieldContainerCompact: {
+    marginBottom: spacing.xl,
   },
   fieldLabel: {
     fontSize: fontSize.md,
     fontWeight: '500',
     color: '#1F2937',
     marginBottom: spacing.xs,
+  },
+  fieldLabelCompact: {
+    fontSize: fontSize.sm,
   },
   textInput: {
     borderWidth: 2,
@@ -1359,6 +1465,10 @@ const styles = StyleSheet.create({
     fontSize: fontSize.md,
     backgroundColor: colors.white,
     color: '#1F2937',
+  },
+  textInputCompact: {
+    padding: spacing.sm,
+    fontSize: fontSize.sm,
   },
   inputWrapper: {
     position: 'relative',
@@ -1384,6 +1494,9 @@ const styles = StyleSheet.create({
     minHeight: 100,
     borderColor: colors.border.default,
   },
+  textAreaCompact: {
+    minHeight: 84,
+  },
   pickerContainer: {
     borderWidth: 1,
     borderColor: colors.border.default,
@@ -1398,6 +1511,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     marginBottom: spacing.xl,
   },
+  dateRowCompact: {
+    flexDirection: 'column',
+    gap: spacing.sm,
+  },
   dateInput: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1407,14 +1524,24 @@ const styles = StyleSheet.create({
     padding: spacing.sm,
     backgroundColor: colors.white,
   },
+  dateInputCompact: {
+    padding: spacing.xs,
+  },
   dateTextInput: {
     flex: 1,
     fontSize: fontSize.md,
     color: '#1F2937',
   },
+  dateTextInputCompact: {
+    fontSize: fontSize.sm,
+  },
   dimensionRow: {
     flexDirection: 'row',
     gap: 12,
+  },
+  dimensionRowCompact: {
+    flexDirection: 'column',
+    gap: spacing.sm,
   },
   dimensionInput: {
     flex: 1,
@@ -1429,6 +1556,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: colors.backgroundLight,
   },
+  imageUploadAreaCompact: {
+    padding: spacing.xl,
+  },
   imageUploadContent: {
     alignItems: 'center',
   },
@@ -1437,17 +1567,27 @@ const styles = StyleSheet.create({
     fontSize: fontSize.sm,
     color: '#6B7280',
   },
+  imageUploadTextCompact: {
+    fontSize: fontSize.xs,
+  },
   imageGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 12,
     marginTop: spacing.sm,
   },
+  imageGridCompact: {
+    gap: spacing.sm,
+  },
   imageGridItem: {
     width: 80,
     height: 80,
     borderRadius: borderRadius.sm,
     overflow: 'hidden',
+  },
+  imageGridItemCompact: {
+    width: 64,
+    height: 64,
   },
   uploadProgressContainer: {
     marginTop: spacing.md,
@@ -1508,12 +1648,19 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: colors.border.default,
   },
+  bottomActionsCompact: {
+    padding: spacing.sm,
+    gap: spacing.sm,
+  },
   cancelButton: {
     flex: 1,
     padding: spacing.md,
     borderRadius: borderRadius.md,
     backgroundColor: '#F3F4F6',
     alignItems: 'center',
+  },
+  cancelButtonCompact: {
+    padding: spacing.sm,
   },
   cancelButtonText: {
     fontSize: fontSize.md,
@@ -1527,6 +1674,9 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primary,
     alignItems: 'center',
   },
+  publishButtonCompact: {
+    padding: spacing.sm,
+  },
   publishButtonDisabled: {
     opacity: 0.6,
   },
@@ -1534,6 +1684,9 @@ const styles = StyleSheet.create({
     fontSize: fontSize.md,
     fontWeight: '600',
     color: '#FFFFFF',
+  },
+  buttonTextCompact: {
+    fontSize: fontSize.sm,
   },
   errorText: {
     fontSize: fontSize.sm,
@@ -1560,10 +1713,16 @@ const styles = StyleSheet.create({
     padding: spacing.sm,
     backgroundColor: colors.white,
   },
+  dropdownButtonCompact: {
+    padding: spacing.xs,
+  },
   dropdownText: {
     fontSize: fontSize.md,
     color: '#1F2937',
     flex: 1,
+  },
+  dropdownTextCompact: {
+    fontSize: fontSize.sm,
   },
   dropdownPlaceholder: {
     color: colors.text.tertiary,
@@ -1576,6 +1735,9 @@ const styles = StyleSheet.create({
     fontSize: fontSize.sm,
     color: '#6B7280',
     marginTop: spacing.xxxs,
+  },
+  fieldHintCompact: {
+    fontSize: fontSize.xs,
   },
   menuOverlay: {
     flex: 1,
