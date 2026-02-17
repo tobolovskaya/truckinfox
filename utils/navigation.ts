@@ -1,9 +1,9 @@
-import { Router } from 'expo-router';
+import { Href, Router } from 'expo-router';
 
 interface NavigationOptions {
   timeout?: number;
   maxRetries?: number;
-  fallbackRoute?: string;
+  fallbackRoute?: Href<string>;
 }
 
 /**
@@ -13,7 +13,7 @@ interface NavigationOptions {
 export class SafeNavigation {
   static async navigate(
     router: Router,
-    route: string,
+    route: Href<string>,
     method: 'push' | 'replace' = 'push',
     options: NavigationOptions = {}
   ): Promise<void> {
@@ -22,9 +22,9 @@ export class SafeNavigation {
     for (let attempt = 0; attempt < maxRetries; attempt++) {
       try {
         if (method === 'push') {
-          router.push(route as any);
+          router.push(route);
         } else {
-          router.replace(route as any);
+          router.replace(route);
         }
         return; // Success
       } catch (error) {
@@ -37,9 +37,9 @@ export class SafeNavigation {
           // Try fallback route as last resort
           try {
             if (method === 'push') {
-              router.push(fallbackRoute as any);
+              router.push(fallbackRoute);
             } else {
-              router.replace(fallbackRoute as any);
+              router.replace(fallbackRoute);
             }
           } catch (fallbackError) {
             console.error('Fallback navigation also failed:', fallbackError);
@@ -55,14 +55,22 @@ export class SafeNavigation {
   /**
    * Safe push navigation
    */
-  static async push(router: Router, route: string, options?: NavigationOptions): Promise<void> {
+  static async push(
+    router: Router,
+    route: Href<string>,
+    options?: NavigationOptions
+  ): Promise<void> {
     return this.navigate(router, route, 'push', options);
   }
 
   /**
    * Safe replace navigation
    */
-  static async replace(router: Router, route: string, options?: NavigationOptions): Promise<void> {
+  static async replace(
+    router: Router,
+    route: Href<string>,
+    options?: NavigationOptions
+  ): Promise<void> {
     return this.navigate(router, route, 'replace', options);
   }
 
@@ -84,10 +92,10 @@ export class SafeNavigation {
  * Hook-friendly navigation helpers
  */
 export const useNavigationHelpers = (router: Router) => {
-  const safePush = (route: string, options?: NavigationOptions) =>
+  const safePush = (route: Href<string>, options?: NavigationOptions) =>
     SafeNavigation.push(router, route, options);
 
-  const safeReplace = (route: string, options?: NavigationOptions) =>
+  const safeReplace = (route: Href<string>, options?: NavigationOptions) =>
     SafeNavigation.replace(router, route, options);
 
   const safeBack = () => SafeNavigation.back(router);

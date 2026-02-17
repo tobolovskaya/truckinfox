@@ -1,5 +1,7 @@
 import { db } from '../lib/firebase';
-import { collection, query, where, getDocs } from 'firebase/firestore';
+import { collection, query, where, getDocs, type DocumentData } from 'firebase/firestore';
+
+type IdempotencyDoc = { id: string } & DocumentData;
 
 /**
  * Idempotency utilities for preventing duplicate operations
@@ -29,7 +31,7 @@ export function generateIdempotencyKey(prefix: string, identifier: string): stri
 export async function checkIdempotency(
   collectionName: string,
   idempotencyKey: string
-): Promise<any | null> {
+): Promise<IdempotencyDoc | null> {
   try {
     const q = query(collection(db, collectionName), where('idempotency_key', '==', idempotencyKey));
 
@@ -58,7 +60,7 @@ export async function checkIdempotency(
 export async function checkExistingPayment(
   orderId: string,
   statuses: string[] = ['initiated', 'paid', 'completed']
-): Promise<any | null> {
+): Promise<IdempotencyDoc | null> {
   try {
     const q = query(
       collection(db, 'escrow_payments'),
@@ -200,18 +202,18 @@ export interface IdempotencyRecord {
   key: string;
   operation: string;
   timestamp: number;
-  result?: any;
+  result?: unknown;
   error?: string;
 }
 
 // In-memory cache for idempotency checks (optional optimization)
-const idempotencyCache = new Map<string, { timestamp: number; data: any }>();
+const idempotencyCache = new Map<string, { timestamp: number; data: unknown }>();
 const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
 /**
  * Get from cache if available and not expired
  */
-export function getCachedIdempotency(key: string): any | null {
+export function getCachedIdempotency<T = unknown>(key: string): T | null {
   const cached = idempotencyCache.get(key);
   if (!cached) return null;
 
@@ -220,13 +222,13 @@ export function getCachedIdempotency(key: string): any | null {
     return null;
   }
 
-  return cached.data;
+  return cached.data as T;
 }
 
 /**
  * Store in cache
  */
-export function setCachedIdempotency(key: string, data: any): void {
+export function setCachedIdempotency<T = unknown>(key: string, data: T): void {
   idempotencyCache.set(key, {
     timestamp: Date.now(),
     data,
