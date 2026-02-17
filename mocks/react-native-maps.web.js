@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 
-const MapView = ({ children, style, ...props }) => {
+const MapView = ({ children, style, ..._props }) => {
   return (
     <View style={[styles.mapPlaceholder, style]}>
       <Text style={styles.text}>Map view is only available on mobile devices</Text>
