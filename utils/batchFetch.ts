@@ -8,6 +8,8 @@
 import { collection, query, where, getDocs, DocumentData } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 
+type BatchFetchedDocument = DocumentData & { id: string };
+
 /**
  * Split array into chunks of specified size
  */
@@ -29,8 +31,10 @@ function chunkArray<T>(array: T[], size: number): T[][] {
  * const usersCache = await batchFetchUsers(['user1', 'user2', 'user3']);
  * const user = usersCache.get('user1');
  */
-export async function batchFetchUsers(userIds: string[]): Promise<Map<string, any>> {
-  const cache = new Map<string, any>();
+export async function batchFetchUsers(
+  userIds: string[]
+): Promise<Map<string, BatchFetchedDocument>> {
+  const cache = new Map<string, BatchFetchedDocument>();
 
   if (userIds.length === 0) {
     return cache;
@@ -68,8 +72,10 @@ export async function batchFetchUsers(userIds: string[]): Promise<Map<string, an
  * const requestsCache = await batchFetchRequests(['req1', 'req2']);
  * const request = requestsCache.get('req1');
  */
-export async function batchFetchRequests(requestIds: string[]): Promise<Map<string, any>> {
-  const cache = new Map<string, any>();
+export async function batchFetchRequests(
+  requestIds: string[]
+): Promise<Map<string, BatchFetchedDocument>> {
+  const cache = new Map<string, BatchFetchedDocument>();
 
   if (requestIds.length === 0) {
     return cache;
@@ -103,8 +109,10 @@ export async function batchFetchRequests(requestIds: string[]): Promise<Map<stri
  * @param orderIds - Array of order IDs to fetch
  * @returns Map of order ID to order data
  */
-export async function batchFetchOrders(orderIds: string[]): Promise<Map<string, any>> {
-  const cache = new Map<string, any>();
+export async function batchFetchOrders(
+  orderIds: string[]
+): Promise<Map<string, BatchFetchedDocument>> {
+  const cache = new Map<string, BatchFetchedDocument>();
 
   if (orderIds.length === 0) {
     return cache;
@@ -135,8 +143,8 @@ export async function batchFetchOrders(orderIds: string[]): Promise<Map<string, 
  * @param bidIds - Array of bid IDs to fetch
  * @returns Map of bid ID to bid data
  */
-export async function batchFetchBids(bidIds: string[]): Promise<Map<string, any>> {
-  const cache = new Map<string, any>();
+export async function batchFetchBids(bidIds: string[]): Promise<Map<string, BatchFetchedDocument>> {
+  const cache = new Map<string, BatchFetchedDocument>();
 
   if (bidIds.length === 0) {
     return cache;
@@ -171,8 +179,8 @@ export async function batchFetchBids(bidIds: string[]): Promise<Map<string, any>
 export async function batchFetchDocuments(
   collectionName: string,
   documentIds: string[]
-): Promise<Map<string, DocumentData>> {
-  const cache = new Map<string, DocumentData>();
+): Promise<Map<string, BatchFetchedDocument>> {
+  const cache = new Map<string, BatchFetchedDocument>();
 
   if (documentIds.length === 0) {
     return cache;

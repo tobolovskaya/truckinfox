@@ -241,7 +241,7 @@ export async function deleteOldNotifications(
  */
 export function getNotificationNavigation(notification: Notification): {
   screen: string;
-  params: Record<string, any>;
+  params: Record<string, unknown>;
 } {
   switch (notification.type) {
     case 'new_bid':

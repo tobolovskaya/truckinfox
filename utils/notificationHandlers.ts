@@ -1,12 +1,38 @@
 import { router } from 'expo-router';
 
+type NotificationData = {
+  type?: string;
+  request_id?: string;
+  order_id?: string;
+  conversation_id?: string;
+  sender_id?: string;
+  [key: string]: unknown;
+};
+
+type NotificationContent = {
+  data: NotificationData;
+  badge?: number;
+};
+
+type NotificationRequest = {
+  content: NotificationContent;
+};
+
+type NotificationPayload = {
+  request: NotificationRequest;
+};
+
+type NotificationResponse = {
+  notification: NotificationPayload;
+};
+
 /**
  * Handle notification tap navigation
  * Routes users to the appropriate screen based on notification type
  *
  * @param response - Notification response from Expo Notifications
  */
-export function handleNotificationTap(response: any): void {
+export function handleNotificationTap(response: NotificationResponse): void {
   try {
     const data = response.notification.request.content.data;
     const type = data.type;
@@ -85,7 +111,7 @@ export function handleNotificationTap(response: any): void {
  *
  * @param notification - Notification object from Expo Notifications
  */
-export function handleForegroundNotification(notification: any): void {
+export function handleForegroundNotification(notification: NotificationPayload): void {
   try {
     console.log('ðŸ“¬ Foreground notification:', notification.request.content);
 
