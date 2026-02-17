@@ -1,12 +1,14 @@
 import { logEvent as firebaseLogEvent } from 'firebase/analytics';
 import { analytics } from '../lib/firebase';
 
+type AnalyticsParams = Record<string, unknown>;
+
 /**
  * Log analytics event with automatic error handling
  * @param eventName - Name of the event to log
  * @param params - Event parameters
  */
-export const logEvent = (eventName: string, params?: Record<string, any>) => {
+export const logEvent = (eventName: string, params?: AnalyticsParams) => {
   try {
     // Only log if analytics is initialized (web platform)
     if (analytics) {
@@ -155,7 +157,7 @@ export const trackOrderStatusChanged = (params: {
   logEvent(AnalyticsEvents.ORDER_STATUS_CHANGED, params);
 };
 
-export const trackScreenView = (screenName: string, params?: Record<string, any>) => {
+export const trackScreenView = (screenName: string, params?: AnalyticsParams) => {
   logEvent(AnalyticsEvents.SCREEN_VIEW, {
     screen_name: screenName,
     ...params,
@@ -164,7 +166,7 @@ export const trackScreenView = (screenName: string, params?: Record<string, any>
 
 export const trackSearch = (params: {
   search_term?: string;
-  filters?: Record<string, any>;
+  filters?: AnalyticsParams;
   results_count?: number;
 }) => {
   logEvent(AnalyticsEvents.SEARCH_PERFORMED, params);
@@ -267,7 +269,7 @@ export const trackCargoCreated = async (params: {
   to_address: string;
   distance_km?: number;
 }) => {
-  const analyticsParams: Record<string, any> = {
+  const analyticsParams: AnalyticsParams = {
     cargo_type: params.cargo_type,
     pricing_model: params.pricing_model,
     from_city: extractCity(params.from_address),

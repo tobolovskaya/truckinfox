@@ -32,7 +32,10 @@
  */
 
 import { doc, setDoc, getDoc, serverTimestamp, updateDoc } from 'firebase/firestore';
+import type { FieldValue, Timestamp } from 'firebase/firestore';
 import { db } from '../lib/firebase';
+
+type ChatTimestamp = Timestamp | FieldValue | null;
 
 export interface Chat {
   id: string;
@@ -41,12 +44,12 @@ export interface Chat {
   customer_id: string;
   carrier_id: string;
   last_message: string;
-  last_message_time: any;
+  last_message_time: ChatTimestamp;
   unread_count: {
     [userId: string]: number;
   };
-  created_at: any;
-  updated_at?: any;
+  created_at: ChatTimestamp;
+  updated_at?: ChatTimestamp;
 }
 
 /**
