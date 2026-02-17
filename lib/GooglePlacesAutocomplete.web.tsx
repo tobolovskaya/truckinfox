@@ -1,15 +1,16 @@
 // Web platform: mock GooglePlacesAutocomplete
 import React from 'react';
 import { TextInput, View, StyleSheet, Text } from 'react-native';
+import type { GooglePlacesAutocompleteProps } from './GooglePlacesAutocomplete';
 
 // Mock GooglePlacesAutocomplete for web
 export const GooglePlacesAutocomplete = ({
   placeholder,
   onPress,
-  query,
+  query: _query,
   styles: customStyles,
-  ...props
-}: any) => {
+  textInputProps,
+}: GooglePlacesAutocompleteProps) => {
   const [value, setValue] = React.useState('');
 
   return (
@@ -21,13 +22,13 @@ export const GooglePlacesAutocomplete = ({
         onChangeText={setValue}
         onSubmitEditing={() => {
           if (onPress && value) {
-            onPress({
-              description: value,
-              geometry: { location: { lat: 59.9139, lng: 10.7522 } }, // Oslo default
-            });
+            onPress(
+              { description: value },
+              { geometry: { location: { lat: 59.9139, lng: 10.7522 } } } // Oslo default
+            );
           }
         }}
-        {...props}
+        {...textInputProps}
       />
       <Text style={localStyles.note}>
         Google Places Autocomplete is only available on mobile. Enter address manually.

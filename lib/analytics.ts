@@ -1,14 +1,23 @@
-import analytics from '@react-native-firebase/analytics';
+import { analytics } from './firebase';
+import { logEvent as firebaseLogEvent } from 'firebase/analytics';
+
+const logFirebaseEvent = (eventName: string, params?: Record<string, string | number>) => {
+  if (!analytics) {
+    return;
+  }
+
+  firebaseLogEvent(analytics, eventName, params);
+};
 
 export const logEvent = {
   cargoRequestCreated: (requestId: string) =>
-    analytics().logEvent('cargo_request_created', { request_id: requestId }),
+    logFirebaseEvent('cargo_request_created', { request_id: requestId }),
 
   bidSubmitted: (bidId: string, amount: number) =>
-    analytics().logEvent('bid_submitted', { bid_id: bidId, amount }),
+    logFirebaseEvent('bid_submitted', { bid_id: bidId, amount }),
 
   paymentCompleted: (orderId: string, amount: number) =>
-    analytics().logEvent('purchase', {
+    logFirebaseEvent('purchase', {
       transaction_id: orderId,
       value: amount,
       currency: 'NOK',

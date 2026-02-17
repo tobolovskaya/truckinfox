@@ -31,9 +31,9 @@ export interface GooglePlacesAutocompleteStyles {
   description?: StyleProp<TextStyle>;
 }
 
-export interface GooglePlacesAutocompleteProps extends ViewProps, TextInputProps {
+export interface GooglePlacesAutocompleteProps extends ViewProps {
   placeholder?: string;
-  onPress?: (data: GooglePlacesData, details?: GooglePlacesDetails | null) => void;
+  onPress?: (_data: GooglePlacesData, _details?: GooglePlacesDetails | null) => void;
   query?: Record<string, unknown>;
   styles?: GooglePlacesAutocompleteStyles;
   textInputProps?: TextInputProps;

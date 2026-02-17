@@ -1,9 +1,12 @@
 // Web platform: mock SuperCluster (not supported on web)
-import React from 'react';
-import { View } from 'react-native';
+import React, { type ReactNode } from 'react';
+import { View, type ViewProps } from 'react-native';
 
-// Mock SuperCluster that just renders its children for web
-const SuperCluster = ({ children, ...props }: any) => {
+type SuperClusterProps = ViewProps & {
+  children?: ReactNode;
+};
+
+const SuperCluster = ({ children, ...props }: SuperClusterProps) => {
   return <View {...props}>{children}</View>;
 };
 
