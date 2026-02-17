@@ -12,7 +12,7 @@ interface NotificationOptions {
 }
 
 interface NotificationBannerContextType {
-  showNotification: (options: NotificationOptions) => void;
+  showNotification: (_options: NotificationOptions) => void;
 }
 
 const NotificationBannerContext = createContext<NotificationBannerContextType | undefined>(

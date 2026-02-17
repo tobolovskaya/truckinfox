@@ -8,12 +8,10 @@ import {
   signOut as firebaseSignOut,
   onAuthStateChanged,
   updateProfile,
-  GoogleAuthProvider,
   signInWithCredential,
   OAuthProvider,
 } from 'firebase/auth';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
-import * as Google from 'expo-auth-session/providers/google';
 import * as AppleAuthentication from 'expo-apple-authentication';
 import * as WebBrowser from 'expo-web-browser';
 import { auth, db } from '../lib/firebase';
@@ -41,8 +39,8 @@ export interface AuthResult<T = void> {
 interface AuthContextType {
   user: User | null;
   loading: boolean;
-  signIn: (email: string, password: string) => Promise<AuthResult<User>>;
-  signUp: (userData: SignUpData) => Promise<AuthResult<User>>;
+  signIn: (_email: string, _password: string) => Promise<AuthResult<User>>;
+  signUp: (_userData: SignUpData) => Promise<AuthResult<User>>;
   signOut: () => Promise<AuthResult>;
   signOutAllDevices: () => Promise<AuthResult>;
   signInWithGoogle: () => Promise<AuthResult<User>>;
@@ -239,34 +237,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const signInWithGoogle = async (): Promise<AuthResult<User>> => {
-    try {
-      // Note: For production, you need to configure Google OAuth in Firebase Console
-      // and add your OAuth client IDs to environment variables
-      return {
-        success: false,
-        error:
-          'Google Sign In requires additional setup. Please configure OAuth client IDs in Firebase Console and add them to your environment variables (EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID, etc.)',
-      };
-
-      // TODO: Uncomment when OAuth is configured:
-      // const clientId = Platform.select({
-      //   ios: process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID,
-      //   android: process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID,
-      //   default: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID,
-      // });
-      //
-      // if (!clientId) {
-      //   return { success: false, error: 'Google OAuth not configured' };
-      // }
-      //
-      // ... Google OAuth flow implementation
-    } catch (error) {
-      console.error('Google Sign In error:', error);
-      return {
-        success: false,
-        error: getAuthErrorMessage(error),
-      };
-    }
+    // Note: For production, you need to configure Google OAuth in Firebase Console
+    // and add your OAuth client IDs to environment variables.
+    // TODO: Implement OAuth flow when client IDs are configured.
+    return {
+      success: false,
+      error:
+        'Google Sign In requires additional setup. Please configure OAuth client IDs in Firebase Console and add them to your environment variables (EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID, etc.)',
+    };
   };
 
   const signInWithApple = async (): Promise<AuthResult<User>> => {
@@ -335,11 +313,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         success: true,
         data: userCredential.user,
       };
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Apple Sign In error:', error);
 
       // Handle user cancellation gracefully
-      if (error.code === 'ERR_CANCELED') {
+      if (
+        typeof error === 'object' &&
+        error !== null &&
+        'code' in error &&
+        (error as { code?: string }).code === 'ERR_CANCELED'
+      ) {
         return {
           success: false,
           error: 'Apple Sign In was cancelled',

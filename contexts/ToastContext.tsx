@@ -9,11 +9,11 @@ interface ToastMessage {
 }
 
 interface ToastContextType {
-  show: (message: string, type?: ToastType, duration?: number) => void;
-  success: (message: string, duration?: number) => void;
-  error: (message: string, duration?: number) => void;
-  info: (message: string, duration?: number) => void;
-  warning: (message: string, duration?: number) => void;
+  show: (_message: string, _type?: ToastType, _duration?: number) => void;
+  success: (_message: string, _duration?: number) => void;
+  error: (_message: string, _duration?: number) => void;
+  info: (_message: string, _duration?: number) => void;
+  warning: (_message: string, _duration?: number) => void;
 }
 
 const ToastContext = createContext<ToastContextType | undefined>(undefined);
@@ -68,7 +68,7 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   return (
     <ToastContext.Provider value={{ show, success, error, info, warning }}>
       {children}
-      {toasts.map((toast, index) => (
+      {toasts.map(toast => (
         <Toast
           key={toast.id}
           visible={true}

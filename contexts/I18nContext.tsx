@@ -9,7 +9,7 @@ import {
 } from '../lib/i18n';
 
 interface I18nContextType {
-  changeLanguage: (language: string) => void;
+  changeLanguage: (_language: string) => void;
   currentLanguage: string;
 }
 
@@ -22,18 +22,13 @@ export function I18nProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const initializeI18n = async () => {
       try {
-        // Initialize i18n (with double-init protection)
         await initI18n();
-
-        // Load saved language preference
         const savedLanguage = await AsyncStorage.getItem('language');
 
         let languageToUse: SupportedLanguage;
         if (savedLanguage) {
-          // Use saved language if it's supported
           languageToUse = getSafeLanguage(savedLanguage);
         } else {
-          // Use device language
           languageToUse = getDeviceLanguage();
         }
 
@@ -41,7 +36,6 @@ export function I18nProvider({ children }: { children: React.ReactNode }) {
         setCurrentLanguage(languageToUse);
       } catch (error) {
         console.error('Error initializing i18n:', error);
-        // Fallback to English on error
         await i18n.changeLanguage('en');
         setCurrentLanguage('en');
       } finally {
@@ -54,25 +48,17 @@ export function I18nProvider({ children }: { children: React.ReactNode }) {
 
   const changeLanguage = async (language: string) => {
     try {
-      // Ensure language is supported
       const safeLanguage = getSafeLanguage(language);
-
-      // Save to storage
       await AsyncStorage.setItem('language', safeLanguage);
-
-      // Change i18n language
       await i18n.changeLanguage(safeLanguage);
-
-      // Update state
       setCurrentLanguage(safeLanguage);
     } catch (error) {
       console.error('Error changing language:', error);
     }
   };
 
-  // Don't render children until i18n is ready
   if (!isReady) {
-    return null; // Or a loading spinner
+    return null;
   }
 
   return (
