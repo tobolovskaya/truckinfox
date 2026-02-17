@@ -1,6 +1,12 @@
 import { useState, useEffect } from 'react';
 import * as Location from 'expo-location';
 
+const LOCATION_OPTIONS: Location.LocationOptions = {
+  accuracy: Location.Accuracy.Balanced,
+  distanceInterval: 50,
+  timeInterval: 10000,
+};
+
 export interface LocationCoords {
   latitude: number;
   longitude: number;
@@ -14,11 +20,6 @@ export const useLocation = () => {
   const [location, setLocation] = useState<LocationCoords | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-  const locationOptions = {
-    accuracy: Location.Accuracy.Balanced,
-    distanceInterval: 50,
-    timeInterval: 10000,
-  };
 
   useEffect(() => {
     (async () => {
@@ -30,10 +31,10 @@ export const useLocation = () => {
           return;
         }
 
-        const currentLocation = await Location.getCurrentPositionAsync(locationOptions);
+        const currentLocation = await Location.getCurrentPositionAsync(LOCATION_OPTIONS);
         setLocation(currentLocation.coords);
         setLoading(false);
-      } catch (err) {
+      } catch {
         setError('Error getting location');
         setLoading(false);
       }
@@ -43,10 +44,10 @@ export const useLocation = () => {
   const refreshLocation = async () => {
     try {
       setLoading(true);
-      const currentLocation = await Location.getCurrentPositionAsync(locationOptions);
+      const currentLocation = await Location.getCurrentPositionAsync(LOCATION_OPTIONS);
       setLocation(currentLocation.coords);
       setLoading(false);
-    } catch (err) {
+    } catch {
       setError('Error getting location');
       setLoading(false);
     }

@@ -21,7 +21,7 @@ export function useFavorites(userId?: string) {
     async (
       requestId: string,
       isFavorite: boolean,
-      onSuccess?: (newFavoriteStatus: boolean) => void
+      onSuccess?: (_newFavoriteStatus: boolean) => void
     ) => {
       try {
         if (!userId) {

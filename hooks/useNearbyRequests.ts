@@ -4,6 +4,8 @@ import { Alert, Linking, Platform } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { findNearbyCargoRequests } from '../utils/geoSearch';
 
+type NearbyRequest = Awaited<ReturnType<typeof findNearbyCargoRequests>>[number];
+
 export interface LocationPermissionStatus {
   granted: boolean;
   canAskAgain: boolean;
@@ -45,7 +47,7 @@ export interface UserLocation {
  */
 export function useNearbyRequests(radiusKm: number = 50, searchType: 'from' | 'to' = 'from') {
   const { t } = useTranslation();
-  const [requests, setRequests] = useState<any[]>([]);
+  const [requests, setRequests] = useState<NearbyRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [userLocation, setUserLocation] = useState<UserLocation | null>(null);
   const [permissionDenied, setPermissionDenied] = useState(false);
@@ -61,7 +63,7 @@ export function useNearbyRequests(radiusKm: number = 50, searchType: 'from' | 't
       const { status: existingStatus, canAskAgain } =
         await Location.getForegroundPermissionsAsync();
 
-      console.log('📍 Current location permission:', existingStatus);
+      console.log('ðŸ“ Current location permission:', existingStatus);
 
       // If already granted, proceed
       if (existingStatus === Location.PermissionStatus.GRANTED) {
@@ -75,7 +77,7 @@ export function useNearbyRequests(radiusKm: number = 50, searchType: 'from' | 't
 
       // If permission was denied and we can't ask again, show settings option
       if (!canAskAgain) {
-        console.log('⚠️  Cannot ask for permission again, showing settings option');
+        console.log('âš ï¸  Cannot ask for permission again, showing settings option');
         setPermissionDenied(true);
         setPermissionStatus({
           granted: false,
@@ -97,7 +99,7 @@ export function useNearbyRequests(radiusKm: number = 50, searchType: 'from' | 't
               text: t('cancel'),
               style: 'cancel',
               onPress: () => {
-                console.log('❌ User cancelled permission request');
+                console.log('âŒ User cancelled permission request');
                 setPermissionDenied(true);
                 setPermissionStatus({
                   granted: false,
@@ -115,7 +117,7 @@ export function useNearbyRequests(radiusKm: number = 50, searchType: 'from' | 't
                 const { status, canAskAgain: canAskAgainAfter } =
                   await Location.requestForegroundPermissionsAsync();
 
-                console.log('📍 Permission response:', status);
+                console.log('ðŸ“ Permission response:', status);
 
                 const granted = status === Location.PermissionStatus.GRANTED;
 
@@ -177,7 +179,7 @@ export function useNearbyRequests(radiusKm: number = 50, searchType: 'from' | 't
    */
   const getUserLocation = async (): Promise<UserLocation | null> => {
     try {
-      console.log('📍 Getting current location...');
+      console.log('ðŸ“ Getting current location...');
 
       const location = await Location.getCurrentPositionAsync({
         accuracy: Location.Accuracy.Balanced,
@@ -191,13 +193,14 @@ export function useNearbyRequests(radiusKm: number = 50, searchType: 'from' | 't
         accuracy: location.coords.accuracy,
       };
 
-      console.log('✅ Location obtained:', userLoc.latitude, userLoc.longitude);
+      console.log('âœ… Location obtained:', userLoc.latitude, userLoc.longitude);
       setUserLocation(userLoc);
 
       return userLoc;
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error getting location:', error);
-      setError(error.message || 'Failed to get location');
+      const message = error instanceof Error ? error.message : 'Failed to get location';
+      setError(message);
       return null;
     }
   };
@@ -207,7 +210,7 @@ export function useNearbyRequests(radiusKm: number = 50, searchType: 'from' | 't
    */
   const fetchNearbyRequests = async (location: UserLocation) => {
     try {
-      console.log(`🔍 Searching for cargo within ${radiusKm}km...`);
+      console.log(`ðŸ” Searching for cargo within ${radiusKm}km...`);
 
       const nearby = await findNearbyCargoRequests(
         location.latitude,
@@ -216,11 +219,12 @@ export function useNearbyRequests(radiusKm: number = 50, searchType: 'from' | 't
         searchType
       );
 
-      console.log(`✅ Found ${nearby.length} nearby cargo requests`);
+      console.log(`âœ… Found ${nearby.length} nearby cargo requests`);
       setRequests(nearby);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error fetching nearby requests:', error);
-      setError(error.message || 'Failed to fetch nearby requests');
+      const message = error instanceof Error ? error.message : 'Failed to fetch nearby requests';
+      setError(message);
     }
   };
 
@@ -252,9 +256,10 @@ export function useNearbyRequests(radiusKm: number = 50, searchType: 'from' | 't
 
       // 3. Fetch nearby requests
       await fetchNearbyRequests(location);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Initialization error:', error);
-      setError(error.message || 'An error occurred');
+      const message = error instanceof Error ? error.message : 'An error occurred';
+      setError(message);
     } finally {
       setLoading(false);
     }
@@ -281,9 +286,10 @@ export function useNearbyRequests(radiusKm: number = 50, searchType: 'from' | 't
 
     try {
       await fetchNearbyRequests(userLocation);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Refresh error:', error);
-      setError(error.message || 'Failed to refresh');
+      const message = error instanceof Error ? error.message : 'Failed to refresh';
+      setError(message);
     } finally {
       setLoading(false);
     }

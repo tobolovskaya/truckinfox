@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo } from 'react';
 import { Alert } from 'react-native';
-import { useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
+import { InfiniteData, useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
 import {
   collection,
   query,
@@ -39,10 +39,15 @@ export interface CargoRequest {
     rating: number;
     avatar_url?: string;
   };
-  bids: any[];
+  bids: Bid[];
   is_favorite?: boolean;
   user_favorites?: { id: string; user_id: string }[];
   images?: string[];
+}
+
+export interface Bid {
+  id: string;
+  [key: string]: unknown;
 }
 
 export interface FilterState {
@@ -67,6 +72,14 @@ interface CargoRequestsPage {
   lastVisible: DocumentSnapshot | null;
   hasMore: boolean;
 }
+
+type CargoRequestsQueryKey = [
+  'cargoRequests',
+  UseCargoRequestsOptions['activeTab'],
+  FilterState,
+  SortOption,
+  string | undefined,
+];
 
 const PAGE_SIZE = 20;
 
@@ -142,11 +155,21 @@ const fetchCargoRequestsPage = async (
     querySnapshot.docs.map(async docSnapshot => {
       const requestData = docSnapshot.data();
 
-      let userData = { full_name: 'Unknown User', user_type: 'customer', rating: 0 };
+      let userData: CargoRequest['users'] = {
+        full_name: 'Unknown User',
+        user_type: 'customer',
+        rating: 0,
+      };
       if (requestData.user_id) {
         const userDoc = await getDoc(doc(db, 'users', requestData.user_id));
         if (userDoc.exists()) {
-          userData = userDoc.data() as any;
+          const userDocData = userDoc.data() as Partial<CargoRequest['users']>;
+          userData = {
+            full_name: userDocData.full_name ?? 'Unknown User',
+            user_type: userDocData.user_type ?? 'customer',
+            rating: typeof userDocData.rating === 'number' ? userDocData.rating : 0,
+            avatar_url: userDocData.avatar_url,
+          };
         }
       }
 
@@ -193,7 +216,7 @@ const fetchCargoRequestsPage = async (
 
 export function useCargoRequests({ activeTab, filters, sortBy, userId }: UseCargoRequestsOptions) {
   const queryClient = useQueryClient();
-  const queryKey = useMemo(
+  const queryKey = useMemo<CargoRequestsQueryKey>(
     () => ['cargoRequests', activeTab, filters, sortBy, userId],
     [activeTab, filters, sortBy, userId]
   );
@@ -207,10 +230,16 @@ export function useCargoRequests({ activeTab, filters, sortBy, userId }: UseCarg
     hasNextPage,
     isFetchingNextPage,
     refetch,
-  } = useInfiniteQuery({
+  } = useInfiniteQuery<
+    CargoRequestsPage,
+    Error,
+    InfiniteData<CargoRequestsPage, DocumentSnapshot | null>,
+    CargoRequestsQueryKey,
+    DocumentSnapshot | null
+  >({
     queryKey,
     queryFn: ({ pageParam }) =>
-      fetchCargoRequestsPage({ activeTab, filters, sortBy, userId }, pageParam ?? null),
+      fetchCargoRequestsPage({ activeTab, filters, sortBy, userId }, pageParam),
     initialPageParam: null,
     getNextPageParam: lastPage => (lastPage.hasMore ? lastPage.lastVisible : undefined),
     staleTime: 5 * 60 * 1000,
@@ -220,27 +249,31 @@ export function useCargoRequests({ activeTab, filters, sortBy, userId }: UseCarg
   const requests = useMemo(() => data?.pages.flatMap(page => page.items) ?? [], [data]);
 
   const setRequests = useCallback(
-    (updater: CargoRequest[] | ((prev: CargoRequest[]) => CargoRequest[])) => {
-      queryClient.setQueryData(queryKey, (oldData: any) => {
-        if (!oldData?.pages) {
-          return oldData;
+    (updater: CargoRequest[] | ((_prev: CargoRequest[]) => CargoRequest[])) => {
+      queryClient.setQueryData<InfiniteData<CargoRequestsPage, DocumentSnapshot | null>>(
+        queryKey,
+        oldData => {
+          if (!oldData?.pages) {
+            return oldData;
+          }
+
+          const currentItems = oldData.pages.flatMap((page: CargoRequestsPage) => page.items);
+          const nextItems = typeof updater === 'function' ? updater(currentItems) : updater;
+          const lastPage = oldData.pages[oldData.pages.length - 1] as CargoRequestsPage | undefined;
+
+          const nextPage: CargoRequestsPage = {
+            items: nextItems,
+            lastVisible: lastPage?.lastVisible ?? null,
+            hasMore: lastPage?.hasMore ?? false,
+          };
+
+          return {
+            ...oldData,
+            pages: [nextPage],
+            pageParams: oldData.pageParams.slice(0, 1),
+          };
         }
-
-        const currentItems = oldData.pages.flatMap((page: CargoRequestsPage) => page.items);
-        const nextItems = typeof updater === 'function' ? updater(currentItems) : updater;
-        const lastPage = oldData.pages[oldData.pages.length - 1] as CargoRequestsPage | undefined;
-
-        const nextPage: CargoRequestsPage = {
-          items: nextItems,
-          lastVisible: lastPage?.lastVisible ?? null,
-          hasMore: lastPage?.hasMore ?? false,
-        };
-
-        return {
-          ...oldData,
-          pages: [nextPage],
-        };
-      });
+      );
     },
     [queryClient, queryKey]
   );
