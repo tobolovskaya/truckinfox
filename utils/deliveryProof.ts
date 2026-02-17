@@ -1,15 +1,23 @@
-import { db } from '../lib/firebase';
+import { app, db } from '../lib/firebase';
 import { doc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { functions } from '../lib/firebase';
-import { httpsCallable } from 'firebase/functions';
+import { getFunctions, httpsCallable } from 'firebase/functions';
 import { trackDeliveryProofSubmitted } from './analytics';
 import { fetchWithTimeout } from './fetchWithTimeout';
+
+const functions = getFunctions(app, 'europe-west1');
+
+function getErrorMessage(error: unknown, fallback: string): string {
+  if (error instanceof Error && error.message) {
+    return error.message;
+  }
+  return fallback;
+}
 
 export interface DeliveryProofData {
   photos: string[]; // Array of photo URLs
   signature: string; // Signature data URL or uploaded URL
-  delivery_time: any; // Firestore timestamp
+  delivery_time: unknown; // Firestore timestamp
 }
 
 /**
@@ -96,16 +104,16 @@ export const uploadDeliveryProof = async (
       const releaseFunds = httpsCallable(functions, 'releaseFundsToCarrier');
       const result = await releaseFunds({ orderId });
       console.log('âœ… Funds release triggered:', result.data);
-    } catch (fundsError: any) {
+    } catch (fundsError: unknown) {
       console.error('âš ï¸ Error releasing funds:', fundsError);
       // Don't throw - delivery proof is still recorded
       // Admin can manually process the payout
     }
 
     console.log('âœ… Delivery proof uploaded successfully');
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('âŒ Error uploading delivery proof:', error);
-    throw new Error(error.message || 'Failed to upload delivery proof');
+    throw new Error(getErrorMessage(error, 'Failed to upload delivery proof'));
   }
 };
 

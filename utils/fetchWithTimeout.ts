@@ -7,7 +7,11 @@ export interface FetchWithTimeoutOptions extends RequestInit {
   timeout?: number;
   retries?: number;
   retryDelay?: number;
-  onRetry?: (attempt: number, error: Error) => void;
+  onRetry?: (_attempt: number, _error: Error) => void;
+}
+
+function normalizeError(error: unknown): Error {
+  return error instanceof Error ? error : new Error(String(error));
 }
 
 /**
@@ -35,13 +39,15 @@ export async function fetchWithTimeout(
     });
     clearTimeout(timeoutId);
     return response;
-  } catch (error: any) {
+  } catch (error: unknown) {
     clearTimeout(timeoutId);
 
-    if (error.name === 'AbortError') {
+    const normalizedError = normalizeError(error);
+
+    if (normalizedError.name === 'AbortError') {
       throw new Error('Request timeout - please check your connection');
     }
-    throw error;
+    throw normalizedError;
   }
 }
 
@@ -86,23 +92,24 @@ export async function fetchWithRetry(
       }
 
       return response;
-    } catch (error: any) {
-      lastError = error;
+    } catch (error: unknown) {
+      const normalizedError = normalizeError(error);
+      lastError = normalizedError;
 
       // Don't retry if it's not a network error
       if (
-        error.message !== 'Request timeout - please check your connection' &&
-        !error.message.includes('Failed to fetch') &&
-        !error.message.includes('Network request failed')
+        normalizedError.message !== 'Request timeout - please check your connection' &&
+        !normalizedError.message.includes('Failed to fetch') &&
+        !normalizedError.message.includes('Network request failed')
       ) {
-        throw error;
+        throw normalizedError;
       }
 
       // Retry if attempts remain
       if (attempt < retries) {
         const delay = retryDelay * Math.pow(2, attempt);
         if (onRetry) {
-          onRetry(attempt + 1, error);
+          onRetry(attempt + 1, normalizedError);
         }
         await sleep(delay);
         continue;
@@ -121,9 +128,9 @@ export async function fetchWithRetry(
  * @param options Additional options
  * @returns Parsed JSON response
  */
-export async function postJSON<T = any>(
+export async function postJSON<T = unknown>(
   url: string,
-  data: any,
+  data: unknown,
   options: FetchWithTimeoutOptions = {}
 ): Promise<T> {
   const response = await fetchWithRetry(url, {
@@ -137,7 +144,10 @@ export async function postJSON<T = any>(
   });
 
   if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}));
+    const errorData = (await response.json().catch(() => ({}))) as {
+      error?: string;
+      message?: string;
+    };
     throw new Error(
       errorData.error || errorData.message || `HTTP ${response.status}: ${response.statusText}`
     );
@@ -153,7 +163,7 @@ export async function postJSON<T = any>(
  * @param options Additional options
  * @returns Parsed JSON response
  */
-export async function getJSON<T = any>(
+export async function getJSON<T = unknown>(
   url: string,
   options: FetchWithTimeoutOptions = {}
 ): Promise<T> {
@@ -163,7 +173,10 @@ export async function getJSON<T = any>(
   });
 
   if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}));
+    const errorData = (await response.json().catch(() => ({}))) as {
+      error?: string;
+      message?: string;
+    };
     throw new Error(
       errorData.error || errorData.message || `HTTP ${response.status}: ${response.statusText}`
     );
@@ -240,7 +253,7 @@ export async function retryOperation<T>(
   options: {
     retries?: number;
     delay?: number;
-    onRetry?: (attempt: number, error: Error) => void;
+    onRetry?: (_attempt: number, _error: Error) => void;
   } = {}
 ): Promise<T> {
   const { retries = 3, delay = 1000, onRetry } = options;
@@ -249,13 +262,14 @@ export async function retryOperation<T>(
   for (let attempt = 0; attempt <= retries; attempt++) {
     try {
       return await operation();
-    } catch (error: any) {
-      lastError = error;
+    } catch (error: unknown) {
+      const normalizedError = normalizeError(error);
+      lastError = normalizedError;
 
       if (attempt < retries) {
         const waitTime = delay * Math.pow(2, attempt);
         if (onRetry) {
-          onRetry(attempt + 1, error);
+          onRetry(attempt + 1, normalizedError);
         }
         await sleep(waitTime);
         continue;

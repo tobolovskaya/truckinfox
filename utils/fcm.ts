@@ -18,6 +18,8 @@ import { db } from '../lib/firebase';
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
     shouldShowAlert: true,
+    shouldShowBanner: true,
+    shouldShowList: true,
     shouldPlaySound: true,
     shouldSetBadge: true,
   }),
@@ -155,7 +157,7 @@ export function subscribeToTokenRefresh(userId: string): () => void {
  * @returns Cleanup function
  */
 export function onForegroundMessage(
-  callback: (notification: Notifications.Notification) => void
+  callback: (_notification: Notifications.Notification) => void
 ): () => void {
   const subscription = Notifications.addNotificationReceivedListener(
     (notification: Notifications.Notification) => {
@@ -176,7 +178,7 @@ export function onForegroundMessage(
  * @returns Cleanup function
  */
 export function onNotificationTap(
-  callback: (response: Notifications.NotificationResponse) => void
+  callback: (_response: Notifications.NotificationResponse) => void
 ): () => void {
   const subscription = Notifications.addNotificationResponseReceivedListener(
     (response: Notifications.NotificationResponse) => {
@@ -196,7 +198,7 @@ export function onNotificationTap(
  * @param callback - Function to call with notification data
  */
 export async function getInitialNotification(
-  callback: (response: Notifications.NotificationResponse | null) => void
+  callback: (_response: Notifications.NotificationResponse | null) => void
 ): Promise<void> {
   try {
     const response = await Notifications.getLastNotificationResponseAsync();
@@ -288,7 +290,7 @@ export async function setBadgeCount(count: number): Promise<void> {
 export async function scheduleLocalNotification(
   title: string,
   body: string,
-  data?: Record<string, any>,
+  data?: Record<string, unknown>,
   trigger?: Notifications.NotificationTriggerInput
 ): Promise<string> {
   try {
@@ -333,11 +335,19 @@ export async function cancelNotification(notificationId: string): Promise<void> 
  * @param data - Notification data object
  * @param navigate - Navigation function
  */
+interface NotificationNavigationData {
+  type?: string;
+  order_id?: string;
+  request_id?: string;
+  screen?: string;
+  [key: string]: unknown;
+}
+
 export function handleNotificationNavigation(
-  data: Record<string, any>,
-  navigate: (screen: string, params?: any) => void
+  data: NotificationNavigationData,
+  navigate: (_screen: string, _params?: Record<string, unknown>) => void
 ): void {
-  const { type, order_id, request_id, bid_id, screen } = data;
+  const { type, order_id, request_id, screen } = data;
 
   console.log('ðŸ“ Navigating from notification:', { type, screen });
 
@@ -376,8 +386,8 @@ export function handleNotificationNavigation(
  */
 export async function setupFCM(
   userId: string,
-  onForeground: (notification: Notifications.Notification) => void,
-  onNavigate: (response: Notifications.NotificationResponse) => void
+  onForeground: (_notification: Notifications.Notification) => void,
+  onNavigate: (_response: Notifications.NotificationResponse) => void
 ): Promise<() => void> {
   console.log('ðŸ”” Setting up push notifications for user:', userId);
 
@@ -398,7 +408,11 @@ export async function setupFCM(
   const unsubscribeTap = onNotificationTap(onNavigate);
 
   // Check for initial notification
-  getInitialNotification(onNavigate);
+  getInitialNotification(response => {
+    if (response) {
+      onNavigate(response);
+    }
+  });
 
   console.log('âœ… Push notification setup complete');
 

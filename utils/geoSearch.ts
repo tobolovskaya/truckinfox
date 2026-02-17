@@ -14,6 +14,21 @@ import { geohashForLocation, geohashQueryBounds, distanceBetween } from 'geofire
 import { collection, query, where, orderBy, startAt, endAt, getDocs } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 
+type GeoPointTuple = [number, number];
+
+interface CargoRequestResult {
+  id: string;
+  cargo_type?: string;
+  weight?: number;
+  price?: number;
+  from_lat?: number;
+  from_lng?: number;
+  to_lat?: number;
+  to_lng?: number;
+  distance_to_search_center?: number;
+  [key: string]: unknown;
+}
+
 /**
  * Calculate geohash for a location
  *
@@ -52,9 +67,9 @@ export async function findNearbyCargoRequests(
   centerLng: number,
   radiusInKm: number,
   searchType: 'from' | 'to' = 'from'
-): Promise<any[]> {
+): Promise<CargoRequestResult[]> {
   try {
-    const center = [centerLat, centerLng];
+    const center: GeoPointTuple = [centerLat, centerLng];
     const radiusInM = radiusInKm * 1000;
 
     // Calculate geohash query bounds
@@ -79,7 +94,7 @@ export async function findNearbyCargoRequests(
     // Execute all queries in parallel
     const snapshots = await Promise.all(promises);
 
-    const matchingDocs: any[] = [];
+    const matchingDocs: CargoRequestResult[] = [];
 
     // Collect all matching documents
     for (const snap of snapshots) {
@@ -89,8 +104,9 @@ export async function findNearbyCargoRequests(
         const lng = searchType === 'from' ? data.from_lng : data.to_lng;
 
         // Filter by exact distance
-        if (lat && lng) {
-          const distanceInKm = distanceBetween([lat, lng], center);
+        if (typeof lat === 'number' && typeof lng === 'number') {
+          const point: GeoPointTuple = [lat, lng];
+          const distanceInKm = distanceBetween(point, center);
           const distanceInM = distanceInKm * 1000;
 
           if (distanceInM <= radiusInM) {
@@ -110,7 +126,11 @@ export async function findNearbyCargoRequests(
     );
 
     // Sort by distance
-    uniqueDocs.sort((a, b) => a.distance_to_search_center - b.distance_to_search_center);
+    uniqueDocs.sort(
+      (a, b) =>
+        (a.distance_to_search_center ?? Number.POSITIVE_INFINITY) -
+        (b.distance_to_search_center ?? Number.POSITIVE_INFINITY)
+    );
 
     return uniqueDocs;
   } catch (error) {
@@ -146,7 +166,7 @@ export async function findCargoAlongRoute(
   toLat: number,
   toLng: number,
   radiusInKm: number = 25
-): Promise<any[]> {
+): Promise<CargoRequestResult[]> {
   try {
     // Search near route start
     const nearStartPromise = findNearbyCargoRequests(fromLat, fromLng, radiusInKm, 'from');
@@ -220,7 +240,7 @@ export async function searchCargoRequests(options: {
   maxWeight?: number;
   minPrice?: number;
   maxPrice?: number;
-}): Promise<any[]> {
+}): Promise<CargoRequestResult[]> {
   try {
     // Get all nearby requests
     const nearby = await findNearbyCargoRequests(
@@ -234,19 +254,27 @@ export async function searchCargoRequests(options: {
     let filtered = nearby;
 
     if (options.cargoTypes && options.cargoTypes.length > 0) {
-      filtered = filtered.filter(doc => options.cargoTypes!.includes(doc.cargo_type));
+      filtered = filtered.filter(
+        doc => typeof doc.cargo_type === 'string' && options.cargoTypes!.includes(doc.cargo_type)
+      );
     }
 
     if (options.maxWeight) {
-      filtered = filtered.filter(doc => doc.weight <= options.maxWeight!);
+      filtered = filtered.filter(
+        doc => typeof doc.weight === 'number' && doc.weight <= options.maxWeight!
+      );
     }
 
     if (options.minPrice) {
-      filtered = filtered.filter(doc => doc.price >= options.minPrice!);
+      filtered = filtered.filter(
+        doc => typeof doc.price === 'number' && doc.price >= options.minPrice!
+      );
     }
 
     if (options.maxPrice) {
-      filtered = filtered.filter(doc => doc.price <= options.maxPrice!);
+      filtered = filtered.filter(
+        doc => typeof doc.price === 'number' && doc.price <= options.maxPrice!
+      );
     }
 
     return filtered;

@@ -41,6 +41,26 @@ export interface DistanceMatrixResult {
   status: string;
 }
 
+export interface PlaceSuggestion {
+  place_id: string;
+  description: string;
+  structured_formatting: {
+    main_text: string;
+    secondary_text: string;
+  };
+  geometry?: {
+    location: {
+      lat: number;
+      lng: number;
+    };
+  };
+}
+
+interface PlacesAutocompleteResponse {
+  status: string;
+  predictions: PlaceSuggestion[];
+}
+
 // Norwegian autocomplete with major cities fallback
 export const norwegianCities = [
   { name: 'Oslo', lat: 59.9139, lng: 10.7522 },
@@ -55,7 +75,7 @@ export const norwegianCities = [
   { name: 'Lillehammer', lat: 61.1153, lng: 10.4662 },
 ];
 
-export const searchNorwegianPlaces = async (input: string): Promise<any[]> => {
+export const searchNorwegianPlaces = async (input: string): Promise<PlaceSuggestion[]> => {
   if (!input || input.length < 2) {
     return [];
   }
@@ -91,10 +111,10 @@ export const searchNorwegianPlaces = async (input: string): Promise<any[]> => {
       10000 // 10 second timeout for autocomplete API
     );
 
-    const data = await response.json();
+    const data = (await response.json()) as PlacesAutocompleteResponse;
 
     if (data.status === 'OK') {
-      return data.predictions.map((prediction: any) => ({
+      return data.predictions.map(prediction => ({
         place_id: prediction.place_id,
         description: prediction.description,
         structured_formatting: prediction.structured_formatting,

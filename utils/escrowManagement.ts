@@ -9,6 +9,49 @@
 import { getFunctions, httpsCallable } from 'firebase/functions';
 import { getApp } from 'firebase/app';
 
+interface ReleaseFundsResponse {
+  success: boolean;
+  message: string;
+  payoutId: string;
+  amount: number;
+  status: string;
+}
+
+interface EscrowStatusResponse {
+  found: boolean;
+  escrow?: {
+    id: string;
+    status: string;
+    total_amount: number;
+    platform_fee: number;
+    carrier_amount: number;
+    created_at: unknown;
+    completed_at: unknown;
+  };
+  payout?: {
+    id: string;
+    status: string;
+    amount: number;
+    created_at: unknown;
+  };
+  order_status?: string;
+}
+
+function getErrorMessage(error: unknown, fallback: string): string {
+  if (error instanceof Error && error.message) {
+    return error.message;
+  }
+
+  if (typeof error === 'object' && error !== null && 'message' in error) {
+    const message = (error as { message?: unknown }).message;
+    if (typeof message === 'string' && message.length > 0) {
+      return message;
+    }
+  }
+
+  return fallback;
+}
+
 // Get Firebase app instance
 const app = getApp();
 
@@ -44,13 +87,16 @@ export async function releaseFundsToCarrier(orderId: string): Promise<{
   status: string;
 }> {
   try {
-    const releaseFunds = httpsCallable(functions, 'releaseFundsToCarrier');
+    const releaseFunds = httpsCallable<{ orderId: string }, ReleaseFundsResponse>(
+      functions,
+      'releaseFundsToCarrier'
+    );
     const result = await releaseFunds({ orderId });
 
-    return result.data as any;
-  } catch (error: any) {
+    return result.data;
+  } catch (error: unknown) {
     console.error('Error releasing funds:', error);
-    throw new Error(error.message || 'Failed to release funds to carrier');
+    throw new Error(getErrorMessage(error, 'Failed to release funds to carrier'));
   }
 }
 
@@ -78,25 +124,28 @@ export async function getEscrowStatus(orderId: string): Promise<{
     total_amount: number;
     platform_fee: number;
     carrier_amount: number;
-    created_at: any;
-    completed_at: any;
+    created_at: unknown;
+    completed_at: unknown;
   };
   payout?: {
     id: string;
     status: string;
     amount: number;
-    created_at: any;
+    created_at: unknown;
   };
   order_status?: string;
 }> {
   try {
-    const getStatus = httpsCallable(functions, 'getEscrowStatus');
+    const getStatus = httpsCallable<{ orderId: string }, EscrowStatusResponse>(
+      functions,
+      'getEscrowStatus'
+    );
     const result = await getStatus({ orderId });
 
-    return result.data as any;
-  } catch (error: any) {
+    return result.data;
+  } catch (error: unknown) {
     console.error('Error getting escrow status:', error);
-    throw new Error(error.message || 'Failed to get escrow status');
+    throw new Error(getErrorMessage(error, 'Failed to get escrow status'));
   }
 }
 
@@ -167,10 +216,16 @@ export function formatEscrowAmount(amount: number): string {
  * @param createdAt - Timestamp when escrow was created
  * @returns Human-readable time elapsed
  */
-export function getEscrowAge(createdAt: any): string {
+export function getEscrowAge(createdAt: unknown): string {
   if (!createdAt) return 'Unknown';
 
-  const created = createdAt.toDate ? createdAt.toDate() : new Date(createdAt);
+  const created =
+    typeof createdAt === 'object' &&
+    createdAt !== null &&
+    'toDate' in createdAt &&
+    typeof (createdAt as { toDate?: unknown }).toDate === 'function'
+      ? ((createdAt as { toDate: () => Date }).toDate() as Date)
+      : new Date(createdAt as string | number | Date);
   const now = new Date();
   const diffMs = now.getTime() - created.getTime();
   const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
