@@ -1,6 +1,7 @@
 import React from 'react';
-import { View, Text, StyleSheet, ViewStyle, TextStyle } from 'react-native';
+import { View, Text, StyleSheet, ViewStyle } from 'react-native';
 import { colors, spacing, fontSize, fontWeight, borderRadius, shadows } from '../lib/sharedStyles';
+import { useResponsive } from '../utils/responsive';
 
 interface ScreenSectionProps {
   /** Section title (optional) */
@@ -49,27 +50,78 @@ export function ScreenSection({
   backgroundColor = colors.white,
   rightAction,
 }: ScreenSectionProps) {
+  const { getResponsiveValue } = useResponsive();
+  const containerSpacing = getResponsiveValue({
+    small: spacing.md,
+    medium: spacing.lg,
+    large: spacing.xl,
+  });
+  const headerPaddingHorizontal = getResponsiveValue({
+    small: spacing.lg,
+    medium: spacing.xl,
+    large: spacing.xxl,
+  });
+  const headerPaddingTop = getResponsiveValue({
+    small: spacing.md,
+    medium: spacing.lg,
+    large: spacing.xl,
+  });
+  const headerPaddingBottom = getResponsiveValue({
+    small: spacing.sm,
+    medium: spacing.md,
+    large: spacing.lg,
+  });
+  const contentPadding = getResponsiveValue({
+    small: spacing.lg,
+    medium: spacing.xl,
+    large: spacing.xxl,
+  });
+  const titleSize = getResponsiveValue({
+    small: fontSize.md,
+    medium: fontSize.lg,
+    large: fontSize.xl,
+  });
+  const subtitleSize = getResponsiveValue({
+    small: fontSize.xs,
+    medium: fontSize.sm,
+    large: fontSize.md,
+  });
+
+  const marginStyle = !noMargin
+    ? { marginHorizontal: containerSpacing, marginTop: containerSpacing }
+    : null;
+  const headerPaddingStyle = !noPadding
+    ? {
+        paddingHorizontal: headerPaddingHorizontal,
+        paddingTop: headerPaddingTop,
+        paddingBottom: headerPaddingBottom,
+      }
+    : null;
+  const contentPaddingStyle = !noPadding ? { padding: contentPadding } : null;
   return (
     <View
       style={[
         styles.container,
         { backgroundColor },
         !noMargin && styles.containerWithMargin,
+        marginStyle,
         elevated && shadows.sm,
         style,
       ]}
     >
       {(title || subtitle || rightAction) && (
-        <View style={[styles.header, !noPadding && styles.headerWithPadding]}>
+        <View style={[styles.header, !noPadding && styles.headerWithPadding, headerPaddingStyle]}>
           <View style={styles.headerText}>
-            {title && <Text style={styles.title}>{title}</Text>}
-            {subtitle && <Text style={styles.subtitle}>{subtitle}</Text>}
+            {title && <Text style={[styles.title, { fontSize: titleSize }]}>{title}</Text>}
+            {subtitle && (
+              <Text style={[styles.subtitle, { fontSize: subtitleSize }]}>{subtitle}</Text>
+            )}
           </View>
           {rightAction && <View style={styles.rightAction}>{rightAction}</View>}
         </View>
       )}
 
-      <View style={[!noPadding && styles.content]}>{children}</View>
+      <View style={[!noPadding && styles.content, contentPaddingStyle]}>{children}</View>
     </View>
   );
 }

@@ -12,6 +12,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { triggerHapticFeedback } from '../utils/haptics';
 import { theme } from '../theme/theme';
 import { colors, spacing, fontSize, fontWeight, borderRadius, shadows } from '../lib/sharedStyles';
+import { useResponsive } from '../utils/responsive';
 
 interface IOSButtonProps {
   title: string;
@@ -42,6 +43,8 @@ export function IOSButton({
   fullWidth = false,
   hapticFeedback = 'light',
 }: IOSButtonProps) {
+  const { getResponsiveValue } = useResponsive();
+
   const handlePress = () => {
     if (disabled || loading) return;
 
@@ -64,19 +67,39 @@ export function IOSButton({
     // Size variants
     const sizeStyles: Record<string, ViewStyle> = {
       small: {
-        paddingVertical: spacing.sm,
-        paddingHorizontal: spacing.lg,
-        minHeight: 44,
+        paddingVertical: getResponsiveValue({
+          small: spacing.xs,
+          medium: spacing.sm,
+          large: spacing.md,
+        }),
+        paddingHorizontal: getResponsiveValue({
+          small: spacing.md,
+          medium: spacing.lg,
+          large: spacing.xl,
+        }),
+        minHeight: getResponsiveValue({ small: 44, medium: 46, large: 48 }),
       },
       medium: {
-        paddingVertical: spacing.sm,
-        paddingHorizontal: spacing.xl,
-        minHeight: 52,
+        paddingVertical: getResponsiveValue({
+          small: spacing.sm,
+          medium: spacing.md,
+          large: spacing.lg,
+        }),
+        paddingHorizontal: getResponsiveValue({
+          small: spacing.lg,
+          medium: spacing.xl,
+          large: spacing.xxl,
+        }),
+        minHeight: getResponsiveValue({ small: 48, medium: 52, large: 56 }),
       },
       large: {
-        paddingVertical: 18,
-        paddingHorizontal: spacing.xxl,
-        minHeight: 58,
+        paddingVertical: getResponsiveValue({ small: spacing.md, medium: 18, large: 20 }),
+        paddingHorizontal: getResponsiveValue({
+          small: spacing.xl,
+          medium: spacing.xxl,
+          large: spacing.xxxl,
+        }),
+        minHeight: getResponsiveValue({ small: 52, medium: 58, large: 64 }),
       },
     };
 
@@ -119,17 +142,29 @@ export function IOSButton({
   const getTextStyle = (): TextStyle => {
     const sizeTextStyles: Record<string, TextStyle> = {
       small: {
-        fontSize: fontSize.sm,
+        fontSize: getResponsiveValue({
+          small: fontSize.xs,
+          medium: fontSize.sm,
+          large: fontSize.md,
+        }),
         fontWeight: '500',
         letterSpacing: 0.2,
       },
       medium: {
-        fontSize: fontSize.md,
+        fontSize: getResponsiveValue({
+          small: fontSize.sm,
+          medium: fontSize.md,
+          large: fontSize.lg,
+        }),
         fontWeight: '500',
         letterSpacing: 0.3,
       },
       large: {
-        fontSize: fontSize.lg,
+        fontSize: getResponsiveValue({
+          small: fontSize.md,
+          medium: fontSize.lg,
+          large: fontSize.xl,
+        }),
         fontWeight: '500',
         letterSpacing: 0.4,
       },
@@ -163,9 +198,9 @@ export function IOSButton({
 
   const getIconSize = (): number => {
     const sizeMap = {
-      small: 16,
-      medium: 18,
-      large: 20,
+      small: getResponsiveValue({ small: 14, medium: 16, large: 18 }),
+      medium: getResponsiveValue({ small: 16, medium: 18, large: 20 }),
+      large: getResponsiveValue({ small: 18, medium: 20, large: 22 }),
     };
     return sizeMap[size];
   };
