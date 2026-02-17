@@ -1,17 +1,12 @@
 import React from 'react';
-import {
-  TouchableOpacity,
-  Text,
-  StyleSheet,
-  ViewStyle,
-  TextStyle,
-  ActivityIndicator,
-  Platform,
-} from 'react-native';
+import { TouchableOpacity, Text, ViewStyle, TextStyle, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import type { ComponentProps } from 'react';
 import { triggerHapticFeedback } from '../utils/haptics';
 import { theme } from '../theme/theme';
-import { colors, spacing, fontSize, fontWeight, borderRadius, shadows } from '../lib/sharedStyles';
+import { colors, spacing, fontSize, borderRadius } from '../lib/sharedStyles';
+
+type IoniconName = ComponentProps<typeof Ionicons>['name'];
 
 interface IOSButtonProps {
   title: string;
@@ -20,7 +15,7 @@ interface IOSButtonProps {
   size?: 'small' | 'medium' | 'large';
   disabled?: boolean;
   loading?: boolean;
-  icon?: string;
+  icon?: IoniconName;
   iconPosition?: 'left' | 'right';
   style?: ViewStyle;
   textStyle?: TextStyle;
@@ -104,7 +99,7 @@ export function IOSButton({
         backgroundColor: 'transparent',
         paddingVertical: spacing.xxxs,
         paddingHorizontal: 0,
-        minHeight: 'auto' as any,
+        minHeight: undefined,
       },
     };
 
@@ -175,7 +170,7 @@ export function IOSButton({
 
     return (
       <Ionicons
-        name={icon as any}
+        name={icon}
         size={getIconSize()}
         color={getTextStyle().color as string}
         style={{
@@ -231,5 +226,3 @@ export const GhostButton = (props: Omit<IOSButtonProps, 'variant'>) => (
 export const LinkButton = (props: Omit<IOSButtonProps, 'variant'>) => (
   <IOSButton {...props} variant="link" />
 );
-
-const styles = StyleSheet.create({});
