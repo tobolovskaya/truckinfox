@@ -45,7 +45,7 @@ export const formatRelativeTime = (date: Date | string, locale = 'no-NO'): strin
   const diffInSeconds = Math.floor((now.getTime() - dateObj.getTime()) / 1000);
 
   if (diffInSeconds < 60) {
-    return locale === 'no-NO' ? 'Akkurat nå' : 'Just now';
+    return locale === 'no-NO' ? 'Akkurat nÃ¥' : 'Just now';
   }
 
   const diffInMinutes = Math.floor(diffInSeconds / 60);

@@ -11,10 +11,10 @@ export const logEvent = (eventName: string, params?: Record<string, any>) => {
     // Only log if analytics is initialized (web platform)
     if (analytics) {
       firebaseLogEvent(analytics, eventName, params);
-      console.log(`📊 Analytics: ${eventName}`, params);
+      console.log(`ðŸ“Š Analytics: ${eventName}`, params);
     } else {
       // For native platforms, just log to console for now
-      console.log(`📊 Analytics (console only): ${eventName}`, params);
+      console.log(`ðŸ“Š Analytics (console only): ${eventName}`, params);
     }
   } catch (error) {
     console.error('Error logging analytics event:', error);

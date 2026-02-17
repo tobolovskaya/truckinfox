@@ -68,7 +68,7 @@ export function sanitizeName(name: string, maxLength: number = 100): string {
   let sanitized = name.replace(/<[^>]*>/g, '');
 
   // Remove special characters (allow letters, numbers, spaces, hyphens, apostrophes)
-  sanitized = sanitized.replace(/[^a-zA-ZæøåÆØÅ0-9\s\-']/g, '');
+  sanitized = sanitized.replace(/[^a-zA-ZÃ¦Ã¸Ã¥Ã†Ã˜Ã…0-9\s\-']/g, '');
 
   // Normalize whitespace
   sanitized = sanitized.replace(/\s+/g, ' ');

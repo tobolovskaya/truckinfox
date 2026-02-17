@@ -201,10 +201,10 @@ export async function cleanupUnpaidOrders(): Promise<number> {
       totalDeleted += batchDocs.length;
     }
 
-    console.log(`✅ Successfully deleted ${totalDeleted} unpaid order(s)`);
+    console.log(`âœ… Successfully deleted ${totalDeleted} unpaid order(s)`);
     return totalDeleted;
   } catch (error) {
-    console.error('❌ Error cleaning up unpaid orders:', error);
+    console.error('âŒ Error cleaning up unpaid orders:', error);
     throw error;
   }
 }

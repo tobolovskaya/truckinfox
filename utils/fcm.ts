@@ -39,11 +39,11 @@ export async function requestNotificationPermission(): Promise<boolean> {
     }
 
     if (finalStatus !== 'granted') {
-      console.log('❌ Notification permission denied');
+      console.log('âŒ Notification permission denied');
       return false;
     }
 
-    console.log('✅ Notification permission granted');
+    console.log('âœ… Notification permission granted');
     return true;
   } catch (error) {
     console.error('Error requesting notification permission:', error);
@@ -78,7 +78,7 @@ export async function getFCMTokenAndSave(userId: string): Promise<string | null>
       return null;
     }
 
-    console.log('✅ Push Token obtained:', token.substring(0, 30) + '...');
+    console.log('âœ… Push Token obtained:', token.substring(0, 30) + '...');
 
     // Save token to user document
     if (userId) {
@@ -88,12 +88,12 @@ export async function getFCMTokenAndSave(userId: string): Promise<string | null>
         push_token_updated_at: serverTimestamp(),
         platform: Platform.OS,
       });
-      console.log('✅ Push token saved to Firestore');
+      console.log('âœ… Push token saved to Firestore');
     }
 
     return token;
   } catch (error) {
-    console.error('❌ Error getting push token:', error);
+    console.error('âŒ Error getting push token:', error);
     return null;
   }
 }
@@ -118,7 +118,7 @@ export function subscribeToTokenRefresh(userId: string): () => void {
       });
 
       const token = tokenData.data;
-      console.log('🔄 Checked push token:', token.substring(0, 30) + '...');
+      console.log('ðŸ”„ Checked push token:', token.substring(0, 30) + '...');
 
       if (userId && token) {
         const userRef = doc(db, 'users', userId);
@@ -128,7 +128,7 @@ export function subscribeToTokenRefresh(userId: string): () => void {
         });
       }
     } catch (error) {
-      console.error('❌ Error checking push token:', error);
+      console.error('âŒ Error checking push token:', error);
     }
 
     // Check again in 24 hours
@@ -159,7 +159,7 @@ export function onForegroundMessage(
 ): () => void {
   const subscription = Notifications.addNotificationReceivedListener(
     (notification: Notifications.Notification) => {
-      console.log('📬 Foreground notification received:', notification);
+      console.log('ðŸ“¬ Foreground notification received:', notification);
       callback(notification);
     }
   );
@@ -180,7 +180,7 @@ export function onNotificationTap(
 ): () => void {
   const subscription = Notifications.addNotificationResponseReceivedListener(
     (response: Notifications.NotificationResponse) => {
-      console.log('👆 Notification tapped:', response);
+      console.log('ðŸ‘† Notification tapped:', response);
       callback(response);
     }
   );
@@ -202,7 +202,7 @@ export async function getInitialNotification(
     const response = await Notifications.getLastNotificationResponseAsync();
 
     if (response) {
-      console.log('📬 App opened from notification:', response);
+      console.log('ðŸ“¬ App opened from notification:', response);
       callback(response);
     } else {
       callback(null);
@@ -226,10 +226,10 @@ export async function clearFCMToken(userId: string): Promise<void> {
         expo_push_token: null,
         push_token_updated_at: serverTimestamp(),
       });
-      console.log('✅ Push token cleared from Firestore');
+      console.log('âœ… Push token cleared from Firestore');
     }
   } catch (error) {
-    console.error('❌ Error clearing push token:', error);
+    console.error('âŒ Error clearing push token:', error);
   }
 }
 
@@ -271,7 +271,7 @@ export async function getBadgeCount(): Promise<number> {
 export async function setBadgeCount(count: number): Promise<void> {
   try {
     await Notifications.setBadgeCountAsync(count);
-    console.log(`✅ Badge count set to ${count}`);
+    console.log(`âœ… Badge count set to ${count}`);
   } catch (error) {
     console.error('Error setting badge count:', error);
   }
@@ -302,7 +302,7 @@ export async function scheduleLocalNotification(
       trigger: trigger || null,
     });
 
-    console.log('✅ Local notification scheduled:', id);
+    console.log('âœ… Local notification scheduled:', id);
     return id;
   } catch (error) {
     console.error('Error scheduling notification:', error);
@@ -318,7 +318,7 @@ export async function scheduleLocalNotification(
 export async function cancelNotification(notificationId: string): Promise<void> {
   try {
     await Notifications.cancelScheduledNotificationAsync(notificationId);
-    console.log('✅ Notification cancelled:', notificationId);
+    console.log('âœ… Notification cancelled:', notificationId);
   } catch (error) {
     console.error('Error cancelling notification:', error);
   }
@@ -339,7 +339,7 @@ export function handleNotificationNavigation(
 ): void {
   const { type, order_id, request_id, bid_id, screen } = data;
 
-  console.log('📍 Navigating from notification:', { type, screen });
+  console.log('ðŸ“ Navigating from notification:', { type, screen });
 
   // Navigate based on screen specified in data
   if (screen === 'order-status' && order_id) {
@@ -379,7 +379,7 @@ export async function setupFCM(
   onForeground: (notification: Notifications.Notification) => void,
   onNavigate: (response: Notifications.NotificationResponse) => void
 ): Promise<() => void> {
-  console.log('🔔 Setting up push notifications for user:', userId);
+  console.log('ðŸ”” Setting up push notifications for user:', userId);
 
   // Request permission and get token
   const hasPermission = await requestNotificationPermission();
@@ -400,11 +400,11 @@ export async function setupFCM(
   // Check for initial notification
   getInitialNotification(onNavigate);
 
-  console.log('✅ Push notification setup complete');
+  console.log('âœ… Push notification setup complete');
 
   // Return cleanup function
   return () => {
-    console.log('🧹 Cleaning up push notification listeners');
+    console.log('ðŸ§¹ Cleaning up push notification listeners');
     unsubscribeTokenRefresh();
     unsubscribeForeground();
     unsubscribeTap();
@@ -417,8 +417,8 @@ export async function setupFCM(
  * @param userId - User's ID
  */
 export async function cleanupFCM(userId: string): Promise<void> {
-  console.log('🧹 Cleaning up FCM for user:', userId);
+  console.log('ðŸ§¹ Cleaning up FCM for user:', userId);
   await clearFCMToken(userId);
   await setBadgeCount(0);
-  console.log('✅ FCM cleanup complete');
+  console.log('âœ… FCM cleanup complete');
 }

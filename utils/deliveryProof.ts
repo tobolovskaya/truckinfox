@@ -59,18 +59,18 @@ export const uploadDeliveryProof = async (
   signature: string // Base64 or local URI from signature canvas
 ): Promise<void> => {
   try {
-    console.log('📦 Uploading delivery proof for order:', orderId);
+    console.log('ðŸ“¦ Uploading delivery proof for order:', orderId);
 
     // Upload all photos to Storage
     const photoUploadPromises = photos.map((photoUri, index) =>
       uploadImage(photoUri, orderId, 'photo', index)
     );
     const uploadedPhotoURLs = await Promise.all(photoUploadPromises);
-    console.log('✅ Photos uploaded:', uploadedPhotoURLs);
+    console.log('âœ… Photos uploaded:', uploadedPhotoURLs);
 
     // Upload signature to Storage
     const uploadedSignatureURL = await uploadImage(signature, orderId, 'signature');
-    console.log('✅ Signature uploaded:', uploadedSignatureURL);
+    console.log('âœ… Signature uploaded:', uploadedSignatureURL);
 
     // Update order document with delivery proof
     const orderRef = doc(db, 'orders', orderId);
@@ -82,7 +82,7 @@ export const uploadDeliveryProof = async (
       delivered_at: serverTimestamp(),
       updated_at: serverTimestamp(),
     });
-    console.log('✅ Order updated with delivery proof');
+    console.log('âœ… Order updated with delivery proof');
 
     // Track delivery proof submitted
     trackDeliveryProofSubmitted({
@@ -95,16 +95,16 @@ export const uploadDeliveryProof = async (
     try {
       const releaseFunds = httpsCallable(functions, 'releaseFundsToCarrier');
       const result = await releaseFunds({ orderId });
-      console.log('✅ Funds release triggered:', result.data);
+      console.log('âœ… Funds release triggered:', result.data);
     } catch (fundsError: any) {
-      console.error('⚠️ Error releasing funds:', fundsError);
+      console.error('âš ï¸ Error releasing funds:', fundsError);
       // Don't throw - delivery proof is still recorded
       // Admin can manually process the payout
     }
 
-    console.log('✅ Delivery proof uploaded successfully');
+    console.log('âœ… Delivery proof uploaded successfully');
   } catch (error: any) {
-    console.error('❌ Error uploading delivery proof:', error);
+    console.error('âŒ Error uploading delivery proof:', error);
     throw new Error(error.message || 'Failed to upload delivery proof');
   }
 };

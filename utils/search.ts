@@ -1,3 +1,5 @@
+import type { DocumentData, Firestore } from 'firebase/firestore';
+
 /**
  * Search utilities for generating searchable terms
  *
@@ -147,10 +149,10 @@ export function normalizeSearchQuery(query: string): string {
  * @note Uses Firestore array-contains query (requires composite index)
  */
 export async function searchUsers(
-  db: any, // Firestore instance
+  db: Firestore,
   searchQuery: string,
   limit: number = 20
-): Promise<any[]> {
+): Promise<Array<{ id: string } & DocumentData>> {
   if (!searchQuery || searchQuery.trim().length === 0) {
     return [];
   }
@@ -204,10 +206,10 @@ export async function searchUsers(
  * @note Requires cargo_requests collection to have search_terms array field
  */
 export async function searchCargoRequests(
-  db: any,
+  db: Firestore,
   searchQuery: string,
   limit: number = 20
-): Promise<any[]> {
+): Promise<Array<{ id: string } & DocumentData>> {
   if (!searchQuery || searchQuery.trim().length === 0) {
     return [];
   }

@@ -41,7 +41,7 @@ export const calculateEstimatedTime = (distanceInKm: number): number => {
  */
 export const getMapRegion = (latitude: number, longitude: number, distanceInKm: number = 10) => {
   // Approximate delta for map region
-  const latitudeDelta = distanceInKm / 111; // 1 degree latitude ≈ 111 km
+  const latitudeDelta = distanceInKm / 111; // 1 degree latitude â‰ˆ 111 km
   const longitudeDelta = distanceInKm / (111 * Math.cos(latitude * (Math.PI / 180)));
 
   return {

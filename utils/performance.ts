@@ -11,7 +11,7 @@ export const startTrace = (traceName: string) => {
     if (performance) {
       const traceInstance = trace(performance, traceName);
       traceInstance.start();
-      console.log(`⚡ Performance trace started: ${traceName}`);
+      console.log(`âš¡ Performance trace started: ${traceName}`);
 
       let stopped = false;
 
@@ -22,7 +22,7 @@ export const startTrace = (traceName: string) => {
             try {
               traceInstance.stop();
               stopped = true;
-              console.log(`⚡ Performance trace stopped: ${traceName}`);
+              console.log(`âš¡ Performance trace stopped: ${traceName}`);
             } catch (error) {
               console.debug(`Performance trace already stopped: ${traceName}`);
             }
@@ -51,12 +51,12 @@ export const startTrace = (traceName: string) => {
       // For native platforms, just log
       const startTime = Date.now();
       let stopped = false;
-      console.log(`⚡ Performance trace (console only): ${traceName}`);
+      console.log(`âš¡ Performance trace (console only): ${traceName}`);
       return {
         stop: () => {
           if (!stopped) {
             const duration = Date.now() - startTime;
-            console.log(`⚡ Performance trace stopped: ${traceName} (${duration}ms)`);
+            console.log(`âš¡ Performance trace stopped: ${traceName} (${duration}ms)`);
             stopped = true;
           }
         },

@@ -11,7 +11,7 @@ export function handleNotificationTap(response: any): void {
     const data = response.notification.request.content.data;
     const type = data.type;
 
-    console.log('📱 Notification tapped:', type, data);
+    console.log('ðŸ“± Notification tapped:', type, data);
 
     switch (type) {
       case 'new_bid':
@@ -87,7 +87,7 @@ export function handleNotificationTap(response: any): void {
  */
 export function handleForegroundNotification(notification: any): void {
   try {
-    console.log('📬 Foreground notification:', notification.request.content);
+    console.log('ðŸ“¬ Foreground notification:', notification.request.content);
 
     // You can implement custom in-app banner here
     // For now, Expo will handle showing the notification
