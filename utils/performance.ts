@@ -23,7 +23,7 @@ export const startTrace = (traceName: string) => {
               traceInstance.stop();
               stopped = true;
               console.log(`âš¡ Performance trace stopped: ${traceName}`);
-            } catch (error) {
+            } catch {
               console.debug(`Performance trace already stopped: ${traceName}`);
             }
           }

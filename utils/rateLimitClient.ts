@@ -1,5 +1,5 @@
-import { functions } from '../lib/firebase';
-import { httpsCallable } from 'firebase/functions';
+import { app } from '../lib/firebase';
+import { FunctionsError, getFunctions, httpsCallable } from 'firebase/functions';
 
 /**
  * Rate Limit Error
@@ -44,18 +44,25 @@ export function formatRetryTime(milliseconds: number): string {
  * @returns Function result
  * @throws RateLimitError if rate limit exceeded
  */
-export async function callFunction<T = any, R = any>(functionName: string, data: T): Promise<R> {
+export async function callFunction<T = unknown, R = unknown>(
+  functionName: string,
+  data: T
+): Promise<R> {
   try {
-    const callable = httpsCallable(functions, functionName);
+    const callable = httpsCallable<T, R>(getFunctions(app), functionName);
     const result = await callable(data);
     return result.data as R;
-  } catch (error: any) {
-    // Check if it's a rate limit error
-    if (error.code === 'functions/resource-exhausted') {
-      const retryAfter = error.details?.retryAfter || 60000;
-      const resetAt = error.details?.resetAt || Date.now() + retryAfter;
+  } catch (error: unknown) {
+    const functionError = error as FunctionsError & {
+      details?: { retryAfter?: number; resetAt?: number };
+    };
 
-      throw new RateLimitError(error.message, retryAfter, resetAt);
+    // Check if it's a rate limit error
+    if (functionError.code === 'functions/resource-exhausted') {
+      const retryAfter = functionError.details?.retryAfter || 60000;
+      const resetAt = functionError.details?.resetAt || Date.now() + retryAfter;
+
+      throw new RateLimitError(functionError.message, retryAfter, resetAt);
     }
 
     // Re-throw other errors
@@ -71,7 +78,7 @@ export async function callFunction<T = any, R = any>(functionName: string, data:
  * @param onRateLimit Optional callback when rate limit is hit
  * @returns Function result or null if rate limited
  */
-export async function safeFunctionCall<T = any, R = any>(
+export async function safeFunctionCall<T = unknown, R = unknown>(
   functionName: string,
   data: T,
   onRateLimit?: (_error: RateLimitError) => void
