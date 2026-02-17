@@ -96,8 +96,9 @@ export default function EditProfileScreen() {
       setSaving(true);
       const fullName = profile.fullName.trim();
       const phone = profile.phone.trim();
-      const companyName = profile.companyName.trim() || null;
-      const orgNumber = profile.orgNumber.trim() || null;
+      const isBusinessAccount = profile.userType === 'carrier';
+      const companyName = isBusinessAccount ? profile.companyName.trim() || null : null;
+      const orgNumber = isBusinessAccount ? profile.orgNumber.trim() || null : null;
 
       await updateDoc(doc(db, 'users', user.uid), {
         full_name: fullName,
@@ -189,30 +190,34 @@ export default function EditProfileScreen() {
               </View>
             </ScreenSection>
 
-            <ScreenSection title={t('businessInformation')}>
-              <View style={styles.fieldGroup}>
-                <Text style={styles.label}>{t('companyName')}</Text>
-                <TextInput
-                  style={styles.input}
-                  value={profile.companyName}
-                  onChangeText={text => setProfile(current => ({ ...current, companyName: text }))}
-                  placeholder={t('enterCompanyName')}
-                  placeholderTextColor={colors.text.tertiary}
-                />
-              </View>
+            {profile.userType === 'carrier' && (
+              <ScreenSection title={t('businessInformation')}>
+                <View style={styles.fieldGroup}>
+                  <Text style={styles.label}>{t('companyName')}</Text>
+                  <TextInput
+                    style={styles.input}
+                    value={profile.companyName}
+                    onChangeText={text =>
+                      setProfile(current => ({ ...current, companyName: text }))
+                    }
+                    placeholder={t('enterCompanyName')}
+                    placeholderTextColor={colors.text.tertiary}
+                  />
+                </View>
 
-              <View style={styles.fieldGroup}>
-                <Text style={styles.label}>{t('orgNumber')}</Text>
-                <TextInput
-                  style={styles.input}
-                  value={profile.orgNumber}
-                  onChangeText={text => setProfile(current => ({ ...current, orgNumber: text }))}
-                  placeholder={t('orgNumber')}
-                  placeholderTextColor={colors.text.tertiary}
-                  keyboardType="number-pad"
-                />
-              </View>
-            </ScreenSection>
+                <View style={styles.fieldGroup}>
+                  <Text style={styles.label}>{t('orgNumber')}</Text>
+                  <TextInput
+                    style={styles.input}
+                    value={profile.orgNumber}
+                    onChangeText={text => setProfile(current => ({ ...current, orgNumber: text }))}
+                    placeholder={t('orgNumber')}
+                    placeholderTextColor={colors.text.tertiary}
+                    keyboardType="number-pad"
+                  />
+                </View>
+              </ScreenSection>
+            )}
 
             <ScreenSection title={t('accountType')}>
               <View style={styles.accountTypeRow}>

@@ -9,6 +9,7 @@ import {
   Image,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { FirebaseError } from 'firebase/app';
 import * as ImagePicker from 'expo-image-picker';
 import * as ImageManipulator from 'expo-image-manipulator';
 import { storage, db } from '../lib/firebase';
@@ -51,7 +52,7 @@ export default function AvatarUpload({ avatarUrl, onUpload, size = 80 }: AvatarU
 
       // Pick image
       const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        mediaTypes: [ImagePicker.MediaType.Images],
         allowsEditing: true,
         aspect: [1, 1],
         quality: 0.8,
@@ -138,7 +139,11 @@ export default function AvatarUpload({ avatarUrl, onUpload, size = 80 }: AvatarU
             try {
               await deleteObject(storageRef);
             } catch (error) {
-              console.warn('File may not exist in storage:', error);
+              const firebaseError = error as FirebaseError;
+              const ignoredCodes = ['storage/object-not-found', 'storage/unauthorized'];
+              if (!ignoredCodes.includes(firebaseError.code)) {
+                console.warn('Avatar delete warning:', error);
+              }
             }
 
             // Update user profile in Firestore
