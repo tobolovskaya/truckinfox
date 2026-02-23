@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useMemo } from 'react';
 import { View, StyleSheet, Animated, Easing } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { theme } from '../theme/theme';
-import { shadows, colors, borderRadius } from '../lib/sharedStyles';
+import { shadows, borderRadius } from '../lib/sharedStyles';
 
 interface SuccessAnimationProps {
   visible: boolean;
@@ -54,7 +54,7 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
         onAnimationEnd?.();
       });
     }
-  }, [visible]);
+  }, [visible, onAnimationEnd, scaleAnim, opacityAnim, rotateAnim]);
 
   if (!visible) return null;
 
@@ -116,7 +116,7 @@ const ConfettiParticles: React.FC = () => {
         })
       )
     ).start();
-  }, []);
+  }, [particles]);
 
   return (
     <>

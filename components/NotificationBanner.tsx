@@ -45,7 +45,7 @@ export const NotificationBanner: React.FC<NotificationBannerProps> = ({
     }, duration);
 
     return () => clearTimeout(timer);
-  }, []);
+  }, [duration, onDismiss, translateY]);
 
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [{ translateY: translateY.value }],

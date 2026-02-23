@@ -6,14 +6,12 @@ import {
   StyleSheet,
   Animated,
   PanResponder,
-  Dimensions,
   Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
-import { colors, spacing, fontSize, fontWeight, borderRadius, shadows } from '../lib/sharedStyles';
+import { colors, spacing, fontSize, fontWeight } from '../lib/sharedStyles';
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const SWIPE_THRESHOLD = 80;
 
 interface SwipeAction {
@@ -82,20 +80,17 @@ export function SwipeableRow({
       isSwipingRef.current = false;
       onSwipeEnd?.();
 
-      let shouldStayOpen = false;
       let finalPosition = 0;
 
       // Determine if swipe should stay open based on distance or velocity
       if (dx > 0 && leftActions.length > 0) {
         // Right swipe
         if (Math.abs(dx) > SWIPE_THRESHOLD || vx > 0.5) {
-          shouldStayOpen = true;
           finalPosition = Math.min(leftActions.length * 80, 120);
         }
       } else if (dx < 0 && rightActions.length > 0) {
         // Left swipe
         if (Math.abs(dx) > SWIPE_THRESHOLD || Math.abs(vx) > 0.5) {
-          shouldStayOpen = true;
           finalPosition = -Math.min(rightActions.length * 80, 120);
         }
       }
