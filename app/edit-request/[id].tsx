@@ -149,26 +149,25 @@ export default function EditRequestScreen() {
   const validateField = (field: string, value: unknown): string => {
     switch (field) {
       case 'title':
-        if (!value || !value.toString().trim()) return 'Tittel er påkrevd';
-        if (value.toString().trim().length < 3) return 'Tittel må være minst 3 tegn';
-        if (value.toString().trim().length > 100) return 'Tittel kan ikke være lengre enn 100 tegn';
+        if (!value || !value.toString().trim()) return t('titleRequired');
+        if (value.toString().trim().length < 3) return t('titleMinLength');
+        if (value.toString().trim().length > 100) return t('titleMaxLength');
         return '';
 
       case 'description':
-        if (!value || !value.toString().trim()) return 'Beskrivelse er påkrevd';
-        if (value.toString().trim().length < 10) return 'Beskrivelse må være minst 10 tegn';
-        if (value.toString().trim().length > 500)
-          return 'Beskrivelse kan ikke være lengre enn 500 tegn';
+        if (!value || !value.toString().trim()) return t('descriptionRequired');
+        if (value.toString().trim().length < 10) return t('descriptionMinLength');
+        if (value.toString().trim().length > 500) return t('descriptionMaxLength');
         return '';
 
       case 'cargo_type':
-        if (!value) return 'Lasttype er påkrevd';
+        if (!value) return t('cargoTypeRequired');
         return '';
 
       case 'weight': {
-        if (!value || value.toString().trim() === '') return 'Vekt er påkrevd';
+        if (!value || value.toString().trim() === '') return t('weightRequired');
         const weight = Number(value);
-        if (isNaN(weight)) return 'Vekt må være et tall';
+        if (isNaN(weight)) return t('weightMustBeNumber');
         if (weight < CARGO_LIMITS.weight.min || weight > CARGO_LIMITS.weight.max)
           return `Vekt må være mellom ${CARGO_LIMITS.weight.min} og ${CARGO_LIMITS.weight.max} kg`;
         return '';
@@ -187,26 +186,26 @@ export default function EditRequestScreen() {
       }
 
       case 'from_address':
-        if (!value || !value.toString().trim()) return 'Fra-adresse er påkrevd';
-        if (value.toString().trim().length < 3) return 'Fra-adresse må være minst 3 tegn';
+        if (!value || !value.toString().trim()) return t('fromAddressRequired');
+        if (value.toString().trim().length < 3) return t('fromAddressMinLength');
         return '';
 
       case 'to_address':
-        if (!value || !value.toString().trim()) return 'Til-adresse er påkrevd';
-        if (value.toString().trim().length < 3) return 'Til-adresse må være minst 3 tegn';
+        if (!value || !value.toString().trim()) return t('toAddressRequired');
+        if (value.toString().trim().length < 3) return t('toAddressMinLength');
         return '';
 
       case 'price_type':
-        if (!value) return 'Pristype er påkrevd';
+        if (!value) return t('priceTypeRequired');
         return '';
 
       case 'price':
         if (formData.price_type === 'fixed') {
-          if (!value || value.toString().trim() === '') return 'Pris er påkrevd for fast pris';
+          if (!value || value.toString().trim() === '') return t('priceRequired');
           const price = Number(value);
-          if (isNaN(price)) return 'Pris må være et tall';
-          if (price <= 0) return 'Pris må være større enn 0';
-          if (price > 1000000) return 'Pris kan ikke være større enn 1 000 000 NOK';
+          if (isNaN(price)) return t('priceMustBeNumber');
+          if (price <= 0) return t('priceMustBePositive');
+          if (price > 1000000) return t('priceMaxExceeded');
         }
         return '';
 
@@ -725,9 +724,7 @@ export default function EditRequestScreen() {
                 <Text
                   style={[styles.dropdownText, !formData.cargo_type && styles.dropdownPlaceholder]}
                 >
-                  {formData.cargo_type
-                    ? CARGO_TYPES.find(t => t.id === formData.cargo_type)?.label
-                    : 'Velg lasttype'}
+                  {formData.cargo_type ? t(formData.cargo_type) : t('selectCargoType')}
                 </Text>
                 <Ionicons name="chevron-down" size={20} color="#6B7280" />
               </TouchableOpacity>
@@ -1028,7 +1025,7 @@ export default function EditRequestScreen() {
                     formData.cargo_type === type.id && styles.menuItemTextSelected,
                   ]}
                 >
-                  {type.label}
+                  {t(type.id)}
                 </Text>
                 {formData.cargo_type === type.id && (
                   <Ionicons name="checkmark" size={20} color="#10B981" />
