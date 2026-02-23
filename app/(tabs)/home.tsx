@@ -153,16 +153,6 @@ export default function HomeScreen() {
     saveState();
   }, [activeTab, searchQuery, sortBy, selectedCargoType]);
 
-  const activeCount = useMemo(
-    () => displayedRequests.filter(request => request.status === 'active').length,
-    [displayedRequests]
-  );
-
-  const assignedCount = useMemo(
-    () => displayedRequests.filter(request => request.status === 'assigned').length,
-    [displayedRequests]
-  );
-
   const handleOpenRequest = (requestId: string) => {
     router.push(`/request-details/${requestId}`);
   };
@@ -310,21 +300,6 @@ export default function HomeScreen() {
               <ActivityIndicator color={colors.primary} />
             </View>
           ) : null
-        }
-        ListHeaderComponent={
-          <View style={styles.headerSection}>
-            <View style={styles.summaryRow}>
-              <View style={styles.summaryItem}>
-                <Text style={styles.summaryLabel}>{t('activeRequests')}</Text>
-                <Text style={styles.summaryValue}>{activeCount}</Text>
-              </View>
-              <View style={styles.summaryDivider} />
-              <View style={styles.summaryItem}>
-                <Text style={styles.summaryLabel}>{t('assigned')}</Text>
-                <Text style={styles.summaryValue}>{assignedCount}</Text>
-              </View>
-            </View>
-          </View>
         }
         ListEmptyComponent={
           !loading ? (
@@ -520,13 +495,9 @@ const styles = StyleSheet.create({
     fontSize: fontSize.xs,
     fontWeight: fontWeight.bold,
   },
-  headerSection: {
-    paddingTop: spacing.lg,
-    paddingBottom: spacing.md,
-  },
   stickyControls: {
     backgroundColor: colors.white,
-    paddingBottom: spacing.md,
+    paddingBottom: spacing.sm,
     borderBottomWidth: 1,
     borderBottomColor: colors.border.light,
   },
@@ -745,31 +716,6 @@ const styles = StyleSheet.create({
   },
   filterChipTextActive: {
     color: colors.primary,
-  },
-  summaryRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.md,
-    paddingVertical: spacing.sm,
-  },
-  summaryItem: {
-    flexDirection: 'row',
-    alignItems: 'baseline',
-    gap: spacing.xs,
-  },
-  summaryLabel: {
-    fontSize: fontSize.sm,
-    color: colors.text.secondary,
-  },
-  summaryValue: {
-    fontSize: fontSize.lg,
-    fontWeight: fontWeight.semibold,
-    color: colors.text.primary,
-  },
-  summaryDivider: {
-    width: 1,
-    height: 20,
-    backgroundColor: colors.border.light,
   },
   emptyState: {
     alignItems: 'center',
