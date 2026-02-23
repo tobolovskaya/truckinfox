@@ -1,9 +1,9 @@
 /**
  * Google Places API Proxy Cloud Function
- * 
+ *
  * This Cloud Function acts as a secure proxy for Google Places API calls.
  * The API key is stored server-side and not exposed to the client.
- * 
+ *
  * Usage:
  * 1. Add GOOGLE_PLACES_API_KEY environment variable in Firebase Console
  * 2. Deploy: firebase deploy --only functions
@@ -50,7 +50,7 @@ const checkRateLimit = async (userId: string): Promise<boolean> => {
   }
 
   const data = rateLimit.data();
-  const requests = (data?.requests || [] as number[]).filter(t => t > oneHourAgo);
+  const requests = (data?.requests || ([] as number[])).filter((t: number) => t > oneHourAgo);
 
   // Allow max 100 requests per hour per user
   if (requests.length >= 100) {
@@ -72,14 +72,14 @@ const checkRateLimit = async (userId: string): Promise<boolean> => {
 const sanitizeInput = (input: string): string => {
   // Remove special characters that could break the API query
   return input
-    .replace(/[<>\"'`]/g, '')
+    .replace(/[<>"'`]/g, '')
     .trim()
     .substring(0, 255); // Limit input length
 };
 
 /**
  * Places Autocomplete Proxy
- * 
+ *
  * POST Data:
  * {
  *   input: string,        // Search query (e.g., "Oslo")
@@ -155,25 +155,19 @@ export const placesAutocomplete = functions.https.onCall(async (data, context) =
         message: error.message,
       });
 
-      throw new functions.https.HttpsError(
-        'internal',
-        'Failed to fetch place suggestions'
-      );
+      throw new functions.https.HttpsError('internal', 'Failed to fetch place suggestions');
     }
 
     console.error('Unexpected error in placesAutocomplete:', error);
-    throw new functions.https.HttpsError(
-      'internal',
-      'An unexpected error occurred'
-    );
+    throw new functions.https.HttpsError('internal', 'An unexpected error occurred');
   }
 });
 
 /**
  * Place Details Proxy
- * 
+ *
  * Retrieves detailed information about a specific place
- * 
+ *
  * POST Data:
  * {
  *   place_id: string      // Google Places place_id
@@ -204,23 +198,17 @@ export const placeDetails = functions.https.onCall(async (data, context) => {
     }
 
     if (!GOOGLE_PLACES_API_KEY) {
-      throw new functions.https.HttpsError(
-        'internal',
-        'API not configured'
-      );
+      throw new functions.https.HttpsError('internal', 'API not configured');
     }
 
-    const response = await axios.get(
-      'https://maps.googleapis.com/maps/api/place/details/json',
-      {
-        params: {
-          place_id: data.place_id,
-          key: GOOGLE_PLACES_API_KEY,
-          language: 'no',
-        },
-        timeout: 5000,
-      }
-    );
+    const response = await axios.get('https://maps.googleapis.com/maps/api/place/details/json', {
+      params: {
+        place_id: data.place_id,
+        key: GOOGLE_PLACES_API_KEY,
+        language: 'no',
+      },
+      timeout: 5000,
+    });
 
     // Return sanitized details
     const result = response.data.result || {};
@@ -240,10 +228,7 @@ export const placeDetails = functions.https.onCall(async (data, context) => {
       throw error;
     }
 
-    throw new functions.https.HttpsError(
-      'internal',
-      'Failed to fetch place details'
-    );
+    throw new functions.https.HttpsError('internal', 'Failed to fetch place details');
   }
 });
 

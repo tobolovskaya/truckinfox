@@ -30,6 +30,18 @@ interface PlaceDetailsResult {
   };
 }
 
+interface PlacesAutocompleteResponse {
+  predictions?: PlaceSuggestion[];
+}
+
+interface PlaceDetailsResponse {
+  result?: PlaceDetailsResult;
+}
+
+interface HealthCheckResponse {
+  status?: string;
+}
+
 /**
  * Hook for accessing Google Places API through secure Forest Cloud Function proxy
  * 
@@ -58,7 +70,9 @@ export const useSecurePlacesProxy = () => {
         components: components || 'country:no',
       });
 
-      return result.data.predictions || [];
+      const data = result.data as PlacesAutocompleteResponse;
+
+      return data.predictions || [];
     } catch (error) {
       console.error('Error searching places via proxy:', error);
       return [];
@@ -81,7 +95,9 @@ export const useSecurePlacesProxy = () => {
         place_id: placeId,
       });
 
-      return result.data.result || null;
+      const data = result.data as PlaceDetailsResponse;
+
+      return data.result || null;
     } catch (error) {
       console.error('Error fetching place details via proxy:', error);
       return null;
@@ -96,7 +112,9 @@ export const useSecurePlacesProxy = () => {
       const healthCheck = httpsCallable(functions, 'healthCheck');
       const result = await healthCheck({});
 
-      return result.data.status === 'ok';
+      const data = result.data as HealthCheckResponse;
+
+      return data.status === 'ok';
     } catch (error) {
       console.error('Health check failed:', error);
       return false;
