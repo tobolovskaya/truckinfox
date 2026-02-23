@@ -17,6 +17,7 @@ import {
   borderRadius,
   shadows,
 } from '../../lib/sharedStyles';
+import { getCargoTypeColors, getCargoTypeIcon } from '../../constants/cardStyles';
 import { formatCurrency, formatDate, formatWeight } from '../../utils/formatting';
 import { useTranslation } from 'react-i18next';
 
@@ -66,9 +67,9 @@ export const RequestCard: React.FC<RequestCardProps> = ({
   const weightText =
     typeof request.weight === 'number' ? formatWeight(request.weight) : t('weightUnknown');
   const dateText = request.pickup_date ? formatDate(request.pickup_date) : t('dateNotSet');
-  const imageSource = request.images?.[0]
-    ? { uri: request.images[0] }
-    : require('../../assets/icon.png');
+  const cargoType = request.cargo_type || 'other';
+  const cargoColors = getCargoTypeColors(cargoType);
+  const cargoIcon = getCargoTypeIcon(cargoType);
 
   return (
     <TouchableOpacity
@@ -79,7 +80,13 @@ export const RequestCard: React.FC<RequestCardProps> = ({
       accessibilityLabel={title}
       accessibilityHint={t('openRequestDetails')}
     >
-      <Image source={imageSource} style={styles.image} resizeMode="cover" />
+      {request.images?.[0] ? (
+        <Image source={{ uri: request.images[0] }} style={styles.image} resizeMode="cover" />
+      ) : (
+        <View style={[styles.imagePlaceholder, { backgroundColor: cargoColors.background }]}>
+          <Ionicons name={cargoIcon} size={40} color={cargoColors.text} />
+        </View>
+      )}
       <View style={styles.headerRow}>
         <Text style={[styles.title, compact && styles.titleCompact]} numberOfLines={2}>
           {title}
@@ -89,9 +96,7 @@ export const RequestCard: React.FC<RequestCardProps> = ({
 
       <View style={styles.badgeRow}>
         <View style={styles.badge}>
-          <Text style={styles.badgeText}>
-            {request.cargo_type ? t(request.cargo_type) : t('cargoType')}
-          </Text>
+          <Text style={styles.badgeText}>{t(request.cargo_type || 'other')}</Text>
         </View>
         <Text style={styles.metaText}>{weightText}</Text>
       </View>
@@ -150,6 +155,14 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.md,
     marginBottom: spacing.md,
     backgroundColor: colors.border.light,
+  },
+  imagePlaceholder: {
+    width: '100%',
+    height: 120,
+    borderRadius: borderRadius.md,
+    marginBottom: spacing.md,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   headerRow: {
     flexDirection: 'row',
