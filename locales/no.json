@@ -51,6 +51,8 @@
   "unfavorite": "Fjern",
   "home": "Hjem",
   "welcomeBack": "Velkommen tilbake!",
+  "welcomePrivate": "Klar for neste levering?",
+  "welcomeBusiness": "Klar for nye oppdrag i dag?",
   "overview": "Oversikt",
   "latestRequests": "Siste forespørsler",
   "noCargoRequestsYet": "Ingen lastforespørsler ennå",

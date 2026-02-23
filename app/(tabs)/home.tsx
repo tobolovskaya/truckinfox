@@ -20,13 +20,16 @@ import {
 } from '../../lib/sharedStyles';
 import { useAuth } from '../../contexts/AuthContext';
 import { useCargoRequests } from '../../hooks/useCargoRequests';
+import { useCurrentUser } from '../../hooks/useCurrentUser';
 import { RequestCard } from '../../components/home/RequestCard';
 import { SkeletonCard } from '../../components/home/SkeletonCard';
 import { useTranslation } from 'react-i18next';
+import Avatar from '../../components/Avatar';
 
 export default function HomeScreen() {
   const router = useRouter();
   const { user } = useAuth();
+  const { currentUser } = useCurrentUser(user?.uid);
   const { t } = useTranslation();
   const { width } = useWindowDimensions();
   const filters = useMemo(
@@ -69,13 +72,25 @@ export default function HomeScreen() {
     router.push(`/request-details/${requestId}`);
   };
 
+  const displayName = currentUser?.full_name || user?.displayName || t('user');
+  const welcomeText = `Hei, ${displayName}!`;
+  const avatarUrl = currentUser?.avatar_url || user?.photoURL;
+
   return (
     <View style={styles.container}>
       {/* Header */}
       <View style={[styles.header, { paddingHorizontal: horizontalPadding }]}>
-        <View>
-          <Text style={styles.welcomeText}>{t('welcomeBack')}</Text>
-          <Text style={styles.userName}>{user?.displayName || 'User'}</Text>
+        <View style={styles.userInfoRow}>
+          <Avatar
+            photoURL={avatarUrl}
+            size={44}
+            iconName="person"
+            backgroundColor={colors.primaryLight}
+            iconColor={colors.primary}
+          />
+          <View style={styles.userTextWrap}>
+            <Text style={styles.welcomeText}>{welcomeText}</Text>
+          </View>
         </View>
         <TouchableOpacity
           style={styles.notificationButton}
@@ -168,15 +183,19 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.lg,
     backgroundColor: colors.white,
   },
-  welcomeText: {
-    fontSize: fontSize.sm,
-    color: colors.text.secondary,
+  userInfoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    flex: 1,
   },
-  userName: {
-    fontSize: fontSize.xxl,
-    fontWeight: fontWeight.bold,
+  userTextWrap: {
+    flex: 1,
+  },
+  welcomeText: {
+    fontSize: fontSize.xl,
+    fontWeight: fontWeight.semibold,
     color: colors.text.primary,
-    marginTop: spacing.xxxs,
   },
   notificationButton: {
     width: 44,

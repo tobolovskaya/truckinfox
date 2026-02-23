@@ -89,7 +89,9 @@ export const RequestCard: React.FC<RequestCardProps> = ({
 
       <View style={styles.badgeRow}>
         <View style={styles.badge}>
-          <Text style={styles.badgeText}>{request.cargo_type || t('cargoType')}</Text>
+          <Text style={styles.badgeText}>
+            {request.cargo_type ? t(request.cargo_type) : t('cargoType')}
+          </Text>
         </View>
         <Text style={styles.metaText}>{weightText}</Text>
       </View>

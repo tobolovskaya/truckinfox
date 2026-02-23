@@ -14,17 +14,17 @@ export default function TabLayout() {
           backgroundColor: colors.white,
           borderTopColor: colors.border.light,
           borderTopWidth: 1,
-          height: 58,
-          paddingBottom: 4,
+          height: 62,
+          paddingBottom: 6,
           paddingTop: 6,
         },
         tabBarIconStyle: {
-          marginTop: -2,
+          marginTop: -4,
         },
         tabBarLabelStyle: {
-          fontSize: 12,
+          fontSize: 14,
           fontWeight: '600',
-          marginBottom: 2,
+          marginBottom: 4,
         },
       }}
     >
@@ -37,7 +37,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="home"
         options={{
-          title: 'Home',
+          title: 'Hjem',
           tabBarIcon: ({ color, size }: { color: string; size: number }) => (
             <Ionicons name="home" size={size} color={color} />
           ),
@@ -46,7 +46,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="messages"
         options={{
-          title: 'Messages',
+          title: 'Meldinger',
           tabBarIcon: ({ color, size }: { color: string; size: number }) => (
             <Ionicons name="chatbubbles" size={size} color={color} />
           ),
@@ -55,7 +55,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="create"
         options={{
-          title: 'Create',
+          title: 'Opprett',
           tabBarIcon: ({ color, size }: { color: string; size: number }) => (
             <Ionicons name="add-circle" size={size} color={color} />
           ),
@@ -64,7 +64,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="orders"
         options={{
-          title: 'Orders',
+          title: 'Ordrer',
           tabBarIcon: ({ color, size }: { color: string; size: number }) => (
             <Ionicons name="list" size={size} color={color} />
           ),
@@ -73,7 +73,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="profile"
         options={{
-          title: 'Profile',
+          title: 'Profil',
           tabBarIcon: ({ color, size }: { color: string; size: number }) => (
             <Ionicons name="person" size={size} color={color} />
           ),

@@ -4,6 +4,7 @@ import { getDocument } from '../lib/firestore-helpers';
 interface CurrentUser {
   full_name: string;
   avatar_url?: string;
+  user_type?: string;
 }
 
 export function useCurrentUser(userId?: string) {

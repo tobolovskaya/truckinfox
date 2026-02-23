@@ -51,6 +51,8 @@
   "unfavorite": "Remove",
   "home": "Home",
   "welcomeBack": "Welcome back!",
+  "welcomePrivate": "Ready for your next delivery?",
+  "welcomeBusiness": "Ready for new jobs today?",
   "overview": "Overview",
   "latestRequests": "Latest Requests",
   "noCargoRequestsYet": "No cargo requests yet",
