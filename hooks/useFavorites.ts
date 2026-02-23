@@ -11,6 +11,7 @@ import {
   serverTimestamp,
 } from 'firebase/firestore';
 import { triggerHapticFeedback } from '../utils/haptics';
+import { i18n } from '../lib/i18n';
 
 /**
  * Custom hook for managing favorite cargo requests
@@ -25,7 +26,7 @@ export function useFavorites(userId?: string) {
     ) => {
       try {
         if (!userId) {
-          Alert.alert('Error', 'Please log in to use favorites');
+          Alert.alert(i18n.t('error'), i18n.t('favoriteLoginRequired'));
           return;
         }
 
@@ -61,7 +62,7 @@ export function useFavorites(userId?: string) {
         // Rollback optimistic update by calling callback with original status
         onSuccess?.(isFavorite);
 
-        Alert.alert('Error', 'Could not update favorite. Please try again.');
+        Alert.alert(i18n.t('error'), i18n.t('favoriteUpdateFailed'));
       }
     },
     [userId]
@@ -71,7 +72,7 @@ export function useFavorites(userId?: string) {
     async (requestId: string, onSuccess?: () => void) => {
       try {
         if (!userId) {
-          Alert.alert('Error', 'Please log in to use favorites');
+          Alert.alert(i18n.t('error'), i18n.t('favoriteLoginRequired'));
           return;
         }
 
@@ -85,7 +86,7 @@ export function useFavorites(userId?: string) {
         onSuccess?.();
       } catch (error: any) {
         console.error('Error adding favorite:', error);
-        Alert.alert('Error', 'Could not add to favorites. Please try again.');
+        Alert.alert(i18n.t('error'), i18n.t('favoriteAddFailed'));
       }
     },
     [userId]
@@ -95,7 +96,7 @@ export function useFavorites(userId?: string) {
     async (requestId: string, onSuccess?: () => void) => {
       try {
         if (!userId) {
-          Alert.alert('Error', 'Please log in to use favorites');
+          Alert.alert(i18n.t('error'), i18n.t('favoriteLoginRequired'));
           return;
         }
 
@@ -111,7 +112,7 @@ export function useFavorites(userId?: string) {
         onSuccess?.();
       } catch (error: any) {
         console.error('Error removing favorite:', error);
-        Alert.alert('Error', 'Could not remove from favorites. Please try again.');
+        Alert.alert(i18n.t('error'), i18n.t('favoriteRemoveFailed'));
       }
     },
     [userId]

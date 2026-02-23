@@ -348,9 +348,9 @@ export default function RequestDetailsScreen() {
       setShowSuccessAnimation(true);
       setTimeout(() => {
         setShowSuccessAnimation(false);
-        Alert.alert('Suksess', 'Bud godtatt! Du kan nå gå til betaling.', [
+        Alert.alert(t('success'), t('bidAcceptedSuccess'), [
           {
-            text: 'Gå til betaling',
+            text: t('proceedToPayment'),
             onPress: () => {
               // Navigate to payment screen (implement if needed)
               router.back();

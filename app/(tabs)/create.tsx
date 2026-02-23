@@ -442,9 +442,9 @@ export default function CreateRequestScreen() {
     }
 
     return new Promise(resolve => {
-      Alert.alert('Duplikat?', 'Du har allerede en lignende forespørsel. Vil du fortsette?', [
-        { text: 'Nei', style: 'cancel', onPress: () => resolve(false) },
-        { text: 'Ja', onPress: () => resolve(true) },
+      Alert.alert(t('duplicateRequestTitle'), t('duplicateRequestMessage'), [
+        { text: t('no'), style: 'cancel', onPress: () => resolve(false) },
+        { text: t('yes'), onPress: () => resolve(true) },
       ]);
     });
   };

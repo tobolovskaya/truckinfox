@@ -63,7 +63,7 @@ export function useNearbyRequests(radiusKm: number = 50, searchType: 'from' | 't
       const { status: existingStatus, canAskAgain } =
         await Location.getForegroundPermissionsAsync();
 
-      console.log('ðŸ“ Current location permission:', existingStatus);
+      console.log('📍 Current location permission:', existingStatus);
 
       // If already granted, proceed
       if (existingStatus === Location.PermissionStatus.GRANTED) {
@@ -77,7 +77,7 @@ export function useNearbyRequests(radiusKm: number = 50, searchType: 'from' | 't
 
       // If permission was denied and we can't ask again, show settings option
       if (!canAskAgain) {
-        console.log('âš ï¸  Cannot ask for permission again, showing settings option');
+        console.log('⚠️ Cannot ask for permission again, showing settings option');
         setPermissionDenied(true);
         setPermissionStatus({
           granted: false,

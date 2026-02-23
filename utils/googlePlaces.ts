@@ -7,7 +7,7 @@ const GOOGLE_PLACES_API_KEY = process.env.EXPO_PUBLIC_GOOGLE_PLACES_API_KEY;
 // Validate API key exists
 if (!GOOGLE_PLACES_API_KEY) {
   console.warn(
-    'âš ï¸  Google Places API key not found in environment variables.\n' +
+    '⚠️ Google Places API key not found in environment variables.\n' +
       'Set EXPO_PUBLIC_GOOGLE_PLACES_API_KEY in your .env file.\n' +
       'Falling back to offline Norwegian cities only.'
   );
@@ -69,7 +69,7 @@ export const norwegianCities = [
   { name: 'Stavanger', lat: 58.97, lng: 5.7331 },
   { name: 'Kristiansand', lat: 58.1467, lng: 7.9956 },
   { name: 'Fredrikstad', lat: 59.2181, lng: 10.9298 },
-  { name: 'TromsÃ¸', lat: 69.6492, lng: 18.9553 },
+  { name: 'Tromsø', lat: 69.6492, lng: 18.9553 },
   { name: 'Drammen', lat: 59.7434, lng: 10.2045 },
   { name: 'Asker', lat: 59.8327, lng: 10.4345 },
   { name: 'Lillehammer', lat: 61.1153, lng: 10.4662 },

@@ -94,7 +94,7 @@ backgroundVeryLight: '#FAFAFA',   // NEW: Very light background
 - ✅ app/index.tsx
 - ✅ app/(auth)/forgot-password.tsx
 - ✅ app/(auth)/register.tsx
-- ✅ app/(auth)/sign-in.tsx
+- ✅ app/(auth)/login.tsx
 - ✅ app/(tabs)/create.tsx
 - ✅ app/(tabs)/home.tsx (50 replacements)
 - ✅ app/(tabs)/map.tsx (33 replacements)

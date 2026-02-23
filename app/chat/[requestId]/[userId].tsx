@@ -544,11 +544,11 @@ export default function ChatScreen() {
   }, [messages]);
 
   const handleAttachmentPress = async () => {
-    Alert.alert('Velg vedlegg', 'Hvilken type fil vil du legge ved?', [
-      { text: 'Avbryt', style: 'cancel' },
-      { text: 'Kamera', onPress: openCamera },
-      { text: 'Galleri', onPress: openImagePicker },
-      { text: 'Dokument', onPress: openDocumentPicker },
+    Alert.alert(t('selectAttachment'), t('attachmentTypePrompt'), [
+      { text: t('cancel'), style: 'cancel' },
+      { text: t('camera'), onPress: openCamera },
+      { text: t('gallery'), onPress: openImagePicker },
+      { text: t('document'), onPress: openDocumentPicker },
     ]);
   };
 
@@ -556,7 +556,7 @@ export default function ChatScreen() {
     const permissionResult = await ImagePicker.requestCameraPermissionsAsync();
 
     if (permissionResult.granted === false) {
-      Alert.alert('Tillatelse', 'Du må gi tillatelse til kameraet for å ta bilder');
+      Alert.alert(t('permissionRequired'), t('cameraPermissionRequired'));
       return;
     }
 
@@ -606,13 +606,10 @@ export default function ChatScreen() {
       const fileName = file.name || 'attachment';
       const fileSize = file.size ? `(${Math.round(file.size / 1024)}KB)` : '';
 
-      Alert.alert(
-        'Fil valgt',
-        `${fileName} ${fileSize}\n\nFilopplasting vil bli implementert senere.`
-      );
+      Alert.alert(t('fileSelected'), `${fileName} ${fileSize}\n\n${t('fileUploadComingSoon')}`);
     } catch (error) {
       console.error('Error handling file:', error);
-      Alert.alert('Feil', 'Kunne ikke behandle filen');
+      Alert.alert(t('error'), t('failedToProcessFile'));
     }
   };
 

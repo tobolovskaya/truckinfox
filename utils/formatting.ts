@@ -43,28 +43,29 @@ export const formatRelativeTime = (date: Date | string, locale = 'no-NO'): strin
   const dateObj = typeof date === 'string' ? new Date(date) : date;
   const now = new Date();
   const diffInSeconds = Math.floor((now.getTime() - dateObj.getTime()) / 1000);
+  const isNorwegian = locale.toLowerCase().startsWith('no');
 
   if (diffInSeconds < 60) {
-    return locale === 'no-NO' ? 'Akkurat nå' : 'Just now';
+    return isNorwegian ? 'Akkurat nå' : 'Just now';
   }
 
   const diffInMinutes = Math.floor(diffInSeconds / 60);
   if (diffInMinutes < 60) {
-    return locale === 'no-NO'
+    return isNorwegian
       ? `${diffInMinutes} ${diffInMinutes === 1 ? 'minutt' : 'minutter'} siden`
       : `${diffInMinutes} ${diffInMinutes === 1 ? 'minute' : 'minutes'} ago`;
   }
 
   const diffInHours = Math.floor(diffInMinutes / 60);
   if (diffInHours < 24) {
-    return locale === 'no-NO'
+    return isNorwegian
       ? `${diffInHours} ${diffInHours === 1 ? 'time' : 'timer'} siden`
       : `${diffInHours} ${diffInHours === 1 ? 'hour' : 'hours'} ago`;
   }
 
   const diffInDays = Math.floor(diffInHours / 24);
   if (diffInDays < 7) {
-    return locale === 'no-NO'
+    return isNorwegian
       ? `${diffInDays} ${diffInDays === 1 ? 'dag' : 'dager'} siden`
       : `${diffInDays} ${diffInDays === 1 ? 'day' : 'days'} ago`;
   }

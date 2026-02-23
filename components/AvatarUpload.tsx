@@ -46,7 +46,7 @@ export default function AvatarUpload({ avatarUrl, onUpload, size = 80 }: AvatarU
       // Request permission
       const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (status !== 'granted') {
-        Alert.alert(t('error'), 'Permission to access camera roll is required!');
+        Alert.alert(t('error'), t('cameraRollPermissionRequired'));
         return;
       }
 
@@ -65,7 +65,7 @@ export default function AvatarUpload({ avatarUrl, onUpload, size = 80 }: AvatarU
       }
     } catch (error) {
       console.error('Error picking image:', error);
-      Alert.alert(t('error'), 'Failed to pick image');
+      Alert.alert(t('error'), t('failedToPickImage'));
     }
   };
 
@@ -110,7 +110,7 @@ export default function AvatarUpload({ avatarUrl, onUpload, size = 80 }: AvatarU
       });
 
       onUpload(downloadURL);
-      Alert.alert(t('success'), 'Avatar updated successfully!');
+      Alert.alert(t('success'), t('avatarUpdatedSuccessfully'));
     } catch (error: any) {
       console.error('Error uploading avatar:', error);
       Alert.alert(t('error'), error.message);
@@ -122,10 +122,10 @@ export default function AvatarUpload({ avatarUrl, onUpload, size = 80 }: AvatarU
   const removeAvatar = async () => {
     if (!user?.uid || !avatarUrl) return;
 
-    Alert.alert('Remove Avatar', 'Are you sure you want to remove your profile picture?', [
+    Alert.alert(t('removeAvatar'), t('confirmRemoveAvatar'), [
       { text: t('cancel'), style: 'cancel' },
       {
-        text: 'Remove',
+        text: t('remove'),
         style: 'destructive',
         onPress: async () => {
           try {
@@ -159,7 +159,7 @@ export default function AvatarUpload({ avatarUrl, onUpload, size = 80 }: AvatarU
             });
 
             onUpload('');
-            Alert.alert(t('success'), 'Avatar removed successfully!');
+            Alert.alert(t('success'), t('avatarRemovedSuccessfully'));
           } catch (error: any) {
             console.error('Error removing avatar:', error);
             Alert.alert(t('error'), error.message);
@@ -203,7 +203,7 @@ export default function AvatarUpload({ avatarUrl, onUpload, size = 80 }: AvatarU
       {avatarUrl && (
         <TouchableOpacity style={styles.removeButton} onPress={removeAvatar} disabled={uploading}>
           <Ionicons name="trash-outline" size={16} color={theme.iconColors.error} />
-          <Text style={styles.removeText}>Remove</Text>
+          <Text style={styles.removeText}>{t('remove')}</Text>
         </TouchableOpacity>
       )}
     </View>

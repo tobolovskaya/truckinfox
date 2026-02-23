@@ -24,7 +24,7 @@ const firebaseConfig = {
 const isConfigValid = firebaseConfig.apiKey && firebaseConfig.projectId && firebaseConfig.appId;
 
 if (!isConfigValid) {
-  console.warn('âš ï¸ Firebase configuration incomplete. Check your .env file.');
+  console.warn('⚠️ Firebase configuration incomplete. Check your .env file.');
   console.warn('Missing:', {
     apiKey: !firebaseConfig.apiKey,
     projectId: !firebaseConfig.projectId,
@@ -65,7 +65,7 @@ try {
   console.error('Firebase Auth initialization failed:', error);
   // Fallback to getAuth
   auth = getAuth(app);
-  console.warn('âš ï¸ Using fallback Firebase Auth instance');
+  console.warn('⚠️ Using fallback Firebase Auth instance');
 }
 
 try {
@@ -75,7 +75,7 @@ try {
   console.error('Firebase Firestore initialization failed:', error);
   // Don't throw - assign anyway to prevent crashes
   firestore = getFirestore(app);
-  console.warn('âš ï¸ Using fallback Firestore instance');
+  console.warn('⚠️ Using fallback Firestore instance');
 }
 
 try {
@@ -85,7 +85,7 @@ try {
   console.error('Firebase Storage initialization failed:', error);
   // Don't throw - assign anyway to prevent crashes
   storage = getStorage(app);
-  console.warn('âš ï¸ Using fallback Storage instance');
+  console.warn('⚠️ Using fallback Storage instance');
 }
 
 // Initialize Analytics (web only) - Native platforms not supported

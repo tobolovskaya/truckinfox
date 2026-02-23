@@ -15,6 +15,7 @@ import {
   DocumentSnapshot,
 } from 'firebase/firestore';
 import { db } from '../lib/firebase';
+import { i18n } from '../lib/i18n';
 import { normalizeSearchQuery } from '../utils/search';
 
 export interface CargoRequest {
@@ -312,12 +313,12 @@ export function useCargoRequests({
       return;
     }
 
-    const message = error instanceof Error ? error.message : 'Unable to load requests.';
+    const message = error instanceof Error ? error.message : i18n.t('unableToLoadRequests');
     const errorMessage = message.toLowerCase().includes('fetch')
-      ? 'Connection error. Please check your internet connection.'
-      : 'Unable to load requests. Please try again.';
+      ? i18n.t('connectionErrorCheckInternet')
+      : i18n.t('unableToLoadRequestsTryAgain');
 
-    Alert.alert('Error', errorMessage);
+    Alert.alert(i18n.t('error'), errorMessage);
   }, [error]);
 
   return {
