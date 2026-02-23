@@ -1,7 +1,8 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   FlatList,
   RefreshControl,
+  ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -9,6 +10,7 @@ import {
   View,
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import {
   colors,
@@ -25,30 +27,48 @@ import { RequestCard } from '../../components/home/RequestCard';
 import { SkeletonCard } from '../../components/home/SkeletonCard';
 import { useTranslation } from 'react-i18next';
 import Avatar from '../../components/Avatar';
+import { useUnreadCount } from '../../hooks/useNotifications';
 
 export default function HomeScreen() {
   const router = useRouter();
   const { user } = useAuth();
   const { currentUser } = useCurrentUser(user?.uid);
   const { t } = useTranslation();
+  const { unreadCount } = useUnreadCount();
+  const [selectedCargoType, setSelectedCargoType] = useState('');
+  const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
+  const cargoTypes = useMemo(
+    () => [
+      'automotive',
+      'construction',
+      'boats',
+      'electronics',
+      'campingvogn',
+      'machinery',
+      'furniture',
+      'other',
+    ],
+    []
+  );
   const filters = useMemo(
     () => ({
       city: '',
-      cargo_type: '',
+      cargo_type: selectedCargoType,
       price_min: '',
       price_max: '',
       price_type: '',
     }),
-    []
+    [selectedCargoType]
   );
 
-  const { requests, loading, refreshing, refresh } = useCargoRequests({
+  const { requests, loading, refreshing, refresh, fetchMoreRequests, hasMore, loadingMore } =
+    useCargoRequests({
     activeTab: 'all',
     filters,
     sortBy: 'newest',
     userId: user?.uid,
-  });
+    });
 
   const horizontalPadding = width < 360 ? spacing.md : spacing.lg;
   const gridGap = width < 360 ? spacing.sm : spacing.md;
@@ -67,6 +87,17 @@ export default function HomeScreen() {
     () => requests.filter(request => request.status === 'assigned').length,
     [requests]
   );
+  const completedCount = useMemo(
+    () =>
+      requests.filter(
+        request => request.status === 'completed' || request.status === 'delivered'
+      ).length,
+    [requests]
+  );
+  const totalBids = useMemo(
+    () => requests.reduce((sum, request) => sum + (request.bids?.length ?? 0), 0),
+    [requests]
+  );
 
   const handleOpenRequest = (requestId: string) => {
     router.push(`/request-details/${requestId}`);
@@ -79,7 +110,12 @@ export default function HomeScreen() {
   return (
     <View style={styles.container}>
       {/* Header */}
-      <View style={[styles.header, { paddingHorizontal: horizontalPadding }]}>
+      <View
+        style={[
+          styles.header,
+          { paddingHorizontal: horizontalPadding, paddingTop: insets.top + spacing.md },
+        ]}
+      >
         <View style={styles.userInfoRow}>
           <Avatar
             photoURL={avatarUrl}
@@ -100,6 +136,13 @@ export default function HomeScreen() {
           accessibilityHint={t('viewNotifications')}
         >
           <Ionicons name="notifications-outline" size={24} color={colors.text.primary} />
+          {unreadCount > 0 && (
+            <View style={styles.notificationBadge}>
+              <Text style={styles.notificationBadgeText}>
+                {unreadCount > 99 ? '99+' : unreadCount}
+              </Text>
+            </View>
+          )}
         </TouchableOpacity>
       </View>
 
@@ -115,9 +158,14 @@ export default function HomeScreen() {
         }}
         showsVerticalScrollIndicator={false}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} />}
+        onEndReached={() => {
+          if (hasMore && !loadingMore) {
+            fetchMoreRequests();
+          }
+        }}
+        onEndReachedThreshold={0.5}
         ListHeaderComponent={
           <View style={styles.headerSection}>
-            <Text style={styles.sectionTitle}>{t('overview')}</Text>
             <View style={styles.statsGrid}>
               <View style={styles.statCard}>
                 <Ionicons name="document-text-outline" size={32} color={colors.primary} />
@@ -125,10 +173,73 @@ export default function HomeScreen() {
                 <Text style={styles.statLabel}>{t('activeRequests')}</Text>
               </View>
               <View style={styles.statCard}>
-                <Ionicons name="checkmark-circle-outline" size={32} color="#4CAF50" />
+                <Ionicons
+                  name="checkmark-circle-outline"
+                  size={32}
+                  color={colors.status.success}
+                />
                 <Text style={styles.statValue}>{assignedCount}</Text>
                 <Text style={styles.statLabel}>{t('assigned')}</Text>
               </View>
+              <View style={styles.statCard}>
+                <Ionicons
+                  name="checkmark-done-outline"
+                  size={32}
+                  color={colors.status.success}
+                />
+                <Text style={styles.statValue}>{completedCount}</Text>
+                <Text style={styles.statLabel}>{t('completed')}</Text>
+              </View>
+              <View style={styles.statCard}>
+                <Ionicons name="pricetag-outline" size={32} color={colors.info} />
+                <Text style={styles.statValue}>{totalBids}</Text>
+                <Text style={styles.statLabel}>{t('totalBids')}</Text>
+              </View>
+            </View>
+            <View style={styles.filterSection}>
+              <Text style={styles.filterTitle}>{t('cargoType')}</Text>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.filterChips}
+              >
+                <TouchableOpacity
+                  style={[styles.filterChip, !selectedCargoType && styles.filterChipActive]}
+                  onPress={() => setSelectedCargoType('')}
+                  accessibilityRole="button"
+                  accessibilityLabel={t('allTypes')}
+                >
+                  <Text
+                    style={[
+                      styles.filterChipText,
+                      !selectedCargoType && styles.filterChipTextActive,
+                    ]}
+                  >
+                    {t('allTypes')}
+                  </Text>
+                </TouchableOpacity>
+                {cargoTypes.map(type => {
+                  const isSelected = selectedCargoType === type;
+                  return (
+                    <TouchableOpacity
+                      key={type}
+                      style={[styles.filterChip, isSelected && styles.filterChipActive]}
+                      onPress={() => setSelectedCargoType(type)}
+                      accessibilityRole="button"
+                      accessibilityLabel={t(type)}
+                    >
+                      <Text
+                        style={[
+                          styles.filterChipText,
+                          isSelected && styles.filterChipTextActive,
+                        ]}
+                      >
+                        {t(type)}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </ScrollView>
             </View>
             <Text style={styles.sectionTitle}>{t('latestRequests')}</Text>
           </View>
@@ -179,7 +290,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingTop: spacing.xxl + spacing.lg,
     paddingBottom: spacing.lg,
     backgroundColor: colors.white,
   },
@@ -198,14 +308,66 @@ const styles = StyleSheet.create({
     color: colors.text.primary,
   },
   notificationButton: {
+    position: 'relative',
     width: 44,
     height: 44,
     justifyContent: 'center',
     alignItems: 'center',
   },
+  notificationBadge: {
+    position: 'absolute',
+    top: 2,
+    right: 2,
+    backgroundColor: colors.error,
+    borderRadius: borderRadius.sm,
+    minWidth: 18,
+    height: 18,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: spacing.xxxs,
+  },
+  notificationBadgeText: {
+    color: colors.white,
+    fontSize: fontSize.xs,
+    fontWeight: fontWeight.bold,
+  },
   headerSection: {
     paddingTop: spacing.lg,
     paddingBottom: spacing.md,
+  },
+  filterSection: {
+    marginTop: spacing.md,
+  },
+  filterTitle: {
+    fontSize: fontSize.md,
+    fontWeight: fontWeight.semibold,
+    color: colors.text.primary,
+    marginBottom: spacing.sm,
+  },
+  filterChips: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+    paddingVertical: spacing.xs,
+  },
+  filterChip: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+    borderRadius: borderRadius.full,
+    backgroundColor: colors.backgroundVeryLight,
+    borderWidth: 1,
+    borderColor: colors.border.light,
+  },
+  filterChipActive: {
+    backgroundColor: colors.primaryLight,
+    borderColor: colors.primaryLight,
+  },
+  filterChipText: {
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.semibold,
+    color: colors.text.secondary,
+  },
+  filterChipTextActive: {
+    color: colors.primary,
   },
   sectionTitle: {
     fontSize: fontSize.lg,
@@ -215,10 +377,12 @@ const styles = StyleSheet.create({
   },
   statsGrid: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: spacing.md,
   },
   statCard: {
-    flex: 1,
+    flexGrow: 1,
+    flexBasis: '48%',
     backgroundColor: colors.white,
     borderRadius: borderRadius.lg,
     padding: spacing.lg,

@@ -53,7 +53,7 @@ export const SkeletonCard = ({ cardStyle }: { cardStyle?: StyleProp<ViewStyle> }
     <View style={[styles.requestCard, cardStyle]}>
       {/* Photo skeleton */}
       <View style={styles.photoSection}>
-        <SkeletonBox width="100%" height={180} style={{ borderRadius: 0 }} />
+        <SkeletonBox width="100%" height={120} style={{ borderRadius: 0 }} />
       </View>
 
       {/* Content skeleton */}
@@ -96,7 +96,7 @@ const styles = StyleSheet.create({
   },
   photoSection: {
     width: '100%',
-    height: 180,
+    height: 120,
   },
   cardContent: {
     padding: spacing.lg,

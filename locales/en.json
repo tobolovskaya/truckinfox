@@ -152,6 +152,7 @@
   "checkBackLater": "Check back later for new requests",
   "createFirstRequest": "Create your first request to get started",
   "bids": "bids",
+  "totalBids": "Total Bids",
   "in_progress": "In Progress",
   "searchMessages": "Search messages",
   "noMessages": "No messages yet",

@@ -31,6 +31,7 @@ interface CargoRequest {
   to_address?: string;
   pickup_date?: string;
   price?: number;
+  price_type?: string;
   status?: string;
   created_at?: string;
   distance?: number;
@@ -63,7 +64,11 @@ export const RequestCard: React.FC<RequestCardProps> = ({
   const fromAddress = request.from_address || t('unknownPickup');
   const toAddress = request.to_address || t('unknownDelivery');
   const priceText =
-    typeof request.price === 'number' ? formatCurrency(request.price) : t('priceOnAgreement');
+    request.price_type === 'negotiable'
+      ? t('negotiable')
+      : typeof request.price === 'number' && request.price > 0
+        ? formatCurrency(request.price)
+        : t('priceOnAgreement');
   const weightText =
     typeof request.weight === 'number' ? formatWeight(request.weight) : t('weightUnknown');
   const dateText = request.pickup_date ? formatDate(request.pickup_date) : t('dateNotSet');
