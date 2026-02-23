@@ -2,7 +2,6 @@ import React, { useState, useRef, useEffect } from 'react';
 import {
   View,
   ActivityIndicator,
-  Image,
   StyleSheet,
   Text,
   ImageStyle,
@@ -11,7 +10,7 @@ import {
   Animated,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { colors, spacing, borderRadius, fontSize } from '../lib/sharedStyles';
+import { colors, spacing, fontSize } from '../lib/sharedStyles';
 import { startTrace, PerformanceTraces } from '../utils/performance';
 
 interface LazyImageProps {
@@ -82,7 +81,7 @@ export const LazyImage: React.FC<LazyImageProps> = ({
       try {
         traceRef.current.stop();
         traceStoppedRef.current = true;
-      } catch (err) {
+      } catch {
         // Silently handle if trace is already stopped
         console.debug('Trace already stopped or unavailable');
       }
@@ -162,7 +161,7 @@ export const LazyImage: React.FC<LazyImageProps> = ({
       {error ? (
         <View style={styles.errorPlaceholder}>
           <Ionicons
-            name={placeholderIcon as any}
+            name={placeholderIcon as keyof typeof Ionicons.glyphMap}
             size={placeholderSize}
             color={colors.text.tertiary}
           />

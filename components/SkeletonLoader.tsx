@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { View, StyleSheet, Animated } from 'react-native';
+import { View, StyleSheet, Animated, StyleProp, ViewStyle } from 'react-native';
 import { theme } from '../theme/theme';
 import { shadows, colors, spacing, borderRadius } from '../lib/sharedStyles';
 
@@ -37,7 +37,7 @@ export const SkeletonLoader: React.FC<SkeletonLoaderProps> = ({ variant = 'card'
   );
 };
 
-const SkeletonShimmer: React.FC<{ style?: any }> = ({ style }) => {
+const SkeletonShimmer: React.FC<{ style?: StyleProp<ViewStyle> }> = ({ style }) => {
   const shimmerAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
@@ -55,7 +55,7 @@ const SkeletonShimmer: React.FC<{ style?: any }> = ({ style }) => {
         }),
       ])
     ).start();
-  }, []);
+  }, [shimmerAnim]);
 
   const opacity = shimmerAnim.interpolate({
     inputRange: [0, 1],

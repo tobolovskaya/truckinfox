@@ -1,7 +1,7 @@
 import React from 'react';
-import { Text, TextProps, StyleSheet, Platform } from 'react-native';
+import { Text, TextProps } from 'react-native';
 import { theme } from '../theme/theme';
-import { colors, spacing, fontSize, fontWeight, borderRadius, shadows } from '../lib/sharedStyles';
+import { fontSize } from '../lib/sharedStyles';
 
 interface IOSTextProps extends TextProps {
   variant?:
@@ -40,7 +40,7 @@ export function IOSText({
     const baseStyle = {
       fontSize: typography.fontSize,
       lineHeight: typography.lineHeight,
-      fontWeight: (weight || typography.fontWeight) as any,
+      fontWeight: (weight || typography.fontWeight) as React.CSSProperties['fontWeight'],
     };
 
     const colorStyles = {
@@ -109,5 +109,3 @@ export const Caption1 = (props: Omit<IOSTextProps, 'variant'>) => (
 export const Caption2 = (props: Omit<IOSTextProps, 'variant'>) => (
   <IOSText {...props} variant="caption2" />
 );
-
-const styles = StyleSheet.create({});

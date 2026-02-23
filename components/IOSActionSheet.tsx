@@ -8,13 +8,12 @@ import {
   Animated,
   Dimensions,
   Platform,
-  SafeAreaView,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import { theme } from '../theme/theme';
-import { colors, spacing, fontSize, fontWeight, borderRadius, shadows } from '../lib/sharedStyles';
+import { colors, spacing, fontSize, fontWeight } from '../lib/sharedStyles';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -79,7 +78,7 @@ export function IOSActionSheet({
         }),
       ]).start();
     }
-  }, [visible]);
+  }, [visible, opacity, translateY]);
 
   const handleOptionPress = (option: IOSActionSheetOption) => {
     if (option.disabled) return;
