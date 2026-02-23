@@ -98,7 +98,7 @@
   "construction": "Construction",
   "automotive": "Automotive",
   "boats": "Boats",
-  "campingvogn": "Camper Vans",
+  "campingvogn": "Camper Trailers",
   "machinery": "Machinery",
   "transport": "Transport",
   "moving": "Moving",
@@ -141,7 +141,7 @@
   "fromAddressRequired": "From address is required",
   "toAddressRequired": "To address is required",
   "priceTypeRequired": "Price type is required",
-  "priceRequired": "Price is required",
+  "priceRequired": "Price is required for fixed price",
   "requestCreated": "Request created successfully",
   "allRequests": "All Requests",
   "myRequests": "My Requests",
@@ -545,5 +545,26 @@
         ]
       }
     }
-  }
+  },
+  "selectCargoType": "Select the type of cargo you want to ship",
+  "tomorrow": "Tomorrow",
+  "in3Days": "In 3 days",
+  "nextWeek": "Next week",
+  "photosOptional": "Photos (optional)",
+  "addCargoPhotos": "Add photos of the cargo",
+  "maxPhotos": "Max 5 photos",
+  "fixErrors": "Fix errors",
+  "titleMinLength": "Title must be at least 3 characters",
+  "titleMaxLength": "Title cannot be longer than 100 characters",
+  "descriptionMinLength": "Description must be at least 10 characters",
+  "descriptionMaxLength": "Description cannot be longer than 500 characters",
+  "weightMustBeNumber": "Weight must be a number",
+  "weightMustBePositive": "Weight must be greater than 0",
+  "weightMaxExceeded": "Weight cannot be greater than 50000 kg",
+  "dimensionsMaxLength": "Dimensions cannot be longer than 50 characters",
+  "fromAddressMinLength": "From address must be at least 3 characters",
+  "toAddressMinLength": "To address must be at least 3 characters",
+  "priceMustBeNumber": "Price must be a number",
+  "priceMustBePositive": "Price must be greater than 0",
+  "priceMaxExceeded": "Price cannot be greater than 1,000,000 NOK"
 }
