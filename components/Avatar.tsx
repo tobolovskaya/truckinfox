@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Image, StyleSheet } from 'react-native';
+import { View, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 interface AvatarProps {

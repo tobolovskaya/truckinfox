@@ -6,8 +6,8 @@ import { borderRadius, colors, fontSize, fontWeight, shadows, spacing } from '..
 
 interface AddressAutocompleteProps {
   value: string;
-  onSelect: (address: string, lat?: number, lng?: number) => void;
-  onChangeText?: (text: string) => void;
+  onSelect: (_address: string, _lat?: number, _lng?: number) => void;
+  onChangeText?: (_text: string) => void;
   placeholder: string;
   label: string;
   error?: string;

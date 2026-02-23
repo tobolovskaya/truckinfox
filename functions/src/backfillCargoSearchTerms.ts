@@ -1,4 +1,5 @@
 import * as admin from 'firebase-admin';
+import { firestore } from 'firebase-admin';
 
 if (!admin.apps.length) {
   admin.initializeApp();
@@ -86,10 +87,10 @@ async function run(): Promise<void> {
   let needsUpdate = 0;
   let updated = 0;
 
-  let lastDoc: FirebaseFirestore.QueryDocumentSnapshot | null = null;
+  let lastDoc: firestore.QueryDocumentSnapshot | null = null;
 
   while (true) {
-    let pageQuery: FirebaseFirestore.Query = db
+    let pageQuery: firestore.Query = db
       .collection('cargo_requests')
       .orderBy(admin.firestore.FieldPath.documentId())
       .limit(PAGE_SIZE);
@@ -106,7 +107,7 @@ async function run(): Promise<void> {
 
     scanned += snapshot.size;
 
-    const pendingUpdates: Array<{ ref: FirebaseFirestore.DocumentReference; terms: string[] }> = [];
+    const pendingUpdates: Array<{ ref: firestore.DocumentReference; terms: string[] }> = [];
 
     snapshot.docs.forEach(doc => {
       const data = doc.data() as CargoRequestDoc;

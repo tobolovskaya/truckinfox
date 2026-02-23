@@ -91,9 +91,7 @@ const buildConstraints = (options: UseCargoRequestsOptions) => {
   const { activeTab, filters, sortBy, searchQuery, userId } = options;
   const constraints: QueryConstraint[] = [];
 
-  const normalizedSearchQuery = searchQuery?.trim()
-    ? normalizeSearchQuery(searchQuery)
-    : '';
+  const normalizedSearchQuery = searchQuery?.trim() ? normalizeSearchQuery(searchQuery) : '';
   if (normalizedSearchQuery) {
     constraints.push(where('search_terms', 'array-contains', normalizedSearchQuery));
   }

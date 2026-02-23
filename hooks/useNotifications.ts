@@ -19,7 +19,7 @@ interface UseNotificationsResult {
   unreadCount: number;
   loading: boolean;
   error: Error | null;
-  markAsRead: (notificationId: string) => Promise<void>;
+  markAsRead: (_notificationId: string) => Promise<void>;
   markAllAsRead: () => Promise<void>;
   refresh: () => void;
 }

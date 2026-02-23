@@ -8,6 +8,8 @@ import {
   StyleSheet,
   Modal,
   Dimensions,
+  type StyleProp,
+  type ViewStyle,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import {
@@ -17,14 +19,14 @@ import {
 } from '../utils/googlePlaces';
 import { theme } from '../theme/theme';
 import { getPlatformShadow } from '../lib/platformShadow';
-import { colors, spacing, fontSize, fontWeight, borderRadius, shadows } from '../lib/sharedStyles';
+import { colors, spacing, fontSize, fontWeight, borderRadius } from '../lib/sharedStyles';
 
 interface AddressInputProps {
   placeholder: string;
   value: string;
-  onAddressSelect: (address: string, coordinates?: { lat: number; lng: number }) => void;
-  onChangeText?: (text: string) => void;
-  style?: any;
+  onAddressSelect: (_address: string, _coordinates?: { lat: number; lng: number }) => void;
+  onChangeText?: (_text: string) => void;
+  style?: StyleProp<ViewStyle>;
 }
 
 interface Suggestion {
