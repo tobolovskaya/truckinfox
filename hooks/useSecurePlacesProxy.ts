@@ -1,9 +1,9 @@
 /**
  * Secure Google Places Client Proxy Hook
- * 
+ *
  * This utility demonstrates how to call the Cloud Function proxy instead
  * of directly calling the Google Places API (which would expose the API key).
- * 
+ *
  * Usage:
  * const { searchPlaces, placeDetails } = useSecurePlacesProxy();
  * const results = await searchPlaces('Oslo');
@@ -44,7 +44,7 @@ interface HealthCheckResponse {
 
 /**
  * Hook for accessing Google Places API through secure Forest Cloud Function proxy
- * 
+ *
  * This keeps the API key server-side and prevents exposure in the client app
  */
 export const useSecurePlacesProxy = () => {
@@ -52,15 +52,12 @@ export const useSecurePlacesProxy = () => {
 
   /**
    * Search for places using the Cloud Function proxy
-   * 
+   *
    * @param input - Search query
    * @param components - Optional API components restriction (e.g., 'country:no')
    * @returns Array of place suggestions
    */
-  const searchPlaces = async (
-    input: string,
-    components?: string
-  ): Promise<PlaceSuggestion[]> => {
+  const searchPlaces = async (input: string, components?: string): Promise<PlaceSuggestion[]> => {
     try {
       // Call the Cloud Function instead of Google API directly
       const placesAutocomplete = httpsCallable(functions, 'placesAutocomplete');
@@ -81,13 +78,11 @@ export const useSecurePlacesProxy = () => {
 
   /**
    * Get detailed information about a place
-   * 
+   *
    * @param placeId - Google Places place_id
    * @returns Place details with coordinates and address
    */
-  const getPlaceDetails = async (
-    placeId: string
-  ): Promise<PlaceDetailsResult | null> => {
+  const getPlaceDetails = async (placeId: string): Promise<PlaceDetailsResult | null> => {
     try {
       const placeDetails = httpsCallable(functions, 'placeDetails');
 
@@ -130,7 +125,7 @@ export const useSecurePlacesProxy = () => {
 
 /**
  * Migration guide: Switching from direct API to Cloud Function proxy
- * 
+ *
  * BEFORE (Exposes API key):
  * ```typescript
  * const GOOGLE_PLACES_API_KEY = process.env.EXPO_PUBLIC_GOOGLE_PLACES_API_KEY;
@@ -139,13 +134,13 @@ export const useSecurePlacesProxy = () => {
  *   `key=${GOOGLE_PLACES_API_KEY}&input=${input}`
  * );
  * ```
- * 
+ *
  * AFTER (Secure proxy):
  * ```typescript
  * const { searchPlaces } = useSecurePlacesProxy();
  * const results = await searchPlaces(input);
  * ```
- * 
+ *
  * Setup steps:
  * 1. Deploy Cloud Functions: firebase deploy --only functions
  * 2. In Google Cloud Console:

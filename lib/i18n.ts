@@ -71,7 +71,7 @@ export const initI18n = async () => {
 
     // Missing key handling
     saveMissing: false,
-    missingKeyHandler: (lngs, ns, key, fallbackValue) => {
+    missingKeyHandler: (lngs, ns, key, _fallbackValue) => {
       if (__DEV__) {
         console.warn(
           `Missing translation key: "${key}" in namespace "${ns}" for languages: ${lngs.join(', ')}`

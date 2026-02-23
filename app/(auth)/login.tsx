@@ -114,9 +114,10 @@ export default function LoginScreen() {
           Alert.alert(t('error'), result.error || t('authenticationFailed'));
         }
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error(`${provider} Sign In error:`, error);
-      Alert.alert(t('error'), error.message || t('authenticationFailed'));
+      const message = error instanceof Error ? error.message : t('authenticationFailed');
+      Alert.alert(t('error'), message);
     } finally {
       setLoading(false);
     }

@@ -27,7 +27,7 @@ export default function LoggUtScreen() {
     if (!user) {
       router.replace('/(auth)/login');
     }
-  }, [user]);
+  }, [user, router]);
 
   const handleSignOut = async () => {
     try {

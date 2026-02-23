@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   View,
   Text,
@@ -55,8 +55,8 @@ interface Message {
   sender_id: string;
   receiver_id: string;
   created_at: string;
-  delivered_at?: any;
-  read_at?: any;
+  delivered_at?: unknown;
+  read_at?: unknown;
   sender: {
     full_name: string;
     user_type: string;
@@ -69,53 +69,6 @@ interface ChatUser {
   user_type: string;
   rating: number;
 }
-
-// Typing Indicator Component
-const TypingIndicator = () => {
-  const dot1Anim = useRef(new Animated.Value(0)).current;
-  const dot2Anim = useRef(new Animated.Value(0)).current;
-  const dot3Anim = useRef(new Animated.Value(0)).current;
-
-  useEffect(() => {
-    const createAnimation = (anim: Animated.Value, delay: number) => {
-      return Animated.loop(
-        Animated.sequence([
-          Animated.delay(delay),
-          Animated.timing(anim, {
-            toValue: -8,
-            duration: 400,
-            useNativeDriver: true,
-          }),
-          Animated.timing(anim, {
-            toValue: 0,
-            duration: 400,
-            useNativeDriver: true,
-          }),
-        ])
-      );
-    };
-
-    const animation = Animated.parallel([
-      createAnimation(dot1Anim, 0),
-      createAnimation(dot2Anim, 150),
-      createAnimation(dot3Anim, 300),
-    ]);
-
-    animation.start();
-
-    return () => animation.stop();
-  }, [dot1Anim, dot2Anim, dot3Anim]);
-
-  return (
-    <View style={styles.typingIndicator}>
-      <View style={styles.typingDots}>
-        <Animated.View style={[styles.typingDot, { transform: [{ translateY: dot1Anim }] }]} />
-        <Animated.View style={[styles.typingDot, { transform: [{ translateY: dot2Anim }] }]} />
-        <Animated.View style={[styles.typingDot, { transform: [{ translateY: dot3Anim }] }]} />
-      </View>
-    </View>
-  );
-};
 
 export default function ChatScreen() {
   const params = useLocalSearchParams();
@@ -227,13 +180,6 @@ export default function ChatScreen() {
       }
     };
   }, [requestId, userId, user?.uid, otherUserTyping]);
-
-  // Mark messages as read when screen is focused
-  useEffect(() => {
-    if (messages.length > 0) {
-      markMessagesAsRead();
-    }
-  }, [messages.length]);
 
   const fetchChatData = async () => {
     try {
@@ -367,7 +313,7 @@ export default function ChatScreen() {
   };
 
   // Mark messages as read
-  const markMessagesAsRead = async () => {
+  const markMessagesAsRead = useCallback(async () => {
     if (!user?.uid || !userId || !requestId) return;
 
     try {
@@ -393,7 +339,14 @@ export default function ChatScreen() {
     } catch (error) {
       console.error('Error marking messages as read:', error);
     }
-  };
+  }, [requestId, user?.uid, userId]);
+
+  // Mark messages as read when screen is focused
+  useEffect(() => {
+    if (messages.length > 0) {
+      markMessagesAsRead();
+    }
+  }, [messages.length, markMessagesAsRead]);
 
   // Get read receipt icon
   const getReadReceiptIcon = (message: Message) => {
@@ -641,7 +594,7 @@ export default function ChatScreen() {
       animateDot(dot1, 0);
       animateDot(dot2, 200);
       animateDot(dot3, 400);
-    }, []);
+    }, [dot1, dot2, dot3]);
 
     return (
       <View style={styles.typingIndicatorContainer}>
@@ -692,7 +645,11 @@ export default function ChatScreen() {
           </View>
         </View>
 
-        <TouchableOpacity style={styles.infoButton} accessibilityRole="button" accessibilityLabel="Chat info">
+        <TouchableOpacity
+          style={styles.infoButton}
+          accessibilityRole="button"
+          accessibilityLabel="Chat info"
+        >
           <Ionicons name="information-circle" size={24} color={theme.iconColors.gray.primary} />
         </TouchableOpacity>
       </View>
