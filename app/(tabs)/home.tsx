@@ -64,10 +64,10 @@ export default function HomeScreen() {
 
   const { requests, loading, refreshing, refresh, fetchMoreRequests, hasMore, loadingMore } =
     useCargoRequests({
-    activeTab: 'all',
-    filters,
-    sortBy: 'newest',
-    userId: user?.uid,
+      activeTab: 'all',
+      filters,
+      sortBy: 'newest',
+      userId: user?.uid,
     });
 
   const horizontalPadding = width < 360 ? spacing.md : spacing.lg;
@@ -89,9 +89,7 @@ export default function HomeScreen() {
   );
   const completedCount = useMemo(
     () =>
-      requests.filter(
-        request => request.status === 'completed' || request.status === 'delivered'
-      ).length,
+      requests.filter(request => request.status === 'completed' || request.status === 'delivered').length,
     [requests]
   );
   const totalBids = useMemo(
@@ -173,20 +171,12 @@ export default function HomeScreen() {
                 <Text style={styles.statLabel}>{t('activeRequests')}</Text>
               </View>
               <View style={styles.statCard}>
-                <Ionicons
-                  name="checkmark-circle-outline"
-                  size={32}
-                  color={colors.status.success}
-                />
+                <Ionicons name="checkmark-circle-outline" size={32} color={colors.status.success} />
                 <Text style={styles.statValue}>{assignedCount}</Text>
                 <Text style={styles.statLabel}>{t('assigned')}</Text>
               </View>
               <View style={styles.statCard}>
-                <Ionicons
-                  name="checkmark-done-outline"
-                  size={32}
-                  color={colors.status.success}
-                />
+                <Ionicons name="checkmark-done-outline" size={32} color={colors.status.success} />
                 <Text style={styles.statValue}>{completedCount}</Text>
                 <Text style={styles.statLabel}>{t('completed')}</Text>
               </View>
@@ -229,10 +219,7 @@ export default function HomeScreen() {
                       accessibilityLabel={t(type)}
                     >
                       <Text
-                        style={[
-                          styles.filterChipText,
-                          isSelected && styles.filterChipTextActive,
-                        ]}
+                        style={[styles.filterChipText, isSelected && styles.filterChipTextActive]}
                       >
                         {t(type)}
                       </Text>
