@@ -241,7 +241,6 @@ export default function HomeScreen() {
                 })}
               </ScrollView>
             </View>
-            <Text style={styles.sectionTitle}>{t('latestRequests')}</Text>
           </View>
         }
         ListEmptyComponent={
