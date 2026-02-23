@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { colors, spacing, fontSize, fontWeight } from '../../lib/sharedStyles';
@@ -13,6 +14,7 @@ export default function ProfileScreen() {
   const router = useRouter();
   const { user, signOut } = useAuth();
   const { t } = useTranslation();
+  const insets = useSafeAreaInsets();
 
   const handleSignOut = async () => {
     Alert.alert(t('signOut'), t('confirmSignOut'), [
@@ -73,7 +75,7 @@ export default function ProfileScreen() {
   return (
     <View style={styles.container}>
       {/* Header */}
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: insets.top + spacing.lg }]}>
         <Text style={styles.headerTitle}>{t('profile')}</Text>
       </View>
 
@@ -133,7 +135,6 @@ const styles = StyleSheet.create({
   },
   header: {
     paddingHorizontal: spacing.lg,
-    paddingTop: spacing.xxl + spacing.lg,
     paddingBottom: spacing.lg,
     backgroundColor: colors.white,
   },

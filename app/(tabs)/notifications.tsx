@@ -1,15 +1,17 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, spacing, fontSize, fontWeight } from '../../lib/sharedStyles';
 
 export default function NotificationsScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: insets.top + spacing.lg }]}>
         <TouchableOpacity
           onPress={() => router.back()}
           style={styles.backButton}
@@ -41,7 +43,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: spacing.lg,
-    paddingTop: spacing.xxl + spacing.lg,
     paddingBottom: spacing.lg,
     backgroundColor: colors.white,
   },

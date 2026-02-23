@@ -17,7 +17,11 @@ import {
   borderRadius,
   shadows,
 } from '../../lib/sharedStyles';
-import { getCargoTypeColors, getCargoTypeIcon } from '../../constants/cardStyles';
+import {
+  getCargoTypeColors,
+  getCargoTypeIcon,
+  REQUEST_CARD_IMAGE_HEIGHT,
+} from '../../constants/cardStyles';
 import { formatCurrency, formatDate, formatWeight } from '../../utils/formatting';
 import { useTranslation } from 'react-i18next';
 
@@ -156,14 +160,14 @@ const styles = StyleSheet.create({
   },
   image: {
     width: '100%',
-    height: 120,
+    height: REQUEST_CARD_IMAGE_HEIGHT,
     borderRadius: borderRadius.md,
     marginBottom: spacing.md,
     backgroundColor: colors.border.light,
   },
   imagePlaceholder: {
     width: '100%',
-    height: 120,
+    height: REQUEST_CARD_IMAGE_HEIGHT,
     borderRadius: borderRadius.md,
     marginBottom: spacing.md,
     alignItems: 'center',

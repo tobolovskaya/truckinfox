@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import {
+  ActivityIndicator,
   FlatList,
   RefreshControl,
   ScrollView,
@@ -12,14 +13,7 @@ import {
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import {
-  colors,
-  spacing,
-  fontSize,
-  fontWeight,
-  borderRadius,
-  shadows,
-} from '../../lib/sharedStyles';
+import { colors, spacing, fontSize, fontWeight, borderRadius } from '../../lib/sharedStyles';
 import { useAuth } from '../../contexts/AuthContext';
 import { useCargoRequests } from '../../hooks/useCargoRequests';
 import { useCurrentUser } from '../../hooks/useCurrentUser';
@@ -73,6 +67,7 @@ export default function HomeScreen() {
   const horizontalPadding = width < 360 ? spacing.md : spacing.lg;
   const gridGap = width < 360 ? spacing.sm : spacing.md;
   const cardWidth = Math.floor((width - horizontalPadding * 2 - gridGap) / 2);
+  const skeletonVariantSeed = useMemo(() => Math.floor(Math.random() * 3), []);
   const skeletonItems = useMemo(
     () => Array.from({ length: 4 }, (_, index) => ({ id: `skeleton-${index}` })),
     []
@@ -85,15 +80,6 @@ export default function HomeScreen() {
 
   const assignedCount = useMemo(
     () => requests.filter(request => request.status === 'assigned').length,
-    [requests]
-  );
-  const completedCount = useMemo(
-    () =>
-      requests.filter(request => request.status === 'completed' || request.status === 'delivered').length,
-    [requests]
-  );
-  const totalBids = useMemo(
-    () => requests.reduce((sum, request) => sum + (request.bids?.length ?? 0), 0),
     [requests]
   );
 
@@ -162,28 +148,24 @@ export default function HomeScreen() {
           }
         }}
         onEndReachedThreshold={0.5}
+        ListFooterComponent={
+          loadingMore ? (
+            <View style={styles.footerLoader}>
+              <ActivityIndicator color={colors.primary} />
+            </View>
+          ) : null
+        }
         ListHeaderComponent={
           <View style={styles.headerSection}>
-            <View style={styles.statsGrid}>
-              <View style={styles.statCard}>
-                <Ionicons name="document-text-outline" size={32} color={colors.primary} />
-                <Text style={styles.statValue}>{activeCount}</Text>
-                <Text style={styles.statLabel}>{t('activeRequests')}</Text>
+            <View style={styles.summaryRow}>
+              <View style={styles.summaryItem}>
+                <Text style={styles.summaryLabel}>{t('activeRequests')}</Text>
+                <Text style={styles.summaryValue}>{activeCount}</Text>
               </View>
-              <View style={styles.statCard}>
-                <Ionicons name="checkmark-circle-outline" size={32} color={colors.status.success} />
-                <Text style={styles.statValue}>{assignedCount}</Text>
-                <Text style={styles.statLabel}>{t('assigned')}</Text>
-              </View>
-              <View style={styles.statCard}>
-                <Ionicons name="checkmark-done-outline" size={32} color={colors.status.success} />
-                <Text style={styles.statValue}>{completedCount}</Text>
-                <Text style={styles.statLabel}>{t('completed')}</Text>
-              </View>
-              <View style={styles.statCard}>
-                <Ionicons name="pricetag-outline" size={32} color={colors.info} />
-                <Text style={styles.statValue}>{totalBids}</Text>
-                <Text style={styles.statLabel}>{t('totalBids')}</Text>
+              <View style={styles.summaryDivider} />
+              <View style={styles.summaryItem}>
+                <Text style={styles.summaryLabel}>{t('assigned')}</Text>
+                <Text style={styles.summaryValue}>{assignedCount}</Text>
               </View>
             </View>
             <View style={styles.filterSection}>
@@ -249,9 +231,12 @@ export default function HomeScreen() {
             </View>
           ) : null
         }
-        renderItem={({ item }) =>
+        renderItem={({ item, index }) =>
           loading ? (
-            <SkeletonCard cardStyle={{ width: cardWidth, marginBottom: gridGap }} />
+            <SkeletonCard
+              variantIndex={index + skeletonVariantSeed}
+              cardStyle={{ width: cardWidth, marginBottom: gridGap }}
+            />
           ) : (
             <RequestCard
               request={item}
@@ -355,37 +340,30 @@ const styles = StyleSheet.create({
   filterChipTextActive: {
     color: colors.primary,
   },
-  sectionTitle: {
-    fontSize: fontSize.lg,
-    fontWeight: fontWeight.bold,
-    color: colors.text.primary,
-    marginBottom: spacing.md,
-  },
-  statsGrid: {
+  summaryRow: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing.md,
-  },
-  statCard: {
-    flexGrow: 1,
-    flexBasis: '48%',
-    backgroundColor: colors.white,
-    borderRadius: borderRadius.lg,
-    padding: spacing.lg,
     alignItems: 'center',
-    ...shadows.sm,
+    gap: spacing.md,
+    paddingVertical: spacing.sm,
   },
-  statValue: {
-    fontSize: fontSize.xxxl,
-    fontWeight: fontWeight.bold,
-    color: colors.text.primary,
-    marginTop: spacing.sm,
+  summaryItem: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    gap: spacing.xs,
   },
-  statLabel: {
-    fontSize: fontSize.xs,
+  summaryLabel: {
+    fontSize: fontSize.sm,
     color: colors.text.secondary,
-    textAlign: 'center',
-    marginTop: spacing.xxxs,
+  },
+  summaryValue: {
+    fontSize: fontSize.lg,
+    fontWeight: fontWeight.semibold,
+    color: colors.text.primary,
+  },
+  summaryDivider: {
+    width: 1,
+    height: 20,
+    backgroundColor: colors.border.light,
   },
   emptyState: {
     alignItems: 'center',
@@ -404,6 +382,10 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: spacing.sm,
     marginBottom: spacing.lg,
+  },
+  footerLoader: {
+    paddingVertical: spacing.lg,
+    alignItems: 'center',
   },
   createButton: {
     flexDirection: 'row',

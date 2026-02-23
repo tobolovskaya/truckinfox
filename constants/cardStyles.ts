@@ -16,6 +16,8 @@ export const CARD_STYLES = {
   elevation: 3,
 };
 
+export const REQUEST_CARD_IMAGE_HEIGHT = 120;
+
 // Badge/Capsule styles (unified)
 export const BADGE_STYLES = {
   borderRadius: 10, // Updated to match button spec

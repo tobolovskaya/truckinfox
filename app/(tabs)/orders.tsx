@@ -1,12 +1,15 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, spacing, fontSize, fontWeight } from '../../lib/sharedStyles';
 
 export default function OrdersScreen() {
+  const insets = useSafeAreaInsets();
+
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: insets.top + spacing.lg }]}>
         <Text style={styles.headerTitle}>Orders</Text>
       </View>
       <View style={styles.emptyState}>
@@ -25,7 +28,6 @@ const styles = StyleSheet.create({
   },
   header: {
     paddingHorizontal: spacing.lg,
-    paddingTop: spacing.xxl + spacing.lg,
     paddingBottom: spacing.lg,
     backgroundColor: colors.white,
   },

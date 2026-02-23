@@ -90,6 +90,7 @@ const buildConstraints = (options: UseCargoRequestsOptions) => {
   if (activeTab === 'my') {
     if (userId) {
       constraints.push(where('user_id', '==', userId));
+      constraints.push(where('status', '==', 'active'));
     }
   } else {
     if (filters.cargo_type) {

@@ -9,6 +9,37 @@ import Animated, {
   Easing,
 } from 'react-native-reanimated';
 import { colors, spacing, borderRadius, shadows } from '../../lib/sharedStyles';
+import { REQUEST_CARD_IMAGE_HEIGHT } from '../../constants/cardStyles';
+
+const SKELETON_VARIANTS = [
+  {
+    titleWidth: '68%' as const,
+    priceWidth: 48,
+    badgeWidth: 66,
+    metaWidth: 46,
+    routePrimaryWidth: '86%' as const,
+    routeSecondaryWidth: '78%' as const,
+    footerWidth: 64,
+  },
+  {
+    titleWidth: '60%' as const,
+    priceWidth: 52,
+    badgeWidth: 72,
+    metaWidth: 50,
+    routePrimaryWidth: '80%' as const,
+    routeSecondaryWidth: '72%' as const,
+    footerWidth: 70,
+  },
+  {
+    titleWidth: '74%' as const,
+    priceWidth: 44,
+    badgeWidth: 62,
+    metaWidth: 42,
+    routePrimaryWidth: '88%' as const,
+    routeSecondaryWidth: '82%' as const,
+    footerWidth: 58,
+  },
+];
 
 const SkeletonBox = ({
   width,
@@ -48,39 +79,58 @@ const SkeletonBox = ({
   return <Animated.View style={combinedStyle} />;
 };
 
-export const SkeletonCard = ({ cardStyle }: { cardStyle?: StyleProp<ViewStyle> }) => {
+export const SkeletonCard = ({
+  cardStyle,
+  variantIndex = 0,
+}: {
+  cardStyle?: StyleProp<ViewStyle>;
+  variantIndex?: number;
+}) => {
+  const variant = SKELETON_VARIANTS[variantIndex % SKELETON_VARIANTS.length];
+
   return (
     <View style={[styles.requestCard, cardStyle]}>
       {/* Photo skeleton */}
-      <View style={styles.photoSection}>
-        <SkeletonBox width="100%" height={120} style={{ borderRadius: 0 }} />
-      </View>
+      <SkeletonBox width="100%" height={REQUEST_CARD_IMAGE_HEIGHT} style={styles.photoSkeleton} />
 
       {/* Content skeleton */}
       <View style={styles.cardContent}>
-        {/* Title */}
-        <SkeletonBox width="90%" height={20} style={{ marginBottom: 8 }} />
-        <SkeletonBox width="60%" height={20} style={{ marginBottom: 12 }} />
-
-        {/* Category badge */}
-        <SkeletonBox
-          width={80}
-          height={20}
-          style={{ borderRadius: borderRadius.md, marginBottom: 8 }}
-        />
-
-        {/* Route */}
-        <View style={styles.routeContainer}>
-          <SkeletonBox
-            width={16}
-            height={16}
-            style={{ borderRadius: borderRadius.sm, marginRight: 6 }}
-          />
-          <SkeletonBox width="80%" height={16} />
+        <View style={styles.headerRow}>
+          <SkeletonBox width={variant.titleWidth} height={34} />
+          <SkeletonBox width={variant.priceWidth} height={14} />
         </View>
 
-        {/* Meta */}
-        <SkeletonBox width="50%" height={16} style={{ marginTop: 8 }} />
+        <View style={styles.badgeRow}>
+          <SkeletonBox
+            width={variant.badgeWidth}
+            height={18}
+            style={{ borderRadius: borderRadius.md }}
+          />
+          <SkeletonBox width={variant.metaWidth} height={12} />
+        </View>
+
+        <View style={styles.routeBlock}>
+          <View style={styles.routeLine}>
+            <SkeletonBox
+              width={12}
+              height={12}
+              style={{ borderRadius: borderRadius.sm, marginTop: 1 }}
+            />
+            <SkeletonBox width={variant.routePrimaryWidth} height={14} />
+          </View>
+          <View style={styles.routeLine}>
+            <SkeletonBox
+              width={12}
+              height={12}
+              style={{ borderRadius: borderRadius.sm, marginTop: 1 }}
+            />
+            <SkeletonBox width={variant.routeSecondaryWidth} height={14} />
+          </View>
+        </View>
+
+        <View style={styles.footerRow}>
+          <SkeletonBox width={variant.footerWidth} height={12} />
+        </View>
       </View>
     </View>
   );
@@ -89,20 +139,40 @@ export const SkeletonCard = ({ cardStyle }: { cardStyle?: StyleProp<ViewStyle> }
 const styles = StyleSheet.create({
   requestCard: {
     backgroundColor: colors.white,
-    borderRadius: borderRadius.md,
+    borderRadius: borderRadius.lg,
+    padding: spacing.md,
     marginBottom: spacing.lg,
-    ...shadows.md,
-    overflow: 'hidden',
-  },
-  photoSection: {
-    width: '100%',
-    height: 120,
+    ...shadows.sm,
   },
   cardContent: {
-    padding: spacing.lg,
+    padding: 0,
   },
-  routeContainer: {
+  photoSkeleton: {
+    borderRadius: borderRadius.md,
+    marginBottom: spacing.md,
+  },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    gap: spacing.md,
+  },
+  badgeRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: spacing.sm,
+    marginTop: spacing.sm,
+  },
+  routeBlock: {
+    marginTop: spacing.sm,
+    gap: spacing.xs,
+  },
+  routeLine: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: spacing.xs,
+  },
+  footerRow: {
+    marginTop: spacing.md,
   },
 });
