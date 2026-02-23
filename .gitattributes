@@ -1,4 +1,4 @@
-* text=auto
+* text=auto eol=lf
 
 # Keep source and config files with LF in repo and working tree
 *.ts text eol=lf
