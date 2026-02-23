@@ -106,7 +106,7 @@ export async function safeFunctionCall<T = unknown, R = unknown>(
  *   if (error instanceof RateLimitError) {
  *     Alert.alert(
  *       'Rate Limit',
- *       `Du har nÃ¥dd grensen. PrÃ¸v igjen om ${formatRetryTime(error.retryAfter)}`
+ *       `Du har nådd grensen. Prøv igjen om ${formatRetryTime(error.retryAfter)}`
  *     );
  *   }
  * }

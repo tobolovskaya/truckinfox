@@ -102,10 +102,10 @@ export async function createChat(
 
     await setDoc(chatRef, chatData);
 
-    console.log('âœ… Chat created successfully:', chatId);
+    console.log('✅ Chat created successfully:', chatId);
     return chatId;
   } catch (error) {
-    console.error('âŒ Error creating chat:', error);
+    console.error('❌ Error creating chat:', error);
     throw error;
   }
 }
@@ -188,9 +188,9 @@ export async function updateChatLastMessage(
       updated_at: serverTimestamp(),
     });
 
-    console.log('âœ… Chat updated with last message');
+    console.log('✅ Chat updated with last message');
   } catch (error) {
-    console.error('âŒ Error updating chat last message:', error);
+    console.error('❌ Error updating chat last message:', error);
     throw error;
   }
 }
@@ -226,9 +226,9 @@ export async function markChatAsRead(chatId: string, userId: string): Promise<vo
       updated_at: serverTimestamp(),
     });
 
-    console.log('âœ… Chat marked as read for user:', userId);
+    console.log('✅ Chat marked as read for user:', userId);
   } catch (error) {
-    console.error('âŒ Error marking chat as read:', error);
+    console.error('❌ Error marking chat as read:', error);
     throw error;
   }
 }

@@ -99,7 +99,7 @@ export function useNearbyRequests(radiusKm: number = 50, searchType: 'from' | 't
               text: t('cancel'),
               style: 'cancel',
               onPress: () => {
-                console.log('âŒ User cancelled permission request');
+                console.log('❌ User cancelled permission request');
                 setPermissionDenied(true);
                 setPermissionStatus({
                   granted: false,
@@ -117,7 +117,7 @@ export function useNearbyRequests(radiusKm: number = 50, searchType: 'from' | 't
                 const { status, canAskAgain: canAskAgainAfter } =
                   await Location.requestForegroundPermissionsAsync();
 
-                console.log('ðŸ“ Permission response:', status);
+                console.log('📍 Permission response:', status);
 
                 const granted = status === Location.PermissionStatus.GRANTED;
 
@@ -179,7 +179,7 @@ export function useNearbyRequests(radiusKm: number = 50, searchType: 'from' | 't
    */
   const getUserLocation = async (): Promise<UserLocation | null> => {
     try {
-      console.log('ðŸ“ Getting current location...');
+      console.log('📍 Getting current location...');
 
       const location = await Location.getCurrentPositionAsync({
         accuracy: Location.Accuracy.Balanced,
@@ -193,7 +193,7 @@ export function useNearbyRequests(radiusKm: number = 50, searchType: 'from' | 't
         accuracy: location.coords.accuracy,
       };
 
-      console.log('âœ… Location obtained:', userLoc.latitude, userLoc.longitude);
+      console.log('✅ Location obtained:', userLoc.latitude, userLoc.longitude);
       setUserLocation(userLoc);
 
       return userLoc;
@@ -210,7 +210,7 @@ export function useNearbyRequests(radiusKm: number = 50, searchType: 'from' | 't
    */
   const fetchNearbyRequests = async (location: UserLocation) => {
     try {
-      console.log(`ðŸ” Searching for cargo within ${radiusKm}km...`);
+      console.log(`🔍 Searching for cargo within ${radiusKm}km...`);
 
       const nearby = await findNearbyCargoRequests(
         location.latitude,
@@ -219,7 +219,7 @@ export function useNearbyRequests(radiusKm: number = 50, searchType: 'from' | 't
         searchType
       );
 
-      console.log(`âœ… Found ${nearby.length} nearby cargo requests`);
+      console.log(`✅ Found ${nearby.length} nearby cargo requests`);
       setRequests(nearby);
     } catch (error: unknown) {
       console.error('Error fetching nearby requests:', error);

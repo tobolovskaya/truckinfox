@@ -25,7 +25,7 @@ export const getRedisClient = (): Redis => {
   try {
     // Prefer REST API for Expo/mobile apps
     if (redisRestUrl && redisRestToken) {
-      console.log('âœ… Using Upstash Redis REST API');
+      console.log('✅ Using Upstash Redis REST API');
       useRestApi = true;
       upstashRedis = new UpstashRedis({
         url: redisRestUrl,
@@ -54,17 +54,17 @@ export const getRedisClient = (): Redis => {
 
     if (redis) {
       redis.on('error', err => {
-        console.error('âŒ Redis connection error:', err.message);
+        console.error('❌ Redis connection error:', err.message);
       });
 
       redis.on('connect', () => {
-        console.log('âœ… Redis connected successfully');
+        console.log('✅ Redis connected successfully');
       });
     }
 
     return redis!;
   } catch (error) {
-    console.error('âŒ Failed to initialize Redis client:', error);
+    console.error('❌ Failed to initialize Redis client:', error);
     throw error;
   }
 };
