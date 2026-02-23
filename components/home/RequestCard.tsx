@@ -26,7 +26,7 @@ import {
 import { formatCurrency, formatDate, formatWeight } from '../../utils/formatting';
 import { useTranslation } from 'react-i18next';
 
-interface CargoRequest {
+export interface CargoRequest {
   id: string;
   title?: string;
   description?: string;

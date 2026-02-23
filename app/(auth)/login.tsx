@@ -85,7 +85,7 @@ export default function LoginScreen() {
   const handleSocialLogin = async (provider: 'google' | 'apple') => {
     try {
       setLoading(true);
-      let result;
+      let result: { success: boolean; error?: string } | undefined;
 
       if (provider === 'google') {
         result = await signInWithGoogle();
@@ -95,6 +95,10 @@ export default function LoginScreen() {
           return;
         }
         result = await signInWithApple();
+      }
+
+      if (!result) {
+        return;
       }
 
       if (result.success) {

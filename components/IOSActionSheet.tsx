@@ -21,7 +21,7 @@ const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 export interface IOSActionSheetOption {
   title: string;
   onPress: () => void;
-  icon?: keyof typeof Ionicons.glyphMap;
+  icon?: string;
   destructive?: boolean;
   disabled?: boolean;
 }

@@ -16,14 +16,14 @@ interface ScreenHeaderProps {
   onBackPress?: () => void;
   /** Right side action button */
   rightAction?: {
-    icon: keyof typeof Ionicons.glyphMap;
+    icon: string;
     onPress: () => void;
     label?: string;
     badge?: number;
   };
   /** Secondary right action button */
   secondaryRightAction?: {
-    icon: keyof typeof Ionicons.glyphMap;
+    icon: string;
     onPress: () => void;
     label?: string;
   };

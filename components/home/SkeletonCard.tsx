@@ -1,7 +1,6 @@
 import React, { useEffect } from 'react';
-import { StyleSheet, View, StyleProp, ViewStyle } from 'react-native';
+import { StyleSheet, View, StyleProp, ViewStyle, type DimensionValue } from 'react-native';
 import Animated, {
-  type AnimatedStyleProp,
   useSharedValue,
   useAnimatedStyle,
   withRepeat,
@@ -46,9 +45,9 @@ const SkeletonBox = ({
   height,
   style,
 }: {
-  width: number | string;
+  width: DimensionValue;
   height: number;
-  style?: AnimatedStyleProp<ViewStyle>;
+  style?: StyleProp<ViewStyle>;
 }) => {
   const opacity = useSharedValue(0.3);
 
@@ -74,7 +73,7 @@ const SkeletonBox = ({
     borderRadius: borderRadius.sm,
   };
 
-  const combinedStyle: AnimatedStyleProp<ViewStyle> = [baseStyle, style, animatedStyle];
+  const combinedStyle: StyleProp<ViewStyle> = [baseStyle, style, animatedStyle];
 
   return <Animated.View style={combinedStyle} />;
 };

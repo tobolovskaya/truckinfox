@@ -18,7 +18,7 @@ const SWIPE_THRESHOLD = 80;
 
 interface SwipeAction {
   text: string;
-  icon: keyof typeof Ionicons.glyphMap;
+  icon: string;
   backgroundColor: string;
   color: string;
   onPress: () => void;
@@ -271,7 +271,7 @@ export const SwipeActions = {
   message: (onPress: () => void): SwipeAction => ({
     text: 'Message',
     icon: 'chatbubble-outline',
-    backgroundcolor: colors.primary, // Primary orange
+    backgroundColor: colors.primary, // Primary orange
     color: 'white',
     onPress,
   }),
