@@ -36,7 +36,7 @@ export interface SavedFilter {
 interface FilterSheetProps {
   visible: boolean;
   onClose: () => void;
-  onApply: (filters: FilterOptions) => void;
+  onApply: (_filters: FilterOptions) => void;
   initialFilters?: FilterOptions;
 }
 
@@ -253,7 +253,7 @@ export const FilterSheet: React.FC<FilterSheetProps> = ({
                     onPress={() => setSortBy(option.id as FilterOptions['sortBy'])}
                   >
                     <Ionicons
-                      name={option.icon as any}
+                      name={option.icon as keyof typeof Ionicons.glyphMap}
                       size={20}
                       color={sortBy === option.id ? 'white' : colors.primary}
                     />
@@ -281,7 +281,7 @@ export const FilterSheet: React.FC<FilterSheetProps> = ({
                     onPress={() => toggleCargoType(type.id)}
                   >
                     <Ionicons
-                      name={type.icon as any}
+                      name={type.icon as keyof typeof Ionicons.glyphMap}
                       size={18}
                       color={selectedTypes.includes(type.id) ? 'white' : colors.primary}
                     />
@@ -522,7 +522,7 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.md,
     alignItems: 'center',
     justifyContent: 'center',
-    ...(shadows.md as any),
+    ...(shadows.md as Record<string, unknown>),
   },
   applyButtonText: {
     fontSize: fontSize.lg,
@@ -540,7 +540,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border.light,
     backgroundColor: colors.white,
-    ...(shadows.sm as any),
+    ...(shadows.sm as Record<string, unknown>),
   },
   savedFilterHeader: {
     flexDirection: 'row',
@@ -580,7 +580,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.white,
     borderRadius: borderRadius.lg,
     padding: spacing.xl,
-    ...(shadows.lg as any),
+    ...(shadows.lg as Record<string, unknown>),
   },
   dialogTitle: {
     fontSize: fontSize.xl,

@@ -19,12 +19,12 @@ import { updateProfile } from 'firebase/auth';
 import { useAuth } from '../contexts/AuthContext';
 import { useTranslation } from 'react-i18next';
 import { theme } from '../theme/theme';
-import { colors, spacing, fontSize, fontWeight, borderRadius, shadows } from '../lib/sharedStyles';
+import { colors, spacing, fontSize, fontWeight, borderRadius } from '../lib/sharedStyles';
 import { fetchWithTimeout } from '../utils/fetchWithTimeout';
 
 interface AvatarUploadProps {
   avatarUrl?: string;
-  onUpload: (url: string) => void;
+  onUpload: (_url: string) => void;
   size?: number;
 }
 
@@ -111,9 +111,10 @@ export default function AvatarUpload({ avatarUrl, onUpload, size = 80 }: AvatarU
 
       onUpload(downloadURL);
       Alert.alert(t('success'), t('avatarUpdatedSuccessfully'));
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error uploading avatar:', error);
-      Alert.alert(t('error'), error.message);
+      const message = error instanceof Error ? error.message : 'Failed to upload avatar';
+      Alert.alert(t('error'), message);
     } finally {
       setUploading(false);
     }
@@ -160,9 +161,10 @@ export default function AvatarUpload({ avatarUrl, onUpload, size = 80 }: AvatarU
 
             onUpload('');
             Alert.alert(t('success'), t('avatarRemovedSuccessfully'));
-          } catch (error: any) {
+          } catch (error) {
             console.error('Error removing avatar:', error);
-            Alert.alert(t('error'), error.message);
+            const message = error instanceof Error ? error.message : 'Failed to remove avatar';
+            Alert.alert(t('error'), message);
           } finally {
             setUploading(false);
           }

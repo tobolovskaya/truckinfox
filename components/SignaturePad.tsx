@@ -1,5 +1,5 @@
 import React, { useRef } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Modal, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Modal } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import SignatureCanvas from 'react-native-signature-canvas';
 import { colors, spacing, fontSize, fontWeight, borderRadius } from '../lib/sharedStyles';
@@ -7,11 +7,9 @@ import { colors, spacing, fontSize, fontWeight, borderRadius } from '../lib/shar
 interface SignaturePadProps {
   visible: boolean;
   onClose: () => void;
-  onSave: (signature: string) => void;
+  onSave: (_signature: string) => void;
   title?: string;
 }
-
-const { width, height } = Dimensions.get('window');
 
 export default function SignaturePad({
   visible,
@@ -19,7 +17,7 @@ export default function SignaturePad({
   onSave,
   title = 'Sign Here',
 }: SignaturePadProps) {
-  const signatureRef = useRef<any>(null);
+  const signatureRef = useRef<SignatureCanvas>(null);
 
   const handleSignature = (signature: string) => {
     onSave(signature);
