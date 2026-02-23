@@ -475,6 +475,8 @@ export default function RequestDetailsScreen() {
                 router.back();
                 triggerHapticFeedback.light();
               }}
+              accessibilityRole="button"
+              accessibilityLabel="Go back"
             >
               <Ionicons name="arrow-back" size={24} color={colors.text.primary} />
             </TouchableOpacity>
@@ -485,6 +487,8 @@ export default function RequestDetailsScreen() {
                   style={styles.headerButton}
                   onPress={handleEdit}
                   disabled={deleting}
+                  accessibilityRole="button"
+                  accessibilityLabel="Edit request"
                 >
                   <Ionicons name="create-outline" size={22} color={colors.primary} />
                 </TouchableOpacity>
@@ -492,6 +496,8 @@ export default function RequestDetailsScreen() {
                   style={styles.headerButton}
                   onPress={handleDelete}
                   disabled={deleting}
+                  accessibilityRole="button"
+                  accessibilityLabel={deleting ? 'Deleting request' : 'Delete request'}
                 >
                   {deleting ? (
                     <ActivityIndicator size="small" color={colors.error} />
@@ -516,6 +522,8 @@ export default function RequestDetailsScreen() {
                   key={idx}
                   onPress={() => openImageGallery(idx)}
                   style={styles.imageContainer}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Open image ${idx + 1}`}
                 >
                   <LazyImage uri={imageUrl} style={styles.image} />
                 </TouchableOpacity>
@@ -661,6 +669,8 @@ export default function RequestDetailsScreen() {
                 style={[styles.submitButton, submittingBid && styles.submitButtonDisabled]}
                 onPress={submitBid}
                 disabled={submittingBid}
+                accessibilityRole="button"
+                accessibilityLabel={submittingBid ? 'Submitting bid' : 'Send bud'}
               >
                 {submittingBid ? (
                   <ActivityIndicator color={colors.white} />
@@ -731,6 +741,8 @@ export default function RequestDetailsScreen() {
                       ]}
                       onPress={() => acceptBid(bid)}
                       disabled={acceptingBid === bid.id}
+                      accessibilityRole="button"
+                      accessibilityLabel={acceptingBid === bid.id ? 'Accepting bid' : 'Godta bud'}
                     >
                       {acceptingBid === bid.id ? (
                         <ActivityIndicator size="small" color={colors.white} />
@@ -764,7 +776,12 @@ export default function RequestDetailsScreen() {
       <View style={styles.errorContainer}>
         <Ionicons name="alert-circle-outline" size={64} color={colors.text.tertiary} />
         <Text style={styles.errorText}>Forespørsel ikke funnet</Text>
-        <TouchableOpacity style={styles.errorButton} onPress={() => router.back()}>
+        <TouchableOpacity
+          style={styles.errorButton}
+          onPress={() => router.back()}
+          accessibilityRole="button"
+          accessibilityLabel="Gå tilbake"
+        >
           <Text style={styles.errorButtonText}>Gå tilbake</Text>
         </TouchableOpacity>
       </View>
@@ -792,7 +809,12 @@ export default function RequestDetailsScreen() {
       {/* Image Gallery Modal */}
       <Modal visible={showImageGallery} transparent animationType="fade">
         <View style={styles.galleryModal}>
-          <TouchableOpacity style={styles.galleryCloseButton} onPress={closeImageGallery}>
+          <TouchableOpacity
+            style={styles.galleryCloseButton}
+            onPress={closeImageGallery}
+            accessibilityRole="button"
+            accessibilityLabel="Close image gallery"
+          >
             <Ionicons name="close" size={32} color={colors.white} />
           </TouchableOpacity>
 
@@ -814,6 +836,8 @@ export default function RequestDetailsScreen() {
             <TouchableOpacity
               style={[styles.galleryNavButton, styles.galleryNavButtonLeft]}
               onPress={() => setSelectedImageIndex(selectedImageIndex - 1)}
+              accessibilityRole="button"
+              accessibilityLabel="Previous image"
             >
               <Ionicons name="chevron-back" size={32} color={colors.white} />
             </TouchableOpacity>
@@ -825,6 +849,8 @@ export default function RequestDetailsScreen() {
               <TouchableOpacity
                 style={[styles.galleryNavButton, styles.galleryNavButtonRight]}
                 onPress={() => setSelectedImageIndex(selectedImageIndex + 1)}
+                accessibilityRole="button"
+                accessibilityLabel="Next image"
               >
                 <Ionicons name="chevron-forward" size={32} color={colors.white} />
               </TouchableOpacity>

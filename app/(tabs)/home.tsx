@@ -369,6 +369,8 @@ export default function HomeScreen() {
                     key={option}
                     style={[styles.sheetOption, selected && styles.sheetOptionActive]}
                     onPress={() => setSortBy(option)}
+                    accessibilityRole="button"
+                    accessibilityLabel={t(option)}
                   >
                     <Text
                       style={[styles.sheetOptionText, selected && styles.sheetOptionTextActive]}
@@ -391,6 +393,8 @@ export default function HomeScreen() {
                   <TouchableOpacity
                     style={[styles.sheetOption, !selectedCargoType && styles.sheetOptionActive]}
                     onPress={() => setSelectedCargoType('')}
+                    accessibilityRole="button"
+                    accessibilityLabel={t('allTypes')}
                   >
                     <Text
                       style={[
@@ -408,6 +412,8 @@ export default function HomeScreen() {
                         key={type}
                         style={[styles.sheetOption, selected && styles.sheetOptionActive]}
                         onPress={() => setSelectedCargoType(type)}
+                        accessibilityRole="button"
+                        accessibilityLabel={t(type)}
                       >
                         <Text
                           style={[styles.sheetOptionText, selected && styles.sheetOptionTextActive]}
@@ -428,12 +434,16 @@ export default function HomeScreen() {
                   setSortBy('newest');
                   setSelectedCargoType('');
                 }}
+                accessibilityRole="button"
+                accessibilityLabel={t('resetFilters')}
               >
                 <Text style={styles.sheetSecondaryButtonText}>{t('resetFilters')}</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={styles.sheetPrimaryButton}
                 onPress={() => setIsFilterSheetVisible(false)}
+                accessibilityRole="button"
+                accessibilityLabel={t('save')}
               >
                 <Text style={styles.sheetPrimaryButtonText}>{t('save')}</Text>
               </TouchableOpacity>
@@ -682,40 +692,6 @@ const styles = StyleSheet.create({
     fontSize: fontSize.sm,
     fontWeight: fontWeight.semibold,
     color: colors.white,
-  },
-  filterSection: {
-    marginTop: spacing.md,
-  },
-  filterTitle: {
-    fontSize: fontSize.md,
-    fontWeight: fontWeight.semibold,
-    color: colors.text.primary,
-    marginBottom: spacing.sm,
-  },
-  filterChips: {
-    flexDirection: 'row',
-    gap: spacing.sm,
-    paddingVertical: spacing.xs,
-  },
-  filterChip: {
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs,
-    borderRadius: borderRadius.full,
-    backgroundColor: colors.backgroundVeryLight,
-    borderWidth: 1,
-    borderColor: colors.border.light,
-  },
-  filterChipActive: {
-    backgroundColor: colors.primaryLight,
-    borderColor: colors.primaryLight,
-  },
-  filterChipText: {
-    fontSize: fontSize.sm,
-    fontWeight: fontWeight.semibold,
-    color: colors.text.secondary,
-  },
-  filterChipTextActive: {
-    color: colors.primary,
   },
   emptyState: {
     alignItems: 'center',

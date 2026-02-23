@@ -262,6 +262,8 @@ export default function MessagesScreen() {
         style={[styles.conversationCard, unreadBadge && styles.unreadCard]}
         onPress={() => handleConversationPress(item)}
         activeOpacity={0.7}
+        accessibilityRole="button"
+        accessibilityLabel={`Open chat with ${item.other_user_name}`}
       >
         <Avatar photoURL={item.other_user_avatar} size={56} />
 
@@ -349,7 +351,11 @@ export default function MessagesScreen() {
             onChangeText={setSearchQuery}
           />
           {searchQuery.length > 0 && (
-            <TouchableOpacity onPress={() => setSearchQuery('')}>
+            <TouchableOpacity
+              onPress={() => setSearchQuery('')}
+              accessibilityRole="button"
+              accessibilityLabel="Clear search"
+            >
               <Ionicons name="close-circle" size={20} color={colors.text.tertiary} />
             </TouchableOpacity>
           )}

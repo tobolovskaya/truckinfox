@@ -663,7 +663,12 @@ export default function EditRequestScreen() {
     <View style={styles.container}>
       {/* Header */}
       <View style={[styles.header, { paddingTop: insets.top + 16 }]}>
-        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => router.back()}
+          accessibilityRole="button"
+          accessibilityLabel="Go back"
+        >
           <Ionicons name="arrow-back" size={24} color={colors.text.primary} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>{t('editRequestTitle')}</Text>
@@ -671,6 +676,8 @@ export default function EditRequestScreen() {
           style={[styles.saveButton, saving && styles.saveButtonDisabled]}
           onPress={handleSave}
           disabled={saving}
+          accessibilityRole="button"
+          accessibilityLabel={saving ? 'Saving request' : t('save')}
         >
           {saving ? (
             <ActivityIndicator size="small" color={colors.white} />
@@ -733,6 +740,8 @@ export default function EditRequestScreen() {
               <TouchableOpacity
                 style={styles.dropdownButton}
                 onPress={() => setShowCargoTypeMenu(true)}
+                accessibilityRole="button"
+                accessibilityLabel="Velg lasttype"
               >
                 <Text
                   style={[styles.dropdownText, !formData.cargo_type && styles.dropdownPlaceholder]}
@@ -787,7 +796,12 @@ export default function EditRequestScreen() {
             <View style={styles.dateRow}>
               <View style={[styles.fieldContainer, { flex: 1, marginRight: 8 }]}>
                 <Text style={styles.fieldLabel}>Hentedato</Text>
-                <TouchableOpacity style={styles.dateInput} onPress={() => setShowPickupDate(true)}>
+                <TouchableOpacity
+                  style={styles.dateInput}
+                  onPress={() => setShowPickupDate(true)}
+                  accessibilityRole="button"
+                  accessibilityLabel="Select pickup date"
+                >
                   <TextInput
                     style={styles.dateTextInput}
                     value={formData.pickup_date.toLocaleDateString('no-NO')}
@@ -803,6 +817,8 @@ export default function EditRequestScreen() {
                 <TouchableOpacity
                   style={styles.dateInput}
                   onPress={() => setShowDeliveryDate(true)}
+                  accessibilityRole="button"
+                  accessibilityLabel="Select delivery date"
                 >
                   <TextInput
                     style={styles.dateTextInput}
@@ -877,7 +893,12 @@ export default function EditRequestScreen() {
             {/* Images */}
             <View style={styles.fieldContainer}>
               <Text style={styles.fieldLabel}>Bilder (maks 5)</Text>
-              <TouchableOpacity style={styles.imageUploadArea} onPress={pickImages}>
+              <TouchableOpacity
+                style={styles.imageUploadArea}
+                onPress={pickImages}
+                accessibilityRole="button"
+                accessibilityLabel={`Add images, ${images.length} of 5 selected`}
+              >
                 <View style={styles.imageUploadContent}>
                   <Ionicons name="image-outline" size={32} color="#9CA3AF" />
                   <Text style={styles.imageUploadText}>Legg til bilder ({images.length}/5)</Text>
@@ -896,6 +917,8 @@ export default function EditRequestScreen() {
                       <TouchableOpacity
                         style={styles.removeImageButton}
                         onPress={() => removeImage(index)}
+                        accessibilityRole="button"
+                        accessibilityLabel={`Remove image ${index + 1}`}
                       >
                         <Ionicons name="close-circle" size={24} color="#EF4444" />
                       </TouchableOpacity>
@@ -911,6 +934,8 @@ export default function EditRequestScreen() {
               <TouchableOpacity
                 style={styles.dropdownButton}
                 onPress={() => setShowPriceTypeMenu(true)}
+                accessibilityRole="button"
+                accessibilityLabel="Velg prismodell"
               >
                 <Text
                   style={[styles.dropdownText, !formData.price_type && styles.dropdownPlaceholder]}
@@ -946,7 +971,12 @@ export default function EditRequestScreen() {
 
             {/* Bottom Action Buttons */}
             <View style={styles.bottomActions}>
-              <TouchableOpacity style={styles.cancelButton} onPress={() => router.back()}>
+              <TouchableOpacity
+                style={styles.cancelButton}
+                onPress={() => router.back()}
+                accessibilityRole="button"
+                accessibilityLabel="Avbryt"
+              >
                 <Text style={styles.cancelButtonText}>Avbryt</Text>
               </TouchableOpacity>
 
@@ -954,6 +984,8 @@ export default function EditRequestScreen() {
                 style={[styles.publishButton, saving && styles.publishButtonDisabled]}
                 onPress={handleSave}
                 disabled={saving}
+                accessibilityRole="button"
+                accessibilityLabel={saving ? 'Saving changes' : 'Lagre endringer'}
               >
                 {saving ? (
                   <ActivityIndicator color={colors.white} />
@@ -1009,11 +1041,17 @@ export default function EditRequestScreen() {
           style={styles.menuOverlay}
           activeOpacity={1}
           onPress={() => setShowCargoTypeMenu(false)}
+          accessibilityRole="button"
+          accessibilityLabel="Lukk lasttype-meny"
         >
           <View style={styles.menuContainer} onStartShouldSetResponder={() => true}>
             <View style={styles.menuHeader}>
               <Text style={styles.menuTitle}>Velg lasttype</Text>
-              <TouchableOpacity onPress={() => setShowCargoTypeMenu(false)}>
+              <TouchableOpacity
+                onPress={() => setShowCargoTypeMenu(false)}
+                accessibilityRole="button"
+                accessibilityLabel="Lukk"
+              >
                 <Ionicons name="close" size={24} color="#6B7280" />
               </TouchableOpacity>
             </View>
@@ -1031,6 +1069,8 @@ export default function EditRequestScreen() {
                   setShowCargoTypeMenu(false);
                   triggerHapticFeedback.light();
                 }}
+                accessibilityRole="menuitem"
+                accessibilityLabel={`Velg ${t(type.id)} som lasttype`}
               >
                 <Text
                   style={[
@@ -1060,11 +1100,17 @@ export default function EditRequestScreen() {
           style={styles.menuOverlay}
           activeOpacity={1}
           onPress={() => setShowPriceTypeMenu(false)}
+          accessibilityRole="button"
+          accessibilityLabel="Lukk prismodell-meny"
         >
           <View style={styles.menuContainer} onStartShouldSetResponder={() => true}>
             <View style={styles.menuHeader}>
               <Text style={styles.menuTitle}>Velg prismodell</Text>
-              <TouchableOpacity onPress={() => setShowPriceTypeMenu(false)}>
+              <TouchableOpacity
+                onPress={() => setShowPriceTypeMenu(false)}
+                accessibilityRole="button"
+                accessibilityLabel="Lukk"
+              >
                 <Ionicons name="close" size={24} color="#6B7280" />
               </TouchableOpacity>
             </View>
@@ -1082,6 +1128,8 @@ export default function EditRequestScreen() {
                   setShowPriceTypeMenu(false);
                   triggerHapticFeedback.light();
                 }}
+                accessibilityRole="menuitem"
+                accessibilityLabel={type.label}
               >
                 <Text
                   style={[

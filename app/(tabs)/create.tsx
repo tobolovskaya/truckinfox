@@ -763,6 +763,9 @@ export default function CreateRequestScreen() {
         <TouchableOpacity
           style={styles.notificationButton}
           onPress={() => router.push('/(tabs)/notifications')}
+          accessibilityRole="button"
+          accessibilityLabel="Varsler"
+          accessibilityHint="Åpne varsler"
         >
           <Ionicons name="notifications-outline" size={24} color={colors.primary} />
           {unreadCount > 0 && (
@@ -961,6 +964,10 @@ export default function CreateRequestScreen() {
                 <TouchableOpacity
                   style={[styles.dateInput, isSmallScreen && styles.dateInputCompact]}
                   onPress={() => setShowDeliveryDate(true)}
+                  accessibilityRole="button"
+                  accessibilityLabel="Select delivery date"
+                  accessibilityHint="Choose when the cargo should be delivered"
+                  accessibilityValue={{ text: formData.delivery_date.toLocaleDateString('no-NO') }}
                 >
                   <TextInput
                     style={[styles.dateTextInput, isSmallScreen && styles.dateTextInputCompact]}
@@ -1204,6 +1211,8 @@ export default function CreateRequestScreen() {
               <TouchableOpacity
                 style={[styles.cancelButton, isSmallScreen && styles.cancelButtonCompact]}
                 onPress={() => router.push('/(tabs)/home')}
+                accessibilityRole="button"
+                accessibilityLabel="Avbryt"
               >
                 <Text style={[styles.cancelButtonText, isSmallScreen && styles.buttonTextCompact]}>
                   Avbryt
@@ -1218,6 +1227,7 @@ export default function CreateRequestScreen() {
                 ]}
                 onPress={handleSubmit}
                 disabled={loading}
+                accessibilityRole="button"
                 accessibilityLabel={loading ? 'Publiserer lastforespørsel' : 'Publiser last'}
                 accessibilityState={{ disabled: loading, busy: loading }}
               >
@@ -1279,6 +1289,8 @@ export default function CreateRequestScreen() {
           style={styles.menuOverlay}
           activeOpacity={1}
           onPress={() => setShowCargoTypeMenu(false)}
+          accessibilityRole="button"
+          accessibilityLabel="Lukk lasttype-meny"
         >
           <View
             style={styles.menuContainer}
@@ -1288,7 +1300,11 @@ export default function CreateRequestScreen() {
           >
             <View style={styles.menuHeader}>
               <Text style={styles.menuTitle}>Velg lasttype</Text>
-              <TouchableOpacity onPress={() => setShowCargoTypeMenu(false)}>
+              <TouchableOpacity
+                onPress={() => setShowCargoTypeMenu(false)}
+                accessibilityRole="button"
+                accessibilityLabel="Lukk"
+              >
                 <Ionicons name="close" size={24} color="#6B7280" />
               </TouchableOpacity>
             </View>
@@ -1340,6 +1356,8 @@ export default function CreateRequestScreen() {
           style={styles.menuOverlay}
           activeOpacity={1}
           onPress={() => setShowPriceTypeMenu(false)}
+          accessibilityRole="button"
+          accessibilityLabel="Lukk prismodell-meny"
         >
           <View
             style={styles.menuContainer}
@@ -1349,7 +1367,11 @@ export default function CreateRequestScreen() {
           >
             <View style={styles.menuHeader}>
               <Text style={styles.menuTitle}>Velg prismodell</Text>
-              <TouchableOpacity onPress={() => setShowPriceTypeMenu(false)}>
+              <TouchableOpacity
+                onPress={() => setShowPriceTypeMenu(false)}
+                accessibilityRole="button"
+                accessibilityLabel="Lukk"
+              >
                 <Ionicons name="close" size={24} color="#6B7280" />
               </TouchableOpacity>
             </View>

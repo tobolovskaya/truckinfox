@@ -674,7 +674,12 @@ export default function ChatScreen() {
     <SafeAreaView style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => router.back()}
+          accessibilityRole="button"
+          accessibilityLabel="Go back"
+        >
           <Ionicons name="arrow-back" size={24} color={theme.iconColors.dark} />
         </TouchableOpacity>
 
@@ -690,7 +695,7 @@ export default function ChatScreen() {
           </View>
         </View>
 
-        <TouchableOpacity style={styles.infoButton}>
+        <TouchableOpacity style={styles.infoButton} accessibilityRole="button" accessibilityLabel="Chat info">
           <Ionicons name="information-circle" size={24} color={theme.iconColors.gray.primary} />
         </TouchableOpacity>
       </View>
@@ -792,6 +797,8 @@ export default function ChatScreen() {
             style={styles.attachButton}
             onPress={handleAttachmentPress}
             activeOpacity={0.7}
+            accessibilityRole="button"
+            accessibilityLabel="Attach file"
           >
             <Text style={styles.attachIcon}>📎</Text>
           </TouchableOpacity>
@@ -816,6 +823,8 @@ export default function ChatScreen() {
             ]}
             onPress={sendMessage}
             disabled={!newMessage.trim() || sending}
+            accessibilityRole="button"
+            accessibilityLabel={sending ? 'Sending message' : 'Send message'}
           >
             <LinearGradient
               colors={
