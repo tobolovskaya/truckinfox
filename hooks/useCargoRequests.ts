@@ -15,6 +15,7 @@ import {
   DocumentSnapshot,
 } from 'firebase/firestore';
 import { db } from '../lib/firebase';
+import { normalizeSearchQuery } from '../utils/search';
 
 export interface CargoRequest {
   id: string;
@@ -64,6 +65,7 @@ interface UseCargoRequestsOptions {
   activeTab: 'all' | 'my';
   filters: FilterState;
   sortBy: SortOption;
+  searchQuery?: string;
   userId?: string;
 }
 
@@ -78,14 +80,22 @@ type CargoRequestsQueryKey = [
   UseCargoRequestsOptions['activeTab'],
   FilterState,
   SortOption,
+  string,
   string | undefined,
 ];
 
 const PAGE_SIZE = 20;
 
 const buildConstraints = (options: UseCargoRequestsOptions) => {
-  const { activeTab, filters, sortBy, userId } = options;
+  const { activeTab, filters, sortBy, searchQuery, userId } = options;
   const constraints: QueryConstraint[] = [];
+
+  const normalizedSearchQuery = searchQuery?.trim()
+    ? normalizeSearchQuery(searchQuery)
+    : '';
+  if (normalizedSearchQuery) {
+    constraints.push(where('search_terms', 'array-contains', normalizedSearchQuery));
+  }
 
   if (activeTab === 'my') {
     if (userId) {
@@ -215,11 +225,17 @@ const fetchCargoRequestsPage = async (
   return { items: filteredData, lastVisible: lastDoc, hasMore };
 };
 
-export function useCargoRequests({ activeTab, filters, sortBy, userId }: UseCargoRequestsOptions) {
+export function useCargoRequests({
+  activeTab,
+  filters,
+  sortBy,
+  searchQuery = '',
+  userId,
+}: UseCargoRequestsOptions) {
   const queryClient = useQueryClient();
   const queryKey = useMemo<CargoRequestsQueryKey>(
-    () => ['cargoRequests', activeTab, filters, sortBy, userId],
-    [activeTab, filters, sortBy, userId]
+    () => ['cargoRequests', activeTab, filters, sortBy, searchQuery, userId],
+    [activeTab, filters, sortBy, searchQuery, userId]
   );
 
   const {
@@ -240,7 +256,7 @@ export function useCargoRequests({ activeTab, filters, sortBy, userId }: UseCarg
   >({
     queryKey,
     queryFn: ({ pageParam }) =>
-      fetchCargoRequestsPage({ activeTab, filters, sortBy, userId }, pageParam),
+      fetchCargoRequestsPage({ activeTab, filters, sortBy, searchQuery, userId }, pageParam),
     initialPageParam: null,
     getNextPageParam: lastPage => (lastPage.hasMore ? lastPage.lastVisible : undefined),
     staleTime: 5 * 60 * 1000,

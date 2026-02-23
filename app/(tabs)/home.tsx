@@ -1,11 +1,13 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
+  Modal,
   RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   TouchableOpacity,
   useWindowDimensions,
   View,
@@ -13,15 +15,26 @@ import {
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { colors, spacing, fontSize, fontWeight, borderRadius } from '../../lib/sharedStyles';
 import { useAuth } from '../../contexts/AuthContext';
-import { useCargoRequests } from '../../hooks/useCargoRequests';
+import { useCargoRequests, type SortOption } from '../../hooks/useCargoRequests';
 import { useCurrentUser } from '../../hooks/useCurrentUser';
 import { RequestCard } from '../../components/home/RequestCard';
 import { SkeletonCard } from '../../components/home/SkeletonCard';
 import { useTranslation } from 'react-i18next';
 import Avatar from '../../components/Avatar';
 import { useUnreadCount } from '../../hooks/useNotifications';
+import { useDebounce } from '../../hooks/useDebounce';
+
+const HOME_FILTERS_STORAGE_KEY = '@home_marketplace_filters';
+
+type PersistedHomeState = {
+  activeTab: 'all' | 'my';
+  searchQuery: string;
+  sortBy: SortOption;
+  selectedCargoType: string;
+};
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -29,8 +42,13 @@ export default function HomeScreen() {
   const { currentUser } = useCurrentUser(user?.uid);
   const { t } = useTranslation();
   const { unreadCount } = useUnreadCount();
+  const [activeTab, setActiveTab] = useState<'all' | 'my'>('all');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [sortBy, setSortBy] = useState<SortOption>('newest');
+  const [isFilterSheetVisible, setIsFilterSheetVisible] = useState(false);
   const [selectedCargoType, setSelectedCargoType] = useState('');
   const insets = useSafeAreaInsets();
+  const debouncedSearchQuery = useDebounce(searchQuery, 300);
   const { width } = useWindowDimensions();
   const cargoTypes = useMemo(
     () => [
@@ -48,21 +66,23 @@ export default function HomeScreen() {
   const filters = useMemo(
     () => ({
       city: '',
-      cargo_type: selectedCargoType,
+      cargo_type: activeTab === 'all' ? selectedCargoType : '',
       price_min: '',
       price_max: '',
       price_type: '',
     }),
-    [selectedCargoType]
+    [activeTab, selectedCargoType]
   );
 
   const { requests, loading, refreshing, refresh, fetchMoreRequests, hasMore, loadingMore } =
     useCargoRequests({
-      activeTab: 'all',
+      activeTab,
       filters,
-      sortBy: 'newest',
+      sortBy,
+      searchQuery: debouncedSearchQuery,
       userId: user?.uid,
     });
+  const displayedRequests = requests;
 
   const horizontalPadding = width < 360 ? spacing.md : spacing.lg;
   const gridGap = width < 360 ? spacing.sm : spacing.md;
@@ -73,14 +93,74 @@ export default function HomeScreen() {
     []
   );
 
+  const hasActiveFilters = sortBy !== 'newest' || !!selectedCargoType;
+
+  useEffect(() => {
+    const loadPersistedState = async () => {
+      try {
+        const rawState = await AsyncStorage.getItem(HOME_FILTERS_STORAGE_KEY);
+        if (!rawState) {
+          return;
+        }
+
+        const state = JSON.parse(rawState) as Partial<PersistedHomeState>;
+
+        if (state.activeTab === 'all' || state.activeTab === 'my') {
+          setActiveTab(state.activeTab);
+        }
+
+        if (typeof state.searchQuery === 'string') {
+          setSearchQuery(state.searchQuery);
+        }
+
+        if (
+          state.sortBy === 'newest' ||
+          state.sortBy === 'oldest' ||
+          state.sortBy === 'priceLowToHigh' ||
+          state.sortBy === 'priceHighToLow' ||
+          state.sortBy === 'date'
+        ) {
+          setSortBy(state.sortBy);
+        }
+
+        if (typeof state.selectedCargoType === 'string') {
+          setSelectedCargoType(state.selectedCargoType);
+        }
+      } catch (error) {
+        console.warn('Failed to load home filters state', error);
+      }
+    };
+
+    loadPersistedState();
+  }, []);
+
+  useEffect(() => {
+    const saveState = async () => {
+      try {
+        const state: PersistedHomeState = {
+          activeTab,
+          searchQuery,
+          sortBy,
+          selectedCargoType,
+        };
+
+        await AsyncStorage.setItem(HOME_FILTERS_STORAGE_KEY, JSON.stringify(state));
+      } catch (error) {
+        console.warn('Failed to save home filters state', error);
+      }
+    };
+
+    saveState();
+  }, [activeTab, searchQuery, sortBy, selectedCargoType]);
+
   const activeCount = useMemo(
-    () => requests.filter(request => request.status === 'active').length,
-    [requests]
+    () => displayedRequests.filter(request => request.status === 'active').length,
+    [displayedRequests]
   );
 
   const assignedCount = useMemo(
-    () => requests.filter(request => request.status === 'assigned').length,
-    [requests]
+    () => displayedRequests.filter(request => request.status === 'assigned').length,
+    [displayedRequests]
   );
 
   const handleOpenRequest = (requestId: string) => {
@@ -131,7 +211,7 @@ export default function HomeScreen() {
       </View>
 
       <FlatList
-        data={loading ? skeletonItems : requests}
+        data={loading ? skeletonItems : displayedRequests}
         keyExtractor={(item, index) => ('id' in item ? item.id : `request-${index}`)}
         numColumns={2}
         columnWrapperStyle={{ gap: gridGap }}
@@ -157,6 +237,33 @@ export default function HomeScreen() {
         }
         ListHeaderComponent={
           <View style={styles.headerSection}>
+            <View style={styles.tabRow}>
+              <TouchableOpacity
+                style={[styles.tabButton, activeTab === 'all' && styles.tabButtonActive]}
+                onPress={() => setActiveTab('all')}
+                accessibilityRole="button"
+                accessibilityLabel={t('allRequests')}
+              >
+                <Text
+                  style={[styles.tabButtonText, activeTab === 'all' && styles.tabButtonTextActive]}
+                >
+                  {t('allRequests')}
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.tabButton, activeTab === 'my' && styles.tabButtonActive]}
+                onPress={() => setActiveTab('my')}
+                accessibilityRole="button"
+                accessibilityLabel={t('myRequests')}
+              >
+                <Text
+                  style={[styles.tabButtonText, activeTab === 'my' && styles.tabButtonTextActive]}
+                >
+                  {t('myRequests')}
+                </Text>
+              </TouchableOpacity>
+            </View>
+
             <View style={styles.summaryRow}>
               <View style={styles.summaryItem}>
                 <Text style={styles.summaryLabel}>{t('activeRequests')}</Text>
@@ -168,55 +275,65 @@ export default function HomeScreen() {
                 <Text style={styles.summaryValue}>{assignedCount}</Text>
               </View>
             </View>
-            <View style={styles.filterSection}>
-              <Text style={styles.filterTitle}>{t('cargoType')}</Text>
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={styles.filterChips}
+            <View style={styles.searchRow}>
+              <View style={styles.searchInputWrap}>
+                <Ionicons name="search-outline" size={18} color={colors.text.tertiary} />
+                <TextInput
+                  style={styles.searchInput}
+                  value={searchQuery}
+                  onChangeText={setSearchQuery}
+                  placeholder={t('searchPlaceholder')}
+                  placeholderTextColor={colors.text.tertiary}
+                  returnKeyType="search"
+                />
+              </View>
+              <TouchableOpacity
+                style={[styles.filterButton, hasActiveFilters && styles.filterButtonActive]}
+                onPress={() => setIsFilterSheetVisible(true)}
+                accessibilityRole="button"
+                accessibilityLabel={t('filterAndSort')}
               >
-                <TouchableOpacity
-                  style={[styles.filterChip, !selectedCargoType && styles.filterChipActive]}
-                  onPress={() => setSelectedCargoType('')}
-                  accessibilityRole="button"
-                  accessibilityLabel={t('allTypes')}
-                >
-                  <Text
-                    style={[
-                      styles.filterChipText,
-                      !selectedCargoType && styles.filterChipTextActive,
-                    ]}
-                  >
-                    {t('allTypes')}
-                  </Text>
-                </TouchableOpacity>
-                {cargoTypes.map(type => {
-                  const isSelected = selectedCargoType === type;
-                  return (
-                    <TouchableOpacity
-                      key={type}
-                      style={[styles.filterChip, isSelected && styles.filterChipActive]}
-                      onPress={() => setSelectedCargoType(type)}
-                      accessibilityRole="button"
-                      accessibilityLabel={t(type)}
-                    >
-                      <Text
-                        style={[styles.filterChipText, isSelected && styles.filterChipTextActive]}
-                      >
-                        {t(type)}
-                      </Text>
-                    </TouchableOpacity>
-                  );
-                })}
-              </ScrollView>
+                <Ionicons
+                  name="options-outline"
+                  size={20}
+                  color={hasActiveFilters ? colors.white : colors.text.primary}
+                />
+              </TouchableOpacity>
             </View>
+
+            {hasActiveFilters && (
+              <View style={styles.activeFilterRow}>
+                {selectedCargoType ? (
+                  <View style={styles.activeFilterChip}>
+                    <Text style={styles.activeFilterChipText}>{t(selectedCargoType)}</Text>
+                  </View>
+                ) : null}
+                {sortBy !== 'newest' ? (
+                  <View style={styles.activeFilterChip}>
+                    <Text style={styles.activeFilterChipText}>{t(sortBy)}</Text>
+                  </View>
+                ) : null}
+                <TouchableOpacity
+                  onPress={() => {
+                    setSelectedCargoType('');
+                    setSortBy('newest');
+                  }}
+                  accessibilityRole="button"
+                  accessibilityLabel={t('resetFilters')}
+                >
+                  <Text style={styles.clearFiltersText}>{t('resetFilters')}</Text>
+                </TouchableOpacity>
+              </View>
+            )}
           </View>
         }
         ListEmptyComponent={
           !loading ? (
             <View style={styles.emptyState}>
               <Ionicons name="cube-outline" size={64} color={colors.text.tertiary} />
-              <Text style={styles.emptyTitle}>{t('noCargoRequestsYet')}</Text>
+              <Text style={styles.emptyTitle}>
+                {activeTab === 'my' ? t('noMyRequests') : t('noCargoRequestsYet')}
+              </Text>
               <Text style={styles.emptyText}>{t('createFirstCargoRequest')}</Text>
               <TouchableOpacity
                 style={styles.createButton}
@@ -248,6 +365,108 @@ export default function HomeScreen() {
           )
         }
       />
+
+      <Modal
+        visible={isFilterSheetVisible}
+        animationType="slide"
+        transparent
+        onRequestClose={() => setIsFilterSheetVisible(false)}
+      >
+        <View style={styles.sheetOverlay}>
+          <View style={styles.sheetContainer}>
+            <View style={styles.sheetHandle} />
+            <View style={styles.sheetHeader}>
+              <Text style={styles.sheetTitle}>{t('filterAndSort')}</Text>
+              <TouchableOpacity
+                onPress={() => setIsFilterSheetVisible(false)}
+                accessibilityRole="button"
+                accessibilityLabel={t('cancel')}
+              >
+                <Ionicons name="close" size={24} color={colors.text.primary} />
+              </TouchableOpacity>
+            </View>
+
+            <Text style={styles.sheetSectionTitle}>{t('sortBy')}</Text>
+            <View style={styles.sheetOptionsRow}>
+              {(['newest', 'priceLowToHigh', 'priceHighToLow'] as SortOption[]).map(option => {
+                const selected = sortBy === option;
+                return (
+                  <TouchableOpacity
+                    key={option}
+                    style={[styles.sheetOption, selected && styles.sheetOptionActive]}
+                    onPress={() => setSortBy(option)}
+                  >
+                    <Text
+                      style={[styles.sheetOptionText, selected && styles.sheetOptionTextActive]}
+                    >
+                      {t(option)}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+
+            {activeTab === 'all' && (
+              <>
+                <Text style={styles.sheetSectionTitle}>{t('cargoType')}</Text>
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={styles.sheetOptionsRow}
+                >
+                  <TouchableOpacity
+                    style={[styles.sheetOption, !selectedCargoType && styles.sheetOptionActive]}
+                    onPress={() => setSelectedCargoType('')}
+                  >
+                    <Text
+                      style={[
+                        styles.sheetOptionText,
+                        !selectedCargoType && styles.sheetOptionTextActive,
+                      ]}
+                    >
+                      {t('allTypes')}
+                    </Text>
+                  </TouchableOpacity>
+                  {cargoTypes.map(type => {
+                    const selected = selectedCargoType === type;
+                    return (
+                      <TouchableOpacity
+                        key={type}
+                        style={[styles.sheetOption, selected && styles.sheetOptionActive]}
+                        onPress={() => setSelectedCargoType(type)}
+                      >
+                        <Text
+                          style={[styles.sheetOptionText, selected && styles.sheetOptionTextActive]}
+                        >
+                          {t(type)}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </ScrollView>
+              </>
+            )}
+
+            <View style={styles.sheetActions}>
+              <TouchableOpacity
+                style={styles.sheetSecondaryButton}
+                onPress={() => {
+                  setSortBy('newest');
+                  setSelectedCargoType('');
+                }}
+              >
+                <Text style={styles.sheetSecondaryButtonText}>{t('resetFilters')}</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.sheetPrimaryButton}
+                onPress={() => setIsFilterSheetVisible(false)}
+              >
+                <Text style={styles.sheetPrimaryButtonText}>{t('save')}</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -305,6 +524,188 @@ const styles = StyleSheet.create({
   headerSection: {
     paddingTop: spacing.lg,
     paddingBottom: spacing.md,
+  },
+  tabRow: {
+    flexDirection: 'row',
+    backgroundColor: colors.backgroundVeryLight,
+    borderRadius: borderRadius.full,
+    padding: spacing.xxxs,
+    gap: spacing.xxxs,
+    marginBottom: spacing.md,
+  },
+  tabButton: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: spacing.xs,
+    borderRadius: borderRadius.full,
+  },
+  tabButtonActive: {
+    backgroundColor: colors.white,
+  },
+  tabButtonText: {
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.semibold,
+    color: colors.text.secondary,
+  },
+  tabButtonTextActive: {
+    color: colors.text.primary,
+  },
+  searchRow: {
+    marginTop: spacing.sm,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  searchInputWrap: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.white,
+    borderRadius: borderRadius.lg,
+    borderWidth: 1,
+    borderColor: colors.border.light,
+    paddingHorizontal: spacing.md,
+  },
+  searchInput: {
+    flex: 1,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.sm,
+    fontSize: fontSize.sm,
+    color: colors.text.primary,
+  },
+  filterButton: {
+    width: 44,
+    height: 44,
+    borderRadius: borderRadius.lg,
+    borderWidth: 1,
+    borderColor: colors.border.light,
+    backgroundColor: colors.white,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  filterButtonActive: {
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
+  },
+  activeFilterRow: {
+    marginTop: spacing.sm,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    flexWrap: 'wrap',
+  },
+  activeFilterChip: {
+    backgroundColor: colors.primaryLight,
+    borderRadius: borderRadius.full,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xxxs,
+  },
+  activeFilterChipText: {
+    fontSize: fontSize.xs,
+    color: colors.primary,
+    fontWeight: fontWeight.semibold,
+  },
+  clearFiltersText: {
+    fontSize: fontSize.xs,
+    color: colors.text.secondary,
+    fontWeight: fontWeight.semibold,
+  },
+  sheetOverlay: {
+    flex: 1,
+    justifyContent: 'flex-end',
+    backgroundColor: 'rgba(0,0,0,0.28)',
+  },
+  sheetContainer: {
+    backgroundColor: colors.white,
+    borderTopLeftRadius: borderRadius.xl,
+    borderTopRightRadius: borderRadius.xl,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.sm,
+    paddingBottom: spacing.xl,
+  },
+  sheetHandle: {
+    alignSelf: 'center',
+    width: 40,
+    height: 4,
+    borderRadius: borderRadius.full,
+    backgroundColor: colors.border.light,
+    marginBottom: spacing.md,
+  },
+  sheetHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: spacing.md,
+  },
+  sheetTitle: {
+    fontSize: fontSize.lg,
+    fontWeight: fontWeight.semibold,
+    color: colors.text.primary,
+  },
+  sheetSectionTitle: {
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.semibold,
+    color: colors.text.secondary,
+    marginBottom: spacing.sm,
+    marginTop: spacing.sm,
+  },
+  sheetOptionsRow: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+    paddingBottom: spacing.xs,
+  },
+  sheetOption: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+    borderRadius: borderRadius.full,
+    borderWidth: 1,
+    borderColor: colors.border.light,
+    backgroundColor: colors.backgroundVeryLight,
+  },
+  sheetOptionActive: {
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
+  },
+  sheetOptionText: {
+    fontSize: fontSize.sm,
+    color: colors.text.secondary,
+    fontWeight: fontWeight.semibold,
+  },
+  sheetOptionTextActive: {
+    color: colors.white,
+  },
+  sheetActions: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+    marginTop: spacing.lg,
+  },
+  sheetSecondaryButton: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: borderRadius.lg,
+    borderWidth: 1,
+    borderColor: colors.border.light,
+    paddingVertical: spacing.sm,
+  },
+  sheetSecondaryButtonText: {
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.semibold,
+    color: colors.text.secondary,
+  },
+  sheetPrimaryButton: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: borderRadius.lg,
+    backgroundColor: colors.primary,
+    paddingVertical: spacing.sm,
+  },
+  sheetPrimaryButtonText: {
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.semibold,
+    color: colors.white,
   },
   filterSection: {
     marginTop: spacing.md,

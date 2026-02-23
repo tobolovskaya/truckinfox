@@ -39,6 +39,7 @@ import { geohashForLocation } from 'geofire-common';
 import { fetchWithTimeout } from '../../utils/fetchWithTimeout';
 import { LazyImage } from '../../components/LazyImage';
 import { colors, spacing, fontSize, fontWeight, borderRadius } from '../../lib/sharedStyles';
+import { generateCargoSearchTerms } from '../../utils/search';
 
 const CARGO_TYPES = [
   { id: 'automotive', label: 'Bil/Motor' },
@@ -515,16 +516,28 @@ export default function EditRequestScreen() {
         dimensions = `${formData.length} x ${formData.width} x ${formData.height}`;
       }
 
+      const title = sanitizeInput(formData.title.trim(), 200);
+      const description = sanitizeInput(formData.description.trim(), 2000);
+      const fromAddress = sanitizeInput(formData.from_address.trim(), 300);
+      const toAddress = sanitizeInput(formData.to_address.trim(), 300);
+      const searchTerms = generateCargoSearchTerms(
+        title,
+        formData.cargo_type,
+        fromAddress,
+        toAddress
+      );
+
       const requestRef = doc(db, 'cargo_requests', id as string);
 
       const updateData: Record<string, unknown> = {
-        title: sanitizeInput(formData.title.trim(), 200),
-        description: sanitizeInput(formData.description.trim(), 2000),
+        title,
+        description,
         cargo_type: formData.cargo_type,
         weight: sanitizeNumber(formData.weight, 0, 100000),
         dimensions: dimensions ? sanitizeInput(dimensions, 100) : null,
-        from_address: sanitizeInput(formData.from_address.trim(), 300),
-        to_address: sanitizeInput(formData.to_address.trim(), 300),
+        from_address: fromAddress,
+        to_address: toAddress,
+        search_terms: searchTerms,
         from_lat: formData.from_lat,
         from_lng: formData.from_lng,
         to_lat: formData.to_lat,
