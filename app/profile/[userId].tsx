@@ -93,7 +93,7 @@ export default function UserProfileScreen() {
       const reviewsSnap = await getDocs(reviewsQuery);
       const reviewsData = await Promise.all(
         reviewsSnap.docs.map(async reviewDoc => {
-          const reviewData = { id: reviewDoc.id, ...reviewDoc.data() } as any;
+          const reviewData = { id: reviewDoc.id, ...reviewDoc.data() } as Record<string, unknown>;
 
           // Fetch reviewer data
           if (reviewData.reviewer_id) {

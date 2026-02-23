@@ -56,7 +56,7 @@ export function useFavorites(userId?: string) {
           // Call success callback with new status
           onSuccess?.(true);
         }
-      } catch (error: any) {
+      } catch (error) {
         console.error('Error toggling favorite:', error);
 
         // Rollback optimistic update by calling callback with original status
@@ -84,7 +84,7 @@ export function useFavorites(userId?: string) {
           created_at: serverTimestamp(),
         });
         onSuccess?.();
-      } catch (error: any) {
+      } catch (error) {
         console.error('Error adding favorite:', error);
         Alert.alert(i18n.t('error'), i18n.t('favoriteAddFailed'));
       }
@@ -110,7 +110,7 @@ export function useFavorites(userId?: string) {
         const snapshot = await getDocs(favoritesQuery);
         await Promise.all(snapshot.docs.map(doc => deleteDoc(doc.ref)));
         onSuccess?.();
-      } catch (error: any) {
+      } catch (error) {
         console.error('Error removing favorite:', error);
         Alert.alert(i18n.t('error'), i18n.t('favoriteRemoveFailed'));
       }
