@@ -210,6 +210,82 @@ export default function HomeScreen() {
         </TouchableOpacity>
       </View>
 
+      <View style={[styles.stickyControls, { paddingHorizontal: horizontalPadding }]}>
+        <View style={styles.tabRow}>
+          <TouchableOpacity
+            style={[styles.tabButton, activeTab === 'all' && styles.tabButtonActive]}
+            onPress={() => setActiveTab('all')}
+            accessibilityRole="button"
+            accessibilityLabel={t('allRequests')}
+          >
+            <Text style={[styles.tabButtonText, activeTab === 'all' && styles.tabButtonTextActive]}>
+              {t('allRequests')}
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.tabButton, activeTab === 'my' && styles.tabButtonActive]}
+            onPress={() => setActiveTab('my')}
+            accessibilityRole="button"
+            accessibilityLabel={t('myRequests')}
+          >
+            <Text style={[styles.tabButtonText, activeTab === 'my' && styles.tabButtonTextActive]}>
+              {t('myRequests')}
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.searchRow}>
+          <View style={styles.searchInputWrap}>
+            <Ionicons name="search-outline" size={18} color={colors.text.tertiary} />
+            <TextInput
+              style={styles.searchInput}
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              placeholder={t('searchPlaceholder')}
+              placeholderTextColor={colors.text.tertiary}
+              returnKeyType="search"
+            />
+          </View>
+          <TouchableOpacity
+            style={[styles.filterButton, hasActiveFilters && styles.filterButtonActive]}
+            onPress={() => setIsFilterSheetVisible(true)}
+            accessibilityRole="button"
+            accessibilityLabel={t('filterAndSort')}
+          >
+            <Ionicons
+              name="options-outline"
+              size={20}
+              color={hasActiveFilters ? colors.white : colors.text.primary}
+            />
+          </TouchableOpacity>
+        </View>
+
+        {hasActiveFilters && (
+          <View style={styles.activeFilterRow}>
+            {selectedCargoType ? (
+              <View style={styles.activeFilterChip}>
+                <Text style={styles.activeFilterChipText}>{t(selectedCargoType)}</Text>
+              </View>
+            ) : null}
+            {sortBy !== 'newest' ? (
+              <View style={styles.activeFilterChip}>
+                <Text style={styles.activeFilterChipText}>{t(sortBy)}</Text>
+              </View>
+            ) : null}
+            <TouchableOpacity
+              onPress={() => {
+                setSelectedCargoType('');
+                setSortBy('newest');
+              }}
+              accessibilityRole="button"
+              accessibilityLabel={t('resetFilters')}
+            >
+              <Text style={styles.clearFiltersText}>{t('resetFilters')}</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+      </View>
+
       <FlatList
         data={loading ? skeletonItems : displayedRequests}
         keyExtractor={(item, index) => ('id' in item ? item.id : `request-${index}`)}
@@ -237,33 +313,6 @@ export default function HomeScreen() {
         }
         ListHeaderComponent={
           <View style={styles.headerSection}>
-            <View style={styles.tabRow}>
-              <TouchableOpacity
-                style={[styles.tabButton, activeTab === 'all' && styles.tabButtonActive]}
-                onPress={() => setActiveTab('all')}
-                accessibilityRole="button"
-                accessibilityLabel={t('allRequests')}
-              >
-                <Text
-                  style={[styles.tabButtonText, activeTab === 'all' && styles.tabButtonTextActive]}
-                >
-                  {t('allRequests')}
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.tabButton, activeTab === 'my' && styles.tabButtonActive]}
-                onPress={() => setActiveTab('my')}
-                accessibilityRole="button"
-                accessibilityLabel={t('myRequests')}
-              >
-                <Text
-                  style={[styles.tabButtonText, activeTab === 'my' && styles.tabButtonTextActive]}
-                >
-                  {t('myRequests')}
-                </Text>
-              </TouchableOpacity>
-            </View>
-
             <View style={styles.summaryRow}>
               <View style={styles.summaryItem}>
                 <Text style={styles.summaryLabel}>{t('activeRequests')}</Text>
@@ -275,56 +324,6 @@ export default function HomeScreen() {
                 <Text style={styles.summaryValue}>{assignedCount}</Text>
               </View>
             </View>
-            <View style={styles.searchRow}>
-              <View style={styles.searchInputWrap}>
-                <Ionicons name="search-outline" size={18} color={colors.text.tertiary} />
-                <TextInput
-                  style={styles.searchInput}
-                  value={searchQuery}
-                  onChangeText={setSearchQuery}
-                  placeholder={t('searchPlaceholder')}
-                  placeholderTextColor={colors.text.tertiary}
-                  returnKeyType="search"
-                />
-              </View>
-              <TouchableOpacity
-                style={[styles.filterButton, hasActiveFilters && styles.filterButtonActive]}
-                onPress={() => setIsFilterSheetVisible(true)}
-                accessibilityRole="button"
-                accessibilityLabel={t('filterAndSort')}
-              >
-                <Ionicons
-                  name="options-outline"
-                  size={20}
-                  color={hasActiveFilters ? colors.white : colors.text.primary}
-                />
-              </TouchableOpacity>
-            </View>
-
-            {hasActiveFilters && (
-              <View style={styles.activeFilterRow}>
-                {selectedCargoType ? (
-                  <View style={styles.activeFilterChip}>
-                    <Text style={styles.activeFilterChipText}>{t(selectedCargoType)}</Text>
-                  </View>
-                ) : null}
-                {sortBy !== 'newest' ? (
-                  <View style={styles.activeFilterChip}>
-                    <Text style={styles.activeFilterChipText}>{t(sortBy)}</Text>
-                  </View>
-                ) : null}
-                <TouchableOpacity
-                  onPress={() => {
-                    setSelectedCargoType('');
-                    setSortBy('newest');
-                  }}
-                  accessibilityRole="button"
-                  accessibilityLabel={t('resetFilters')}
-                >
-                  <Text style={styles.clearFiltersText}>{t('resetFilters')}</Text>
-                </TouchableOpacity>
-              </View>
-            )}
           </View>
         }
         ListEmptyComponent={
@@ -524,6 +523,12 @@ const styles = StyleSheet.create({
   headerSection: {
     paddingTop: spacing.lg,
     paddingBottom: spacing.md,
+  },
+  stickyControls: {
+    backgroundColor: colors.white,
+    paddingBottom: spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border.light,
   },
   tabRow: {
     flexDirection: 'row',
