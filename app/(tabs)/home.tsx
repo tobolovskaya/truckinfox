@@ -160,8 +160,8 @@ export default function HomeScreen() {
     setSelectedCargoType('');
   };
 
-  const displayName = currentUser?.full_name || user?.displayName || t('user');
-  const avatarUrl = currentUser?.avatar_url || user?.photoURL;
+  const displayName = currentUser?.full_name || user?.displayName || t('user') || '';
+  const avatarUrl = currentUser?.avatar_url || user?.photoURL || undefined;
 
   return (
     <View style={styles.container}>

@@ -17,7 +17,8 @@ export default function SignaturePad({
   onSave,
   title = 'Sign Here',
 }: SignaturePadProps) {
-  const signatureRef = useRef<SignatureCanvas>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const signatureRef = useRef<any>(null);
 
   const handleSignature = (signature: string) => {
     onSave(signature);

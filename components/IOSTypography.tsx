@@ -1,5 +1,5 @@
 import React from 'react';
-import { Text, TextProps } from 'react-native';
+import { Text, TextProps, TextStyle } from 'react-native';
 import { theme } from '../theme/theme';
 import { fontSize } from '../lib/sharedStyles';
 
@@ -40,7 +40,7 @@ export function IOSText({
     const baseStyle = {
       fontSize: typography.fontSize,
       lineHeight: typography.lineHeight,
-      fontWeight: (weight || typography.fontWeight) as React.CSSProperties['fontWeight'],
+      fontWeight: (weight || typography.fontWeight) as TextStyle['fontWeight'],
     };
 
     const colorStyles = {

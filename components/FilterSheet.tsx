@@ -253,7 +253,7 @@ export const FilterSheet: React.FC<FilterSheetProps> = ({
                     onPress={() => setSortBy(option.id as FilterOptions['sortBy'])}
                   >
                     <Ionicons
-                      name={option.icon as keyof typeof Ionicons.glyphMap}
+                      name={option.icon}
                       size={20}
                       color={sortBy === option.id ? 'white' : colors.primary}
                     />
@@ -281,7 +281,7 @@ export const FilterSheet: React.FC<FilterSheetProps> = ({
                     onPress={() => toggleCargoType(type.id)}
                   >
                     <Ionicons
-                      name={type.icon as keyof typeof Ionicons.glyphMap}
+                      name={type.icon}
                       size={18}
                       color={selectedTypes.includes(type.id) ? 'white' : colors.primary}
                     />
