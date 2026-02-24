@@ -10,10 +10,12 @@ import {
   updateProfile,
   signInWithCredential,
   OAuthProvider,
+  GoogleAuthProvider,
 } from 'firebase/auth';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
 import * as AppleAuthentication from 'expo-apple-authentication';
 import * as WebBrowser from 'expo-web-browser';
+import * as AuthSession from 'expo-auth-session';
 import { auth, db } from '../lib/firebase';
 import { generateSearchTerms } from '../utils/search';
 
@@ -246,14 +248,116 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const signInWithGoogle = async (): Promise<AuthResult<User>> => {
-    // Note: For production, you need to configure Google OAuth in Firebase Console
-    // and add your OAuth client IDs to environment variables.
-    // TODO: Implement OAuth flow when client IDs are configured.
-    return {
-      success: false,
-      error:
-        'Google Sign In requires additional setup. Please configure OAuth client IDs in Firebase Console and add them to your environment variables (EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID, etc.)',
-    };
+    try {
+      const clientId = Platform.select({
+        ios: process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID,
+        android: process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID,
+        default: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID,
+      });
+
+      if (!clientId) {
+        return {
+          success: false,
+          error:
+            'Google OAuth client ID is not configured for this platform. Add EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID, EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID, and EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID to your environment.',
+        };
+      }
+
+      const redirectUri = AuthSession.makeRedirectUri({
+        scheme: 'truckinfox',
+        path: 'oauthredirect',
+      });
+
+      const discovery = {
+        authorizationEndpoint: 'https://accounts.google.com/o/oauth2/v2/auth',
+        tokenEndpoint: 'https://oauth2.googleapis.com/token',
+        revocationEndpoint: 'https://oauth2.googleapis.com/revoke',
+      };
+
+      const request = new AuthSession.AuthRequest({
+        clientId,
+        responseType: AuthSession.ResponseType.IdToken,
+        scopes: ['openid', 'profile', 'email'],
+        redirectUri,
+        usePKCE: false,
+        extraParams: {
+          prompt: 'select_account',
+        },
+      });
+
+      const result = await request.promptAsync(discovery);
+
+      if (result.type === 'cancel' || result.type === 'dismiss') {
+        return {
+          success: false,
+          error: 'Google Sign In was cancelled',
+        };
+      }
+
+      if (result.type !== 'success') {
+        return {
+          success: false,
+          error: 'Google authentication failed',
+        };
+      }
+
+      const idToken = result.params.id_token;
+
+      if (!idToken) {
+        return {
+          success: false,
+          error: 'Google Sign In failed to return ID token',
+        };
+      }
+
+      const credential = GoogleAuthProvider.credential(idToken);
+      const userCredential = await signInWithCredential(auth, credential);
+
+      const userDoc = await getDoc(doc(db, 'users', userCredential.user.uid));
+      if (!userDoc.exists()) {
+        const fullName =
+          userCredential.user.displayName ||
+          userCredential.user.email?.split('@')[0] ||
+          'Google User';
+
+        await setDoc(doc(db, 'users', userCredential.user.uid), {
+          email: userCredential.user.email || '',
+          full_name: fullName,
+          phone: userCredential.user.phoneNumber || '',
+          user_type: 'customer',
+          search_terms: generateSearchTerms(fullName),
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        });
+      }
+
+      return {
+        success: true,
+        data: userCredential.user,
+      };
+    } catch (error: unknown) {
+      console.error('Google Sign In error:', error);
+
+      if (
+        typeof error === 'object' &&
+        error !== null &&
+        'message' in error &&
+        typeof (error as { message?: string }).message === 'string' &&
+        (error as { message: string }).message.toLowerCase().includes('cancel')
+      ) {
+        return {
+          success: false,
+          error: 'Google Sign In was cancelled',
+        };
+      }
+
+      const errorInfo = getAuthErrorMessage(error);
+      return {
+        success: false,
+        error: errorInfo.message,
+        errorCode: errorInfo.code,
+      };
+    }
   };
 
   const signInWithApple = async (): Promise<AuthResult<User>> => {
