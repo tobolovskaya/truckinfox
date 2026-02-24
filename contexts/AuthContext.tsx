@@ -16,6 +16,7 @@ import { doc, setDoc, getDoc } from 'firebase/firestore';
 import * as AppleAuthentication from 'expo-apple-authentication';
 import * as WebBrowser from 'expo-web-browser';
 import * as AuthSession from 'expo-auth-session';
+import Constants from 'expo-constants';
 import { auth, db } from '../lib/firebase';
 import { generateSearchTerms } from '../utils/search';
 
@@ -249,10 +250,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signInWithGoogle = async (): Promise<AuthResult<User>> => {
     try {
+      const configExtra = (Constants.expoConfig?.extra ?? {}) as {
+        googleOAuth?: {
+          webClientId?: string | null;
+          iosClientId?: string | null;
+          androidClientId?: string | null;
+        };
+      };
+
+      const webClientId =
+        process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID ?? configExtra.googleOAuth?.webClientId;
+      const iosClientId =
+        process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID ?? configExtra.googleOAuth?.iosClientId;
+      const androidClientId =
+        process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID ??
+        configExtra.googleOAuth?.androidClientId;
+
       const clientId = Platform.select({
-        ios: process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID,
-        android: process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID,
-        default: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID,
+        ios: iosClientId,
+        android: androidClientId,
+        default: webClientId,
       });
 
       if (!clientId) {
