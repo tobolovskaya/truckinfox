@@ -89,7 +89,7 @@ export const SkeletonCard = ({
 
   return (
     <View style={[styles.requestCard, cardStyle]}>
-      {/* Photo skeleton */}
+      {/* Photo skeleton - must match RequestCard image height (120px) */}
       <SkeletonBox width="100%" height={REQUEST_CARD_IMAGE_HEIGHT} style={styles.photoSkeleton} />
 
       {/* Content skeleton */}
