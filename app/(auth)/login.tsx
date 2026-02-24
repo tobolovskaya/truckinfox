@@ -23,9 +23,6 @@ import {
   borderRadius,
   shadows,
 } from '../../lib/sharedStyles';
-import * as WebBrowser from 'expo-web-browser';
-
-WebBrowser.maybeCompleteAuthSession();
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
@@ -34,7 +31,7 @@ export default function LoginScreen() {
   const [rememberMe, setRememberMe] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  const { signIn, signInWithGoogle, signInWithApple } = useAuth();
+  const { signIn } = useAuth();
   const router = useRouter();
   const { t } = useTranslation();
 
@@ -69,9 +66,7 @@ export default function LoginScreen() {
       }
 
       // Track user login
-      trackUserLogin({
-        login_method: 'email',
-      });
+      trackUserLogin();
 
       router.replace('/(tabs)');
     } finally {
@@ -79,50 +74,7 @@ export default function LoginScreen() {
     }
   };
 
-  const handleSocialLogin = async (provider: 'google' | 'apple') => {
-    try {
-      setLoading(true);
-      let result: { success: boolean; error?: string } | undefined;
 
-      if (provider === 'google') {
-        result = await signInWithGoogle();
-      } else if (provider === 'apple') {
-        if (Platform.OS !== 'ios') {
-          Alert.alert(t('error'), t('appleSignInIosOnly'));
-          return;
-        }
-        result = await signInWithApple();
-      }
-
-      if (!result) {
-        return;
-      }
-
-      if (result.success) {
-        // Track social login
-        await trackUserLogin({
-          login_method: provider,
-        });
-
-        router.replace('/(tabs)');
-      } else {
-        // Show error unless it was a cancellation
-        if (!result.error?.includes('cancelled') && !result.error?.includes('canceled')) {
-          Alert.alert(t('error'), result.error || t('authenticationFailed'));
-        }
-      }
-    } catch (error: unknown) {
-      console.error(`${provider} Sign In error:`, error);
-      const message = error instanceof Error ? error.message : t('authenticationFailed');
-      Alert.alert(t('error'), message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleAppleLogin = async () => {
-    await handleSocialLogin('apple');
-  };
 
   return (
     <View style={styles.container}>
@@ -237,41 +189,6 @@ export default function LoginScreen() {
               {loading ? t('signingIn') : t('signInButton')}
             </Text>
           </TouchableOpacity>
-
-          {/* Divider */}
-          <View style={styles.divider}>
-            <View style={styles.dividerLine} />
-            <Text style={styles.dividerText}>{t('or')}</Text>
-            <View style={styles.dividerLine} />
-          </View>
-
-          {/* Social Login */}
-          <View style={styles.socialContainer}>
-            <TouchableOpacity
-              style={styles.socialButton}
-              onPress={() => handleSocialLogin('google')}
-              disabled={loading}
-            >
-              <Ionicons name="logo-google" size={24} color="#4285F4" />
-            </TouchableOpacity>
-            {Platform.OS === 'ios' ? (
-              <TouchableOpacity
-                style={styles.socialButton}
-                onPress={handleAppleLogin}
-                disabled={loading}
-              >
-                <Ionicons name="logo-apple" size={24} color="#000000" />
-              </TouchableOpacity>
-            ) : (
-              <TouchableOpacity
-                style={styles.socialButton}
-                onPress={() => handleSocialLogin('apple')}
-                disabled={loading}
-              >
-                <Ionicons name="logo-apple" size={24} color="#000000" />
-              </TouchableOpacity>
-            )}
-          </View>
 
           {/* Sign Up Link */}
           <View style={styles.signUpContainer}>
@@ -439,37 +356,6 @@ const styles = StyleSheet.create({
     color: colors.white,
     fontSize: fontSize.md,
     fontWeight: fontWeight.semibold,
-  },
-  divider: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: spacing.xl,
-  },
-  dividerLine: {
-    flex: 1,
-    height: 1,
-    backgroundColor: colors.border.default,
-  },
-  dividerText: {
-    paddingHorizontal: spacing.lg,
-    fontSize: fontSize.sm,
-    color: colors.text.secondary,
-  },
-  socialContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    gap: spacing.md,
-    marginBottom: spacing.xl,
-  },
-  socialButton: {
-    width: 44,
-    height: 44,
-    borderWidth: 1,
-    borderColor: colors.border.default,
-    borderRadius: borderRadius.sm,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: colors.white,
   },
   signUpContainer: {
     flexDirection: 'row',

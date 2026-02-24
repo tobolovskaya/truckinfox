@@ -195,8 +195,8 @@ export const trackUserRegistered = (params: {
   logEvent(AnalyticsEvents.USER_REGISTERED, params);
 };
 
-export const trackUserLogin = (params: { login_method?: string }) => {
-  logEvent(AnalyticsEvents.USER_LOGGED_IN, params);
+export const trackUserLogin = () => {
+  logEvent(AnalyticsEvents.USER_LOGGED_IN);
 };
 
 /**

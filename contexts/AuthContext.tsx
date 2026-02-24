@@ -1,5 +1,4 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { Platform } from 'react-native';
 import { FirebaseError } from 'firebase/app';
 import {
   User,
@@ -8,19 +7,10 @@ import {
   signOut as firebaseSignOut,
   onAuthStateChanged,
   updateProfile,
-  signInWithCredential,
-  OAuthProvider,
-  GoogleAuthProvider,
 } from 'firebase/auth';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
-import * as AppleAuthentication from 'expo-apple-authentication';
-import * as WebBrowser from 'expo-web-browser';
-import * as AuthSession from 'expo-auth-session';
-import Constants from 'expo-constants';
 import { auth, db } from '../lib/firebase';
 import { generateSearchTerms } from '../utils/search';
-
-WebBrowser.maybeCompleteAuthSession();
 
 // Strict TypeScript interfaces for auth data
 export interface SignUpData {
@@ -47,8 +37,6 @@ interface AuthContextType {
   signUp: (_userData: SignUpData) => Promise<AuthResult<User>>;
   signOut: () => Promise<AuthResult>;
   signOutAllDevices: () => Promise<AuthResult>;
-  signInWithGoogle: () => Promise<AuthResult<User>>;
-  signInWithApple: () => Promise<AuthResult<User>>;
 }
 
 // Input validation helpers
@@ -103,12 +91,6 @@ const getAuthErrorMessage = (error: unknown): { message: string; code?: string }
         return { message: 'Акаунт вимкнено. Зверніться до підтримки.', code: error.code };
       case 'auth/too-many-requests':
         return { message: 'Забагато спроб. Спробуйте пізніше.', code: error.code };
-      case 'auth/operation-not-allowed':
-        return {
-          message:
-            'This authentication method is not enabled. Please enable it in Firebase Console or contact support.',
-          code: error.code,
-        };
       case 'auth/network-request-failed':
         return { message: 'Nettverksfeil. Sjekk tilkoblingen og prov igjen.', code: error.code };
       case 'auth/configuration-not-found':
@@ -255,238 +237,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const signInWithGoogle = async (): Promise<AuthResult<User>> => {
-    try {
-      const configExtra = (Constants.expoConfig?.extra ?? {}) as {
-        googleOAuth?: {
-          webClientId?: string | null;
-          iosClientId?: string | null;
-          androidClientId?: string | null;
-        };
-      };
-
-      const webClientId =
-        process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID ?? configExtra.googleOAuth?.webClientId;
-      const iosClientId =
-        process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID ?? configExtra.googleOAuth?.iosClientId;
-      const androidClientId =
-        process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID ??
-        configExtra.googleOAuth?.androidClientId;
-
-      const clientId = Platform.select({
-        ios: iosClientId,
-        android: androidClientId,
-        default: webClientId,
-      });
-
-      if (!clientId) {
-        return {
-          success: false,
-          error:
-            'Google OAuth client ID is not configured for this platform. Add EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID, EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID, and EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID to your environment.',
-        };
-      }
-
-      const redirectUri = AuthSession.makeRedirectUri({
-        scheme: 'truckinfox',
-        path: 'oauthredirect',
-      });
-
-      const discovery = {
-        authorizationEndpoint: 'https://accounts.google.com/o/oauth2/v2/auth',
-        tokenEndpoint: 'https://oauth2.googleapis.com/token',
-        revocationEndpoint: 'https://oauth2.googleapis.com/revoke',
-      };
-
-      const request = new AuthSession.AuthRequest({
-        clientId,
-        responseType: AuthSession.ResponseType.IdToken,
-        scopes: ['openid', 'profile', 'email'],
-        redirectUri,
-        usePKCE: false,
-        extraParams: {
-          prompt: 'select_account',
-        },
-      });
-
-      const result = await request.promptAsync(discovery);
-
-      if (result.type === 'cancel' || result.type === 'dismiss') {
-        return {
-          success: false,
-          error: 'Google Sign In was cancelled',
-        };
-      }
-
-      if (result.type !== 'success') {
-        return {
-          success: false,
-          error: 'Google authentication failed',
-        };
-      }
-
-      const idToken = result.params.id_token;
-
-      if (!idToken) {
-        return {
-          success: false,
-          error: 'Google Sign In failed to return ID token',
-        };
-      }
-
-      const credential = GoogleAuthProvider.credential(idToken);
-      const userCredential = await signInWithCredential(auth, credential);
-
-      const userDoc = await getDoc(doc(db, 'users', userCredential.user.uid));
-      if (!userDoc.exists()) {
-        const fullName =
-          userCredential.user.displayName ||
-          userCredential.user.email?.split('@')[0] ||
-          'Google User';
-
-        await setDoc(doc(db, 'users', userCredential.user.uid), {
-          email: userCredential.user.email || '',
-          full_name: fullName,
-          phone: userCredential.user.phoneNumber || '',
-          user_type: 'customer',
-          search_terms: generateSearchTerms(fullName),
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        });
-      }
-
-      return {
-        success: true,
-        data: userCredential.user,
-      };
-    } catch (error: unknown) {
-      console.error('Google Sign In error:', error);
-
-      if (
-        typeof error === 'object' &&
-        error !== null &&
-        'message' in error &&
-        typeof (error as { message?: string }).message === 'string' &&
-        (error as { message: string }).message.toLowerCase().includes('cancel')
-      ) {
-        return {
-          success: false,
-          error: 'Google Sign In was cancelled',
-        };
-      }
-
-      const errorInfo = getAuthErrorMessage(error);
-      return {
-        success: false,
-        error: errorInfo.message,
-        errorCode: errorInfo.code,
-      };
-    }
+    return {
+      success: false,
+      error: 'Google Sign In has been removed. Please use email/password authentication.',
+    };
   };
 
   const signInWithApple = async (): Promise<AuthResult<User>> => {
-    try {
-      if (Platform.OS !== 'ios') {
-        return {
-          success: false,
-          error: 'Apple Sign In is only available on iOS',
-        };
-      }
-
-      // Check if Apple Sign In is available
-      const isAvailable = await AppleAuthentication.isAvailableAsync();
-      if (!isAvailable) {
-        return {
-          success: false,
-          error: 'Apple Sign In is not available on this device',
-        };
-      }
-
-      const appleCredential = await AppleAuthentication.signInAsync({
-        requestedScopes: [
-          AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
-          AppleAuthentication.AppleAuthenticationScope.EMAIL,
-        ],
-      });
-
-      const { identityToken } = appleCredential;
-      if (!identityToken) {
-        return {
-          success: false,
-          error: 'Apple Sign In failed to return identity token',
-        };
-      }
-
-      // Create Firebase credential
-      const provider = new OAuthProvider('apple.com');
-      const credential = provider.credential({
-        idToken: identityToken,
-      });
-
-      const userCredential = await signInWithCredential(auth, credential);
-
-      // Check if user profile exists in Firestore
-      const userDoc = await getDoc(doc(db, 'users', userCredential.user.uid));
-
-      if (!userDoc.exists()) {
-        // Create user profile for first-time Apple sign in
-        const fullName =
-          appleCredential.fullName?.givenName && appleCredential.fullName?.familyName
-            ? `${appleCredential.fullName.givenName} ${appleCredential.fullName.familyName}`
-            : userCredential.user.displayName || 'Apple User';
-
-        await setDoc(doc(db, 'users', userCredential.user.uid), {
-          email: appleCredential.email || userCredential.user.email || '',
-          full_name: fullName,
-          phone: '',
-          user_type: 'customer', // Default to customer
-          search_terms: generateSearchTerms(fullName),
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        });
-      }
-
-      return {
-        success: true,
-        data: userCredential.user,
-      };
-    } catch (error: unknown) {
-      console.error('Apple Sign In error:', error);
-
-      // Check for operation-not-allowed (Firebase Apple provider not enabled)
-      if (
-        typeof error === 'object' &&
-        error !== null &&
-        'code' in error &&
-        (error as { code?: string }).code === 'auth/operation-not-allowed'
-      ) {
-        return {
-          success: false,
-          error:
-            'Apple Sign In is not enabled in this app. Please enable it in Firebase Console.\n\nSee APPLE_SIGNIN_SETUP.md for setup instructions.',
-          errorCode: 'auth/operation-not-allowed',
-        };
-      }
-
-      // Handle user cancellation gracefully
-      if (
-        typeof error === 'object' &&
-        error !== null &&
-        'code' in error &&
-        (error as { code?: string }).code === 'ERR_CANCELED'
-      ) {
-        return {
-          success: false,
-          error: 'Apple Sign In was cancelled',
-        };
-      }
-
-      const errorInfo = getAuthErrorMessage(error);
-      return {
-        success: false,
-        error: errorInfo.message,
-        errorCode: errorInfo.code,
-      };
-    }
+    return {
+      success: false,
+      error: 'Apple Sign In has been removed. Please use email/password authentication.',
+    };
   };
 
   return (
@@ -498,8 +259,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         signUp,
         signOut,
         signOutAllDevices,
-        signInWithGoogle,
-        signInWithApple,
       }}
     >
       {children}
