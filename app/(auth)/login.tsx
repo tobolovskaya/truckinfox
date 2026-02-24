@@ -9,7 +9,6 @@ import {
   Alert,
   Platform,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useAuth } from '../../contexts/AuthContext';
@@ -23,7 +22,6 @@ import {
   fontWeight,
   borderRadius,
   shadows,
-  gradients,
 } from '../../lib/sharedStyles';
 import * as WebBrowser from 'expo-web-browser';
 
@@ -128,7 +126,7 @@ export default function LoginScreen() {
   };
 
   return (
-    <LinearGradient colors={gradients.primary} style={styles.container}>
+    <View style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         {/* Logo and Header */}
         <View style={styles.header}>
@@ -295,13 +293,14 @@ export default function LoginScreen() {
           <Text style={styles.footerText}>© 2025 TruckinFox. {t('allRightsReserved')}</Text>
         </View>
       </ScrollView>
-    </LinearGradient>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: colors.background,
   },
   scrollContent: {
     flexGrow: 1,
@@ -322,13 +321,14 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: spacing.md,
-    ...shadows.lg,
+    ...shadows.sm,
   },
   title: {
     fontSize: fontSize.xxxl,
     fontWeight: fontWeight.bold,
     color: colors.text.primary,
     marginBottom: spacing.sm,
+    textAlign: 'center',
   },
   subtitle: {
     fontSize: fontSize.sm,
@@ -340,9 +340,7 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.lg,
     padding: spacing.xl,
     marginBottom: spacing.xl,
-    ...shadows.lg,
-    borderWidth: 1,
-    borderColor: gradients.primary[1],
+    ...shadows.sm,
   },
   formHeader: {
     marginBottom: spacing.lg,
