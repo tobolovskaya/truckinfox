@@ -48,12 +48,11 @@ export default function LoginScreen() {
     try {
       const result = await signIn(email, password);
       if (!result.success) {
-        // Check if error is user not found or invalid credentials
-        const errorMessage = result.error || '';
+        // Check error code to determine if user account doesn't exist
         const isUserNotFound =
-          errorMessage.includes('user-not-found') ||
-          errorMessage.includes('invalid-credential') ||
-          errorMessage.includes('wrong-password');
+          result.errorCode === 'auth/user-not-found' ||
+          result.errorCode === 'auth/invalid-credential' ||
+          result.errorCode === 'auth/wrong-password';
 
         if (isUserNotFound) {
           Alert.alert(t('userNotFound'), t('wouldYouLikeToRegister'), [
@@ -64,7 +63,7 @@ export default function LoginScreen() {
             },
           ]);
         } else {
-          Alert.alert(t('loginError'), errorMessage || t('somethingWentWrong'));
+          Alert.alert(t('loginError'), result.error || t('somethingWentWrong'));
         }
         return;
       }

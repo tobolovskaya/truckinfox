@@ -34,6 +34,7 @@ export interface AuthResult<T = void> {
   success: boolean;
   data?: T;
   error?: string;
+  errorCode?: string;
 }
 
 interface AuthContextType {
@@ -85,30 +86,30 @@ const validateSignUpData = (userData: SignUpData): string | null => {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const getAuthErrorMessage = (error: unknown): string => {
+const getAuthErrorMessage = (error: unknown): { message: string; code?: string } => {
   if (error instanceof FirebaseError) {
     switch (error.code) {
       case 'auth/user-not-found':
-        return 'Користувача не знайдено. Спочатку зареєструйтесь.';
+        return { message: 'Користувача не знайдено. Спочатку зареєструйтесь.', code: error.code };
       case 'auth/invalid-credential':
       case 'auth/wrong-password':
-        return 'Невірний email або пароль.';
+        return { message: 'Невірний email або пароль.', code: error.code };
       case 'auth/invalid-email':
-        return 'Невірний формат email.';
+        return { message: 'Невірний формат email.', code: error.code };
       case 'auth/user-disabled':
-        return 'Акаунт вимкнено. Зверніться до підтримки.';
+        return { message: 'Акаунт вимкнено. Зверніться до підтримки.', code: error.code };
       case 'auth/too-many-requests':
-        return 'Забагато спроб. Спробуйте пізніше.';
+        return { message: 'Забагато спроб. Спробуйте пізніше.', code: error.code };
       case 'auth/network-request-failed':
-        return 'Nettverksfeil. Sjekk tilkoblingen og prov igjen.';
+        return { message: 'Nettverksfeil. Sjekk tilkoblingen og prov igjen.', code: error.code };
       case 'auth/configuration-not-found':
-        return 'Налаштування Firebase Auth не знайдено. Увімкніть Email/Password у Firebase Console.';
+        return { message: 'Налаштування Firebase Auth не знайдено. Увімкніть Email/Password у Firebase Console.', code: error.code };
       default:
-        return error.message;
+        return { message: error.message, code: error.code };
     }
   }
 
-  return error instanceof Error ? error.message : 'An unexpected error occurred';
+  return { message: error instanceof Error ? error.message : 'An unexpected error occurred' };
 };
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
@@ -151,9 +152,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       };
     } catch (error) {
       console.error('Sign in error:', error);
+      const errorInfo = getAuthErrorMessage(error);
       return {
         success: false,
-        error: getAuthErrorMessage(error),
+        error: errorInfo.message,
+        errorCode: errorInfo.code,
       };
     }
   };
@@ -198,9 +201,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       };
     } catch (error) {
       console.error('Sign up error:', error);
+      const errorInfo = getAuthErrorMessage(error);
       return {
         success: false,
-        error: getAuthErrorMessage(error),
+        error: errorInfo.message,
+        errorCode: errorInfo.code,
       };
     }
   };
@@ -329,9 +334,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         };
       }
 
+      const errorInfo = getAuthErrorMessage(error);
       return {
         success: false,
-        error: getAuthErrorMessage(error),
+        error: errorInfo.message,
+        errorCode: errorInfo.code,
       };
     }
   };
