@@ -399,18 +399,40 @@ const styles = StyleSheet.create({
   },
   optionsGrid: {
     flexDirection: 'row',
-    closeButton: {
-      width: 36,
-      height: 36,
-      borderRadius: 18,
-      justifyContent: 'center',
-      alignItems: 'center',
-    },
+    flexWrap: 'wrap',
+    gap: spacing.sm,
+  },
+  sortOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: borderRadius.full,
+    borderWidth: 1.5,
+    borderColor: colors.border.light,
+    backgroundColor: colors.white,
+  },
+  sortOptionActive: {
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
+  },
+  sortOptionText: {
+    fontSize: fontSize.sm,
+    color: colors.text.primary,
+    fontWeight: fontWeight.medium,
   },
   sortOptionTextActive: {
     color: 'white',
   },
   chipsContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.sm,
+  },
+  chip: {
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: spacing.xs,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
