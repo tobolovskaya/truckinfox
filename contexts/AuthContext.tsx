@@ -103,6 +103,12 @@ const getAuthErrorMessage = (error: unknown): { message: string; code?: string }
         return { message: 'Акаунт вимкнено. Зверніться до підтримки.', code: error.code };
       case 'auth/too-many-requests':
         return { message: 'Забагато спроб. Спробуйте пізніше.', code: error.code };
+      case 'auth/operation-not-allowed':
+        return {
+          message:
+            'This authentication method is not enabled. Please enable it in Firebase Console or contact support.',
+          code: error.code,
+        };
       case 'auth/network-request-failed':
         return { message: 'Nettverksfeil. Sjekk tilkoblingen og prov igjen.', code: error.code };
       case 'auth/configuration-not-found':
@@ -445,6 +451,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       };
     } catch (error: unknown) {
       console.error('Apple Sign In error:', error);
+
+      // Check for operation-not-allowed (Firebase Apple provider not enabled)
+      if (
+        typeof error === 'object' &&
+        error !== null &&
+        'code' in error &&
+        (error as { code?: string }).code === 'auth/operation-not-allowed'
+      ) {
+        return {
+          success: false,
+          error:
+            'Apple Sign In is not enabled in this app. Please enable it in Firebase Console.\n\nSee APPLE_SIGNIN_SETUP.md for setup instructions.',
+          errorCode: 'auth/operation-not-allowed',
+        };
+      }
 
       // Handle user cancellation gracefully
       if (
