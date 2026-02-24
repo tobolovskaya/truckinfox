@@ -91,17 +91,21 @@ const buildConstraints = (options: UseCargoRequestsOptions) => {
   const { activeTab, filters, sortBy, searchQuery, userId } = options;
   const constraints: QueryConstraint[] = [];
 
+  // Add search filter if query exists
   const normalizedSearchQuery = searchQuery?.trim() ? normalizeSearchQuery(searchQuery) : '';
   if (normalizedSearchQuery) {
     constraints.push(where('search_terms', 'array-contains', normalizedSearchQuery));
   }
 
+  // Tab-specific constraints
   if (activeTab === 'my') {
+    // My tab: only show current user's requests that are active
     if (userId) {
       constraints.push(where('user_id', '==', userId));
-      constraints.push(where('status', '==', 'active'));
+      constraints.push(where('status', '==', 'active')); // Only active requests for "My" tab
     }
   } else {
+    // All tab: apply cargo type and price filters
     if (filters.cargo_type) {
       constraints.push(where('cargo_type', '==', filters.cargo_type));
     }
@@ -232,6 +236,9 @@ export function useCargoRequests({
   userId,
 }: UseCargoRequestsOptions) {
   const queryClient = useQueryClient();
+
+  // Query key includes activeTab to ensure All/My tabs have separate cache
+  // This allows seamless switching without data reflow
   const queryKey = useMemo<CargoRequestsQueryKey>(
     () => ['cargoRequests', activeTab, filters, sortBy, searchQuery, userId],
     [activeTab, filters, sortBy, searchQuery, userId]
