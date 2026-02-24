@@ -15,6 +15,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { colors, spacing, fontSize, fontWeight, borderRadius, shadows } from '../lib/sharedStyles';
 import { trackFilterApplied } from '../utils/analytics';
 import { startTrace, PerformanceTraces } from '../utils/performance';
+import { StandardBottomSheet } from './StandardBottomSheet';
 
 const SAVED_FILTERS_KEY = '@truckinfox_saved_filters';
 
@@ -185,182 +186,176 @@ export const FilterSheet: React.FC<FilterSheetProps> = ({
   };
 
   return (
-    <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
-      <View style={styles.overlay}>
-        <View style={styles.sheet}>
-          {/* Header */}
-          <View style={styles.header}>
-            <TouchableOpacity onPress={onClose} style={styles.closeButton}>
-              <Ionicons name="close" size={24} color={colors.text.primary} />
-            </TouchableOpacity>
-            <Text style={styles.headerTitle}>{t('filterAndSort')}</Text>
-            <TouchableOpacity onPress={handleReset}>
-              <Text style={styles.resetText}>{t('resetFilters')}</Text>
-            </TouchableOpacity>
-          </View>
-
-          <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-            {/* Saved Filters Section */}
-            {savedFilters.length > 0 && (
-              <View style={styles.section}>
-                <Text style={styles.sectionTitle}>{t('savedFilters')}</Text>
-                <ScrollView
-                  horizontal
-                  showsHorizontalScrollIndicator={false}
-                  contentContainerStyle={styles.savedFiltersScroll}
-                >
-                  {savedFilters.map(savedFilter => (
-                    <TouchableOpacity
-                      key={savedFilter.id}
-                      style={styles.savedFilterCard}
-                      onPress={() => handleLoadFilter(savedFilter)}
-                    >
-                      <View style={styles.savedFilterHeader}>
-                        <Ionicons name="bookmark" size={18} color={colors.primary} />
-                        <Text style={styles.savedFilterName} numberOfLines={1}>
-                          {savedFilter.name}
-                        </Text>
-                        <TouchableOpacity
-                          onPress={() => handleDeleteFilter(savedFilter.id)}
-                          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                        >
-                          <Ionicons name="close-circle" size={18} color={colors.text.tertiary} />
-                        </TouchableOpacity>
-                      </View>
-                      <View style={styles.savedFilterDetails}>
-                        <Text style={styles.savedFilterDetail}>
-                          {savedFilter.filters.cargoTypes.length} {t('types')}
-                        </Text>
-                        <Text style={styles.savedFilterDetailSeparator}>•</Text>
-                        <Text style={styles.savedFilterDetail}>
-                          {t(savedFilter.filters.sortBy)}
-                        </Text>
-                      </View>
-                    </TouchableOpacity>
-                  ))}
-                </ScrollView>
-              </View>
-            )}
-
-            {/* Sort Section */}
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>{t('sortBy')}</Text>
-              <View style={styles.optionsGrid}>
-                {SORT_OPTIONS.map(option => (
-                  <TouchableOpacity
-                    key={option.id}
-                    style={[styles.sortOption, sortBy === option.id && styles.sortOptionActive]}
-                    onPress={() => setSortBy(option.id as FilterOptions['sortBy'])}
-                  >
-                    <Ionicons
-                      name={option.icon}
-                      size={20}
-                      color={sortBy === option.id ? 'white' : colors.primary}
-                    />
-                    <Text
-                      style={[
-                        styles.sortOptionText,
-                        sortBy === option.id && styles.sortOptionTextActive,
-                      ]}
-                    >
-                      {option.label}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            </View>
-
-            {/* Cargo Types */}
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>{t('cargoType')}</Text>
-              <View style={styles.chipsContainer}>
-                {CARGO_TYPES.map(type => (
-                  <TouchableOpacity
-                    key={type.id}
-                    style={[styles.chip, selectedTypes.includes(type.id) && styles.chipActive]}
-                    onPress={() => toggleCargoType(type.id)}
-                  >
-                    <Ionicons
-                      name={type.icon}
-                      size={18}
-                      color={selectedTypes.includes(type.id) ? 'white' : colors.primary}
-                    />
-                    <Text
-                      style={[
-                        styles.chipText,
-                        selectedTypes.includes(type.id) && styles.chipTextActive,
-                      ]}
-                    >
-                      {type.label}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            </View>
-
-            {/* Price Range */}
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>{t('priceRange')}</Text>
-              <View style={styles.priceRange}>
-                <View style={styles.priceInput}>
-                  <Text style={styles.priceLabel}>{t('from')}</Text>
-                  <Text style={styles.priceValue}>{priceRange.min} NOK</Text>
-                </View>
-                <Text style={styles.priceSeparator}>-</Text>
-                <View style={styles.priceInput}>
-                  <Text style={styles.priceLabel}>{t('to')}</Text>
-                  <Text style={styles.priceValue}>{priceRange.max} NOK</Text>
-                </View>
-              </View>
-            </View>
-          </ScrollView>
-
-          {/* Apply Button */}
-          <View style={styles.footer}>
-            <TouchableOpacity
-              style={styles.saveFilterButton}
-              onPress={() => setShowSaveDialog(true)}
+    <StandardBottomSheet
+      visible={visible}
+      onClose={onClose}
+      title={t('filterAndSort')}
+      headerLeft={
+        <TouchableOpacity onPress={onClose} style={styles.closeButton}>
+          <Ionicons name="close" size={22} color={colors.text.primary} />
+        </TouchableOpacity>
+      }
+      headerRight={
+        <TouchableOpacity onPress={handleReset}>
+          <Text style={styles.resetText}>{t('resetFilters')}</Text>
+        </TouchableOpacity>
+      }
+    >
+      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+        {/* Saved Filters Section */}
+        {savedFilters.length > 0 && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>{t('savedFilters')}</Text>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.savedFiltersScroll}
             >
-              <Ionicons name="bookmark-outline" size={20} color={colors.primary} />
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.applyButton} onPress={handleApply}>
-              <Text style={styles.applyButtonText}>{t('applyFilters')}</Text>
-            </TouchableOpacity>
+              {savedFilters.map(savedFilter => (
+                <TouchableOpacity
+                  key={savedFilter.id}
+                  style={styles.savedFilterCard}
+                  onPress={() => handleLoadFilter(savedFilter)}
+                >
+                  <View style={styles.savedFilterHeader}>
+                    <Ionicons name="bookmark" size={18} color={colors.primary} />
+                    <Text style={styles.savedFilterName} numberOfLines={1}>
+                      {savedFilter.name}
+                    </Text>
+                    <TouchableOpacity
+                      onPress={() => handleDeleteFilter(savedFilter.id)}
+                      hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                    >
+                      <Ionicons name="close-circle" size={18} color={colors.text.tertiary} />
+                    </TouchableOpacity>
+                  </View>
+                  <View style={styles.savedFilterDetails}>
+                    <Text style={styles.savedFilterDetail}>
+                      {savedFilter.filters.cargoTypes.length} {t('types')}
+                    </Text>
+                    <Text style={styles.savedFilterDetailSeparator}>•</Text>
+                    <Text style={styles.savedFilterDetail}>{t(savedFilter.filters.sortBy)}</Text>
+                  </View>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </View>
+        )}
+
+        {/* Sort Section */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>{t('sortBy')}</Text>
+          <View style={styles.optionsGrid}>
+            {SORT_OPTIONS.map(option => (
+              <TouchableOpacity
+                key={option.id}
+                style={[styles.sortOption, sortBy === option.id && styles.sortOptionActive]}
+                onPress={() => setSortBy(option.id as FilterOptions['sortBy'])}
+              >
+                <Ionicons
+                  name={option.icon}
+                  size={20}
+                  color={sortBy === option.id ? 'white' : colors.primary}
+                />
+                <Text
+                  style={[
+                    styles.sortOptionText,
+                    sortBy === option.id && styles.sortOptionTextActive,
+                  ]}
+                >
+                  {option.label}
+                </Text>
+              </TouchableOpacity>
+            ))}
           </View>
         </View>
 
-        {/* Save Filter Dialog */}
-        <Modal visible={showSaveDialog} transparent animationType="fade">
-          <View style={styles.dialogOverlay}>
-            <View style={styles.dialogContent}>
-              <Text style={styles.dialogTitle}>{t('saveCurrentFilter')}</Text>
-              <TextInput
-                style={styles.dialogInput}
-                placeholder={t('enterFilterName')}
-                placeholderTextColor={colors.text.tertiary}
-                value={filterName}
-                onChangeText={setFilterName}
-                autoFocus
-              />
-              <View style={styles.dialogButtons}>
-                <TouchableOpacity
-                  style={styles.dialogButtonCancel}
-                  onPress={() => {
-                    setShowSaveDialog(false);
-                    setFilterName('');
-                  }}
+        {/* Cargo Types */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>{t('cargoType')}</Text>
+          <View style={styles.chipsContainer}>
+            {CARGO_TYPES.map(type => (
+              <TouchableOpacity
+                key={type.id}
+                style={[styles.chip, selectedTypes.includes(type.id) && styles.chipActive]}
+                onPress={() => toggleCargoType(type.id)}
+              >
+                <Ionicons
+                  name={type.icon}
+                  size={18}
+                  color={selectedTypes.includes(type.id) ? 'white' : colors.primary}
+                />
+                <Text
+                  style={[
+                    styles.chipText,
+                    selectedTypes.includes(type.id) && styles.chipTextActive,
+                  ]}
                 >
-                  <Text style={styles.dialogButtonCancelText}>{t('cancel')}</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.dialogButtonSave} onPress={handleSaveFilter}>
-                  <Text style={styles.dialogButtonSaveText}>{t('save')}</Text>
-                </TouchableOpacity>
-              </View>
+                  {type.label}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
+
+        {/* Price Range */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>{t('priceRange')}</Text>
+          <View style={styles.priceRange}>
+            <View style={styles.priceInput}>
+              <Text style={styles.priceLabel}>{t('from')}</Text>
+              <Text style={styles.priceValue}>{priceRange.min} NOK</Text>
+            </View>
+            <Text style={styles.priceSeparator}>-</Text>
+            <View style={styles.priceInput}>
+              <Text style={styles.priceLabel}>{t('to')}</Text>
+              <Text style={styles.priceValue}>{priceRange.max} NOK</Text>
             </View>
           </View>
-        </Modal>
+        </View>
+      </ScrollView>
+
+      {/* Apply Button */}
+      <View style={styles.footer}>
+        <TouchableOpacity style={styles.saveFilterButton} onPress={() => setShowSaveDialog(true)}>
+          <Ionicons name="bookmark-outline" size={20} color={colors.primary} />
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.applyButton} onPress={handleApply}>
+          <Text style={styles.applyButtonText}>{t('applyFilters')}</Text>
+        </TouchableOpacity>
       </View>
-    </Modal>
+
+      {/* Save Filter Dialog */}
+      <Modal visible={showSaveDialog} transparent animationType="fade">
+        <View style={styles.dialogOverlay}>
+          <View style={styles.dialogContent}>
+            <Text style={styles.dialogTitle}>{t('saveCurrentFilter')}</Text>
+            <TextInput
+              style={styles.dialogInput}
+              placeholder={t('enterFilterName')}
+              placeholderTextColor={colors.text.tertiary}
+              value={filterName}
+              onChangeText={setFilterName}
+              autoFocus
+            />
+            <View style={styles.dialogButtons}>
+              <TouchableOpacity
+                style={styles.dialogButtonCancel}
+                onPress={() => {
+                  setShowSaveDialog(false);
+                  setFilterName('');
+                }}
+              >
+                <Text style={styles.dialogButtonCancelText}>{t('cancel')}</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.dialogButtonSave} onPress={handleSaveFilter}>
+                <Text style={styles.dialogButtonSaveText}>{t('save')}</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+    </StandardBottomSheet>
   );
 };
 
@@ -376,25 +371,11 @@ const styles = StyleSheet.create({
     borderTopRightRadius: borderRadius.xl,
     maxHeight: '90%',
   },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border.light,
-  },
   closeButton: {
     width: 40,
     height: 40,
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  headerTitle: {
-    fontSize: fontSize.xl,
-    fontWeight: fontWeight.bold,
-    color: colors.text.primary,
   },
   resetText: {
     fontSize: fontSize.md,
@@ -418,40 +399,18 @@ const styles = StyleSheet.create({
   },
   optionsGrid: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing.sm,
-  },
-  sortOption: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    borderRadius: borderRadius.full,
-    borderWidth: 1.5,
-    borderColor: colors.primary,
-    backgroundColor: colors.white,
-  },
-  sortOptionActive: {
-    backgroundColor: colors.primary,
-    borderColor: colors.primary,
-  },
-  sortOptionText: {
-    fontSize: fontSize.sm,
-    color: colors.primary,
-    fontWeight: fontWeight.medium,
+    closeButton: {
+      width: 36,
+      height: 36,
+      borderRadius: 18,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
   },
   sortOptionTextActive: {
     color: 'white',
   },
   chipsContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing.sm,
-  },
-  chip: {
-    flexDirection: 'row',
-    alignItems: 'center',
     gap: spacing.xs,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,

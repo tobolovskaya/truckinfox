@@ -1,17 +1,27 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 import { colors, spacing, fontSize, fontWeight } from '../../lib/sharedStyles';
+import { ScreenHeader } from '../../components/ScreenHeader';
+import { useUnreadCount } from '../../hooks/useNotifications';
 
 export default function OrdersScreen() {
-  const insets = useSafeAreaInsets();
+  const router = useRouter();
+  const { unreadCount } = useUnreadCount();
 
   return (
     <View style={styles.container}>
-      <View style={[styles.header, { paddingTop: insets.top + spacing.lg }]}>
-        <Text style={styles.headerTitle}>Orders</Text>
-      </View>
+      <ScreenHeader
+        title="Orders"
+        showBackButton={false}
+        rightAction={{
+          icon: 'notifications-outline',
+          onPress: () => router.push('/(tabs)/notifications'),
+          label: 'Notifications',
+          badge: unreadCount,
+        }}
+      />
       <View style={styles.emptyState}>
         <Ionicons name="list-outline" size={64} color={colors.text.tertiary} />
         <Text style={styles.emptyTitle}>No orders yet</Text>
@@ -25,16 +35,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,
-  },
-  header: {
-    paddingHorizontal: spacing.lg,
-    paddingBottom: spacing.lg,
-    backgroundColor: colors.white,
-  },
-  headerTitle: {
-    fontSize: fontSize.xxl,
-    fontWeight: fontWeight.bold,
-    color: colors.text.primary,
   },
   emptyState: {
     flex: 1,

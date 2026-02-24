@@ -20,6 +20,8 @@ import Avatar from '../../components/Avatar';
 import { SkeletonLoader } from '../../components/SkeletonLoader';
 import { colors, spacing, fontSize, fontWeight, borderRadius } from '../../lib/sharedStyles';
 import { formatDistanceToNow } from 'date-fns';
+import { ScreenHeader } from '../../components/ScreenHeader';
+import { useUnreadCount } from '../../hooks/useNotifications';
 
 type FirestoreTimestamp = {
   toDate?: () => Date;
@@ -70,6 +72,7 @@ export default function MessagesScreen() {
   const { user } = useAuth();
   const { t } = useTranslation();
   const router = useRouter();
+  const { unreadCount } = useUnreadCount();
 
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [filteredConversations, setFilteredConversations] = useState<Conversation[]>([]);
@@ -320,20 +323,34 @@ export default function MessagesScreen() {
 
   if (loading) {
     return (
-      <SafeAreaView style={styles.container} edges={['top']}>
-        <View style={styles.header}>
-          <Text style={styles.headerTitle}>{t('messages')}</Text>
-        </View>
+      <SafeAreaView style={styles.container} edges={['bottom']}>
+        <ScreenHeader
+          title={t('messages')}
+          showBackButton={false}
+          rightAction={{
+            icon: 'notifications-outline',
+            onPress: () => router.push('/(tabs)/notifications'),
+            label: t('notifications'),
+            badge: unreadCount,
+          }}
+        />
         <SkeletonLoader variant="list" count={8} />
       </SafeAreaView>
     );
   }
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>{t('messages')}</Text>
-      </View>
+    <SafeAreaView style={styles.container} edges={['bottom']}>
+      <ScreenHeader
+        title={t('messages')}
+        showBackButton={false}
+        rightAction={{
+          icon: 'notifications-outline',
+          onPress: () => router.push('/(tabs)/notifications'),
+          label: t('notifications'),
+          badge: unreadCount,
+        }}
+      />
 
       {conversations.length > 0 && (
         <View style={styles.searchContainer}>
@@ -425,12 +442,12 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: colors.border.light,
   },
-  unreadCard: {
-    backgroundColor: colors.primaryLight,
-  },
   conversationContent: {
     flex: 1,
     marginLeft: spacing.md,
+  },
+  unreadCard: {
+    backgroundColor: colors.backgroundVeryLight,
   },
   conversationHeader: {
     flexDirection: 'row',

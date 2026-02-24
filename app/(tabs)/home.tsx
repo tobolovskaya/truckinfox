@@ -10,7 +10,6 @@ import {
   View,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { colors, spacing, fontSize, fontWeight } from '../../lib/sharedStyles';
@@ -48,7 +47,7 @@ export default function HomeScreen() {
   const [sortBy, setSortBy] = useState<SortOption>('newest');
   const [isFilterSheetVisible, setIsFilterSheetVisible] = useState(false);
   const [selectedCargoType, setSelectedCargoType] = useState('');
-  const insets = useSafeAreaInsets();
+  const [hasPersistedState, setHasPersistedState] = useState<boolean | null>(null);
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
   const { width } = useWindowDimensions();
   const cargoTypes = useMemo(
@@ -98,10 +97,12 @@ export default function HomeScreen() {
       try {
         const rawState = await AsyncStorage.getItem(HOME_FILTERS_STORAGE_KEY);
         if (!rawState) {
+          setHasPersistedState(false);
           return;
         }
 
         const state = JSON.parse(rawState) as Partial<PersistedHomeState>;
+        setHasPersistedState(true);
 
         if (state.activeTab === 'all' || state.activeTab === 'my') {
           setActiveTab(state.activeTab);
@@ -131,6 +132,12 @@ export default function HomeScreen() {
 
     loadPersistedState();
   }, []);
+
+  useEffect(() => {
+    if (hasPersistedState === false && user?.uid && activeTab === 'all') {
+      setActiveTab('my');
+    }
+  }, [activeTab, hasPersistedState, user?.uid]);
 
   useEffect(() => {
     const saveState = async () => {
@@ -166,12 +173,7 @@ export default function HomeScreen() {
   return (
     <View style={styles.container}>
       {/* Header: Avatar + Notifications */}
-      <HomeHeader
-        avatarUrl={avatarUrl}
-        displayName={displayName}
-        unreadCount={unreadCount}
-        insets={insets}
-      />
+      <HomeHeader avatarUrl={avatarUrl} displayName={displayName} unreadCount={unreadCount} />
 
       {/* Sticky Controls: Tabs + Search + Filters */}
       <View style={[styles.stickyControls, { paddingHorizontal: horizontalPadding }]}>

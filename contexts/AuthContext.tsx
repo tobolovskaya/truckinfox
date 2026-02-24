@@ -103,7 +103,11 @@ const getAuthErrorMessage = (error: unknown): { message: string; code?: string }
       case 'auth/network-request-failed':
         return { message: 'Nettverksfeil. Sjekk tilkoblingen og prov igjen.', code: error.code };
       case 'auth/configuration-not-found':
-        return { message: 'Налаштування Firebase Auth не знайдено. Увімкніть Email/Password у Firebase Console.', code: error.code };
+        return {
+          message:
+            'Налаштування Firebase Auth не знайдено. Увімкніть Email/Password у Firebase Console.',
+          code: error.code,
+        };
       default:
         return { message: error.message, code: error.code };
     }

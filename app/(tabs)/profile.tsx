@@ -1,12 +1,13 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { colors, spacing, fontSize, fontWeight } from '../../lib/sharedStyles';
 import { useAuth } from '../../contexts/AuthContext';
 import Avatar from '../../components/Avatar';
+import { ScreenHeader } from '../../components/ScreenHeader';
+import { useUnreadCount } from '../../hooks/useNotifications';
 
 type IoniconName = React.ComponentProps<typeof Ionicons>['name'];
 
@@ -14,7 +15,7 @@ export default function ProfileScreen() {
   const router = useRouter();
   const { user, signOut } = useAuth();
   const { t } = useTranslation();
-  const insets = useSafeAreaInsets();
+  const { unreadCount } = useUnreadCount();
 
   const handleSignOut = async () => {
     Alert.alert(t('signOut'), t('confirmSignOut'), [
@@ -74,10 +75,16 @@ export default function ProfileScreen() {
 
   return (
     <View style={styles.container}>
-      {/* Header */}
-      <View style={[styles.header, { paddingTop: insets.top + spacing.lg }]}>
-        <Text style={styles.headerTitle}>{t('profile')}</Text>
-      </View>
+      <ScreenHeader
+        title={t('profile')}
+        showBackButton={false}
+        rightAction={{
+          icon: 'notifications-outline',
+          onPress: () => router.push('/(tabs)/notifications'),
+          label: t('notifications'),
+          badge: unreadCount,
+        }}
+      />
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         {/* Profile Card */}
@@ -132,16 +139,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,
-  },
-  header: {
-    paddingHorizontal: spacing.lg,
-    paddingBottom: spacing.lg,
-    backgroundColor: colors.white,
-  },
-  headerTitle: {
-    fontSize: fontSize.xxl,
-    fontWeight: fontWeight.bold,
-    color: colors.text.primary,
   },
   content: {
     flex: 1,

@@ -5,14 +5,12 @@ import {
   StyleSheet,
   TouchableOpacity,
   TextInput,
-  Modal,
   ActivityIndicator,
   Alert,
   useWindowDimensions,
 } from 'react-native';
 import { KeyboardAwareFlatList } from 'react-native-keyboard-aware-scroll-view';
 import { Ionicons } from '@expo/vector-icons';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as ImagePicker from 'expo-image-picker';
 import { manipulateAsync, SaveFormat } from 'expo-image-manipulator';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -38,6 +36,7 @@ import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 import { useRouter } from 'expo-router';
 import { triggerHapticFeedback } from '../../utils/haptics';
 import { SuccessAnimation } from '../../components/SuccessAnimation';
+import { StandardBottomSheet } from '../../components/StandardBottomSheet';
 import { useDebouncedCallback } from 'use-debounce';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { AddressAutocomplete } from '../../components/AddressAutocomplete';
@@ -46,6 +45,7 @@ import { geohashForLocation } from 'geofire-common';
 import { fetchWithTimeout } from '../../utils/fetchWithTimeout';
 import { LazyImage } from '../../components/LazyImage';
 import { generateCargoSearchTerms } from '../../utils/search';
+import { ScreenHeader } from '../../components/ScreenHeader';
 
 const CARGO_TYPES = [
   { id: 'automotive', label: 'Bil/Motor' },
@@ -79,7 +79,6 @@ export default function CreateRequestScreen() {
   const { t } = useTranslation();
   const toast = useToast();
   const router = useRouter();
-  const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const isSmallScreen = width < 360;
   const { unreadCount } = useNotifications();
@@ -164,14 +163,15 @@ export default function CreateRequestScreen() {
   useEffect(() => {
     const saveDraft = async () => {
       try {
-        await AsyncStorage.setItem(
-          DRAFT_KEY,
-          JSON.stringify({
-            ...formData,
-            images,
-            savedAt: new Date().toISOString(),
-          })
-        );
+        const payload = {
+          ...formData,
+          images,
+          pickup_date: formData.pickup_date?.toISOString?.() || new Date().toISOString(),
+          delivery_date: formData.delivery_date?.toISOString?.() || new Date().toISOString(),
+          savedAt: new Date().toISOString(),
+        };
+
+        await AsyncStorage.setItem(DRAFT_KEY, JSON.stringify(payload));
       } catch (error) {
         console.error('Failed to save draft:', error);
       }
@@ -181,28 +181,16 @@ export default function CreateRequestScreen() {
     return () => clearTimeout(timeoutId);
   }, [formData, images]);
 
-  const clearDistanceIfNeeded = (field: string) => {
-    if (field === 'from_address' || field === 'to_address') {
-      setFormData(prev => ({ ...prev, distance_km: null }));
-    }
-  };
-
-  const validateField = (
-    field: string,
-    value: unknown,
-    nextData: typeof formData = formData
-  ): string => {
+  const validateField = (field: string, value: unknown, nextData: typeof formData = formData) => {
     switch (field) {
       case 'title':
-        if (!value || !value.toString().trim()) return t('titleRequired');
+        if (!value || value.toString().trim() === '') return t('titleRequired');
         if (value.toString().trim().length < 3) return t('titleMinLength');
-        if (value.toString().trim().length > 100) return t('titleMaxLength');
         return '';
 
       case 'description':
-        if (!value || !value.toString().trim()) return t('descriptionRequired');
+        if (!value || value.toString().trim() === '') return t('descriptionRequired');
         if (value.toString().trim().length < 10) return t('descriptionMinLength');
-        if (value.toString().trim().length > 500) return t('descriptionMaxLength');
         return '';
 
       case 'cargo_type':
@@ -213,8 +201,10 @@ export default function CreateRequestScreen() {
         if (!value || value.toString().trim() === '') return t('weightRequired');
         const weight = Number(value);
         if (isNaN(weight)) return t('weightMustBeNumber');
-        if (weight < CARGO_LIMITS.weight.min || weight > CARGO_LIMITS.weight.max)
+        if (weight <= 0) return t('weightMustBePositive');
+        if (weight < CARGO_LIMITS.weight.min || weight > CARGO_LIMITS.weight.max) {
           return `Vekt må være mellom ${CARGO_LIMITS.weight.min} og ${CARGO_LIMITS.weight.max} kg`;
+        }
         return '';
       }
 
@@ -256,6 +246,12 @@ export default function CreateRequestScreen() {
 
       default:
         return '';
+    }
+  };
+
+  const clearDistanceIfNeeded = (field: keyof typeof formData) => {
+    if (field === 'from_address' || field === 'to_address') {
+      updateFormData('distance_km', null);
     }
   };
 
@@ -749,34 +745,16 @@ export default function CreateRequestScreen() {
 
   return (
     <View style={styles.container}>
-      {/* Header */}
-      <View
-        style={[
-          styles.header,
-          isSmallScreen && styles.headerCompact,
-          { paddingTop: insets.top + (isSmallScreen ? 8 : 16) },
-        ]}
-      >
-        <Text style={[styles.headerTitle, isSmallScreen && styles.headerTitleCompact]}>
-          {t('createCargoRequest') || 'Opprett lastforespørsel'}
-        </Text>
-        <TouchableOpacity
-          style={styles.notificationButton}
-          onPress={() => router.push('/(tabs)/notifications')}
-          accessibilityRole="button"
-          accessibilityLabel="Varsler"
-          accessibilityHint="Åpne varsler"
-        >
-          <Ionicons name="notifications-outline" size={24} color={colors.primary} />
-          {unreadCount > 0 && (
-            <View style={styles.notificationBadge}>
-              <Text style={styles.notificationBadgeText}>
-                {unreadCount > 99 ? '99+' : unreadCount}
-              </Text>
-            </View>
-          )}
-        </TouchableOpacity>
-      </View>
+      <ScreenHeader
+        title={t('createCargoRequest') || 'Opprett lastforespørsel'}
+        showBackButton={false}
+        rightAction={{
+          icon: 'notifications-outline',
+          onPress: () => router.push('/(tabs)/notifications'),
+          label: t('notifications'),
+          badge: unreadCount,
+        }}
+      />
 
       <KeyboardAwareFlatList
         contentContainerStyle={[styles.scrollContent, isSmallScreen && styles.scrollContentCompact]}
@@ -1278,137 +1256,77 @@ export default function CreateRequestScreen() {
         />
       )}
 
-      {/* Cargo Type Modal Menu */}
-      <Modal
+      {/* Cargo Type Sheet */}
+      <StandardBottomSheet
         visible={showCargoTypeMenu}
-        transparent
-        animationType="slide"
-        onRequestClose={() => setShowCargoTypeMenu(false)}
+        onClose={() => setShowCargoTypeMenu(false)}
+        title={t('selectCargoType')}
       >
-        <TouchableOpacity
-          style={styles.menuOverlay}
-          activeOpacity={1}
-          onPress={() => setShowCargoTypeMenu(false)}
-          accessibilityRole="button"
-          accessibilityLabel="Lukk lasttype-meny"
-        >
-          <View
-            style={styles.menuContainer}
-            accessible={true}
-            accessibilityRole="menu"
-            onStartShouldSetResponder={() => true}
+        {CARGO_TYPES.map(type => (
+          <TouchableOpacity
+            key={type.id}
+            testID={`cargo-type-${type.id}`}
+            accessibilityRole="menuitem"
+            accessibilityLabel={`Velg ${t(type.id)} som lasttype`}
+            accessibilityHint="Dobbelttrykk for å velge denne lasttypen"
+            accessibilityState={{ selected: formData.cargo_type === type.id }}
+            style={[styles.menuItem, formData.cargo_type === type.id && styles.menuItemSelected]}
+            onPress={() => {
+              updateFormData('cargo_type', type.id);
+              handleBlur('cargo_type');
+              setShowCargoTypeMenu(false);
+              triggerHapticFeedback.light();
+            }}
           >
-            <View style={styles.menuHeader}>
-              <Text style={styles.menuTitle}>Velg lasttype</Text>
-              <TouchableOpacity
-                onPress={() => setShowCargoTypeMenu(false)}
-                accessibilityRole="button"
-                accessibilityLabel="Lukk"
-              >
-                <Ionicons name="close" size={24} color="#6B7280" />
-              </TouchableOpacity>
-            </View>
+            <Text
+              style={[
+                styles.menuItemText,
+                formData.cargo_type === type.id && styles.menuItemTextSelected,
+              ]}
+            >
+              {t(type.id)}
+            </Text>
+            {formData.cargo_type === type.id && (
+              <Ionicons name="checkmark" size={20} color="#10B981" />
+            )}
+          </TouchableOpacity>
+        ))}
+      </StandardBottomSheet>
 
-            {CARGO_TYPES.map(type => (
-              <TouchableOpacity
-                key={type.id}
-                testID={`cargo-type-${type.id}`}
-                accessibilityRole="menuitem"
-                accessibilityLabel={`Velg ${t(type.id)} som lasttype`}
-                accessibilityHint="Dobbelttrykk for å velge denne lasttypen"
-                accessibilityState={{ selected: formData.cargo_type === type.id }}
-                style={[
-                  styles.menuItem,
-                  formData.cargo_type === type.id && styles.menuItemSelected,
-                ]}
-                onPress={() => {
-                  updateFormData('cargo_type', type.id);
-                  handleBlur('cargo_type');
-                  setShowCargoTypeMenu(false);
-                  triggerHapticFeedback.light();
-                }}
-              >
-                <Text
-                  style={[
-                    styles.menuItemText,
-                    formData.cargo_type === type.id && styles.menuItemTextSelected,
-                  ]}
-                >
-                  {t(type.id)}
-                </Text>
-                {formData.cargo_type === type.id && (
-                  <Ionicons name="checkmark" size={20} color="#10B981" />
-                )}
-              </TouchableOpacity>
-            ))}
-          </View>
-        </TouchableOpacity>
-      </Modal>
-
-      {/* Price Type Modal Menu */}
-      <Modal
+      {/* Price Type Sheet */}
+      <StandardBottomSheet
         visible={showPriceTypeMenu}
-        transparent
-        animationType="slide"
-        onRequestClose={() => setShowPriceTypeMenu(false)}
+        onClose={() => setShowPriceTypeMenu(false)}
+        title={t('priceType')}
       >
-        <TouchableOpacity
-          style={styles.menuOverlay}
-          activeOpacity={1}
-          onPress={() => setShowPriceTypeMenu(false)}
-          accessibilityRole="button"
-          accessibilityLabel="Lukk prismodell-meny"
-        >
-          <View
-            style={styles.menuContainer}
-            accessible={true}
-            accessibilityRole="menu"
-            onStartShouldSetResponder={() => true}
+        {PRICE_TYPES.map(type => (
+          <TouchableOpacity
+            key={type.id}
+            style={[styles.menuItem, formData.price_type === type.id && styles.menuItemSelected]}
+            onPress={() => {
+              updateFormData('price_type', type.id);
+              handleBlur('price_type');
+              setShowPriceTypeMenu(false);
+              triggerHapticFeedback.light();
+            }}
+            accessibilityRole="menuitem"
+            accessibilityLabel={type.label}
+            accessibilityState={{ selected: formData.price_type === type.id }}
           >
-            <View style={styles.menuHeader}>
-              <Text style={styles.menuTitle}>Velg prismodell</Text>
-              <TouchableOpacity
-                onPress={() => setShowPriceTypeMenu(false)}
-                accessibilityRole="button"
-                accessibilityLabel="Lukk"
-              >
-                <Ionicons name="close" size={24} color="#6B7280" />
-              </TouchableOpacity>
-            </View>
-
-            {PRICE_TYPES.map(type => (
-              <TouchableOpacity
-                key={type.id}
-                style={[
-                  styles.menuItem,
-                  formData.price_type === type.id && styles.menuItemSelected,
-                ]}
-                onPress={() => {
-                  updateFormData('price_type', type.id);
-                  handleBlur('price_type');
-                  setShowPriceTypeMenu(false);
-                  triggerHapticFeedback.light();
-                }}
-                accessibilityRole="menuitem"
-                accessibilityLabel={type.label}
-                accessibilityState={{ selected: formData.price_type === type.id }}
-              >
-                <Text
-                  style={[
-                    styles.menuItemText,
-                    formData.price_type === type.id && styles.menuItemTextSelected,
-                  ]}
-                >
-                  {type.label}
-                </Text>
-                {formData.price_type === type.id && (
-                  <Ionicons name="checkmark" size={20} color="#10B981" />
-                )}
-              </TouchableOpacity>
-            ))}
-          </View>
-        </TouchableOpacity>
-      </Modal>
+            <Text
+              style={[
+                styles.menuItemText,
+                formData.price_type === type.id && styles.menuItemTextSelected,
+              ]}
+            >
+              {type.label}
+            </Text>
+            {formData.price_type === type.id && (
+              <Ionicons name="checkmark" size={20} color="#10B981" />
+            )}
+          </TouchableOpacity>
+        ))}
+      </StandardBottomSheet>
 
       {/* Success Animation Overlay */}
       <SuccessAnimation
@@ -1424,49 +1342,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#F5F5F5',
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: spacing.xl,
-    paddingBottom: spacing.lg,
-    backgroundColor: colors.white,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border.light,
-  },
-  headerCompact: {
-    paddingHorizontal: spacing.lg,
-    paddingBottom: spacing.md,
-  },
-  headerTitle: {
-    fontSize: fontSize.xl,
-    fontWeight: fontWeight.bold,
-    color: colors.text.primary,
-  },
-  headerTitleCompact: {
-    fontSize: fontSize.lg,
-  },
-  notificationButton: {
-    position: 'relative',
-    padding: spacing.sm,
-  },
-  notificationBadge: {
-    position: 'absolute',
-    top: 4,
-    right: 4,
-    backgroundColor: colors.error,
-    borderRadius: borderRadius.sm,
-    minWidth: 20,
-    height: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: spacing.xxxs,
-  },
-  notificationBadgeText: {
-    color: colors.white,
-    fontSize: fontSize.xs,
-    fontWeight: fontWeight.bold,
   },
   scrollContent: {
     padding: spacing.lg,
@@ -1770,31 +1645,6 @@ const styles = StyleSheet.create({
   },
   fieldHintCompact: {
     fontSize: fontSize.xs,
-  },
-  menuOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'flex-end',
-  },
-  menuContainer: {
-    backgroundColor: colors.white,
-    borderTopLeftRadius: 16,
-    borderTopRightRadius: 16,
-    paddingBottom: 34,
-    maxHeight: '70%',
-  },
-  menuHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border.default,
-  },
-  menuTitle: {
-    fontSize: fontSize.lg,
-    fontWeight: '600',
-    color: '#1F2937',
   },
   menuItem: {
     flexDirection: 'row',
