@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo } from 'react';
 import { Alert } from 'react-native';
 import { InfiniteData, useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
+import { FirebaseError } from 'firebase/app';
 import {
   collection,
   query,
@@ -87,6 +88,46 @@ type CargoRequestsQueryKey = [
 
 const PAGE_SIZE = 20;
 
+const toTimestamp = (value?: string): number => {
+  if (!value) {
+    return 0;
+  }
+  const parsed = Date.parse(value);
+  return Number.isNaN(parsed) ? 0 : parsed;
+};
+
+const toNumber = (value?: number): number => {
+  if (typeof value !== 'number' || Number.isNaN(value)) {
+    return 0;
+  }
+  return value;
+};
+
+const sortRequestsClientSide = (requests: CargoRequest[], sortBy: SortOption): CargoRequest[] => {
+  const sorted = [...requests];
+
+  switch (sortBy) {
+    case 'oldest':
+      sorted.sort((a, b) => toTimestamp(a.created_at) - toTimestamp(b.created_at));
+      break;
+    case 'priceLowToHigh':
+      sorted.sort((a, b) => toNumber(a.price) - toNumber(b.price));
+      break;
+    case 'priceHighToLow':
+      sorted.sort((a, b) => toNumber(b.price) - toNumber(a.price));
+      break;
+    case 'date':
+      sorted.sort((a, b) => toTimestamp(a.pickup_date) - toTimestamp(b.pickup_date));
+      break;
+    case 'newest':
+    default:
+      sorted.sort((a, b) => toTimestamp(b.created_at) - toTimestamp(a.created_at));
+      break;
+  }
+
+  return sorted;
+};
+
 const buildConstraints = (options: UseCargoRequestsOptions) => {
   const { activeTab, filters, sortBy, searchQuery, userId } = options;
   const constraints: QueryConstraint[] = [];
@@ -154,14 +195,43 @@ const fetchCargoRequestsPage = async (
   const constraints = buildConstraints(options);
   const pagingConstraints = lastVisible ? [startAfter(lastVisible)] : [];
 
-  const requestsQuery = query(
-    collection(db, 'cargo_requests'),
-    ...constraints,
-    ...pagingConstraints,
-    limit(PAGE_SIZE)
-  );
+  let querySnapshot;
+  let usedMyTabFallback = false;
 
-  const querySnapshot = await getDocs(requestsQuery);
+  try {
+    const requestsQuery = query(
+      collection(db, 'cargo_requests'),
+      ...constraints,
+      ...pagingConstraints,
+      limit(PAGE_SIZE)
+    );
+    querySnapshot = await getDocs(requestsQuery);
+  } catch (error: unknown) {
+    const canUseMyTabFallback =
+      options.activeTab === 'my' &&
+      options.userId &&
+      error instanceof FirebaseError &&
+      (error.code === 'failed-precondition' || error.code === 'permission-denied');
+
+    if (!canUseMyTabFallback) {
+      throw error;
+    }
+
+    usedMyTabFallback = true;
+    const fallbackConstraints: QueryConstraint[] = [where('user_id', '==', options.userId)];
+    if (lastVisible) {
+      fallbackConstraints.push(startAfter(lastVisible));
+    }
+
+    const fallbackQuery = query(
+      collection(db, 'cargo_requests'),
+      ...fallbackConstraints,
+      limit(PAGE_SIZE)
+    );
+
+    querySnapshot = await getDocs(fallbackQuery);
+  }
+
   const lastDoc = querySnapshot.docs[querySnapshot.docs.length - 1] ?? null;
   const hasMore = querySnapshot.docs.length === PAGE_SIZE;
 
@@ -216,6 +286,11 @@ const fetchCargoRequestsPage = async (
   );
 
   let filteredData = data;
+  if (options.activeTab === 'my' && usedMyTabFallback) {
+    filteredData = filteredData.filter(request => request.status === 'active');
+    filteredData = sortRequestsClientSide(filteredData, options.sortBy);
+  }
+
   if (options.filters.city && options.activeTab !== 'my') {
     const cityLower = options.filters.city.toLowerCase();
     filteredData = data.filter(
