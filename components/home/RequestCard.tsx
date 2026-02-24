@@ -20,7 +20,6 @@ import {
 import {
   getCargoTypeColors,
   getCargoTypeIcon,
-  getCargoTypeLabel,
   REQUEST_CARD_IMAGE_HEIGHT,
 } from '../../constants/cardStyles';
 import { formatCurrency, formatDate, formatWeight } from '../../utils/formatting';
@@ -78,7 +77,8 @@ export const RequestCard: React.FC<RequestCardProps> = ({
     typeof request.weight === 'number' ? formatWeight(request.weight) : t('weightUnknown');
   const dateText = request.pickup_date ? formatDate(request.pickup_date) : t('dateNotSet');
   const cargoType = request.cargo_type || 'other';
-  const cargoTypeLabel = t(cargoType, { defaultValue: getCargoTypeLabel(cargoType) });
+  // Translate cargo type - falls back to key name if translation not found
+  const cargoTypeLabel = t(cargoType);
   const cargoColors = getCargoTypeColors(cargoType);
   const cargoIcon = getCargoTypeIcon(cargoType);
 
@@ -106,8 +106,8 @@ export const RequestCard: React.FC<RequestCardProps> = ({
       </View>
 
       <View style={styles.badgeRow}>
-        <View style={styles.badge}>
-          <Text style={styles.badgeText}>{cargoTypeLabel}</Text>
+        <View style={[styles.badge, { backgroundColor: cargoColors.background }]}>
+          <Text style={[styles.badgeText, { color: cargoColors.text }]}>{cargoTypeLabel}</Text>
         </View>
         <Text style={styles.metaText}>{weightText}</Text>
       </View>
