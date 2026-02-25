@@ -8,6 +8,7 @@ import {
   ScrollView,
   Alert,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useAuth } from '../../contexts/AuthContext';
@@ -67,10 +68,10 @@ export default function LoginScreen() {
   };
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
-          <BrandLogo />
+          <BrandLogo size="sm" />
           <Text style={styles.subtitle}>{t('signInToAccount')}</Text>
         </View>
 
@@ -178,7 +179,7 @@ export default function LoginScreen() {
           </View>
         </View>
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 }
 
@@ -190,16 +191,18 @@ const styles = StyleSheet.create({
   scrollContent: {
     flexGrow: 1,
     paddingHorizontal: spacing.lg,
-    paddingTop: spacing.xxl,
+    paddingTop: spacing.xl,
     paddingBottom: spacing.lg,
   },
   header: {
-    marginBottom: spacing.md,
+    alignItems: 'center',
+    marginBottom: spacing.lg,
   },
   subtitle: {
     fontSize: fontSize.md,
     color: colors.text.secondary,
     marginTop: spacing.sm,
+    textAlign: 'center',
   },
   formContainer: {
     backgroundColor: colors.white,
