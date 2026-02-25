@@ -258,7 +258,9 @@ export default function RegisterScreen() {
             <View style={[styles.checkbox, termsAccepted && styles.checkboxChecked]}>
               {termsAccepted ? <Ionicons name="checkmark" size={14} color={colors.white} /> : null}
             </View>
-            <Text style={styles.termsText}>{t('iAgreeToThe')}</Text>
+            <Text style={styles.termsText}>
+              {t('iAgreeToThe')} {t('termsOfService')} {t('and')} {t('privacyPolicy')}
+            </Text>
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -409,6 +411,7 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: fontSize.sm,
     color: colors.text.secondary,
+    flexWrap: 'wrap',
   },
   primaryButton: {
     backgroundColor: colors.primary,
