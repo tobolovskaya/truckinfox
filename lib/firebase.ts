@@ -2,7 +2,12 @@ import { initializeApp, getApps, FirebaseApp } from 'firebase/app';
 import { Auth, initializeAuth, getAuth } from 'firebase/auth';
 // @ts-expect-error - getReactNativePersistence exists at runtime via React Native module resolution
 import { getReactNativePersistence } from 'firebase/auth';
-import { Firestore, getFirestore } from 'firebase/firestore';
+import {
+  Firestore,
+  getFirestore,
+  enableIndexedDbPersistence,
+  enableMultiTabIndexedDbPersistence,
+} from 'firebase/firestore';
 import { FirebaseStorage, getStorage } from 'firebase/storage';
 import { Analytics, getAnalytics, isSupported as isAnalyticsSupported } from 'firebase/analytics';
 import { FirebasePerformance, getPerformance } from 'firebase/performance';
@@ -71,6 +76,35 @@ try {
 try {
   firestore = getFirestore(app);
   console.log('Firebase Firestore initialized successfully');
+
+  // 🔌 Enable offline persistence for Firestore
+  // Caches data locally for offline access
+  if (Platform.OS === 'web') {
+    // Web: Use IndexedDB for multi-tab support
+    enableMultiTabIndexedDbPersistence(firestore)
+      .then(() => {
+        console.log('✅ Firestore offline persistence enabled (web - multi-tab)');
+      })
+      .catch((err) => {
+        if (err.code === 'failed-precondition') {
+          // Multiple tabs open, fall back to single-tab
+          enableIndexedDbPersistence(firestore)
+            .then(() => {
+              console.log('✅ Firestore offline persistence enabled (web - single-tab)');
+            })
+            .catch((singleTabErr) => {
+              console.warn('⚠️ Firestore offline persistence not available:', singleTabErr.message);
+            });
+        } else if (err.code === 'unimplemented') {
+          console.warn('⚠️ Browser does not support IndexedDB for offline persistence');
+        } else {
+          console.warn('⚠️ Firestore offline persistence error:', err);
+        }
+      });
+  } else {
+    // React Native: Persistence enabled automatically via SDK
+    console.log('✅ Firestore offline persistence enabled (React Native - automatic)');
+  }
 } catch (error) {
   console.error('Firebase Firestore initialization failed:', error);
   // Don't throw - assign anyway to prevent crashes

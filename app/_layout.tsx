@@ -1,6 +1,6 @@
 import 'react-native-reanimated';
 import 'react-native-get-random-values';
-import React from 'react';
+import React, { useEffect } from 'react';
 import { LogBox, View } from 'react-native';
 import { Stack } from 'expo-router';
 import { PaperProvider } from 'react-native-paper';
@@ -13,6 +13,7 @@ import { NotificationBannerProvider } from '../contexts/NotificationBannerContex
 import { ErrorBoundary } from '../components/ErrorBoundary';
 import { NetworkStatusBar } from '../components/NetworkStatusBar';
 import { theme } from '../theme/theme';
+import { initializeOfflineSync } from '../lib/offlineSync';
 import 'react-native-url-polyfill/auto';
 
 const queryClient = new QueryClient({
@@ -31,6 +32,11 @@ LogBox.ignoreLogs([
 ]);
 
 export default function RootLayout() {
+  // Initialize offline-first sync on app startup
+  useEffect(() => {
+    initializeOfflineSync();
+  }, []);
+
   return (
     <ErrorBoundary>
       <GestureHandlerRootView style={{ flex: 1 }}>
