@@ -15,7 +15,9 @@ export default function MapScreen() {
       <View style={styles.emptyState}>
         <Ionicons name="map-outline" size={64} color={colors.text.tertiary} />
         <Text style={styles.emptyTitle}>Map view is not available yet</Text>
-        <Text style={styles.emptyText}>Use marketplace search for now or create a new request.</Text>
+        <Text style={styles.emptyText}>
+          Use marketplace search for now or create a new request.
+        </Text>
 
         <View style={styles.ctaRow}>
           <TouchableOpacity
