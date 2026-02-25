@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { colors, spacing, fontSize, fontWeight, borderRadius } from '../lib/sharedStyles';
 
 type BrandLogoProps = {
@@ -14,9 +15,11 @@ export function BrandLogo({ size = 'md', variant = 'full' }: BrandLogoProps) {
   return (
     <View style={[styles.container, isSmall && styles.containerSmall]}>
       <View style={[styles.mark, isSmall && styles.markSmall]}>
-        <Text style={[styles.markText, isSmall && styles.markTextSmall]}>TF</Text>
+        <Ionicons name="car-sport" size={isSmall ? 14 : 18} color={colors.white} />
       </View>
-      {!markOnly && <Text style={[styles.wordmark, isSmall && styles.wordmarkSmall]}>TruckinFox</Text>}
+      {!markOnly && (
+        <Text style={[styles.wordmark, isSmall && styles.wordmarkSmall]}>TruckinFox</Text>
+      )}
     </View>
   );
 }
@@ -41,14 +44,6 @@ const styles = StyleSheet.create({
   markSmall: {
     width: 28,
     height: 28,
-  },
-  markText: {
-    color: colors.white,
-    fontSize: fontSize.sm,
-    fontWeight: fontWeight.bold,
-  },
-  markTextSmall: {
-    fontSize: fontSize.xs,
   },
   wordmark: {
     color: colors.text.primary,
