@@ -328,6 +328,7 @@ export default function MessagesScreen() {
           title={t('messages')}
           showBackButton={false}
           showBrandMark
+          brandMarkMaxTitleLength={14}
           rightAction={{
             icon: 'notifications-outline',
             onPress: () => router.push('/(tabs)/notifications'),
@@ -346,6 +347,7 @@ export default function MessagesScreen() {
         title={t('messages')}
         showBackButton={false}
         showBrandMark
+        brandMarkMaxTitleLength={14}
         rightAction={{
           icon: 'notifications-outline',
           onPress: () => router.push('/(tabs)/notifications'),

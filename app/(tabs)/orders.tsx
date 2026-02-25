@@ -16,6 +16,7 @@ export default function OrdersScreen() {
         title="Orders"
         showBackButton={false}
         showBrandMark
+        brandMarkMaxTitleLength={18}
         rightAction={{
           icon: 'notifications-outline',
           onPress: () => router.push('/(tabs)/notifications'),

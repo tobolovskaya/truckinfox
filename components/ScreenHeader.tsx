@@ -36,6 +36,8 @@ interface ScreenHeaderProps {
   customCenter?: React.ReactNode;
   /** Show compact brand mark next to title */
   showBrandMark?: boolean;
+  /** Max title length to allow brand mark before auto-hiding */
+  brandMarkMaxTitleLength?: number;
 }
 
 /**
@@ -66,9 +68,12 @@ export function ScreenHeader({
   showBorder = true,
   customCenter,
   showBrandMark = false,
+  brandMarkMaxTitleLength = 16,
 }: ScreenHeaderProps) {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const shouldShowBrandMark =
+    showBrandMark && title.trim().length <= brandMarkMaxTitleLength;
 
   const handleBackPress = () => {
     if (Platform.OS === 'ios') {
@@ -117,7 +122,7 @@ export function ScreenHeader({
         <View style={styles.centerSection}>
           {customCenter || (
             <View style={styles.titleRow}>
-              {showBrandMark && <BrandLogo size="sm" variant="mark" />}
+              {shouldShowBrandMark && <BrandLogo size="sm" variant="mark" />}
               <Text style={styles.title} numberOfLines={1}>
                 {title}
               </Text>

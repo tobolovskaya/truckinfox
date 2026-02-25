@@ -79,6 +79,7 @@ export default function ProfileScreen() {
         title={t('profile')}
         showBackButton={false}
         showBrandMark
+        brandMarkMaxTitleLength={16}
         rightAction={{
           icon: 'notifications-outline',
           onPress: () => router.push('/(tabs)/notifications'),
