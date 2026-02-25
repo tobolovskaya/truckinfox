@@ -69,7 +69,7 @@ export default function ProfileScreen() {
       id: 'help',
       icon: 'help-circle-outline',
       label: t('helpSupport'),
-      onPress: () => {},
+      onPress: () => router.push('/profile/help'),
     },
   ];
 
