@@ -11,16 +11,9 @@ import {
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { sendPasswordResetEmail } from 'firebase/auth';
-import {
-  colors,
-  spacing,
-  fontSize,
-  fontWeight,
-  borderRadius,
-} from '../../lib/sharedStyles';
+import { colors, spacing, fontSize, fontWeight, borderRadius } from '../../lib/sharedStyles';
 import { auth } from '../../lib/firebase';
 import { ScreenHeader } from '../../components/ScreenHeader';
-import { BrandLogo } from '../../components/BrandLogo';
 
 export default function ForgotPasswordScreen() {
   const router = useRouter();
@@ -61,9 +54,7 @@ export default function ForgotPasswordScreen() {
       <ScreenHeader title={t('forgotPasswordTitle')} onBackPress={() => router.back()} />
 
       <View style={styles.content}>
-        <View style={styles.branding}>
-          <BrandLogo />
-        </View>
+        <View style={styles.branding} />
         <Text style={styles.subtitle}>{t('forgotPasswordSubtitle')}</Text>
 
         <View style={styles.formCard}>

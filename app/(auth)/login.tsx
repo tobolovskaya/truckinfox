@@ -204,7 +204,7 @@ const styles = StyleSheet.create({
     marginBottom: spacing.lg,
   },
   subtitle: {
-    fontSize: fontSize.md,
+    fontSize: fontSize.sm,
     color: colors.text.secondary,
     marginTop: spacing.sm,
     textAlign: 'center',

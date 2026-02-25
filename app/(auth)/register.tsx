@@ -311,7 +311,7 @@ const styles = StyleSheet.create({
     marginBottom: spacing.lg,
   },
   title: {
-    fontSize: fontSize.xxl,
+    fontSize: fontSize.xl,
     fontWeight: fontWeight.semibold,
     color: colors.text.primary,
     marginBottom: spacing.xs,
@@ -319,7 +319,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   subtitle: {
-    fontSize: fontSize.md,
+    fontSize: fontSize.sm,
     color: colors.text.secondary,
     textAlign: 'center',
   },

@@ -55,9 +55,9 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   welcomeText: {
-    fontSize: fontSize.xl,
+    fontSize: fontSize.sm,
     fontWeight: fontWeight.semibold,
-    color: colors.text.primary,
+    color: colors.text.secondary,
     flexShrink: 1,
   },
 });
