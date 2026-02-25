@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { colors, spacing, fontSize, fontWeight } from '../../lib/sharedStyles';
 import { ScreenHeader } from '../../components/ScreenHeader';
 import { useUnreadCount } from '../../hooks/useNotifications';
@@ -9,43 +10,47 @@ import { useUnreadCount } from '../../hooks/useNotifications';
 export default function OrdersScreen() {
   const router = useRouter();
   const { unreadCount } = useUnreadCount();
+  const { t } = useTranslation();
 
   return (
     <View style={styles.container}>
       <ScreenHeader
-        title="Orders"
+        title={t('orders') || 'Ordrer'}
         showBackButton={false}
         showBrandMark
         brandMarkMaxTitleLength={18}
         rightAction={{
           icon: 'notifications-outline',
           onPress: () => router.push('/(tabs)/notifications'),
-          label: 'Notifications',
+          label: t('notifications'),
           badge: unreadCount,
         }}
       />
       <View style={styles.emptyState}>
         <Ionicons name="list-outline" size={64} color={colors.text.tertiary} />
-        <Text style={styles.emptyTitle}>No orders yet</Text>
-        <Text style={styles.emptyText}>Create your first request or explore marketplace orders.</Text>
+        <Text style={styles.emptyTitle}>{t('noOrdersYet') || 'No orders yet'}</Text>
+        <Text style={styles.emptyText}>
+          {t('exploreOrCreateRequest') ||
+            'Create your first request or explore marketplace orders.'}
+        </Text>
 
         <View style={styles.ctaRow}>
           <TouchableOpacity
             style={styles.primaryButton}
             onPress={() => router.push('/(tabs)/create')}
             accessibilityRole="button"
-            accessibilityLabel="Create request"
+            accessibilityLabel={t('createRequest')}
           >
-            <Text style={styles.primaryButtonText}>Create request</Text>
+            <Text style={styles.primaryButtonText}>{t('createRequest')}</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
             style={styles.secondaryButton}
             onPress={() => router.push('/(tabs)/home')}
             accessibilityRole="button"
-            accessibilityLabel="Go to marketplace"
+            accessibilityLabel={t('marketplace')}
           >
-            <Text style={styles.secondaryButtonText}>Go to marketplace</Text>
+            <Text style={styles.secondaryButtonText}>{t('goToMarketplace')}</Text>
           </TouchableOpacity>
         </View>
       </View>

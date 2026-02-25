@@ -748,6 +748,7 @@ export default function CreateRequestScreen() {
       <ScreenHeader
         title={t('createCargoRequest') || 'Opprett lastforespørsel'}
         showBackButton={false}
+        showBrandMark={true}
         rightAction={{
           icon: 'notifications-outline',
           onPress: () => router.push('/(tabs)/notifications'),
