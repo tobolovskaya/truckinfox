@@ -13,7 +13,6 @@ import {
   View,
 } from 'react-native';
 import { KeyboardAwareFlatList } from 'react-native-keyboard-aware-scroll-view';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useAuth } from '../../contexts/AuthContext';
@@ -24,6 +23,7 @@ import { triggerHapticFeedback } from '../../utils/haptics';
 import { SuccessAnimation } from '../../components/SuccessAnimation';
 import { LazyImage } from '../../components/LazyImage';
 import Avatar from '../../components/Avatar';
+import { ScreenHeader } from '../../components/ScreenHeader';
 import {
   collection,
   doc,
@@ -95,7 +95,6 @@ export default function RequestDetailsScreen() {
   const { t } = useTranslation();
   const toast = useToast();
   const router = useRouter();
-  const insets = useSafeAreaInsets();
 
   const [request, setRequest] = useState<CargoRequest | null>(null);
   const [bids, setBids] = useState<Bid[]>([]);
@@ -467,50 +466,7 @@ export default function RequestDetailsScreen() {
   const renderItem = ({ item }: { item: string; index: number }) => {
     switch (item) {
       case 'header':
-        return (
-          <View style={styles.header}>
-            <TouchableOpacity
-              style={styles.backButton}
-              onPress={() => {
-                router.back();
-                triggerHapticFeedback.light();
-              }}
-              accessibilityRole="button"
-              accessibilityLabel="Go back"
-            >
-              <Ionicons name="arrow-back" size={24} color={colors.text.primary} />
-            </TouchableOpacity>
-            <Text style={styles.headerTitle}>{t('requestDetails')}</Text>
-            {isCustomer ? (
-              <View style={styles.headerActions}>
-                <TouchableOpacity
-                  style={styles.headerButton}
-                  onPress={handleEdit}
-                  disabled={deleting}
-                  accessibilityRole="button"
-                  accessibilityLabel="Edit request"
-                >
-                  <Ionicons name="create-outline" size={22} color={colors.primary} />
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={styles.headerButton}
-                  onPress={handleDelete}
-                  disabled={deleting}
-                  accessibilityRole="button"
-                  accessibilityLabel={deleting ? 'Deleting request' : 'Delete request'}
-                >
-                  {deleting ? (
-                    <ActivityIndicator size="small" color={colors.error} />
-                  ) : (
-                    <Ionicons name="trash-outline" size={22} color={colors.error} />
-                  )}
-                </TouchableOpacity>
-              </View>
-            ) : (
-              <View style={styles.backButton} />
-            )}
-          </View>
-        );
+        return null;
 
       case 'images':
         if (!request?.images || request.images.length === 0) return null;
@@ -788,11 +744,34 @@ export default function RequestDetailsScreen() {
     );
   }
 
-  const sections = ['header', 'images', 'info', 'route', 'customer', 'bidForm', 'bids'];
+  const sections = ['images', 'info', 'route', 'customer', 'bidForm', 'bids'];
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
+    <View style={styles.container}>
       <StatusBar barStyle="dark-content" />
+
+      <ScreenHeader
+        title={t('requestDetails')}
+        onBackPress={() => router.back()}
+        secondaryRightAction={
+          isCustomer
+            ? {
+                icon: 'create-outline',
+                onPress: handleEdit,
+                label: 'Edit request',
+              }
+            : undefined
+        }
+        rightAction={
+          isCustomer
+            ? {
+                icon: 'trash-outline',
+                onPress: handleDelete,
+                label: deleting ? 'Deleting request' : 'Delete request',
+              }
+            : undefined
+        }
+      />
 
       <KeyboardAwareFlatList
         ref={flatListRef}
@@ -908,38 +887,6 @@ const styles = StyleSheet.create({
   },
   content: {
     paddingBottom: spacing.xxxl,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
-    backgroundColor: colors.white,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border.light,
-  },
-  backButton: {
-    width: 44,
-    height: 44,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  headerActions: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs,
-  },
-  headerButton: {
-    width: 44,
-    height: 44,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  headerTitle: {
-    fontSize: fontSize.lg,
-    fontWeight: '600',
-    color: colors.text.primary,
   },
   imagesSection: {
     backgroundColor: colors.white,

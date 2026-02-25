@@ -40,6 +40,7 @@ import * as ImagePicker from 'expo-image-picker';
 import * as DocumentPicker from 'expo-document-picker';
 import { generateChatId } from '../../../utils/chatManagement';
 import { theme } from '../../../theme/theme';
+import { ScreenHeader } from '../../../components/ScreenHeader';
 import {
   colors,
   spacing,
@@ -621,38 +622,29 @@ export default function ChatScreen() {
   }, {});
 
   return (
-    <SafeAreaView style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => router.back()}
-          accessibilityRole="button"
-          accessibilityLabel="Go back"
-        >
-          <Ionicons name="arrow-back" size={24} color={theme.iconColors.dark} />
-        </TouchableOpacity>
-
-        <View style={styles.headerInfo}>
-          <View style={styles.avatar}>
-            <Text style={styles.avatarInitials}>{getUserInitials(chatUser?.full_name || '')}</Text>
+    <SafeAreaView style={styles.container} edges={['bottom']}>
+      <ScreenHeader
+        title=""
+        onBackPress={() => router.back()}
+        customCenter={
+          <View style={styles.headerInfo}>
+            <View style={styles.avatar}>
+              <Text style={styles.avatarInitials}>{getUserInitials(chatUser?.full_name || '')}</Text>
+            </View>
+            <View style={styles.headerText}>
+              <Text style={styles.userName}>{chatUser?.full_name || t('unknownUser')}</Text>
+              <Text style={styles.userRole}>
+                {chatUser ? getUserRoleText(chatUser.user_type, chatUser.rating) : ''}
+              </Text>
+            </View>
           </View>
-          <View style={styles.headerText}>
-            <Text style={styles.userName}>{chatUser?.full_name || t('unknownUser')}</Text>
-            <Text style={styles.userRole}>
-              {chatUser ? getUserRoleText(chatUser.user_type, chatUser.rating) : ''}
-            </Text>
-          </View>
-        </View>
-
-        <TouchableOpacity
-          style={styles.infoButton}
-          accessibilityRole="button"
-          accessibilityLabel="Chat info"
-        >
-          <Ionicons name="information-circle" size={24} color={theme.iconColors.gray.primary} />
-        </TouchableOpacity>
-      </View>
+        }
+        rightAction={{
+          icon: 'information-circle',
+          onPress: () => {},
+          label: 'Chat info',
+        }}
+      />
 
       <KeyboardAvoidingView
         style={styles.chatContainer}
@@ -807,23 +799,6 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.white,
   },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
-    backgroundColor: colors.white,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border.light,
-  },
-  backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: borderRadius.full,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: spacing.md,
-  },
   headerInfo: {
     flex: 1,
     flexDirection: 'row',
@@ -856,13 +831,6 @@ const styles = StyleSheet.create({
     fontSize: fontSize.sm,
     color: colors.text.secondary,
     fontWeight: fontWeight.medium,
-  },
-  infoButton: {
-    width: 40,
-    height: 40,
-    borderRadius: borderRadius.full,
-    justifyContent: 'center',
-    alignItems: 'center',
   },
   requestCard: {
     backgroundColor: colors.white,

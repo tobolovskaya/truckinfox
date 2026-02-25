@@ -12,7 +12,6 @@ import {
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   colors,
   spacing,
@@ -22,11 +21,11 @@ import {
   shadows,
 } from '../../lib/sharedStyles';
 import { useAuth } from '../../contexts/AuthContext';
+import { ScreenHeader } from '../../components/ScreenHeader';
 
 export default function SecurityScreen() {
   const router = useRouter();
   const { t } = useTranslation();
-  const insets = useSafeAreaInsets();
   const { user, signOut, signOutAllDevices } = useAuth();
   const [loading, setLoading] = useState(false);
 
@@ -148,20 +147,8 @@ export default function SecurityScreen() {
   ];
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity
-          onPress={() => router.back()}
-          style={styles.backButton}
-          accessibilityRole="button"
-          accessibilityLabel="Go back"
-        >
-          <Ionicons name="arrow-back" size={24} color={colors.text.primary} />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>{t('security')}</Text>
-        <View style={styles.headerRight} />
-      </View>
+    <View style={styles.container}>
+      <ScreenHeader title={t('security')} onBackPress={() => router.back()} />
 
       <ScrollView
         style={styles.content}
@@ -255,32 +242,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
-    backgroundColor: colors.white,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border.light,
-    ...Platform.select({
-      ios: shadows.sm,
-      android: { elevation: 2 },
-    }),
-  },
-  backButton: {
-    padding: spacing.xs,
-    marginLeft: -spacing.xs,
-  },
-  headerTitle: {
-    fontSize: fontSize.xl,
-    fontWeight: fontWeight.bold,
-    color: colors.text.primary,
-  },
-  headerRight: {
-    width: 40,
   },
   content: {
     flex: 1,

@@ -9,7 +9,6 @@ import {
   View,
 } from 'react-native';
 import { KeyboardAwareFlatList } from 'react-native-keyboard-aware-scroll-view';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useAuth } from '../../contexts/AuthContext';
@@ -34,6 +33,7 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import * as ImagePicker from 'expo-image-picker';
 import { manipulateAsync, SaveFormat } from 'expo-image-manipulator';
 import AddressInput from '../../components/AddressInput';
+import { ScreenHeader } from '../../components/ScreenHeader';
 import { calculateDistance } from '../../utils/googlePlaces';
 import { geohashForLocation } from 'geofire-common';
 import { fetchWithTimeout } from '../../utils/fetchWithTimeout';
@@ -98,7 +98,6 @@ export default function EditRequestScreen() {
   const { t } = useTranslation();
   const toast = useToast();
   const router = useRouter();
-  const insets = useSafeAreaInsets();
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -661,31 +660,19 @@ export default function EditRequestScreen() {
 
   return (
     <View style={styles.container}>
-      {/* Header */}
-      <View style={[styles.header, { paddingTop: insets.top + 16 }]}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => router.back()}
-          accessibilityRole="button"
-          accessibilityLabel="Go back"
-        >
-          <Ionicons name="arrow-back" size={24} color={colors.text.primary} />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>{t('editRequestTitle')}</Text>
-        <TouchableOpacity
-          style={[styles.saveButton, saving && styles.saveButtonDisabled]}
-          onPress={handleSave}
-          disabled={saving}
-          accessibilityRole="button"
-          accessibilityLabel={saving ? 'Saving request' : t('save')}
-        >
-          {saving ? (
-            <ActivityIndicator size="small" color={colors.white} />
-          ) : (
-            <Text style={styles.saveButtonText}>{t('save')}</Text>
-          )}
-        </TouchableOpacity>
-      </View>
+      <ScreenHeader
+        title={t('editRequestTitle')}
+        onBackPress={() => router.back()}
+        rightAction={{
+          icon: 'checkmark',
+          onPress: () => {
+            if (!saving) {
+              handleSave();
+            }
+          },
+          label: saving ? 'Saving request' : t('save'),
+        }}
+      />
 
       <KeyboardAwareFlatList
         contentContainerStyle={styles.scrollContent}
@@ -695,45 +682,6 @@ export default function EditRequestScreen() {
         enableResetScrollToCoords={false}
         data={[{ key: 'form' }]}
         keyExtractor={item => item.key}
-        renderItem={() => (
-          <View>
-            {/* Title */}
-            <View style={styles.fieldContainer}>
-              <Text style={styles.fieldLabel}>Tittel</Text>
-              <TextInput
-                style={styles.textInput}
-                value={formData.title}
-                onChangeText={value => {
-                  updateFormData('title', value);
-                  clearDistanceIfNeeded('title');
-                }}
-                onBlur={() => handleBlur('title')}
-                placeholder=""
-                autoComplete="off"
-                returnKeyType="next"
-              />
-            </View>
-
-            {/* Description */}
-            <View style={styles.fieldContainer}>
-              <Text style={styles.fieldLabel}>Beskrivelse</Text>
-              <TextInput
-                style={[styles.textInput, styles.textArea]}
-                value={formData.description}
-                onChangeText={value => {
-                  updateFormData('description', value);
-                  clearDistanceIfNeeded('description');
-                }}
-                onBlur={() => handleBlur('description')}
-                multiline
-                numberOfLines={4}
-                textAlignVertical="top"
-                placeholder=""
-                autoComplete="off"
-                returnKeyType="next"
-              />
-            </View>
-
             {/* Cargo Type */}
             <View style={styles.fieldContainer}>
               <Text style={styles.fieldLabel}>Lasttype</Text>

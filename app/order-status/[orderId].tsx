@@ -43,6 +43,7 @@ import { uploadDeliveryProof } from '../../utils/deliveryProof';
 import * as ImagePicker from 'expo-image-picker';
 import SignaturePad from '../../components/SignaturePad';
 import { LazyImage } from '../../components/LazyImage';
+import { ScreenHeader } from '../../components/ScreenHeader';
 
 interface Order {
   id: string;
@@ -508,7 +509,7 @@ export default function OrderStatusScreen() {
 
   if (loading) {
     return (
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView style={styles.container} edges={['bottom']}>
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={theme.iconColors.primary} />
           <Text style={styles.loadingText}>{t('loading')}</Text>
@@ -519,7 +520,7 @@ export default function OrderStatusScreen() {
 
   if (!order) {
     return (
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView style={styles.container} edges={['bottom']}>
         <View style={styles.errorContainer}>
           <Text style={styles.errorText}>{t('orderNotFound')}</Text>
         </View>
@@ -530,20 +531,17 @@ export default function OrderStatusScreen() {
   const deliveryTime = getDeliveryTime(order.delivery_time);
 
   return (
-    <SafeAreaView style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-          <Ionicons name="arrow-back" size={24} color={theme.iconColors.dark} />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>{t('orderStatus')}</Text>
-        {lastUpdated && (
+    <SafeAreaView style={styles.container} edges={['bottom']}>
+      <ScreenHeader title={t('orderStatus')} onBackPress={() => router.back()} />
+
+      {lastUpdated && (
+        <View style={styles.liveStatusRow}>
           <View style={styles.liveIndicator}>
             <View style={styles.liveDot} />
             <Text style={styles.liveText}>Live</Text>
           </View>
-        )}
-      </View>
+        </View>
+      )}
 
       <ScrollView style={styles.scrollView}>
         {/* Status Card */}
@@ -877,27 +875,9 @@ const styles = StyleSheet.create({
     fontSize: fontSize.lg,
     color: colors.error,
   },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  liveStatusRow: {
     paddingHorizontal: spacing.xl,
-    paddingVertical: spacing.lg,
-    backgroundColor: colors.white,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border.light,
-  },
-  backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: borderRadius.full,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: spacing.md,
-  },
-  headerTitle: {
-    fontSize: fontSize.xl,
-    fontWeight: fontWeight.bold,
-    color: colors.text.primary,
+    paddingTop: spacing.sm,
   },
   scrollView: {
     flex: 1,
