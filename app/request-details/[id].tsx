@@ -36,6 +36,7 @@ import {
   deleteDoc,
   serverTimestamp,
   runTransaction,
+  updateDoc,
 } from 'firebase/firestore';
 import { trackBidSubmitted, trackBidAccepted, trackCargoRequestDeleted } from '../../utils/analytics';
 import { createChat } from '../../utils/chatManagement';
@@ -372,8 +373,7 @@ export default function RequestDetailsScreen() {
           {
             text: t('proceedToPayment'),
             onPress: () => {
-              // Navigate to payment screen (implement if needed)
-              router.back();
+              navigateToPayment(bid);
             },
           },
         ]);
@@ -385,6 +385,56 @@ export default function RequestDetailsScreen() {
       triggerHapticFeedback.error();
     } finally {
       setAcceptingBid(null);
+    }
+  };
+
+  const navigateToPayment = async (bid: Bid) => {
+    try {
+      if (!user?.uid) {
+        throw new Error('User not authenticated');
+      }
+
+      if (!id || typeof id !== 'string') {
+        throw new Error('Invalid request ID');
+      }
+
+      // Reuse existing order for this accepted bid if it already exists
+      const existingOrderQuery = query(collection(db, 'orders'), where('bid_id', '==', bid.id));
+      const existingOrderSnap = await getDocs(existingOrderQuery);
+
+      if (!existingOrderSnap.empty) {
+        router.push(`/payment/${existingOrderSnap.docs[0].id}` as never);
+        return;
+      }
+
+      const totalAmount = bid.price;
+      const platformFee = Math.round(totalAmount * 0.1);
+      const carrierAmount = totalAmount - platformFee;
+
+      const orderRef = await addDoc(collection(db, 'orders'), {
+        request_id: id,
+        customer_id: user.uid,
+        carrier_id: bid.carrier_id,
+        bid_id: bid.id,
+        total_amount: totalAmount,
+        platform_fee: platformFee,
+        carrier_amount: carrierAmount,
+        payment_status: 'pending',
+        status: 'active',
+        created_at: serverTimestamp(),
+        payment_initiated_at: serverTimestamp(),
+      });
+
+      await updateDoc(doc(db, 'bids', bid.id), {
+        order_id: orderRef.id,
+        updated_at: serverTimestamp(),
+      });
+
+      router.push(`/payment/${orderRef.id}` as never);
+    } catch (error) {
+      console.error('Navigation to payment error:', error);
+      const errorMessage = error instanceof Error ? error.message : t('errorLoadingPayments');
+      toast.error(errorMessage);
     }
   };
 
