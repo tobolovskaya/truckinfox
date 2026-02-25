@@ -63,7 +63,7 @@ export default function ProfileScreen() {
       id: 'settings',
       icon: 'settings-outline',
       label: t('settings'),
-      onPress: () => {},
+      onPress: () => router.push('/profile/settings'),
     },
     {
       id: 'help',
