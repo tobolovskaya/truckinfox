@@ -19,10 +19,63 @@ interface Order {
   total_amount: number;
   status: string;
   payment_status: string;
-  created_at: string;
+  created_at?:
+    | string
+    | number
+    | Date
+    | {
+        seconds?: number;
+        nanoseconds?: number;
+        toDate?: () => Date;
+      }
+    | null;
   cargo_title?: string;
   cargo_type?: string;
 }
+
+const toSafeDate = (value: Order['created_at']): Date => {
+  if (!value) {
+    return new Date(0);
+  }
+
+  if (value instanceof Date) {
+    return value;
+  }
+
+  if (typeof value === 'string' || typeof value === 'number') {
+    const parsed = new Date(value);
+    return Number.isNaN(parsed.getTime()) ? new Date(0) : parsed;
+  }
+
+  if (typeof value === 'object') {
+    if (typeof value.toDate === 'function') {
+      const parsed = value.toDate();
+      return Number.isNaN(parsed.getTime()) ? new Date(0) : parsed;
+    }
+
+    if (typeof value.seconds === 'number') {
+      return new Date(value.seconds * 1000);
+    }
+  }
+
+  return new Date(0);
+};
+
+const mergeAndSortOrders = (customerOrders: Order[], carrierOrders: Order[]): Order[] => {
+  const uniqueOrders = new Map<string, Order>();
+
+  [...customerOrders, ...carrierOrders].forEach(order => {
+    uniqueOrders.set(order.id, order);
+  });
+
+  return Array.from(uniqueOrders.values()).sort(
+    (a, b) => toSafeDate(b.created_at).getTime() - toSafeDate(a.created_at).getTime()
+  );
+};
+
+const formatOrderDate = (value: Order['created_at']): string => {
+  return toSafeDate(value).toLocaleDateString('no-NO');
+};
 
 export default function OrdersScreen() {
   const router = useRouter();
@@ -32,6 +85,7 @@ export default function OrdersScreen() {
 
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const indexWarningShownRef = useRef(false);
 
   useEffect(() => {
@@ -40,8 +94,8 @@ export default function OrdersScreen() {
     }
   }, [user?.uid]);
 
-  const isIndexUnavailableError = (error: any): boolean => {
-    const errorMessage = error?.message || '';
+  const isIndexUnavailableError = (error: unknown): boolean => {
+    const errorMessage = error instanceof Error ? error.message : String(error ?? '');
     return errorMessage.includes('requires an index') || errorMessage.includes('index is currently building');
   };
 
@@ -80,11 +134,10 @@ export default function OrdersScreen() {
         ...(doc.data() as Omit<Order, 'id'>),
       }));
 
-      const allOrders = [...customerOrders, ...carrierOrders]
-        .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+      const allOrders = mergeAndSortOrders(customerOrders, carrierOrders);
 
       setOrders(allOrders);
-    } catch (error: any) {
+    } catch (error: unknown) {
       if (isIndexUnavailableError(error)) {
         // Fallback: query without orderBy and sort locally
         if (!indexWarningShownRef.current) {
@@ -118,8 +171,7 @@ export default function OrdersScreen() {
             ...(doc.data() as Omit<Order, 'id'>),
           }));
 
-          const allOrders = [...customerOrders, ...carrierOrders]
-            .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+          const allOrders = mergeAndSortOrders(customerOrders, carrierOrders);
 
           setOrders(allOrders);
         } catch (fallbackError) {
@@ -130,6 +182,15 @@ export default function OrdersScreen() {
       }
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    try {
+      await fetchOrders();
+    } finally {
+      setRefreshing(false);
     }
   };
 
@@ -182,9 +243,7 @@ export default function OrdersScreen() {
         </View>
         <View style={styles.detailRow}>
           <Text style={styles.label}>{t('date')}:</Text>
-          <Text style={styles.value}>
-            {new Date(item.created_at).toLocaleDateString('no-NO')}
-          </Text>
+          <Text style={styles.value}>{formatOrderDate(item.created_at)}</Text>
         </View>
       </View>
     </TouchableOpacity>
@@ -240,6 +299,8 @@ export default function OrdersScreen() {
           keyExtractor={item => item.id}
           renderItem={renderOrderItem}
           contentContainerStyle={styles.listContainer}
+          refreshing={refreshing}
+          onRefresh={handleRefresh}
           scrollEnabled={true}
         />
       )}

@@ -18,21 +18,11 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useTranslation } from 'react-i18next';
 import { useToast } from '../../contexts/ToastContext';
 import { useNotifications } from '../../hooks/useNotifications';
-import { db, storage } from '../../lib/firebase';
+import { storage } from '../../lib/firebase';
 import { trackCargoCreated } from '../../utils/analytics';
 import { sanitizeInput, sanitizeNumber } from '../../utils/sanitization';
 import { colors, spacing, fontSize, fontWeight, borderRadius } from '../../lib/sharedStyles';
-import {
-  collection,
-  addDoc,
-  updateDoc,
-  doc,
-  getDocs,
-  orderBy,
-  query,
-  where,
-} from 'firebase/firestore';
-import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
+import { ref, uploadBytesResumable, getDownloadURL, UploadTaskSnapshot } from 'firebase/storage';
 import { useRouter } from 'expo-router';
 import { triggerHapticFeedback } from '../../utils/haptics';
 import { SuccessAnimation } from '../../components/SuccessAnimation';
@@ -139,8 +129,6 @@ export default function CreateRequestScreen() {
           const hoursSince = (Date.now() - savedAt.getTime()) / (1000 * 60 * 60);
 
           if (hoursSince < DRAFT_EXPIRY_HOURS) {
-            const hoursText = Math.round(hoursSince) === 1 ? 'time' : 'timer';
-            toast.info(`Fant lagret utkast fra ${Math.round(hoursSince)} ${hoursText} siden`);
             setFormData({
               ...parsed,
               pickup_date: parsed.pickup_date ? new Date(parsed.pickup_date) : new Date(),
@@ -159,7 +147,6 @@ export default function CreateRequestScreen() {
     };
 
     loadDraft();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -558,13 +545,13 @@ export default function CreateRequestScreen() {
           await new Promise<void>((resolve, reject) => {
             uploadTask.on(
               'state_changed',
-              snapshot => {
+              (snapshot: UploadTaskSnapshot) => {
                 const progress = snapshot.totalBytes
                   ? (snapshot.bytesTransferred / snapshot.totalBytes) * 100
                   : 0;
                 setUploadProgress(prev => ({ ...prev, [imageKey]: progress }));
               },
-              error => {
+              (error: Error) => {
                 console.error(`Error uploading image ${i}:`, error);
                 reject(error);
               },
