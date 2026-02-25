@@ -216,7 +216,7 @@ export default function SettingsScreen() {
 
                 <View style={styles.settingRow}>
                   <View style={styles.settingInfo}>
-                    <Ionicons name="package-outline" size={20} color={colors.text.secondary} />
+                    <Ionicons name="receipt-outline" size={20} color={colors.text.secondary} />
                     <Text style={styles.settingLabel}>{t('newOrdersNotifications')}</Text>
                   </View>
                   <Switch

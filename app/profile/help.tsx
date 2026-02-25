@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState, useMemo } from 'react';
 import {
   View,
   Text,
@@ -23,48 +23,54 @@ export default function HelpSupportScreen() {
   const { t } = useTranslation();
   const [expandedFAQ, setExpandedFAQ] = useState<string | null>(null);
 
-  const faqItems: FAQItem[] = [
-    {
-      id: '1',
-      question: t('howToCreateRequest') || 'How do I create a cargo request?',
-      answer: t('howToCreateRequestAnswer') || 'Navigate to the Create tab, fill in cargo details, set price, and submit. Carriers will then send bids for your cargo.',
-    },
-    {
-      id: '2',
-      question: t('howToSubmitBid') || 'How do I submit a bid?',
-      answer: t('howToSubmitBidAnswer') || 'As a carrier, browse active cargo requests in the Browse tab, compare offers, and submit your bid with your price and message.',
-    },
-    {
-      id: '3',
-      question: t('howPaymentWorks') || 'How does payment work?',
-      answer: t('howPaymentWorksAnswer') || 'Payment uses secure escrow. Your payment is held until delivery is confirmed. Carriers receive payment only after successful delivery.',
-    },
-    {
-      id: '4',
-      question: t('howToTrackOrder') || 'How can I track my order?',
-      answer: t('howToTrackOrderAnswer') || 'Once a bid is accepted, you can track the cargo in real-time using GPS. Chat directly with the carrier for updates.',
-    },
-    {
-      id: '5',
-      question: t('whatIfCarrierLate') || 'What if the carrier is late?',
-      answer: t('whatIfCarrierLateAnswer') || 'Contact the carrier immediately via chat. If the issue persists, contact our support team for assistance.',
-    },
-    {
-      id: '6',
-      question: t('canICancelOrder') || 'Can I cancel my order?',
-      answer: t('canICancelOrderAnswer') || 'You can cancel before a bid is accepted. Once accepted, cancellation requires carrier consent and may incur fees.',
-    },
-  ];
+  const faqItems: FAQItem[] = useMemo(
+    () => [
+      {
+        id: '1',
+        question: t('howToCreateRequest'),
+        answer: t('howToCreateRequestAnswer'),
+      },
+      {
+        id: '2',
+        question: t('howToSubmitBid'),
+        answer: t('howToSubmitBidAnswer'),
+      },
+      {
+        id: '3',
+        question: t('howPaymentWorks'),
+        answer: t('howPaymentWorksAnswer'),
+      },
+      {
+        id: '4',
+        question: t('howToTrackOrder'),
+        answer: t('howToTrackOrderAnswer'),
+      },
+      {
+        id: '5',
+        question: t('whatIfCarrierLate'),
+        answer: t('whatIfCarrierLateAnswer'),
+      },
+      {
+        id: '6',
+        question: t('canICancelOrder'),
+        answer: t('canICancelOrderAnswer'),
+      },
+    ],
+    [t]
+  );
 
   const handleContactSupport = async () => {
     const email = 'support@truckinfox.no';
-    const subject = t('supportRequest') || 'Support Request';
-    const body = t('pleaseDescribeIssue') || 'Please describe your issue here...';
+    const subject = t('supportRequest');
+    const body = t('pleaseDescribeIssue');
 
     try {
-      await Linking.openURL(`mailto:${email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`);
-    } catch (error) {
-      Alert.alert(t('error'), t('couldNotOpenEmail') || 'Could not open email client');
+      const mailUrl = `mailto:${email}?subject=${encodeURIComponent(
+        subject
+      )}&body=${encodeURIComponent(body)}`;
+      await Linking.openURL(mailUrl);
+    } catch {
+      Alert.alert(t('error'), t('couldNotOpenEmail'));
     }
   };
 
@@ -74,8 +80,8 @@ export default function HelpSupportScreen() {
       if (canOpen) {
         await Linking.openURL(url);
       }
-    } catch (error) {
-      Alert.alert(t('error'), t('couldNotOpenLink') || 'Could not open link');
+    } catch {
+      Alert.alert(t('error'), t('couldNotOpenLink'));
     }
   };
 
@@ -97,8 +103,10 @@ export default function HelpSupportScreen() {
           <View style={styles.contactHeader}>
             <Ionicons name="mail-outline" size={32} color={colors.primary} />
             <View style={styles.contactInfo}>
-              <Text style={styles.contactTitle}>{t('needHelp') || 'Need Help?'}</Text>
-              <Text style={styles.contactSubtitle}>{t('contactUsDirectly') || 'Contact our support team'}</Text>
+              <Text style={styles.contactTitle}>{t('needHelp')}</Text>
+              <Text style={styles.contactSubtitle}>
+                {t('contactUsDirectly')}
+              </Text>
             </View>
           </View>
 
@@ -109,13 +117,19 @@ export default function HelpSupportScreen() {
             accessibilityLabel={t('contactSupport')}
           >
             <Text style={styles.contactButtonText}>{t('contactSupport')}</Text>
-            <Ionicons name="chevron-forward" size={20} color={colors.primary} />
+            <Ionicons
+              name="chevron-forward"
+              size={20}
+              color={colors.primary}
+            />
           </TouchableOpacity>
         </View>
 
         {/* FAQ Section */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>{t('frequentlyAskedQuestions') || 'Frequently Asked Questions'}</Text>
+          <Text style={styles.sectionTitle}>
+            {t('frequentlyAskedQuestions')}
+          </Text>
 
           <View style={styles.faqContainer}>
             {faqItems.map((item, index) => (
@@ -125,11 +139,19 @@ export default function HelpSupportScreen() {
                   onPress={() => toggleFAQ(item.id)}
                   accessibilityRole="button"
                   accessibilityLabel={`Question: ${item.question}`}
-                  accessibilityHint={expandedFAQ === item.id ? 'Double tap to collapse' : 'Double tap to expand'}
+                  accessibilityHint={
+                    expandedFAQ === item.id
+                      ? 'Double tap to collapse'
+                      : 'Double tap to expand'
+                  }
                 >
                   <View style={styles.faqHeader}>
                     <Ionicons
-                      name={expandedFAQ === item.id ? 'chevron-down' : 'chevron-forward'}
+                      name={
+                        expandedFAQ === item.id
+                          ? 'chevron-down'
+                          : 'chevron-forward'
+                      }
                       size={20}
                       color={colors.primary}
                     />
@@ -141,7 +163,9 @@ export default function HelpSupportScreen() {
                   )}
                 </TouchableOpacity>
 
-                {index < faqItems.length - 1 && <View style={styles.faqDivider} />}
+                {index < faqItems.length - 1 && (
+                  <View style={styles.faqDivider} />
+                )}
               </View>
             ))}
           </View>
@@ -149,7 +173,7 @@ export default function HelpSupportScreen() {
 
         {/* Legal & Info Section */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>{t('legalAndInfo') || 'Legal & Information'}</Text>
+          <Text style={styles.sectionTitle}>{t('legalAndInfo')}</Text>
 
           <View style={styles.legalContainer}>
             <TouchableOpacity
@@ -158,11 +182,19 @@ export default function HelpSupportScreen() {
               accessibilityRole="button"
               accessibilityLabel={t('termsOfService')}
             >
-              <Ionicons name="document-text-outline" size={24} color={colors.primary} />
+              <Ionicons
+                name="document-text-outline"
+                size={24}
+                color={colors.primary}
+              />
               <View style={styles.legalTextContainer}>
                 <Text style={styles.legalText}>{t('termsOfService')}</Text>
               </View>
-              <Ionicons name="chevron-forward" size={20} color={colors.text.tertiary} />
+              <Ionicons
+                name="chevron-forward"
+                size={20}
+                color={colors.text.tertiary}
+              />
             </TouchableOpacity>
 
             <View style={styles.legalDivider} />
@@ -173,11 +205,19 @@ export default function HelpSupportScreen() {
               accessibilityRole="button"
               accessibilityLabel={t('privacyPolicy')}
             >
-              <Ionicons name="shield-outline" size={24} color={colors.primary} />
+              <Ionicons
+                name="shield-outline"
+                size={24}
+                color={colors.primary}
+              />
               <View style={styles.legalTextContainer}>
                 <Text style={styles.legalText}>{t('privacyPolicy')}</Text>
               </View>
-              <Ionicons name="chevron-forward" size={20} color={colors.text.tertiary} />
+              <Ionicons
+                name="chevron-forward"
+                size={20}
+                color={colors.text.tertiary}
+              />
             </TouchableOpacity>
 
             <View style={styles.legalDivider} />
@@ -188,21 +228,31 @@ export default function HelpSupportScreen() {
               accessibilityRole="button"
               accessibilityLabel={t('about')}
             >
-              <Ionicons name="information-circle-outline" size={24} color={colors.primary} />
+              <Ionicons
+                name="information-circle-outline"
+                size={24}
+                color={colors.primary}
+              />
               <View style={styles.legalTextContainer}>
                 <Text style={styles.legalText}>{t('about')}</Text>
               </View>
-              <Ionicons name="chevron-forward" size={20} color={colors.text.tertiary} />
+              <Ionicons
+                name="chevron-forward"
+                size={20}
+                color={colors.text.tertiary}
+              />
             </TouchableOpacity>
           </View>
         </View>
 
         {/* Info Box */}
         <View style={styles.infoBox}>
-          <Ionicons name="information-circle" size={20} color={colors.info} />
-          <Text style={styles.infoText}>
-            {t('responseTimeInfo') || 'Our support team typically responds within 24 hours.'}
-          </Text>
+          <Ionicons
+            name="information-circle"
+            size={20}
+            color={colors.info}
+          />
+          <Text style={styles.infoText}>{t('responseTimeInfo')}</Text>
         </View>
       </ScrollView>
     </View>
