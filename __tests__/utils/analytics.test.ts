@@ -3,12 +3,16 @@ import {
   trackReviewSubmitted,
   trackUserRegistered,
 } from '../../utils/analytics';
-import { analytics } from '../../lib/firebase';
+
+const mockLogEvent = jest.fn();
+
+jest.mock('firebase/analytics', () => ({
+  logEvent: (_analytics: unknown, eventName: string, params?: unknown) =>
+    mockLogEvent(eventName, params),
+}));
 
 jest.mock('../../lib/firebase', () => ({
-  analytics: {
-    logEvent: jest.fn(),
-  },
+  analytics: {},
 }));
 
 describe('Analytics Tracking', () => {
@@ -25,7 +29,7 @@ describe('Analytics Tracking', () => {
         bid_count: 3,
       });
 
-      expect(analytics.logEvent).toHaveBeenCalledWith('cargo_request_deleted', {
+      expect(mockLogEvent).toHaveBeenCalledWith('cargo_request_deleted', {
         request_id: 'req123',
         cargo_type: 'automotive',
         had_bids: true,
@@ -41,7 +45,7 @@ describe('Analytics Tracking', () => {
         bid_count: 0,
       });
 
-      expect(analytics.logEvent).toHaveBeenCalledWith(
+      expect(mockLogEvent).toHaveBeenCalledWith(
         'cargo_request_deleted',
         expect.objectContaining({
           had_bids: false,
@@ -62,7 +66,7 @@ describe('Analytics Tracking', () => {
         });
       });
 
-      expect(analytics.logEvent).toHaveBeenCalledTimes(4);
+      expect(mockLogEvent).toHaveBeenCalledTimes(4);
     });
   });
 
@@ -74,7 +78,7 @@ describe('Analytics Tracking', () => {
         has_comment: true,
       });
 
-      expect(analytics.logEvent).toHaveBeenCalledWith('review_submitted', {
+      expect(mockLogEvent).toHaveBeenCalledWith('review_submitted', {
         order_id: 'order123',
         rating: 5,
         has_comment: true,
@@ -88,7 +92,7 @@ describe('Analytics Tracking', () => {
         has_comment: false,
       });
 
-      expect(analytics.logEvent).toHaveBeenCalledWith(
+      expect(mockLogEvent).toHaveBeenCalledWith(
         'review_submitted',
         expect.objectContaining({
           has_comment: false,
@@ -107,10 +111,10 @@ describe('Analytics Tracking', () => {
         });
       });
 
-      expect(analytics.logEvent).toHaveBeenCalledTimes(5);
+      expect(mockLogEvent).toHaveBeenCalledTimes(5);
       // Verify all ratings were tracked
       ratings.forEach(rating => {
-        expect(analytics.logEvent).toHaveBeenCalledWith(
+        expect(mockLogEvent).toHaveBeenCalledWith(
           'review_submitted',
           expect.objectContaining({ rating })
         );
@@ -124,7 +128,7 @@ describe('Analytics Tracking', () => {
         has_comment: true,
       });
 
-      expect(analytics.logEvent).toHaveBeenCalledWith(
+      expect(mockLogEvent).toHaveBeenCalledWith(
         'review_submitted',
         expect.objectContaining({
           rating: 1,
@@ -140,7 +144,7 @@ describe('Analytics Tracking', () => {
         registration_method: 'email',
       });
 
-      expect(analytics.logEvent).toHaveBeenCalledWith('user_registered', {
+      expect(mockLogEvent).toHaveBeenCalledWith('user_registered', {
         account_type: 'private',
         registration_method: 'email',
       });
@@ -152,7 +156,7 @@ describe('Analytics Tracking', () => {
         registration_method: 'email',
       });
 
-      expect(analytics.logEvent).toHaveBeenCalledWith(
+      expect(mockLogEvent).toHaveBeenCalledWith(
         'user_registered',
         expect.objectContaining({
           account_type: 'business',
@@ -170,7 +174,7 @@ describe('Analytics Tracking', () => {
         });
       });
 
-      expect(analytics.logEvent).toHaveBeenCalledTimes(3);
+      expect(mockLogEvent).toHaveBeenCalledTimes(3);
     });
 
     it('should track both account types and all methods', () => {
@@ -186,7 +190,7 @@ describe('Analytics Tracking', () => {
         });
       });
 
-      expect(analytics.logEvent).toHaveBeenCalledTimes(6);
+      expect(mockLogEvent).toHaveBeenCalledTimes(6);
     });
   });
 
@@ -211,16 +215,24 @@ describe('Analytics Tracking', () => {
       });
 
       // Verify all events were logged
-      expect(analytics.logEvent).toHaveBeenCalledTimes(3);
+      expect(mockLogEvent).toHaveBeenCalledTimes(3);
 
       // Verify call signatures
-      expect(analytics.logEvent).toHaveBeenNthCalledWith(
+      expect(mockLogEvent).toHaveBeenNthCalledWith(
         1,
         'cargo_request_deleted',
         expect.any(Object)
       );
-      expect(analytics.logEvent).toHaveBeenNthCalledWith(2, 'review_submitted', expect.any(Object));
-      expect(analytics.logEvent).toHaveBeenNthCalledWith(3, 'user_registered', expect.any(Object));
+      expect(mockLogEvent).toHaveBeenNthCalledWith(
+        2,
+        'review_submitted',
+        expect.any(Object)
+      );
+      expect(mockLogEvent).toHaveBeenNthCalledWith(
+        3,
+        'user_registered',
+        expect.any(Object)
+      );
     });
   });
 });

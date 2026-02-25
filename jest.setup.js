@@ -45,7 +45,9 @@ jest.mock('expo-router', () => ({
   },
 }));
 
-jest.mock('react-native/Libraries/Animated/NativeAnimatedHelper');
+jest.mock('react-native/Libraries/Animated/NativeAnimatedHelper', () => ({}), {
+  virtual: true,
+});
 
 // Mock Firebase modules
 jest.mock('firebase/auth', () => ({
