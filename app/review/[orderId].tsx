@@ -38,6 +38,7 @@ import {
   shadows,
 } from '../../lib/sharedStyles';
 import { sanitizeMessage } from '../../utils/sanitization';
+import { trackReviewSubmitted } from '../../utils/analytics';
 
 interface Order {
   id: string;
@@ -174,6 +175,13 @@ export default function ReviewScreen() {
       console.log(
         `Updated rating for user ${reviewedId}: ${avgRating.toFixed(2)} (${reviewsSnap.size} reviews)`
       );
+
+      // 📊 Track review submission
+      trackReviewSubmitted({
+        order_id: orderId as string,
+        rating: rating,
+        has_comment: !!comment.trim(),
+      });
 
       Alert.alert(t('success'), 'Review submitted successfully!', [
         {

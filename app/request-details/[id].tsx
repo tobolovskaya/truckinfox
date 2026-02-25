@@ -37,7 +37,7 @@ import {
   serverTimestamp,
   runTransaction,
 } from 'firebase/firestore';
-import { trackBidSubmitted, trackBidAccepted } from '../../utils/analytics';
+import { trackBidSubmitted, trackBidAccepted, trackCargoRequestDeleted } from '../../utils/analytics';
 import { createChat } from '../../utils/chatManagement';
 import { colors, spacing, fontSize, borderRadius } from '../../lib/sharedStyles';
 import MapView, { Marker, Polyline, PROVIDER_GOOGLE } from 'react-native-maps';
@@ -451,6 +451,14 @@ export default function RequestDetailsScreen() {
 
       // Delete the cargo request
       await deleteDoc(doc(db, 'cargo_requests', id as string));
+
+      // 📊 Track request deletion
+      trackCargoRequestDeleted({
+        request_id: id as string,
+        cargo_type: request?.cargo_type,
+        had_bids: bidsSnap.size > 0,
+        bid_count: bidsSnap.size,
+      });
 
       triggerHapticFeedback.success();
       toast.success(t('requestDeleted') || 'Request deleted successfully');

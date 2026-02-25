@@ -16,6 +16,7 @@ import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../contexts/AuthContext';
 import { BrandLogo } from '../../components/BrandLogo';
 import { colors, spacing, fontSize, fontWeight, borderRadius } from '../../lib/sharedStyles';
+import { trackUserRegistered } from '../../utils/analytics';
 
 type AccountType = 'private' | 'business';
 
@@ -76,6 +77,12 @@ export default function RegisterScreen() {
         Alert.alert(t('error'), result.error || t('somethingWentWrong'));
         return;
       }
+
+      // 📊 Track user registration
+      trackUserRegistered({
+        account_type: isBusiness ? 'business' : 'private',
+        registration_method: 'email',
+      });
 
       Alert.alert(t('success'), t('accountCreated'));
       router.replace('/(tabs)');

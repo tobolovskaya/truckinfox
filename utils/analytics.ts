@@ -93,6 +93,15 @@ export const trackCargoRequestCreated = (params: {
   logEvent(AnalyticsEvents.CARGO_REQUEST_CREATED, params);
 };
 
+export const trackCargoRequestDeleted = (params: {
+  request_id: string;
+  cargo_type?: string;
+  had_bids: boolean;
+  bid_count?: number;
+}) => {
+  logEvent(AnalyticsEvents.CARGO_REQUEST_DELETED, params);
+};
+
 export const trackBidSubmitted = (params: {
   request_id: string;
   amount: number;
