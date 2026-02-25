@@ -682,6 +682,8 @@ export default function EditRequestScreen() {
         enableResetScrollToCoords={false}
         data={[{ key: 'form' }]}
         keyExtractor={item => item.key}
+        renderItem={() => (
+          <View>
             {/* Cargo Type */}
             <View style={styles.fieldContainer}>
               <Text style={styles.fieldLabel}>Lasttype</Text>
