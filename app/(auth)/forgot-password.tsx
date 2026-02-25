@@ -20,6 +20,7 @@ import {
 } from '../../lib/sharedStyles';
 import { auth } from '../../lib/firebase';
 import { ScreenHeader } from '../../components/ScreenHeader';
+import { BrandLogo } from '../../components/BrandLogo';
 
 export default function ForgotPasswordScreen() {
   const router = useRouter();
@@ -60,7 +61,9 @@ export default function ForgotPasswordScreen() {
       <ScreenHeader title={t('forgotPasswordTitle')} onBackPress={() => router.back()} />
 
       <View style={styles.content}>
-        <Text style={styles.title}>{t('forgotPasswordTitle')}</Text>
+        <View style={styles.branding}>
+          <BrandLogo />
+        </View>
         <Text style={styles.subtitle}>{t('forgotPasswordSubtitle')}</Text>
 
         <View style={styles.formCard}>
@@ -114,13 +117,10 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     paddingHorizontal: spacing.lg,
-    paddingTop: spacing.xxl,
+    paddingTop: spacing.lg,
   },
-  title: {
-    fontSize: fontSize.xxl,
-    fontWeight: fontWeight.semibold,
-    color: colors.text.primary,
-    marginBottom: spacing.xs,
+  branding: {
+    marginBottom: spacing.md,
   },
   subtitle: {
     fontSize: fontSize.md,

@@ -141,6 +141,7 @@ export default function LoginScreen() {
               <Text style={styles.rememberText}>{t('rememberMe')}</Text>
             </TouchableOpacity>
             <TouchableOpacity
+              style={styles.forgotPasswordButton}
               accessibilityRole="button"
               accessibilityLabel="Forgot password"
               accessibilityHint="Reset your password"
@@ -189,11 +190,11 @@ const styles = StyleSheet.create({
   scrollContent: {
     flexGrow: 1,
     paddingHorizontal: spacing.lg,
-    paddingTop: spacing.huge,
+    paddingTop: spacing.xxl,
     paddingBottom: spacing.lg,
   },
   header: {
-    marginBottom: spacing.lg,
+    marginBottom: spacing.md,
   },
   subtitle: {
     fontSize: fontSize.md,
@@ -206,7 +207,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border.light,
     padding: spacing.xl,
-    marginBottom: spacing.xl,
   },
   inputContainer: {
     marginBottom: spacing.lg,
@@ -248,15 +248,19 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    flexWrap: 'wrap',
+    rowGap: spacing.xs,
     marginBottom: spacing.xl,
   },
   rememberMe: {
     flexDirection: 'row',
     alignItems: 'center',
+    minHeight: 44,
+    paddingVertical: spacing.xs,
   },
   checkbox: {
-    width: 18,
-    height: 18,
+    width: 22,
+    height: 22,
     borderWidth: 2,
     borderColor: colors.border.default,
     borderRadius: spacing.xs,
@@ -276,6 +280,11 @@ const styles = StyleSheet.create({
     fontSize: fontSize.sm,
     color: colors.primary,
     fontWeight: fontWeight.semibold,
+  },
+  forgotPasswordButton: {
+    minHeight: 44,
+    justifyContent: 'center',
+    paddingVertical: spacing.xs,
   },
   loginButton: {
     backgroundColor: colors.primary,

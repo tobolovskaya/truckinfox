@@ -93,7 +93,7 @@ export default function RegisterScreen() {
     <View style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
-          <BrandLogo size="sm" />
+          <BrandLogo />
           <Text style={styles.title}>{t('createAccount')}</Text>
           <Text style={styles.subtitle}>{t('fillFormToCreateAccount')}</Text>
         </View>
@@ -310,7 +310,7 @@ const styles = StyleSheet.create({
     fontWeight: fontWeight.semibold,
     color: colors.text.primary,
     marginBottom: spacing.xs,
-    marginTop: spacing.sm,
+    marginTop: spacing.xs,
   },
   subtitle: {
     fontSize: fontSize.md,
