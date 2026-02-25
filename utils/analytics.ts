@@ -36,6 +36,7 @@ export const AnalyticsEvents = {
   // Bid Events
   BID_SUBMITTED: 'bid_submitted',
   BID_ACCEPTED: 'bid_accepted',
+  BID_CONVERSION: 'bid_conversion',
   BID_REJECTED: 'bid_rejected',
   BID_WITHDRAWN: 'bid_withdrawn',
 
@@ -117,6 +118,20 @@ export const trackBidAccepted = (params: {
   carrier_id?: string;
 }) => {
   logEvent(AnalyticsEvents.BID_ACCEPTED, params);
+};
+
+export const trackBidConversion = (data: {
+  request_id: string;
+  bids_count: number;
+  time_to_accept: number;
+  accepted_bid_price: number;
+}) => {
+  const conversionRate = data.bids_count > 0 ? 1 / data.bids_count : 0;
+
+  logEvent(AnalyticsEvents.BID_CONVERSION, {
+    ...data,
+    conversion_rate: conversionRate,
+  });
 };
 
 export const trackFilterApplied = (params: {
