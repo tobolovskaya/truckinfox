@@ -16,7 +16,7 @@ interface I18nContextType {
 const I18nContext = createContext<I18nContextType | undefined>(undefined);
 
 export function I18nProvider({ children }: { children: React.ReactNode }) {
-  const [currentLanguage, setCurrentLanguage] = useState<string>('en');
+  const [currentLanguage, setCurrentLanguage] = useState<string>('no');
   const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
@@ -36,8 +36,8 @@ export function I18nProvider({ children }: { children: React.ReactNode }) {
         setCurrentLanguage(languageToUse);
       } catch (error) {
         console.error('Error initializing i18n:', error);
-        await i18n.changeLanguage('en');
-        setCurrentLanguage('en');
+        await i18n.changeLanguage('no');
+        setCurrentLanguage('no');
       } finally {
         setIsReady(true);
       }

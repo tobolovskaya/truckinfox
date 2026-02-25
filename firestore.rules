@@ -139,5 +139,13 @@ service cloud.firestore {
         isOwner(resource.data.userId)
       );
     }
+
+    // Payments collection
+    match /payments/{paymentId} {
+      allow read: if isAuthenticated() && isOwner(resource.data.user_id);
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated() && isOwner(resource.data.user_id);
+      allow delete: if isAuthenticated() && isOwner(resource.data.user_id);
+    }
   }
 }

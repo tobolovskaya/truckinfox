@@ -55,7 +55,7 @@ export const initI18n = async () => {
 
   await i18n.use(initReactI18next).init({
     resources,
-    lng: getDeviceLanguage(),
+    lng: 'no',
     fallbackLng: 'no',
 
     // Default namespace
