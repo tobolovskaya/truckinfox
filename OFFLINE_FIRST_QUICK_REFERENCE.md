@@ -96,9 +96,7 @@ showToast(
 
 ### Simulate Offline
 ```typescript
-// In DevTools or test
-navigator.onLine = false;  // Web
-// Or disable network on device
+// Disable network on device/emulator
 ```
 
 ### Check Queue
@@ -363,6 +361,6 @@ import { where, orderBy, limit } from 'firebase/firestore';
 - **Document size**: Max 1MB per document
 - **Write batch**: Max 500 operations per batch
 - **Retries**: 3 attempts per operation (1s, 2s, 4s delays)
-- **Cache**: ~50MB on web, platform-dependent on mobile
+- **Cache**: Platform-dependent on mobile
 - **Timeout**: 10s per operation attempt
 

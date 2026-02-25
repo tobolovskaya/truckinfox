@@ -19,10 +19,8 @@ Comprehensive offline-first architecture with Firestore persistence, automatic o
 ### 1. Core Persistence Layer
 
 **[lib/firebase.ts](../lib/firebase.ts)** - Updated
-- Added `enableIndexedDbPersistence()` for web (multi-tab support)
-- Added `enableMultiTabIndexedDbPersistence()` with fallback
 - React Native persistence enabled automatically by SDK
-- Proper error handling for browser compatibility
+- Proper error handling for native runtime
 
 **[lib/offlineSync.ts](../lib/offlineSync.ts)** - New (280 lines)
 - `OfflineQueueItem` interface for operation tracking
@@ -85,9 +83,6 @@ Comprehensive offline-first architecture with Firestore persistence, automatic o
 
 ### ✅ Automatic Persistence
 ```typescript
-// Web: IndexedDB (50MB+)
-enableMultiTabIndexedDbPersistence(db)
-
 // React Native: Automatic
 // (Already enabled by SDK)
 ```
@@ -326,7 +321,6 @@ if (result.queued) {
 ## Performance Impact
 
 ### Storage Usage
-- **IndexedDB (Web)**: ~50MB available per origin
 - **React Native**: Platform-dependent (typically 10-100MB)
 
 ### Network Efficiency
@@ -339,13 +333,7 @@ if (result.queued) {
 - **Transparent sync**: Automatic, no user action
 - **Clear status**: UI shows exactly what's happening
 
-## Browser/Platform Support
-
-### Web
-- ✅ Chrome/Edge: IndexedDB (multi-tab)
-- ✅ Firefox: IndexedDB (multi-tab)
-- ✅ Safari: IndexedDB (single-tab)
-- ✅ Mobile browsers: Varies
+## Platform Support
 
 ### React Native
 - ✅ iOS: Automatic persistence
@@ -401,7 +389,7 @@ test('offline-first', async () => {
 ## Limitations & Workarounds
 
 ### Limitation 1: Storage Size
-- **Issue**: IndexedDB limited to ~50MB
+- **Issue**: Device storage limits vary by platform
 - **Solution**: Archive old data, cleanup queue
 
 ### Limitation 2: Complex Queries

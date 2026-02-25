@@ -53,7 +53,6 @@
 │  │                           ▼                                    │   │
 │  │  ┌────────────────────────────────────────────────────────┐  │   │
 │  │  │  Local Storage (Persistent Cache)                      │  │   │
-│  │  │  - Web: IndexedDB (50MB+, multi-tab)                   │  │   │
 │  │  │  - React Native: Native persistence (Automatic)        │  │   │
 │  │  │  - Firestore SDK: Auto-managed                         │  │   │
 │  │  └────────────────────────────────────────────────────────┘  │   │
@@ -61,9 +60,8 @@
 │       │                                                               │
 └───────┼───────────────────────────────────────────────────────────────┘
         │
-        │  Firebase SDK (firestore.ts)
-        │  - enableIndexedDbPersistence()
-        │  - enableMultiTabIndexedDbPersistence()
+      │  Firebase SDK (firestore.ts)
+      │  - Native offline persistence (automatic)
         │
         ▼
      ┌──────────────────────────────────────────────┐

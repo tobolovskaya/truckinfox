@@ -747,22 +747,6 @@ export default function NetworkIndicator() {
 ### Offline Persistence Initialization
 
 ```typescript
-// Web: Multi-tab IndexedDB persistence
-if (Platform.OS === 'web') {
-  enableMultiTabIndexedDbPersistence(firestore)
-    .then(() => {
-      console.log('✅ Firestore offline persistence enabled (web)');
-    })
-    .catch((err) => {
-      if (err.code === 'failed-precondition') {
-        // Fall back to single-tab for older browsers
-        enableIndexedDbPersistence(firestore).catch(() => {
-          console.warn('Offline persistence not available');
-        });
-      }
-    });
-}
-
 // React Native: Persistence enabled automatically by SDK
 // No configuration needed - Firebase React Native SDK
 // automatically enables offline persistence
@@ -973,7 +957,6 @@ try {
 - Polling: Queue updates every 5 seconds
 
 ### Storage
-- Web IndexedDB: ~50MB available
 - React Native: Platform specific (iOS: unlimited, Android: varies)
 - Data: Compressed JSON with timestamps
 

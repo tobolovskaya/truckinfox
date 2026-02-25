@@ -11,9 +11,7 @@ The app now supports seamless offline-first functionality using Firebase Firesto
 ## Features
 
 ### ✅ Automatic Offline Persistence
-- **Web**: IndexedDB for local caching
 - **React Native**: Built-in SDK persistence
-- **Multi-tab Support**: Automatic fallback for multiple browser tabs
 
 ### ✅ Offline Operation Queuing
 - Automatic queuing of Firestore operations when offline
@@ -187,19 +185,6 @@ console.log('Queue stats:', {
 
 When the app starts, Firestore persistence is automatically enabled:
 
-**Web**:
-```typescript
-// Multi-tab support
-enableMultiTabIndexedDbPersistence(firestore)
-  .then(() => console.log('✅ Firestore offline persistence enabled'))
-  .catch((err) => {
-    if (err.code === 'failed-precondition') {
-      // Fall back to single-tab persistence
-      enableIndexedDbPersistence(firestore);
-    }
-  });
-```
-
 **React Native**:
 - Persistence is enabled automatically by the SDK
 
@@ -359,7 +344,7 @@ if (lastError) {
 
 ## Limitations
 
-1. **IndexedDB Size**: Browser typically allows 50MB per origin
+1. **Storage Size**: Depends on device/platform limits
 2. **Offline Additions**: Documents with temporary IDs until synced
 3. **Conflict Resolution**: Last-write-wins strategy (no merge logic)
 4. **Complex Queries**: Some advanced queries may not work offline
@@ -375,13 +360,6 @@ if (lastError) {
 
 ## Testing Offline Mode
 
-### In Browser DevTools
-1. Open DevTools → Network tab
-2. Check "Offline" checkbox
-3. App continues working with cached data
-4. Uncheck "Offline" to restore connection
-5. Sync automatically triggers
-
 ### In React Native
 1. Toggle WiFi/Mobile data off
 2. App queues operations
@@ -394,7 +372,7 @@ if (lastError) {
 
 ```typescript
 // Initialization
-✅ Firestore offline persistence enabled (web - multi-tab)
+✅ Firestore offline persistence enabled (React Native - automatic)
 
 // Queuing
 📤 Offline operation queued: update in requests {documentId: "req123"}

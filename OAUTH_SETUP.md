@@ -82,8 +82,7 @@ Users can tap the Apple icon on the login screen to sign in with their Apple ID.
 3. Navigate to **Authentication** → **Sign-in method**
 4. Click on **Google**
 5. Click **Enable**
-6. Note the **Web client ID** (auto-generated)
-7. Click **Save**
+6. Click **Save**
 
 #### 2. Get iOS OAuth Client ID
 
@@ -123,7 +122,6 @@ Create or update `.env` file:
 
 ```env
 # Firebase OAuth Configuration
-EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID=your-web-client-id.apps.googleusercontent.com
 EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID=your-ios-client-id.apps.googleusercontent.com
 EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID=your-android-client-id.apps.googleusercontent.com
 ```
@@ -140,7 +138,7 @@ const signInWithGoogle = async (): Promise<AuthResult<User>> => {
     const clientId = Platform.select({
       ios: process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID,
       android: process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID,
-      default: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID,
+      default: process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID,
     });
 
     if (!clientId) {
@@ -149,7 +147,6 @@ const signInWithGoogle = async (): Promise<AuthResult<User>> => {
 
     // TODO: Implement full Google OAuth flow
     // Use @react-native-google-signin/google-signin for native experience
-    // Or expo-auth-session for web-based flow
   } catch (error) {
     // ... error handling
   }
@@ -172,8 +169,8 @@ import { GoogleSignin } from '@react-native-google-signin/google-signin';
 
 // Configure Google Sign In
 GoogleSignin.configure({
-  webClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID,
   iosClientId: process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID,
+  androidClientId: process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID,
 });
 
 const signInWithGoogle = async (): Promise<AuthResult<User>> => {

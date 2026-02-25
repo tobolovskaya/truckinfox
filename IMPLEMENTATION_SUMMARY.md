@@ -474,17 +474,14 @@ Added comprehensive Firebase Performance Monitoring and Analytics tracking:
 
 - Created `utils/performance.ts` with trace management utilities
 - Enhanced `utils/analytics.ts` with new event types
-- Updated `lib/firebase.ts` to initialize Analytics and Performance Monitoring with platform-specific checks
-- Added proper React Native platform detection to skip web-only Firebase services
-- Used `isSupported()` check for Analytics on web platform
-- Integrated monitoring into FilterSheet, LazyImage, and chat components
-- Automatic fallback to console logging for native platforms (iOS/Android)
+- Updated `lib/firebase.ts` for native-only runtime behavior
+- Integrated monitoring scaffolding into FilterSheet, LazyImage, and chat components
+- Native builds use console logging fallback for analytics/performance signals
 
 **Platform Support:**
 
-- **Web**: Full Firebase Analytics and Performance Monitoring with IndexedDB and cookies
-- **iOS/Android**: Falls back to console logging (Firebase Analytics/Performance are web-only)
-- Automatic platform detection using React Native's `Platform.OS`
+- **iOS/Android**: Console logging fallback (native-only build)
+- No web platform target in the current app setup
 - No errors or warnings on native platforms
 
 **Benefits:**
@@ -1544,7 +1541,6 @@ To enable Google Sign In:
 1. Configure OAuth client IDs in Firebase Console
 2. Add client IDs to environment variables:
    ```env
-   EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID=...
    EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID=...
    EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID=...
    ```
