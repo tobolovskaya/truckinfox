@@ -17,7 +17,7 @@ export default function OrdersScreen() {
       <ScreenHeader
         title={t('orders') || 'Ordrer'}
         showBackButton={false}
-        showBrandMark
+        showBrandMark={true}
         brandMarkMaxTitleLength={18}
         rightAction={{
           icon: 'notifications-outline',

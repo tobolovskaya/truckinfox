@@ -40,6 +40,7 @@ import {
 import { trackBidSubmitted, trackBidAccepted } from '../../utils/analytics';
 import { createChat } from '../../utils/chatManagement';
 import { colors, spacing, fontSize, borderRadius } from '../../lib/sharedStyles';
+import MapView, { Marker, Polyline, PROVIDER_GOOGLE } from 'react-native-maps';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -543,43 +544,139 @@ export default function RequestDetailsScreen() {
         );
 
       case 'route':
-        return (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Rute</Text>
+        // Show map if coordinates are available, otherwise show text addresses
+        if (request?.from_lat && request?.from_lng && request?.to_lat && request?.to_lng) {
+          // Calculate center point and initial region
+          const centerLat = (request.from_lat + request.to_lat) / 2;
+          const centerLng = (request.from_lng + request.to_lng) / 2;
+          const latDelta = Math.abs(request.from_lat - request.to_lat) * 1.5 + 0.05;
+          const lngDelta = Math.abs(request.from_lng - request.to_lng) * 1.5 + 0.05;
 
-            <View style={styles.routeRow}>
-              <Ionicons name="location" size={24} color={colors.success} />
-              <View style={styles.routeInfo}>
-                <Text style={styles.routeLabel}>Fra</Text>
-                <Text style={styles.routeAddress}>{request?.from_address}</Text>
-                <Text style={styles.routeDate}>{formatDate(request?.pickup_date || '')}</Text>
+          return (
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Rute</Text>
+              <MapView
+                style={styles.map}
+                provider={PROVIDER_GOOGLE}
+                initialRegion={{
+                  latitude: centerLat,
+                  longitude: centerLng,
+                  latitudeDelta: latDelta,
+                  longitudeDelta: lngDelta,
+                }}
+              >
+                {/* Pickup location marker */}
+                <Marker
+                  coordinate={{
+                    latitude: request.from_lat,
+                    longitude: request.from_lng,
+                  }}
+                  title="Pickup"
+                  description={request.from_address}
+                  pinColor="green"
+                />
+
+                {/* Delivery location marker */}
+                <Marker
+                  coordinate={{
+                    latitude: request.to_lat,
+                    longitude: request.to_lng,
+                  }}
+                  title="Delivery"
+                  description={request.to_address}
+                  pinColor="red"
+                />
+
+                {/* Route line */}
+                <Polyline
+                  coordinates={[
+                    {
+                      latitude: request.from_lat,
+                      longitude: request.from_lng,
+                    },
+                    {
+                      latitude: request.to_lat,
+                      longitude: request.to_lng,
+                    },
+                  ]}
+                  strokeColor={colors.primary}
+                  strokeWidth={3}
+                />
+              </MapView>
+
+              {/* Route info below map */}
+              <View style={styles.routeInfoBox}>
+                <View style={styles.routeInfoRow}>
+                  <Ionicons name="location" size={18} color={colors.success} />
+                  <View style={styles.routeInfoCol}>
+                    <Text style={styles.routeLabel}>Fra</Text>
+                    <Text style={styles.routeAddress}>{request.from_address}</Text>
+                    <Text style={styles.routeDate}>{formatDate(request.pickup_date || '')}</Text>
+                  </View>
+                </View>
+
+                <View style={styles.divider} />
+
+                <View style={styles.routeInfoRow}>
+                  <Ionicons name="location" size={18} color={colors.error} />
+                  <View style={styles.routeInfoCol}>
+                    <Text style={styles.routeLabel}>Til</Text>
+                    <Text style={styles.routeAddress}>{request.to_address}</Text>
+                    <Text style={styles.routeDate}>{formatDate(request.delivery_date || '')}</Text>
+                  </View>
+                </View>
               </View>
-            </View>
 
-            <View style={styles.routeDivider}>
-              <View style={styles.routeLine} />
-              <Ionicons name="arrow-down" size={16} color={colors.text.tertiary} />
+              {request?.distance_km && (
+                <View style={styles.distanceInfo}>
+                  <Ionicons name="navigate-outline" size={16} color={colors.text.secondary} />
+                  <Text style={styles.distanceText}>
+                    {typeof request.distance_km === 'number' ? request.distance_km.toFixed(0) : '0'} km
+                  </Text>
+                </View>
+              )}
             </View>
+          );
+        } else {
+          // Fallback to text view if no coordinates
+          return (
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Rute</Text>
 
-            <View style={styles.routeRow}>
-              <Ionicons name="location" size={24} color={colors.error} />
-              <View style={styles.routeInfo}>
-                <Text style={styles.routeLabel}>Til</Text>
-                <Text style={styles.routeAddress}>{request?.to_address}</Text>
-                <Text style={styles.routeDate}>{formatDate(request?.delivery_date || '')}</Text>
+              <View style={styles.routeRow}>
+                <Ionicons name="location" size={24} color={colors.success} />
+                <View style={styles.routeInfo}>
+                  <Text style={styles.routeLabel}>Fra</Text>
+                  <Text style={styles.routeAddress}>{request?.from_address}</Text>
+                  <Text style={styles.routeDate}>{formatDate(request?.pickup_date || '')}</Text>
+                </View>
               </View>
-            </View>
 
-            {request?.distance_km && (
-              <View style={styles.distanceInfo}>
-                <Ionicons name="navigate-outline" size={16} color={colors.text.secondary} />
-                <Text style={styles.distanceText}>
-                  {typeof request.distance_km === 'number' ? request.distance_km.toFixed(0) : '0'} km
-                </Text>
+              <View style={styles.routeDivider}>
+                <View style={styles.routeLine} />
+                <Ionicons name="arrow-down" size={16} color={colors.text.tertiary} />
               </View>
-            )}
-          </View>
-        );
+
+              <View style={styles.routeRow}>
+                <Ionicons name="location" size={24} color={colors.error} />
+                <View style={styles.routeInfo}>
+                  <Text style={styles.routeLabel}>Til</Text>
+                  <Text style={styles.routeAddress}>{request?.to_address}</Text>
+                  <Text style={styles.routeDate}>{formatDate(request?.delivery_date || '')}</Text>
+                </View>
+              </View>
+
+              {request?.distance_km && (
+                <View style={styles.distanceInfo}>
+                  <Ionicons name="navigate-outline" size={16} color={colors.text.secondary} />
+                  <Text style={styles.distanceText}>
+                    {typeof request.distance_km === 'number' ? request.distance_km.toFixed(0) : '0'} km
+                  </Text>
+                </View>
+              )}
+            </View>
+          );
+        }
 
       case 'customer':
         if (!request?.users) return null;
@@ -1229,5 +1326,28 @@ const styles = StyleSheet.create({
   },
   galleryNavButtonRight: {
     right: spacing.lg,
+  },
+  map: {
+    height: 300,
+    borderRadius: borderRadius.md,
+    overflow: 'hidden',
+    marginBottom: spacing.md,
+  },
+  routeInfoBox: {
+    backgroundColor: colors.backgroundLight,
+    borderRadius: borderRadius.md,
+    padding: spacing.md,
+    gap: spacing.md,
+  },
+  routeInfoRow: {
+    flexDirection: 'row',
+    gap: spacing.md,
+  },
+  routeInfoCol: {
+    flex: 1,
+  },
+  divider: {
+    height: 1,
+    backgroundColor: colors.border.default,
   },
 });
