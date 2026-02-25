@@ -267,6 +267,17 @@ export default function RequestDetailsScreen() {
     triggerHapticFeedback.medium();
 
     try {
+      // 🔒 Fetch all other pending bids OUTSIDE transaction (more reliable)
+      const otherBidsQuery = query(
+        collection(db, 'bids'),
+        where('request_id', '==', id),
+        where('status', '==', 'pending')
+      );
+      const otherBidsSnap = await getDocs(otherBidsQuery);
+      const otherBidRefs = otherBidsSnap.docs
+        .filter(bidDoc => bidDoc.id !== bid.id)
+        .map(bidDoc => bidDoc.ref);
+
       // Use transaction for atomic operations
       await runTransaction(db, async transaction => {
         // 1. Verify bid is still pending
@@ -309,23 +320,14 @@ export default function RequestDetailsScreen() {
           updated_at: serverTimestamp(),
         });
 
-        // 5. Reject other pending bids
-        const otherBidsQuery = query(
-          collection(db, 'bids'),
-          where('request_id', '==', id),
-          where('status', '==', 'pending')
-        );
-        const otherBidsSnap = await getDocs(otherBidsQuery);
-
-        otherBidsSnap.docs.forEach(otherBidDoc => {
-          if (otherBidDoc.id !== bid.id) {
-            transaction.update(otherBidDoc.ref, {
-              status: 'rejected',
-              rejected_at: serverTimestamp(),
-              rejected_reason: 'Et annet bud ble godtatt',
-              updated_at: serverTimestamp(),
-            });
-          }
+        // 5. 🔒 Reject other pending bids (atomic - using refs from before)
+        otherBidRefs.forEach(otherBidRef => {
+          transaction.update(otherBidRef, {
+            status: 'rejected',
+            rejected_at: serverTimestamp(),
+            rejected_reason: 'Et annet bud ble godtatt',
+            updated_at: serverTimestamp(),
+          });
         });
       });
 
