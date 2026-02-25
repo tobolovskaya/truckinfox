@@ -72,8 +72,7 @@ export function ScreenHeader({
 }: ScreenHeaderProps) {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const shouldShowBrandMark =
-    showBrandMark && title.trim().length <= brandMarkMaxTitleLength;
+  const shouldShowBrandMark = showBrandMark && title.trim().length <= brandMarkMaxTitleLength;
 
   const handleBackPress = () => {
     if (Platform.OS === 'ios') {
