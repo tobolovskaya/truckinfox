@@ -28,29 +28,26 @@ export default function OrdersScreen() {
       />
       <View style={styles.emptyState}>
         <Ionicons name="list-outline" size={64} color={colors.text.tertiary} />
-        <Text style={styles.emptyTitle}>{t('noOrdersYet') || 'No orders yet'}</Text>
-        <Text style={styles.emptyText}>
-          {t('exploreOrCreateRequest') ||
-            'Create your first request or explore marketplace orders.'}
-        </Text>
+        <Text style={styles.emptyTitle}>{t('noOrdersFound')}</Text>
+        <Text style={styles.emptyText}>{t('createRequestToSeeOrders')}</Text>
 
         <View style={styles.ctaRow}>
           <TouchableOpacity
             style={styles.primaryButton}
             onPress={() => router.push('/(tabs)/create')}
             accessibilityRole="button"
-            accessibilityLabel={t('createRequest')}
+            accessibilityLabel={t('createCargoRequest')}
           >
-            <Text style={styles.primaryButtonText}>{t('createRequest')}</Text>
+            <Text style={styles.primaryButtonText}>{t('createCargoRequest')}</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
             style={styles.secondaryButton}
             onPress={() => router.push('/(tabs)/home')}
             accessibilityRole="button"
-            accessibilityLabel={t('marketplace')}
+            accessibilityLabel={t('allRequests')}
           >
-            <Text style={styles.secondaryButtonText}>{t('goToMarketplace')}</Text>
+            <Text style={styles.secondaryButtonText}>{t('allRequests')}</Text>
           </TouchableOpacity>
         </View>
       </View>
