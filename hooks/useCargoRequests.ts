@@ -17,7 +17,7 @@ import {
 } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { i18n } from '../lib/i18n';
-import { normalizeSearchQuery } from '../utils/search';
+import { searchRequests } from '../utils/search';
 
 export interface CargoRequest {
   id: string;
@@ -129,14 +129,8 @@ const sortRequestsClientSide = (requests: CargoRequest[], sortBy: SortOption): C
 };
 
 const buildConstraints = (options: UseCargoRequestsOptions) => {
-  const { activeTab, filters, sortBy, searchQuery, userId } = options;
+  const { activeTab, filters, sortBy, userId } = options;
   const constraints: QueryConstraint[] = [];
-
-  // Add search filter if query exists
-  const normalizedSearchQuery = searchQuery?.trim() ? normalizeSearchQuery(searchQuery) : '';
-  if (normalizedSearchQuery) {
-    constraints.push(where('search_terms', 'array-contains', normalizedSearchQuery));
-  }
 
   // Tab-specific constraints
   if (activeTab === 'my') {
@@ -185,12 +179,110 @@ const buildConstraints = (options: UseCargoRequestsOptions) => {
   return constraints;
 };
 
+const hydrateCargoRequest = async (
+  docSnapshot: DocumentSnapshot,
+  userId?: string
+): Promise<CargoRequest | null> => {
+  if (!docSnapshot.exists()) {
+    return null;
+  }
+
+  const requestData = docSnapshot.data();
+  const requestUserId = typeof requestData.user_id === 'string' ? requestData.user_id : undefined;
+
+  let userData: CargoRequest['users'] = {
+    full_name: 'Unknown User',
+    user_type: 'customer',
+    rating: 0,
+  };
+
+  if (requestUserId) {
+    const userDoc = await getDoc(doc(db, 'users', requestUserId));
+    if (userDoc.exists()) {
+      const userDocData = userDoc.data() as Partial<CargoRequest['users']>;
+      userData = {
+        full_name: userDocData.full_name ?? 'Unknown User',
+        user_type: userDocData.user_type ?? 'customer',
+        rating: typeof userDocData.rating === 'number' ? userDocData.rating : 0,
+        avatar_url: userDocData.avatar_url,
+      };
+    }
+  }
+
+  const bidsQuery = query(collection(db, 'bids'), where('cargo_request_id', '==', docSnapshot.id));
+  const bidsSnapshot = await getDocs(bidsQuery);
+  const bids = bidsSnapshot.docs.map(docItem => ({ id: docItem.id, ...docItem.data() }));
+
+  let isFavorite = false;
+  if (userId) {
+    const favoritesQuery = query(
+      collection(db, 'user_favorites'),
+      where('cargo_request_id', '==', docSnapshot.id),
+      where('user_id', '==', userId)
+    );
+    const favoritesSnapshot = await getDocs(favoritesQuery);
+    isFavorite = !favoritesSnapshot.empty;
+  }
+
+  return {
+    id: docSnapshot.id,
+    ...requestData,
+    users: userData,
+    bids,
+    is_favorite: isFavorite,
+  } as CargoRequest;
+};
+
 const fetchCargoRequestsPage = async (
   options: UseCargoRequestsOptions,
   lastVisible: DocumentSnapshot | null
 ): Promise<CargoRequestsPage> => {
   if (options.activeTab === 'my' && !options.userId) {
     return { items: [], lastVisible: null, hasMore: false };
+  }
+
+  const hasSearchQuery = Boolean(options.searchQuery?.trim());
+  if (hasSearchQuery && options.activeTab !== 'my') {
+    if (lastVisible) {
+      return { items: [], lastVisible: null, hasMore: false };
+    }
+
+    const searchHits = await searchRequests(options.searchQuery ?? '', PAGE_SIZE);
+    const matchedSnapshots = await Promise.all(
+      searchHits.map(hit => getDoc(doc(db, 'cargo_requests', String(hit.id))))
+    );
+    const hydrated = await Promise.all(
+      matchedSnapshots.map(snapshot => hydrateCargoRequest(snapshot, options.userId))
+    );
+
+    let filteredData = hydrated.filter((request): request is CargoRequest => request !== null);
+
+    if (options.filters.cargo_type) {
+      filteredData = filteredData.filter(request => request.cargo_type === options.filters.cargo_type);
+    }
+    if (options.filters.price_type) {
+      filteredData = filteredData.filter(request => request.price_type === options.filters.price_type);
+    }
+    if (options.filters.price_min && !isNaN(parseFloat(options.filters.price_min))) {
+      const minPrice = parseFloat(options.filters.price_min);
+      filteredData = filteredData.filter(request => toNumber(request.price) >= minPrice);
+    }
+    if (options.filters.price_max && !isNaN(parseFloat(options.filters.price_max))) {
+      const maxPrice = parseFloat(options.filters.price_max);
+      filteredData = filteredData.filter(request => toNumber(request.price) <= maxPrice);
+    }
+    if (options.filters.city) {
+      const cityLower = options.filters.city.toLowerCase();
+      filteredData = filteredData.filter(
+        request =>
+          request.from_address?.toLowerCase().includes(cityLower) ||
+          request.to_address?.toLowerCase().includes(cityLower)
+      );
+    }
+
+    filteredData = sortRequestsClientSide(filteredData, options.sortBy);
+
+    return { items: filteredData, lastVisible: null, hasMore: false };
   }
 
   const constraints = buildConstraints(options);
@@ -236,55 +328,10 @@ const fetchCargoRequestsPage = async (
   const lastDoc = querySnapshot.docs[querySnapshot.docs.length - 1] ?? null;
   const hasMore = querySnapshot.docs.length === PAGE_SIZE;
 
-  const data = await Promise.all(
-    querySnapshot.docs.map(async docSnapshot => {
-      const requestData = docSnapshot.data();
-
-      let userData: CargoRequest['users'] = {
-        full_name: 'Unknown User',
-        user_type: 'customer',
-        rating: 0,
-      };
-      if (requestData.user_id) {
-        const userDoc = await getDoc(doc(db, 'users', requestData.user_id));
-        if (userDoc.exists()) {
-          const userDocData = userDoc.data() as Partial<CargoRequest['users']>;
-          userData = {
-            full_name: userDocData.full_name ?? 'Unknown User',
-            user_type: userDocData.user_type ?? 'customer',
-            rating: typeof userDocData.rating === 'number' ? userDocData.rating : 0,
-            avatar_url: userDocData.avatar_url,
-          };
-        }
-      }
-
-      const bidsQuery = query(
-        collection(db, 'bids'),
-        where('cargo_request_id', '==', docSnapshot.id)
-      );
-      const bidsSnapshot = await getDocs(bidsQuery);
-      const bids = bidsSnapshot.docs.map(docItem => ({ id: docItem.id, ...docItem.data() }));
-
-      let isFavorite = false;
-      if (options.userId) {
-        const favoritesQuery = query(
-          collection(db, 'user_favorites'),
-          where('cargo_request_id', '==', docSnapshot.id),
-          where('user_id', '==', options.userId)
-        );
-        const favoritesSnapshot = await getDocs(favoritesQuery);
-        isFavorite = !favoritesSnapshot.empty;
-      }
-
-      return {
-        id: docSnapshot.id,
-        ...requestData,
-        users: userData,
-        bids,
-        is_favorite: isFavorite,
-      } as CargoRequest;
-    })
+  const hydrated = await Promise.all(
+    querySnapshot.docs.map(docSnapshot => hydrateCargoRequest(docSnapshot, options.userId))
   );
+  const data = hydrated.filter((request): request is CargoRequest => request !== null);
 
   let filteredData = data;
   if (options.activeTab === 'my' && usedMyTabFallback) {

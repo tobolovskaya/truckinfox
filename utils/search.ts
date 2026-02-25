@@ -1,4 +1,5 @@
 import type { DocumentData, Firestore } from 'firebase/firestore';
+import algoliasearch from 'algoliasearch';
 
 /**
  * Search utilities for generating searchable terms
@@ -128,6 +129,26 @@ export function normalizeSearchQuery(query: string): string {
   return query.toLowerCase().trim();
 }
 
+interface AlgoliaCargoRequestHit {
+  objectID: string;
+  title?: string;
+  cargo_type?: string;
+  from_address?: string;
+  [key: string]: unknown;
+}
+
+const algoliaAppId = process.env.EXPO_PUBLIC_ALGOLIA_APP_ID;
+const algoliaSearchKey = process.env.EXPO_PUBLIC_ALGOLIA_SEARCH_KEY;
+const algoliaCargoRequestsIndexName =
+  process.env.EXPO_PUBLIC_ALGOLIA_CARGO_REQUESTS_INDEX ?? 'cargo_requests';
+
+const algoliaClient =
+  algoliaAppId && algoliaSearchKey
+    ? algoliasearch(algoliaAppId, algoliaSearchKey)
+    : null;
+
+const cargoRequestsIndex = algoliaClient?.initIndex(algoliaCargoRequestsIndexName) ?? null;
+
 /**
  * Search users by name using Firestore search_terms
  *
@@ -206,42 +227,44 @@ export async function searchUsers(
  * @note Requires cargo_requests collection to have search_terms array field
  */
 export async function searchCargoRequests(
-  db: Firestore,
+  _db: Firestore,
   searchQuery: string,
   limit: number = 20
 ): Promise<Array<{ id: string } & DocumentData>> {
-  if (!searchQuery || searchQuery.trim().length === 0) {
+  return searchRequests(searchQuery, limit);
+}
+
+/**
+ * Search cargo requests with Algolia
+ *
+ * Replaces Firestore array-contains search with full-text Algolia search.
+ */
+export async function searchRequests(
+  query: string,
+  limit: number = 20
+): Promise<Array<{ id: string } & DocumentData>> {
+  if (!query || query.trim().length === 0) {
     return [];
   }
 
-  const {
-    collection,
-    query,
-    where,
-    getDocs,
-    orderBy,
-    limit: firestoreLimit,
-  } = await import('firebase/firestore');
-
-  const normalizedQuery = normalizeSearchQuery(searchQuery);
+  if (!cargoRequestsIndex) {
+    console.warn('Algolia is not configured. Set EXPO_PUBLIC_ALGOLIA_APP_ID and EXPO_PUBLIC_ALGOLIA_SEARCH_KEY.');
+    return [];
+  }
 
   try {
-    const requestsQuery = query(
-      collection(db, 'cargo_requests'),
-      where('search_terms', 'array-contains', normalizedQuery),
-      where('status', '==', 'open'),
-      orderBy('created_at', 'desc'),
-      firestoreLimit(limit)
-    );
+    const { hits } = await cargoRequestsIndex.search<AlgoliaCargoRequestHit>(query.trim(), {
+      filters: 'status:active',
+      hitsPerPage: limit,
+      attributesToRetrieve: ['title', 'cargo_type', 'from_address'],
+    });
 
-    const snapshot = await getDocs(requestsQuery);
-
-    return snapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data(),
+    return hits.map(hit => ({
+      id: hit.objectID,
+      ...hit,
     }));
   } catch (error) {
-    console.error('Error searching cargo requests:', error);
+    console.error('Error searching cargo requests in Algolia:', error);
     return [];
   }
 }
