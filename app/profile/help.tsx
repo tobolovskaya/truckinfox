@@ -1,13 +1,5 @@
 ﻿import React, { useState, useMemo } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-  Linking,
-  Alert,
-} from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Linking, Alert } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
 import { ScreenHeader } from '../../components/ScreenHeader';
@@ -104,9 +96,7 @@ export default function HelpSupportScreen() {
             <Ionicons name="mail-outline" size={32} color={colors.primary} />
             <View style={styles.contactInfo}>
               <Text style={styles.contactTitle}>{t('needHelp')}</Text>
-              <Text style={styles.contactSubtitle}>
-                {t('contactUsDirectly')}
-              </Text>
+              <Text style={styles.contactSubtitle}>{t('contactUsDirectly')}</Text>
             </View>
           </View>
 
@@ -117,19 +107,13 @@ export default function HelpSupportScreen() {
             accessibilityLabel={t('contactSupport')}
           >
             <Text style={styles.contactButtonText}>{t('contactSupport')}</Text>
-            <Ionicons
-              name="chevron-forward"
-              size={20}
-              color={colors.primary}
-            />
+            <Ionicons name="chevron-forward" size={20} color={colors.primary} />
           </TouchableOpacity>
         </View>
 
         {/* FAQ Section */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>
-            {t('frequentlyAskedQuestions')}
-          </Text>
+          <Text style={styles.sectionTitle}>{t('frequentlyAskedQuestions')}</Text>
 
           <View style={styles.faqContainer}>
             {faqItems.map((item, index) => (
@@ -140,32 +124,22 @@ export default function HelpSupportScreen() {
                   accessibilityRole="button"
                   accessibilityLabel={`Question: ${item.question}`}
                   accessibilityHint={
-                    expandedFAQ === item.id
-                      ? 'Double tap to collapse'
-                      : 'Double tap to expand'
+                    expandedFAQ === item.id ? 'Double tap to collapse' : 'Double tap to expand'
                   }
                 >
                   <View style={styles.faqHeader}>
                     <Ionicons
-                      name={
-                        expandedFAQ === item.id
-                          ? 'chevron-down'
-                          : 'chevron-forward'
-                      }
+                      name={expandedFAQ === item.id ? 'chevron-down' : 'chevron-forward'}
                       size={20}
                       color={colors.primary}
                     />
                     <Text style={styles.faqQuestion}>{item.question}</Text>
                   </View>
 
-                  {expandedFAQ === item.id && (
-                    <Text style={styles.faqAnswer}>{item.answer}</Text>
-                  )}
+                  {expandedFAQ === item.id && <Text style={styles.faqAnswer}>{item.answer}</Text>}
                 </TouchableOpacity>
 
-                {index < faqItems.length - 1 && (
-                  <View style={styles.faqDivider} />
-                )}
+                {index < faqItems.length - 1 && <View style={styles.faqDivider} />}
               </View>
             ))}
           </View>
@@ -182,19 +156,11 @@ export default function HelpSupportScreen() {
               accessibilityRole="button"
               accessibilityLabel={t('termsOfService')}
             >
-              <Ionicons
-                name="document-text-outline"
-                size={24}
-                color={colors.primary}
-              />
+              <Ionicons name="document-text-outline" size={24} color={colors.primary} />
               <View style={styles.legalTextContainer}>
                 <Text style={styles.legalText}>{t('termsOfService')}</Text>
               </View>
-              <Ionicons
-                name="chevron-forward"
-                size={20}
-                color={colors.text.tertiary}
-              />
+              <Ionicons name="chevron-forward" size={20} color={colors.text.tertiary} />
             </TouchableOpacity>
 
             <View style={styles.legalDivider} />
@@ -205,19 +171,11 @@ export default function HelpSupportScreen() {
               accessibilityRole="button"
               accessibilityLabel={t('privacyPolicy')}
             >
-              <Ionicons
-                name="shield-outline"
-                size={24}
-                color={colors.primary}
-              />
+              <Ionicons name="shield-outline" size={24} color={colors.primary} />
               <View style={styles.legalTextContainer}>
                 <Text style={styles.legalText}>{t('privacyPolicy')}</Text>
               </View>
-              <Ionicons
-                name="chevron-forward"
-                size={20}
-                color={colors.text.tertiary}
-              />
+              <Ionicons name="chevron-forward" size={20} color={colors.text.tertiary} />
             </TouchableOpacity>
 
             <View style={styles.legalDivider} />
@@ -228,30 +186,18 @@ export default function HelpSupportScreen() {
               accessibilityRole="button"
               accessibilityLabel={t('about')}
             >
-              <Ionicons
-                name="information-circle-outline"
-                size={24}
-                color={colors.primary}
-              />
+              <Ionicons name="information-circle-outline" size={24} color={colors.primary} />
               <View style={styles.legalTextContainer}>
                 <Text style={styles.legalText}>{t('about')}</Text>
               </View>
-              <Ionicons
-                name="chevron-forward"
-                size={20}
-                color={colors.text.tertiary}
-              />
+              <Ionicons name="chevron-forward" size={20} color={colors.text.tertiary} />
             </TouchableOpacity>
           </View>
         </View>
 
         {/* Info Box */}
         <View style={styles.infoBox}>
-          <Ionicons
-            name="information-circle"
-            size={20}
-            color={colors.info}
-          />
+          <Ionicons name="information-circle" size={20} color={colors.info} />
           <Text style={styles.infoText}>{t('responseTimeInfo')}</Text>
         </View>
       </ScrollView>
