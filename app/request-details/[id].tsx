@@ -255,6 +255,13 @@ export default function RequestDetailsScreen() {
   };
 
   const processBidAcceptance = async (bid: Bid) => {
+    // Verify user is the request owner
+    if (!request || request.user_id !== user?.uid) {
+      Alert.alert('Feil', 'Du kan bare godta bud på dine egne forespørsler');
+      triggerHapticFeedback.error();
+      return;
+    }
+
     setAcceptingBid(bid.id);
     triggerHapticFeedback.medium();
 
@@ -331,11 +338,18 @@ export default function RequestDetailsScreen() {
 
       // Create chat between customer and carrier
       try {
-        if (user?.uid && id) {
-          await createChat(id as string, user.uid, bid.carrier_id);
+        if (request?.user_id && id) {
+          console.log('Creating chat with:', {
+            requestId: id,
+            customerId: request.user_id,
+            carrierId: bid.carrier_id,
+            currentUserId: user?.uid,
+          });
+          await createChat(id as string, request.user_id, bid.carrier_id);
         }
       } catch (chatError) {
-        console.error('⚠️ Error creating chat:', chatError);
+        console.error('⚠️ Error creating chat (non-critical):', chatError);
+        // Don't fail the bid acceptance if chat creation fails
       }
 
       // Refresh bids
