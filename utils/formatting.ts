@@ -77,6 +77,9 @@ export const formatRelativeTime = (date: Date | string, locale = 'no-NO'): strin
  * Format distance in kilometers
  */
 export const formatDistance = (distanceInKm: number, locale = 'no-NO'): string => {
+  if (distanceInKm == null || typeof distanceInKm !== 'number' || isNaN(distanceInKm)) {
+    return locale === 'no-NO' ? '0 km' : '0 km';
+  }
   if (distanceInKm < 1) {
     return locale === 'no-NO'
       ? `${Math.round(distanceInKm * 1000)} m`
@@ -89,6 +92,9 @@ export const formatDistance = (distanceInKm: number, locale = 'no-NO'): string =
  * Format weight in kilograms or tons
  */
 export const formatWeight = (weightInKg: number, locale = 'no-NO'): string => {
+  if (weightInKg == null || typeof weightInKg !== 'number' || isNaN(weightInKg)) {
+    return locale === 'no-NO' ? '0 kg' : '0 kg';
+  }
   if (weightInKg < 1000) {
     return locale === 'no-NO' ? `${weightInKg} kg` : `${weightInKg} kg`;
   }

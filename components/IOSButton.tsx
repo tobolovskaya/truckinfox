@@ -21,6 +21,8 @@ interface IOSButtonProps {
   textStyle?: TextStyle;
   fullWidth?: boolean;
   hapticFeedback?: 'light' | 'medium' | 'heavy';
+  accessibilityLabel?: string;
+  accessibilityHint?: string;
 }
 
 export function IOSButton({
@@ -36,6 +38,8 @@ export function IOSButton({
   textStyle,
   fullWidth = false,
   hapticFeedback = 'light',
+  accessibilityLabel,
+  accessibilityHint,
 }: IOSButtonProps) {
   const handlePress = () => {
     if (disabled || loading) return;
@@ -200,6 +204,13 @@ export function IOSButton({
       onPress={handlePress}
       disabled={disabled || loading}
       activeOpacity={0.7}
+      accessibilityRole="button"
+      accessibilityLabel={accessibilityLabel || title}
+      accessibilityHint={accessibilityHint}
+      accessibilityState={{
+        disabled: disabled || loading,
+        busy: loading,
+      }}
     >
       {renderContent()}
     </TouchableOpacity>

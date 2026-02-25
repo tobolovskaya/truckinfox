@@ -451,7 +451,8 @@ export default function ChatScreen() {
       carrier: 'Sjåfør',
     };
     const role = roleMap[userType] || 'Bruker';
-    return `${role} • ⭐ ${rating.toFixed(1)}`;
+    const ratingText = typeof rating === 'number' ? rating.toFixed(1) : '0.0';
+    return `${role} • ⭐ ${ratingText}`;
   };
 
   const animateMessage = (messageId: string) => {

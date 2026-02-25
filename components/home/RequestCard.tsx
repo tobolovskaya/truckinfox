@@ -87,8 +87,9 @@ export const RequestCard: React.FC<RequestCardProps> = ({
       onPress={() => onPress(request)}
       activeOpacity={0.9}
       accessibilityRole="button"
-      accessibilityLabel={title}
+      accessibilityLabel={`${title}. ${t('from')} ${fromAddress} ${t('to')} ${toAddress}. ${priceText}`}
       accessibilityHint={t('openRequestDetails')}
+      accessible={true}
     >
       {request.images?.[0] ? (
         <Image source={{ uri: request.images[0] }} style={styles.image} resizeMode="cover" />
@@ -134,7 +135,10 @@ export const RequestCard: React.FC<RequestCardProps> = ({
           <TouchableOpacity
             onPress={() => onToggleFavorite(request.id)}
             accessibilityRole="button"
-            accessibilityLabel={request.is_favorite ? t('unfavorite') : t('favorite')}
+            accessibilityLabel={request.is_favorite ? t('removeFromFavorites') : t('addToFavorites')}
+            accessibilityHint={request.is_favorite ? t('removeFavoriteHint') : t('addFavoriteHint')}
+            accessibilityState={{ selected: request.is_favorite }}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           >
             <Ionicons
               name={request.is_favorite ? 'heart' : 'heart-outline'}

@@ -559,7 +559,9 @@ export default function RequestDetailsScreen() {
             {request?.distance_km && (
               <View style={styles.distanceInfo}>
                 <Ionicons name="navigate-outline" size={16} color={colors.text.secondary} />
-                <Text style={styles.distanceText}>{request.distance_km.toFixed(0)} km</Text>
+                <Text style={styles.distanceText}>
+                  {typeof request.distance_km === 'number' ? request.distance_km.toFixed(0) : '0'} km
+                </Text>
               </View>
             )}
           </View>
@@ -577,7 +579,9 @@ export default function RequestDetailsScreen() {
                 <Text style={styles.customerName}>{request.users.full_name}</Text>
                 <View style={styles.ratingRow}>
                   <Ionicons name="star" size={16} color="#FFA726" />
-                  <Text style={styles.ratingText}>{request.users.rating.toFixed(1)}</Text>
+                  <Text style={styles.ratingText}>
+                    {typeof request.users.rating === 'number' ? request.users.rating.toFixed(1) : '0.0'}
+                  </Text>
                 </View>
               </View>
               {!isCustomer && (
@@ -655,7 +659,9 @@ export default function RequestDetailsScreen() {
                     <Text style={styles.bidUserName}>{bid.users?.full_name}</Text>
                     <View style={styles.ratingRow}>
                       <Ionicons name="star" size={14} color="#FFA726" />
-                      <Text style={styles.bidRating}>{bid.users?.rating.toFixed(1)}</Text>
+                      <Text style={styles.bidRating}>
+                        {typeof bid.users?.rating === 'number' ? bid.users.rating.toFixed(1) : '0.0'}
+                      </Text>
                     </View>
                   </View>
                   <View style={styles.bidPriceContainer}>
