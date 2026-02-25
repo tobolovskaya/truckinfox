@@ -414,13 +414,33 @@ export default function ChatScreen() {
     }
   };
 
-  const formatTime = (dateString: string) => {
-    const date = new Date(dateString);
+  const convertToDate = (timestamp: any): Date => {
+    if (!timestamp) return new Date();
+    // Handle Firestore Timestamp object
+    if (timestamp.toDate && typeof timestamp.toDate === 'function') {
+      return timestamp.toDate();
+    }
+    // Handle Date object
+    if (timestamp instanceof Date) {
+      return timestamp;
+    }
+    // Handle string
+    return new Date(timestamp);
+  };
+
+  const formatTime = (timestamp: any) => {
+    const date = convertToDate(timestamp);
+    if (isNaN(date.getTime())) {
+      return '--:--';
+    }
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
+  const formatDate = (timestamp: any) => {
+    const date = convertToDate(timestamp);
+    if (isNaN(date.getTime())) {
+      return 'Invalid Date';
+    }
     const today = new Date();
     const yesterday = new Date(today);
     yesterday.setDate(yesterday.getDate() - 1);
@@ -614,7 +634,7 @@ export default function ChatScreen() {
 
   // Group messages by date
   const groupedMessages = messages.reduce((groups: { [key: string]: Message[] }, message) => {
-    const date = new Date(message.created_at).toDateString();
+    const date = convertToDate(message.created_at).toDateString();
     if (!groups[date]) {
       groups[date] = [];
     }
