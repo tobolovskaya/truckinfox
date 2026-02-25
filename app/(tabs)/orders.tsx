@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, FlatList, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -32,12 +32,18 @@ export default function OrdersScreen() {
 
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
+  const indexWarningShownRef = useRef(false);
 
   useEffect(() => {
     if (user?.uid) {
       fetchOrders();
     }
   }, [user?.uid]);
+
+  const isIndexUnavailableError = (error: any): boolean => {
+    const errorMessage = error?.message || '';
+    return errorMessage.includes('requires an index') || errorMessage.includes('index is currently building');
+  };
 
   const fetchOrders = async () => {
     if (!user?.uid) {
@@ -78,8 +84,50 @@ export default function OrdersScreen() {
         .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
       setOrders(allOrders);
-    } catch (error) {
-      console.error('Error fetching orders:', error);
+    } catch (error: any) {
+      if (isIndexUnavailableError(error)) {
+        // Fallback: query without orderBy and sort locally
+        if (!indexWarningShownRef.current) {
+          console.warn('⏳ Orders index is being created. Using local fallback sorting...');
+          indexWarningShownRef.current = true;
+        }
+        
+        try {
+          const customerOrdersQuery = query(
+            collection(db, 'orders'),
+            where('customer_id', '==', user.uid)
+          );
+
+          const carrierOrdersQuery = query(
+            collection(db, 'orders'),
+            where('carrier_id', '==', user.uid)
+          );
+
+          const [customerSnap, carrierSnap] = await Promise.all([
+            getDocs(customerOrdersQuery),
+            getDocs(carrierOrdersQuery),
+          ]);
+
+          const customerOrders = customerSnap.docs.map(doc => ({
+            id: doc.id,
+            ...(doc.data() as Omit<Order, 'id'>),
+          }));
+
+          const carrierOrders = carrierSnap.docs.map(doc => ({
+            id: doc.id,
+            ...(doc.data() as Omit<Order, 'id'>),
+          }));
+
+          const allOrders = [...customerOrders, ...carrierOrders]
+            .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+
+          setOrders(allOrders);
+        } catch (fallbackError) {
+          console.error('Error fetching orders (fallback):', fallbackError);
+        }
+      } else {
+        console.error('Error fetching orders:', error);
+      }
     } finally {
       setLoading(false);
     }
