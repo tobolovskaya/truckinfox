@@ -46,6 +46,8 @@ import { fetchWithTimeout } from '../../utils/fetchWithTimeout';
 import { LazyImage } from '../../components/LazyImage';
 import { generateCargoSearchTerms } from '../../utils/search';
 import { ScreenHeader } from '../../components/ScreenHeader';
+import { safeAddDoc, safeUpdateDoc } from '../../lib/safeFirestoreOps';
+import { validateBeforeCreation } from '../../utils/requestValidation';
 
 const CARGO_TYPES = [
   { id: 'automotive', label: 'Bil/Motor' },
@@ -413,36 +415,57 @@ export default function CreateRequestScreen() {
       return true;
     }
 
-    const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
-
-    const recentRequests = await getDocs(
-      query(
-        collection(db, 'cargo_requests'),
-        where('user_id', '==', user.uid),
-        where('created_at', '>', since),
-        orderBy('created_at', 'desc')
-      )
-    );
-
-    const similar = recentRequests.docs.find(docSnapshot => {
-      const data = docSnapshot.data();
-      return (
-        data.from_address === formData.from_address &&
-        data.to_address === formData.to_address &&
-        Math.abs((data.weight ?? 0) - Number(formData.weight)) < 10
-      );
+    // ✅ Use comprehensive validation with offline support
+    const validationReport = await validateBeforeCreation(user.uid, {
+      title: formData.title,
+      description: formData.description,
+      from_address: formData.from_address,
+      to_address: formData.to_address,
+      cargo_type: formData.cargo_type,
+      weight: formData.weight,
+      price: formData.price,
     });
 
-    if (!similar) {
-      return true;
+    // Check for validation errors
+    if (validationReport.validationErrors && validationReport.validationErrors.length > 0) {
+      Alert.alert(
+        t('validationError') || 'Validation Error',
+        validationReport.validationErrors.join('\n'),
+        [{ text: t('ok') || 'OK', style: 'default' }]
+      );
+      return false;
     }
 
-    return new Promise(resolve => {
-      Alert.alert(t('duplicateRequestTitle'), t('duplicateRequestMessage'), [
-        { text: t('no'), style: 'cancel', onPress: () => resolve(false) },
-        { text: t('yes'), onPress: () => resolve(true) },
-      ]);
-    });
+    // Check for duplicates
+    if (validationReport.isDuplicate) {
+      return new Promise(resolve => {
+        Alert.alert(
+          t('duplicateRequestTitle') || 'Duplicate Request',
+          validationReport.error || 'You already have a similar request',
+          [
+            { text: t('no') || 'No', style: 'cancel', onPress: () => resolve(false) },
+            { text: t('yes') || 'Yes', onPress: () => resolve(true) },
+          ]
+        );
+      });
+    }
+
+    // Check for rate limiting
+    if (validationReport.rateLimited) {
+      Alert.alert(
+        t('rateLimitTitle') || 'Rate Limited',
+        validationReport.error || 'You are creating requests too quickly. Please wait.',
+        [{ text: t('ok') || 'OK', style: 'default' }]
+      );
+      return false;
+    }
+
+    // ✅ Show offline warning if checking duplicates offline
+    if (validationReport.offlineMode) {
+      console.warn('⚠️ Checking duplicates offline. Will verify on sync.');
+    }
+
+    return true;
   };
 
   const compressImage = async (uri: string) => {
@@ -611,7 +634,8 @@ export default function CreateRequestScreen() {
         toAddress
       );
 
-      const requestRef = await addDoc(collection(db, 'cargo_requests'), {
+      // ✅ Use safeAddDoc for offline-first support
+      const result = await safeAddDoc('cargo_requests', {
         user_id: user?.uid,
         title,
         description,
@@ -636,7 +660,11 @@ export default function CreateRequestScreen() {
         created_at: new Date().toISOString(),
       });
 
-      const request = { id: requestRef.id };
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to create request');
+      }
+
+      const request = { id: result.id };
 
       trackCargoCreated({
         cargo_type: formData.cargo_type,
@@ -648,11 +676,12 @@ export default function CreateRequestScreen() {
         distance_km: formData.distance_km || undefined,
       });
 
-      if (images.length > 0 && request) {
+      if (images.length > 0 && request && request.id) {
         const imageUrls = await uploadImages(request.id);
 
         if (imageUrls.length > 0) {
-          await updateDoc(doc(db, 'cargo_requests', request.id), {
+          // ✅ Use safeUpdateDoc for offline-first support
+          await safeUpdateDoc('cargo_requests', request.id, {
             images: imageUrls,
           });
         }
@@ -662,7 +691,11 @@ export default function CreateRequestScreen() {
       triggerHapticFeedback.success();
       setShowSuccessAnimation(true);
 
-      toast.success(t('requestCreated'));
+      // ✅ Show appropriate message based on sync status
+      const successMessage = result.fromCache
+        ? `${t('requestCreated')} - ${t('syncingWhenOnline') || 'Will sync when online'}`
+        : t('requestCreated');
+      toast.success(successMessage);
 
       await AsyncStorage.removeItem(DRAFT_KEY);
 
