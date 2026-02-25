@@ -38,18 +38,23 @@ export default function LoginScreen() {
     try {
       const result = await signIn(email, password);
       if (!result.success) {
-        // Check error code to determine if user account doesn't exist
-        const isUserNotFound =
-          result.errorCode === 'auth/user-not-found' ||
-          result.errorCode === 'auth/invalid-credential' ||
-          result.errorCode === 'auth/wrong-password';
-
-        if (isUserNotFound) {
+        if (result.errorCode === 'auth/user-not-found') {
           Alert.alert(t('userNotFound'), t('wouldYouLikeToRegister'), [
             { text: t('cancel'), style: 'cancel' },
             {
               text: t('signUp'),
               onPress: () => router.push('/(auth)/register'),
+            },
+          ]);
+        } else if (
+          result.errorCode === 'auth/invalid-credential' ||
+          result.errorCode === 'auth/wrong-password'
+        ) {
+          Alert.alert(t('loginError'), t('invalidCredentials'), [
+            { text: t('cancel'), style: 'cancel' },
+            {
+              text: t('forgotPassword'),
+              onPress: () => router.push('/(auth)/forgot-password'),
             },
           ]);
         } else {
