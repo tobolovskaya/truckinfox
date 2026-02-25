@@ -34,7 +34,9 @@ LogBox.ignoreLogs([
 export default function RootLayout() {
   // Initialize offline-first sync on app startup
   useEffect(() => {
-    initializeOfflineSync();
+    const cleanup = initializeOfflineSync();
+
+    return cleanup;
   }, []);
 
   return (

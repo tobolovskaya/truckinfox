@@ -17,6 +17,8 @@ import {
   doc,
   serverTimestamp,
 } from 'firebase/firestore';
+import { Platform } from 'react-native';
+import NetInfo from '@react-native-community/netinfo';
 
 export interface OfflineQueueItem {
   id: string;
@@ -33,6 +35,7 @@ export interface OfflineQueueItem {
  * Will be synced when connection restored
  */
 const offlineQueue: Map<string, OfflineQueueItem> = new Map();
+let offlineSyncCleanup: (() => void) | null = null;
 
 /**
  * Add operation to offline queue
@@ -222,22 +225,64 @@ export const queryLocal = async (
 /**
  * Enable offline persistence configuration
  */
-export const initializeOfflineSync = (): void => {
+export const initializeOfflineSync = (): (() => void) => {
   console.log('🔌 Offline sync utilities initialized');
 
+  if (offlineSyncCleanup) {
+    offlineSyncCleanup();
+    offlineSyncCleanup = null;
+  }
+
   // Listen for online/offline events
-  if (typeof window !== 'undefined') {
-    window.addEventListener('online', () => {
+  if (Platform.OS === 'web' && typeof window !== 'undefined' && typeof window.addEventListener === 'function') {
+    const handleOnline = () => {
       console.log('🌐 Online detected - syncing offline queue...');
       syncOfflineQueue().catch(error => {
         console.error('Failed to sync offline queue:', error);
       });
-    });
+    };
 
-    window.addEventListener('offline', () => {
+    const handleOffline = () => {
       console.log('📴 Offline detected - offline cache active');
-    });
+    };
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    offlineSyncCleanup = () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+
+    return () => {
+      if (offlineSyncCleanup) {
+        offlineSyncCleanup();
+        offlineSyncCleanup = null;
+      }
+    };
   }
+
+  const unsubscribe = NetInfo.addEventListener(state => {
+    if (state.isConnected) {
+      console.log('🌐 Online detected - syncing offline queue...');
+      syncOfflineQueue().catch(error => {
+        console.error('Failed to sync offline queue:', error);
+      });
+    } else {
+      console.log('📴 Offline detected - offline cache active');
+    }
+  });
+
+  offlineSyncCleanup = () => {
+    unsubscribe();
+  };
+
+  return () => {
+    if (offlineSyncCleanup) {
+      offlineSyncCleanup();
+      offlineSyncCleanup = null;
+    }
+  };
 };
 
 /**
