@@ -1,5 +1,14 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Switch, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  Switch,
+  TouchableOpacity,
+  Alert,
+  ActivityIndicator,
+} from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
@@ -94,7 +103,7 @@ export default function SettingsScreen() {
 
     try {
       setSaving(true);
-      const updates: any = {};
+      const updates: Record<string, unknown> = {};
 
       if (notifSettings) {
         updates.notification_settings = notifSettings;
@@ -196,7 +205,7 @@ export default function SettingsScreen() {
               <Switch
                 value={notificationSettings.push_notifications_enabled}
                 onValueChange={() => handleNotificationToggle('push_notifications_enabled')}
-                trackColor={{ false: colors.divider, true: `${colors.primary}40` }}
+                trackColor={{ false: colors.border.default, true: `${colors.primary}40` }}
                 thumbColor={notificationSettings.push_notifications_enabled ? colors.primary : colors.text.tertiary}
               />
             </View>
@@ -213,7 +222,7 @@ export default function SettingsScreen() {
                   <Switch
                     value={notificationSettings.new_orders_notifications}
                     onValueChange={() => handleNotificationToggle('new_orders_notifications')}
-                    trackColor={{ false: colors.divider, true: `${colors.primary}40` }}
+                    trackColor={{ false: colors.border.default, true: `${colors.primary}40` }}
                     thumbColor={notificationSettings.new_orders_notifications ? colors.primary : colors.text.tertiary}
                   />
                 </View>
@@ -228,7 +237,7 @@ export default function SettingsScreen() {
                   <Switch
                     value={notificationSettings.status_updates_notifications}
                     onValueChange={() => handleNotificationToggle('status_updates_notifications')}
-                    trackColor={{ false: colors.divider, true: `${colors.primary}40` }}
+                    trackColor={{ false: colors.border.default, true: `${colors.primary}40` }}
                     thumbColor={notificationSettings.status_updates_notifications ? colors.primary : colors.text.tertiary}
                   />
                 </View>
@@ -243,7 +252,7 @@ export default function SettingsScreen() {
                   <Switch
                     value={notificationSettings.bid_notifications}
                     onValueChange={() => handleNotificationToggle('bid_notifications')}
-                    trackColor={{ false: colors.divider, true: `${colors.primary}40` }}
+                    trackColor={{ false: colors.border.default, true: `${colors.primary}40` }}
                     thumbColor={notificationSettings.bid_notifications ? colors.primary : colors.text.tertiary}
                   />
                 </View>
@@ -258,7 +267,7 @@ export default function SettingsScreen() {
                   <Switch
                     value={notificationSettings.message_notifications}
                     onValueChange={() => handleNotificationToggle('message_notifications')}
-                    trackColor={{ false: colors.divider, true: `${colors.primary}40` }}
+                    trackColor={{ false: colors.border.default, true: `${colors.primary}40` }}
                     thumbColor={notificationSettings.message_notifications ? colors.primary : colors.text.tertiary}
                   />
                 </View>
@@ -282,7 +291,7 @@ export default function SettingsScreen() {
               <Switch
                 value={privacySettings.show_phone_publicly}
                 onValueChange={() => handlePrivacyToggle('show_phone_publicly')}
-                trackColor={{ false: colors.divider, true: `${colors.primary}40` }}
+                trackColor={{ false: colors.border.default, true: `${colors.primary}40` }}
                 thumbColor={privacySettings.show_phone_publicly ? colors.primary : colors.text.tertiary}
               />
             </View>
@@ -299,7 +308,7 @@ export default function SettingsScreen() {
               <Switch
                 value={privacySettings.show_email_publicly}
                 onValueChange={() => handlePrivacyToggle('show_email_publicly')}
-                trackColor={{ false: colors.divider, true: `${colors.primary}40` }}
+                trackColor={{ false: colors.border.default, true: `${colors.primary}40` }}
                 thumbColor={privacySettings.show_email_publicly ? colors.primary : colors.text.tertiary}
               />
             </View>
@@ -316,7 +325,7 @@ export default function SettingsScreen() {
               <Switch
                 value={privacySettings.allow_location_tracking}
                 onValueChange={() => handlePrivacyToggle('allow_location_tracking')}
-                trackColor={{ false: colors.divider, true: `${colors.primary}40` }}
+                trackColor={{ false: colors.border.default, true: `${colors.primary}40` }}
                 thumbColor={privacySettings.allow_location_tracking ? colors.primary : colors.text.tertiary}
               />
             </View>
@@ -414,11 +423,11 @@ const styles = StyleSheet.create({
   },
   divider: {
     height: 1,
-    backgroundColor: colors.divider,
+    backgroundColor: colors.border.default,
   },
   smallDivider: {
     height: 1,
-    backgroundColor: colors.divider,
+    backgroundColor: colors.border.default,
     marginLeft: spacing.md + 24,
   },
   languageButtons: {
@@ -433,7 +442,7 @@ const styles = StyleSheet.create({
     borderRadius: spacing.sm,
     backgroundColor: colors.background,
     borderWidth: 1,
-    borderColor: colors.divider,
+    borderColor: colors.border.default,
     alignItems: 'center',
   },
   languageButtonActive: {
