@@ -15,8 +15,8 @@ admin.initializeApp();
  */
 async function withRetry<T>(
   fn: () => Promise<T>,
-  retries: number = 3,
-  delayMs: number = 1000
+  retries = 3,
+  delayMs = 1000
 ): Promise<T> {
   let lastError: Error | null = null;
 
@@ -164,11 +164,17 @@ export const verifyCarrier = functions.https.onCall(async (data, context) => {
 
   try {
     // 🔄 Call Brønnøysundregistrene API with retry logic
-    const response = await withRetry(() =>
-      fetch(`https://data.brreg.no/enhetsregisteret/api/enheter/${organizationNumber}`, {
-        timeout: 10000, // 10 second timeout
-      })
-    );
+    const response = await withRetry(async () => {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000);
+      try {
+        return await fetch(`https://data.brreg.no/enhetsregisteret/api/enheter/${organizationNumber}`, {
+          signal: controller.signal,
+        });
+      } finally {
+        clearTimeout(timeoutId);
+      }
+    });
 
     if (!response.ok) {
       throw new functions.https.HttpsError('not-found', 'Organization not found');
@@ -544,17 +550,17 @@ export const sendBatchNotificationsOnNewRequest = functions.firestore
           );
 
           // Log failed token indices for cleanup
-          if (response.failures.length > 0) {
-            const failedTokens = response.failures
-              .map(failure => {
-                const tokenIndex = batch.indexOf(failure.error.multicastSendError?.message || '');
-                return { tokenIndex, error: failure.error.code };
-              })
-              .filter(f => f.tokenIndex >= 0);
+          const failedTokens = response.responses
+            .map((sendResponse, index) => {
+              if (sendResponse.error) {
+                return { tokenIndex: index, error: sendResponse.error.code };
+              }
+              return null;
+            })
+            .filter((token): token is { tokenIndex: number; error: string } => token !== null);
 
-            if (failedTokens.length > 0) {
-              console.warn(`⚠️ Failed tokens in batch ${batchIndex + 1}:`, failedTokens);
-            }
+          if (failedTokens.length > 0) {
+            console.warn(`⚠️ Failed tokens in batch ${batchIndex + 1}:`, failedTokens);
           }
         } catch (error) {
           console.error(
@@ -590,6 +596,7 @@ export const sendBatchNotificationsOnNewRequest = functions.firestore
       // Step 5: Create notification history for rate limiting
       const now = admin.firestore.FieldValue.serverTimestamp();
       const batch = admin.firestore().batch();
+      let historyCount = 0;
 
       carrierIds.forEach((carrierId, index) => {
         if (index < totalSent) {
@@ -605,12 +612,13 @@ export const sendBatchNotificationsOnNewRequest = functions.firestore
             timestamp: now,
             expires_at: new Date(Date.now() + 3600000), // 1 hour
           });
+          historyCount++;
         }
       });
 
-      if (batch._mutations.length > 0) {
+      if (historyCount > 0) {
         await batch.commit();
-        console.log(`✅ Recorded ${batch._mutations.length} notification history entries`);
+        console.log(`✅ Recorded ${historyCount} notification history entries`);
       }
 
       // Step 6: Log success metrics

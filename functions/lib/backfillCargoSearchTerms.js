@@ -96,6 +96,7 @@ async function run() {
     let needsUpdate = 0;
     let updated = 0;
     let lastDoc = null;
+    // eslint-disable-next-line no-constant-condition
     while (true) {
         let pageQuery = db
             .collection('cargo_requests')

@@ -26,8 +26,8 @@ const GOOGLE_PLACES_API_KEY = process.env.GOOGLE_PLACES_API_KEY;
  */
 async function withRetry<T>(
   fn: () => Promise<T>,
-  retries: number = 2,
-  delayMs: number = 1000
+  retries = 2,
+  delayMs = 1000
 ): Promise<T> {
   let lastError: Error | null = null;
 
@@ -123,7 +123,10 @@ export const placesAutocomplete = functions.https.onCall(async (data, context) =
     validateUserAuth(context);
 
     // Check rate limits
-    const isWithinLimit = await checkRateLimit(context.auth!.uid);
+    if (!context.auth?.uid) {
+      throw new functions.https.HttpsError('unauthenticated', 'User must be authenticated');
+    }
+    const isWithinLimit = await checkRateLimit(context.auth.uid);
     if (!isWithinLimit) {
       throw new functions.https.HttpsError(
         'resource-exhausted',
