@@ -49,15 +49,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,
-    flex: 1,
   },
   userTextWrap: {
     flex: 1,
   },
   welcomeText: {
-    fontSize: fontSize.sm,
+    fontSize: fontSize.md,
     fontWeight: fontWeight.semibold,
-    color: colors.text.secondary,
+    color: colors.text.primary,
     flexShrink: 1,
   },
 });
