@@ -1,4 +1,4 @@
-import { useCallback, useMemo } from 'react';
+import { useCallback, useMemo, useRef } from 'react';
 import { useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
 import { FirebaseError } from 'firebase/app';
 import {
@@ -51,6 +51,18 @@ interface UsePaymentHistoryOptions {
  */
 export const usePaymentHistory = ({ userId, statusFilter }: UsePaymentHistoryOptions) => {
   const queryClient = useQueryClient();
+  const hasLoggedIndexFallbackWarning = useRef(false);
+
+  const isIndexUnavailableError = useCallback((error: unknown) => {
+    if (!(error instanceof FirebaseError)) {
+      return false;
+    }
+
+    return (
+      error.code === 'failed-precondition' &&
+      error.message.toLowerCase().includes('requires an index')
+    );
+  }, []);
 
   const buildConstraints = useCallback((): QueryConstraint[] => {
     const constraints: QueryConstraint[] = [where('user_id', '==', userId)];
@@ -97,6 +109,36 @@ export const usePaymentHistory = ({ userId, statusFilter }: UsePaymentHistoryOpt
           hasMore: items.length === 20,
         };
       } catch (error) {
+        if (isIndexUnavailableError(error)) {
+          if (!hasLoggedIndexFallbackWarning.current) {
+            console.warn(
+              'Payment history index is still building. Falling back to local sort/filter query.'
+            );
+            hasLoggedIndexFallbackWarning.current = true;
+          }
+
+          const fallbackSnapshot = await getDocs(
+            query(collection(db, 'payments'), where('user_id', '==', userId), limit(100))
+          );
+
+          const fallbackItems = fallbackSnapshot.docs
+            .map(doc => ({
+              id: doc.id,
+              ...doc.data(),
+            }))
+            .filter(item => !statusFilter || item.status === statusFilter)
+            .sort(
+              (a, b) =>
+                new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+            ) as PaymentRecord[];
+
+          return {
+            items: fallbackItems,
+            lastVisible: null,
+            hasMore: false,
+          };
+        }
+
         console.error('Error fetching payment history:', error);
         if (error instanceof FirebaseError) {
           throw new Error(
@@ -108,7 +150,7 @@ export const usePaymentHistory = ({ userId, statusFilter }: UsePaymentHistoryOpt
         throw error;
       }
     },
-    [buildConstraints]
+    [buildConstraints, isIndexUnavailableError, statusFilter, userId]
   );
 
   const { data, error, isLoading, isFetchingNextPage, hasNextPage, fetchNextPage, refetch } =
