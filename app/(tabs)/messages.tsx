@@ -327,6 +327,7 @@ export default function MessagesScreen() {
         <ScreenHeader
           title={t('messages')}
           showBackButton={false}
+          showBrandMark
           rightAction={{
             icon: 'notifications-outline',
             onPress: () => router.push('/(tabs)/notifications'),
@@ -344,6 +345,7 @@ export default function MessagesScreen() {
       <ScreenHeader
         title={t('messages')}
         showBackButton={false}
+        showBrandMark
         rightAction={{
           icon: 'notifications-outline',
           onPress: () => router.push('/(tabs)/notifications'),

@@ -13,6 +13,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../contexts/AuthContext';
+import { BrandLogo } from '../../components/BrandLogo';
 import {
   colors,
   spacing,
@@ -92,6 +93,7 @@ export default function RegisterScreen() {
     <View style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
+          <BrandLogo size="sm" />
           <Text style={styles.title}>{t('createAccount')}</Text>
           <Text style={styles.subtitle}>{t('fillFormToCreateAccount')}</Text>
         </View>
@@ -308,6 +310,7 @@ const styles = StyleSheet.create({
     fontWeight: fontWeight.semibold,
     color: colors.text.primary,
     marginBottom: spacing.xs,
+    marginTop: spacing.sm,
   },
   subtitle: {
     fontSize: fontSize.md,

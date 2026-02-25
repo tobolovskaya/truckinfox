@@ -14,6 +14,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useTranslation } from 'react-i18next';
 import { trackUserLogin } from '../../utils/analytics';
 import { colors, spacing, fontSize, fontWeight, borderRadius } from '../../lib/sharedStyles';
+import { BrandLogo } from '../../components/BrandLogo';
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
@@ -69,7 +70,7 @@ export default function LoginScreen() {
     <View style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
-          <Text style={styles.title}>TruckinFox</Text>
+          <BrandLogo />
           <Text style={styles.subtitle}>{t('signInToAccount')}</Text>
         </View>
 
@@ -187,23 +188,17 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     flexGrow: 1,
-    justifyContent: 'center',
     paddingHorizontal: spacing.lg,
-    paddingTop: spacing.xxl,
+    paddingTop: spacing.huge,
     paddingBottom: spacing.lg,
   },
   header: {
     marginBottom: spacing.lg,
   },
-  title: {
-    fontSize: fontSize.xxl,
-    fontWeight: fontWeight.semibold,
-    color: colors.text.primary,
-    marginBottom: spacing.xs,
-  },
   subtitle: {
     fontSize: fontSize.md,
     color: colors.text.secondary,
+    marginTop: spacing.sm,
   },
   formContainer: {
     backgroundColor: colors.white,

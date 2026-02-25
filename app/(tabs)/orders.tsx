@@ -15,6 +15,7 @@ export default function OrdersScreen() {
       <ScreenHeader
         title="Orders"
         showBackButton={false}
+        showBrandMark
         rightAction={{
           icon: 'notifications-outline',
           onPress: () => router.push('/(tabs)/notifications'),

@@ -78,6 +78,7 @@ export default function ProfileScreen() {
       <ScreenHeader
         title={t('profile')}
         showBackButton={false}
+        showBrandMark
         rightAction={{
           icon: 'notifications-outline',
           onPress: () => router.push('/(tabs)/notifications'),

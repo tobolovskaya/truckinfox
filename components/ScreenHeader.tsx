@@ -6,6 +6,7 @@ import { useRouter } from 'expo-router';
 import { colors, spacing, fontSize, fontWeight, borderRadius, shadows } from '../lib/sharedStyles';
 import { TOUCH_TARGET } from '../constants/touchTargets';
 import * as Haptics from 'expo-haptics';
+import { BrandLogo } from './BrandLogo';
 
 interface ScreenHeaderProps {
   /** Header title text */
@@ -33,6 +34,8 @@ interface ScreenHeaderProps {
   showBorder?: boolean;
   /** Custom content to replace title */
   customCenter?: React.ReactNode;
+  /** Show compact brand mark next to title */
+  showBrandMark?: boolean;
 }
 
 /**
@@ -62,6 +65,7 @@ export function ScreenHeader({
   backgroundColor = colors.white,
   showBorder = true,
   customCenter,
+  showBrandMark = false,
 }: ScreenHeaderProps) {
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -112,9 +116,12 @@ export function ScreenHeader({
         {/* Center: Title or Custom Content */}
         <View style={styles.centerSection}>
           {customCenter || (
-            <Text style={styles.title} numberOfLines={1}>
-              {title}
-            </Text>
+            <View style={styles.titleRow}>
+              {showBrandMark && <BrandLogo size="sm" variant="mark" />}
+              <Text style={styles.title} numberOfLines={1}>
+                {title}
+              </Text>
+            </View>
           )}
         </View>
 
@@ -215,6 +222,14 @@ const styles = StyleSheet.create({
     fontWeight: fontWeight.bold,
     color: colors.text.primary,
     textAlign: 'center',
+    flexShrink: 1,
+  },
+  titleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.xs,
+    maxWidth: '100%',
   },
   badge: {
     position: 'absolute',

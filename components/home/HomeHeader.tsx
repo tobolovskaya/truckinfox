@@ -5,6 +5,7 @@ import { colors, spacing, fontSize, fontWeight } from '../../lib/sharedStyles';
 import Avatar from '../Avatar';
 import { useTranslation } from 'react-i18next';
 import { ScreenHeader } from '../ScreenHeader';
+import { BrandLogo } from '../BrandLogo';
 
 interface HomeHeaderProps {
   avatarUrl?: string;
@@ -36,7 +37,10 @@ export const HomeHeader: React.FC<HomeHeaderProps> = ({ avatarUrl, displayName, 
             iconColor={colors.primary}
           />
           <View style={styles.userTextWrap}>
-            <Text style={styles.welcomeText}>Hei, {displayName}!</Text>
+            <View style={styles.brandAndWelcomeRow}>
+              <BrandLogo size="sm" variant="mark" />
+              <Text style={styles.welcomeText}>Hei, {displayName}!</Text>
+            </View>
           </View>
         </View>
       }
@@ -54,9 +58,15 @@ const styles = StyleSheet.create({
   userTextWrap: {
     flex: 1,
   },
+  brandAndWelcomeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+  },
   welcomeText: {
     fontSize: fontSize.xl,
     fontWeight: fontWeight.semibold,
     color: colors.text.primary,
+    flexShrink: 1,
   },
 });
