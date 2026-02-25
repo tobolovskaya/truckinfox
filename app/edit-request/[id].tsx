@@ -1121,45 +1121,7 @@ const styles = StyleSheet.create({
     color: colors.text.secondary,
     marginTop: spacing.lg,
   },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: spacing.xl,
-    paddingBottom: spacing.lg,
-    backgroundColor: colors.white,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border.light,
-  },
-  backButton: {
-    width: 40,
-    height: 40,
-    justifyContent: 'center',
-    alignItems: 'flex-start',
-  },
-  headerTitle: {
-    fontSize: fontSize.xl,
-    fontWeight: fontWeight.bold,
-    color: colors.text.primary,
-    flex: 1,
-    textAlign: 'center',
-  },
-  saveButton: {
-    backgroundColor: colors.primary,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.sm,
-    borderRadius: borderRadius.md,
-    minWidth: 60,
-    alignItems: 'center',
-  },
-  saveButtonDisabled: {
-    opacity: 0.6,
-  },
-  saveButtonText: {
-    color: colors.white,
-    fontSize: fontSize.sm,
-    fontWeight: fontWeight.semibold,
-  },
+
   scrollContent: {
     padding: spacing.lg,
   },
