@@ -41,6 +41,7 @@ import { trackBidSubmitted, trackBidAccepted } from '../../utils/analytics';
 import { createChat } from '../../utils/chatManagement';
 import { colors, spacing, fontSize, borderRadius } from '../../lib/sharedStyles';
 import MapView, { Marker, Polyline, PROVIDER_GOOGLE } from 'react-native-maps';
+import { sanitizeMessage } from '../../utils/sanitization';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -205,11 +206,14 @@ export default function RequestDetailsScreen() {
         throw new Error('User not authenticated');
       }
 
+      // 🔐 Sanitize bid message before sending
+      const sanitizedMessage = bidMessage.trim() ? sanitizeMessage(bidMessage.trim(), 1000) : '';
+
       await addDoc(collection(db, 'bids'), {
         request_id: id,
         carrier_id: user.uid,
         price: amount,
-        message: bidMessage.trim(),
+        message: sanitizedMessage,
         status: 'pending',
         created_at: serverTimestamp(),
       });

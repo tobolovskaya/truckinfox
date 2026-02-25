@@ -37,6 +37,7 @@ import {
   borderRadius,
   shadows,
 } from '../../lib/sharedStyles';
+import { sanitizeMessage } from '../../utils/sanitization';
 
 interface Order {
   id: string;
@@ -150,7 +151,7 @@ export default function ReviewScreen() {
         reviewer_id: user.uid,
         reviewed_id: reviewedId,
         rating: rating,
-        comment: comment.trim() || null,
+        comment: comment.trim() ? sanitizeMessage(comment.trim(), 1000) : null,
         created_at: serverTimestamp(),
       });
 
