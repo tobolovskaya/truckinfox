@@ -9,18 +9,13 @@ import {
   ActivityIndicator,
   Alert,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../contexts/AuthContext';
 import { BrandLogo } from '../../components/BrandLogo';
-import {
-  colors,
-  spacing,
-  fontSize,
-  fontWeight,
-  borderRadius,
-} from '../../lib/sharedStyles';
+import { colors, spacing, fontSize, fontWeight, borderRadius } from '../../lib/sharedStyles';
 
 type AccountType = 'private' | 'business';
 
@@ -90,10 +85,10 @@ export default function RegisterScreen() {
   };
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
-          <BrandLogo />
+          <BrandLogo size="sm" />
           <Text style={styles.title}>{t('createAccount')}</Text>
           <Text style={styles.subtitle}>{t('fillFormToCreateAccount')}</Text>
         </View>
@@ -103,7 +98,10 @@ export default function RegisterScreen() {
             <Text style={styles.label}>{t('accountType')}</Text>
             <View style={styles.segmentRow}>
               <TouchableOpacity
-                style={[styles.segmentButton, accountType === 'private' && styles.segmentButtonActive]}
+                style={[
+                  styles.segmentButton,
+                  accountType === 'private' && styles.segmentButtonActive,
+                ]}
                 onPress={() => setAccountType('private')}
                 accessibilityRole="button"
                 accessibilityLabel={t('private')}
@@ -118,7 +116,10 @@ export default function RegisterScreen() {
                 </Text>
               </TouchableOpacity>
               <TouchableOpacity
-                style={[styles.segmentButton, accountType === 'business' && styles.segmentButtonActive]}
+                style={[
+                  styles.segmentButton,
+                  accountType === 'business' && styles.segmentButtonActive,
+                ]}
                 onPress={() => setAccountType('business')}
                 accessibilityRole="button"
                 accessibilityLabel={t('business')}
@@ -214,7 +215,10 @@ export default function RegisterScreen() {
                 secureTextEntry={!showPassword}
                 autoCapitalize="none"
               />
-              <TouchableOpacity style={styles.eyeButton} onPress={() => setShowPassword(!showPassword)}>
+              <TouchableOpacity
+                style={styles.eyeButton}
+                onPress={() => setShowPassword(!showPassword)}
+              >
                 <Ionicons
                   name={showPassword ? 'eye-outline' : 'eye-off-outline'}
                   size={20}
@@ -287,7 +291,7 @@ export default function RegisterScreen() {
           </View>
         </View>
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 }
 
@@ -299,10 +303,11 @@ const styles = StyleSheet.create({
   scrollContent: {
     flexGrow: 1,
     paddingHorizontal: spacing.lg,
-    paddingTop: spacing.xxl,
+    paddingTop: spacing.xl,
     paddingBottom: spacing.lg,
   },
   header: {
+    alignItems: 'center',
     marginBottom: spacing.lg,
   },
   title: {
@@ -311,10 +316,12 @@ const styles = StyleSheet.create({
     color: colors.text.primary,
     marginBottom: spacing.xs,
     marginTop: spacing.xs,
+    textAlign: 'center',
   },
   subtitle: {
     fontSize: fontSize.md,
     color: colors.text.secondary,
+    textAlign: 'center',
   },
   formCard: {
     backgroundColor: colors.white,
