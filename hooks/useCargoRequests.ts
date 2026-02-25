@@ -17,7 +17,7 @@ import {
 } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { i18n } from '../lib/i18n';
-import { searchRequests } from '../utils/search';
+import { normalizeSearchQuery } from '../utils/search';
 
 export interface CargoRequest {
   id: string;
@@ -129,8 +129,13 @@ const sortRequestsClientSide = (requests: CargoRequest[], sortBy: SortOption): C
 };
 
 const buildConstraints = (options: UseCargoRequestsOptions) => {
-  const { activeTab, filters, sortBy, userId } = options;
+  const { activeTab, filters, sortBy, searchQuery, userId } = options;
   const constraints: QueryConstraint[] = [];
+
+  const normalizedSearchQuery = searchQuery?.trim() ? normalizeSearchQuery(searchQuery) : '';
+  if (normalizedSearchQuery) {
+    constraints.push(where('search_terms', 'array-contains', normalizedSearchQuery));
+  }
 
   // Tab-specific constraints
   if (activeTab === 'my') {
@@ -239,50 +244,6 @@ const fetchCargoRequestsPage = async (
 ): Promise<CargoRequestsPage> => {
   if (options.activeTab === 'my' && !options.userId) {
     return { items: [], lastVisible: null, hasMore: false };
-  }
-
-  const hasSearchQuery = Boolean(options.searchQuery?.trim());
-  if (hasSearchQuery && options.activeTab !== 'my') {
-    if (lastVisible) {
-      return { items: [], lastVisible: null, hasMore: false };
-    }
-
-    const searchHits = await searchRequests(options.searchQuery ?? '', PAGE_SIZE);
-    const matchedSnapshots = await Promise.all(
-      searchHits.map(hit => getDoc(doc(db, 'cargo_requests', String(hit.id))))
-    );
-    const hydrated = await Promise.all(
-      matchedSnapshots.map(snapshot => hydrateCargoRequest(snapshot, options.userId))
-    );
-
-    let filteredData = hydrated.filter((request): request is CargoRequest => request !== null);
-
-    if (options.filters.cargo_type) {
-      filteredData = filteredData.filter(request => request.cargo_type === options.filters.cargo_type);
-    }
-    if (options.filters.price_type) {
-      filteredData = filteredData.filter(request => request.price_type === options.filters.price_type);
-    }
-    if (options.filters.price_min && !isNaN(parseFloat(options.filters.price_min))) {
-      const minPrice = parseFloat(options.filters.price_min);
-      filteredData = filteredData.filter(request => toNumber(request.price) >= minPrice);
-    }
-    if (options.filters.price_max && !isNaN(parseFloat(options.filters.price_max))) {
-      const maxPrice = parseFloat(options.filters.price_max);
-      filteredData = filteredData.filter(request => toNumber(request.price) <= maxPrice);
-    }
-    if (options.filters.city) {
-      const cityLower = options.filters.city.toLowerCase();
-      filteredData = filteredData.filter(
-        request =>
-          request.from_address?.toLowerCase().includes(cityLower) ||
-          request.to_address?.toLowerCase().includes(cityLower)
-      );
-    }
-
-    filteredData = sortRequestsClientSide(filteredData, options.sortBy);
-
-    return { items: filteredData, lastVisible: null, hasMore: false };
   }
 
   const constraints = buildConstraints(options);

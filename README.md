@@ -220,7 +220,6 @@ firebase deploy --only functions
 
 - [Push Notifications Setup](./PUSH_NOTIFICATIONS_SETUP.md)
 - [Quick Deploy Guide](./QUICK_DEPLOY_SETUP.md)
-- [Algolia Search Setup](./ALGOLIA_SEARCH_SETUP.md)
 - [UI/UX Improvements](./UIUX_PERFORMANCE_IMPROVEMENTS.md)
 - [Vipps Integration](./VIPPS_INTEGRATION_REPORT.md)
 
