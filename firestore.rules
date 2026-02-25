@@ -58,13 +58,7 @@ service cloud.firestore {
     
     // Messages collection (flat structure)
     match /messages/{messageId} {
-      allow read: if isAuthenticated() && (
-        request.auth.uid == resource.data.sender_id ||
-        request.auth.uid == resource.data.receiver_id ||
-        // Allow if user is a participant in the associated chat
-        (exists(/databases/$(database)/documents/chats/$(resource.data.chat_id)) &&
-         request.auth.uid in get(/databases/$(database)/documents/chats/$(resource.data.chat_id)).data.participants)
-      );
+      allow read: if isAuthenticated();
       
       allow create: if isAuthenticated() &&
         request.auth.uid == request.resource.data.sender_id;
