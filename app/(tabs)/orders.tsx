@@ -1,16 +1,146 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, FlatList, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
+import { useAuth } from '../../contexts/AuthContext';
+import { db } from '../../lib/firebase';
+import { collection, query, where, getDocs, orderBy } from 'firebase/firestore';
 import { colors, spacing, fontSize, fontWeight } from '../../lib/sharedStyles';
 import { ScreenHeader } from '../../components/ScreenHeader';
 import { useUnreadCount } from '../../hooks/useNotifications';
+
+interface Order {
+  id: string;
+  request_id?: string;
+  bid_id?: string;
+  customer_id: string;
+  carrier_id: string;
+  total_amount: number;
+  status: string;
+  payment_status: string;
+  created_at: string;
+  cargo_title?: string;
+  cargo_type?: string;
+}
 
 export default function OrdersScreen() {
   const router = useRouter();
   const { unreadCount } = useUnreadCount();
   const { t } = useTranslation();
+  const { user } = useAuth();
+
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (user?.uid) {
+      fetchOrders();
+    }
+  }, [user?.uid]);
+
+  const fetchOrders = async () => {
+    if (!user?.uid) {
+      setLoading(false);
+      return;
+    }
+
+    try {
+      // Fetch orders where user is customer OR carrier
+      const customerOrdersQuery = query(
+        collection(db, 'orders'),
+        where('customer_id', '==', user.uid),
+        orderBy('created_at', 'desc')
+      );
+
+      const carrierOrdersQuery = query(
+        collection(db, 'orders'),
+        where('carrier_id', '==', user.uid),
+        orderBy('created_at', 'desc')
+      );
+
+      const [customerSnap, carrierSnap] = await Promise.all([
+        getDocs(customerOrdersQuery),
+        getDocs(carrierOrdersQuery),
+      ]);
+
+      const customerOrders = customerSnap.docs.map(doc => ({
+        id: doc.id,
+        ...(doc.data() as Omit<Order, 'id'>),
+      }));
+
+      const carrierOrders = carrierSnap.docs.map(doc => ({
+        id: doc.id,
+        ...(doc.data() as Omit<Order, 'id'>),
+      }));
+
+      const allOrders = [...customerOrders, ...carrierOrders]
+        .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+
+      setOrders(allOrders);
+    } catch (error) {
+      console.error('Error fetching orders:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getStatusLabel = (status: string) => {
+    const map: { [key: string]: string } = {
+      active: 'onGoing',
+      delivered: 'completed',
+      cancelled: 'cancelled',
+    };
+    return t(map[status] || status);
+  };
+
+  const getPaymentStatusColor = (status: string) => {
+    switch (status) {
+      case 'completed':
+        return colors.success || '#10B981';
+      case 'pending':
+        return colors.status.warning || '#F59E0B';
+      default:
+        return colors.text.secondary;
+    }
+  };
+
+  const renderOrderItem = ({ item }: { item: Order }) => (
+    <TouchableOpacity
+      style={styles.orderCard}
+      onPress={() => router.push(`/order-status/${item.id}`)}
+      accessibilityRole="button"
+      accessibilityLabel={`Order ${item.id}`}
+    >
+      <View style={styles.orderHeader}>
+        <Text style={styles.orderTitle} numberOfLines={1}>
+          {item.cargo_title || t('order')} (#{item.id.slice(0, 8)})
+        </Text>
+        <View
+          style={[styles.statusBadge, { backgroundColor: getPaymentStatusColor(item.payment_status) }]}
+        >
+          <Text style={styles.statusBadgeText}>{t(item.payment_status)}</Text>
+        </View>
+      </View>
+
+      <View style={styles.orderDetails}>
+        <View style={styles.detailRow}>
+          <Text style={styles.label}>{t('amount')}:</Text>
+          <Text style={styles.value}>{item.total_amount} NOK</Text>
+        </View>
+        <View style={styles.detailRow}>
+          <Text style={styles.label}>{t('status')}:</Text>
+          <Text style={styles.value}>{getStatusLabel(item.status)}</Text>
+        </View>
+        <View style={styles.detailRow}>
+          <Text style={styles.label}>{t('date')}:</Text>
+          <Text style={styles.value}>
+            {new Date(item.created_at).toLocaleDateString('no-NO')}
+          </Text>
+        </View>
+      </View>
+    </TouchableOpacity>
+  );
 
   return (
     <View style={styles.container}>
@@ -26,31 +156,45 @@ export default function OrdersScreen() {
           badge: unreadCount,
         }}
       />
-      <View style={styles.emptyState}>
-        <Ionicons name="list-outline" size={64} color={colors.text.tertiary} />
-        <Text style={styles.emptyTitle}>{t('noOrdersFound')}</Text>
-        <Text style={styles.emptyText}>{t('createRequestToSeeOrders')}</Text>
-
-        <View style={styles.ctaRow}>
-          <TouchableOpacity
-            style={styles.primaryButton}
-            onPress={() => router.push('/(tabs)/create')}
-            accessibilityRole="button"
-            accessibilityLabel={t('createCargoRequest')}
-          >
-            <Text style={styles.primaryButtonText}>{t('createCargoRequest')}</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.secondaryButton}
-            onPress={() => router.push('/(tabs)/home')}
-            accessibilityRole="button"
-            accessibilityLabel={t('allRequests')}
-          >
-            <Text style={styles.secondaryButtonText}>{t('allRequests')}</Text>
-          </TouchableOpacity>
+      {loading ? (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={colors.primary} />
         </View>
-      </View>
+      ) : orders.length === 0 ? (
+        <View style={styles.emptyState}>
+          <Ionicons name="list-outline" size={64} color={colors.text.tertiary} />
+          <Text style={styles.emptyTitle}>{t('noOrdersFound')}</Text>
+          <Text style={styles.emptyText}>{t('createRequestToSeeOrders')}</Text>
+
+          <View style={styles.ctaRow}>
+            <TouchableOpacity
+              style={styles.primaryButton}
+              onPress={() => router.push('/(tabs)/create')}
+              accessibilityRole="button"
+              accessibilityLabel={t('createCargoRequest')}
+            >
+              <Text style={styles.primaryButtonText}>{t('createCargoRequest')}</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.secondaryButton}
+              onPress={() => router.push('/(tabs)/home')}
+              accessibilityRole="button"
+              accessibilityLabel={t('allRequests')}
+            >
+              <Text style={styles.secondaryButtonText}>{t('allRequests')}</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      ) : (
+        <FlatList
+          data={orders}
+          keyExtractor={item => item.id}
+          renderItem={renderOrderItem}
+          contentContainerStyle={styles.listContainer}
+          scrollEnabled={true}
+        />
+      )}
     </View>
   );
 }
@@ -59,6 +203,63 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  listContainer: {
+    padding: spacing.md,
+    gap: spacing.md,
+  },
+  orderCard: {
+    backgroundColor: colors.white,
+    borderRadius: 10,
+    padding: spacing.md,
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 2,
+  },
+  orderHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: spacing.sm,
+  },
+  orderTitle: {
+    fontSize: fontSize.md,
+    fontWeight: fontWeight.semibold,
+    color: colors.text.primary,
+    flex: 1,
+  },
+  statusBadge: {
+    borderRadius: 6,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 4,
+    marginLeft: spacing.sm,
+  },
+  statusBadgeText: {
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.semibold,
+    color: colors.white,
+  },
+  orderDetails: {
+    gap: spacing.xs,
+  },
+  detailRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  label: {
+    fontSize: fontSize.sm,
+    color: colors.text.secondary,
+  },
+  value: {
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.semibold,
+    color: colors.text.primary,
   },
   emptyState: {
     flex: 1,
