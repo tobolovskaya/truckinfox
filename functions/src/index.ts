@@ -4,6 +4,49 @@ import axios from 'axios';
 
 admin.initializeApp();
 
+/**
+ * 🔄 Retry helper for external API calls with exponential backoff
+ * Prevents failures due to temporary network issues or rate limiting
+ *
+ * @param fn Async function to retry
+ * @param retries Number of retries (default: 3)
+ * @param delayMs Initial delay in milliseconds (default: 1000)
+ * @returns Result of the function
+ */
+async function withRetry<T>(
+  fn: () => Promise<T>,
+  retries: number = 3,
+  delayMs: number = 1000
+): Promise<T> {
+  let lastError: Error | null = null;
+
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      return await fn();
+    } catch (error) {
+      lastError = error instanceof Error ? error : new Error(String(error));
+
+      // Don't retry on the last attempt
+      if (attempt === retries) {
+        break;
+      }
+
+      // Calculate exponential backoff delay
+      const delay = delayMs * Math.pow(2, attempt);
+
+      // Log retry attempt
+      console.log(
+        `🔄 Retry attempt ${attempt + 1}/${retries} after ${delay}ms. Error: ${lastError.message}`
+      );
+
+      // Wait before retrying
+      await new Promise(resolve => setTimeout(resolve, delay));
+    }
+  }
+
+  throw lastError;
+}
+
 // Send notification when a new bid is placed
 export const onNewBid = functions.firestore
   .document('bids/{bidId}')
@@ -120,9 +163,11 @@ export const verifyCarrier = functions.https.onCall(async (data, context) => {
   }
 
   try {
-    // Call Brønnøysundregistrene API
-    const response = await fetch(
-      `https://data.brreg.no/enhetsregisteret/api/enheter/${organizationNumber}`
+    // 🔄 Call Brønnøysundregistrene API with retry logic
+    const response = await withRetry(() =>
+      fetch(`https://data.brreg.no/enhetsregisteret/api/enheter/${organizationNumber}`, {
+        timeout: 10000, // 10 second timeout
+      })
     );
 
     if (!response.ok) {
@@ -145,7 +190,8 @@ export const verifyCarrier = functions.https.onCall(async (data, context) => {
     };
   } catch (error) {
     console.error('Error verifying carrier:', error);
-    throw new functions.https.HttpsError('internal', 'Verification failed');
+    const message = error instanceof Error ? error.message : 'Verification failed';
+    throw new functions.https.HttpsError('internal', message);
   }
 });
 
@@ -208,19 +254,26 @@ export const refundVippsPayment = functions.https.onCall(async (data, context) =
       throw new functions.https.HttpsError('failed-precondition', 'Vipps token not configured');
     }
 
-    const refundResponse = await axios.post(
-      `https://api.vipps.no/ecomm/v2/payments/${orderId}/refund`,
-      {
-        modificationAmount: { currency: 'NOK', value: amount },
-        merchantRefundReason: reason,
-      },
-      { headers: { Authorization: `Bearer ${vippsAccessToken}` } }
+    // 🔄 Call Vipps API with retry logic
+    const refundResponse = await withRetry(() =>
+      axios.post(
+        `https://api.vipps.no/ecomm/v2/payments/${orderId}/refund`,
+        {
+          modificationAmount: { currency: 'NOK', value: amount },
+          merchantRefundReason: reason,
+        },
+        {
+          headers: { Authorization: `Bearer ${vippsAccessToken}` },
+          timeout: 15000, // 15 second timeout for payment operations
+        }
+      )
     );
 
     return { success: true, refundId: refundResponse.data.refundId };
   } catch (error) {
     console.error('Error processing refund:', error);
-    throw new functions.https.HttpsError('internal', 'Refund processing failed');
+    const message = error instanceof Error ? error.message : 'Refund processing failed';
+    throw new functions.https.HttpsError('internal', message);
   }
 });
 
@@ -333,3 +386,7 @@ export const cleanupTypingIndicators = functions.pubsub
       return null;
     }
   });
+
+// Import and export Google Places API proxy functions
+// These provide a secure, server-side proxy for Google Places API calls
+export { placesAutocomplete, placeDetails, healthCheck } from './placesProxyExample';

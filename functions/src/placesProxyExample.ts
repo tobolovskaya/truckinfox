@@ -17,6 +17,37 @@ import axios from 'axios';
 const GOOGLE_PLACES_API_KEY = process.env.GOOGLE_PLACES_API_KEY;
 
 /**
+ * 🔄 Retry helper for external API calls with exponential backoff
+ * Prevents failures due to temporary network issues
+ *
+ * @param fn Async function to retry
+ * @param retries Number of retries (default: 2)
+ * @param delayMs Initial delay in milliseconds (default: 1000)
+ */
+async function withRetry<T>(
+  fn: () => Promise<T>,
+  retries: number = 2,
+  delayMs: number = 1000
+): Promise<T> {
+  let lastError: Error | null = null;
+
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      return await fn();
+    } catch (error) {
+      lastError = error instanceof Error ? error : new Error(String(error));
+      if (attempt === retries) break;
+
+      const delay = delayMs * Math.pow(2, attempt);
+      console.log(`🔄 Retry attempt ${attempt + 1}/${retries} after ${delay}ms`);
+      await new Promise(resolve => setTimeout(resolve, delay));
+    }
+  }
+
+  throw lastError;
+}
+
+/**
  * Validates that the user is authenticated before allowing API access
  */
 const validateUserAuth = (context: functions.https.CallableContext) => {
@@ -126,17 +157,20 @@ export const placesAutocomplete = functions.https.onCall(async (data, context) =
     }
 
     // Call Google Places API (server-side, key is protected)
-    const response = await axios.get(
-      'https://maps.googleapis.com/maps/api/place/autocomplete/json',
-      {
-        params: {
-          input,
-          components: data.components || 'country:no',
-          language: 'no',
-          key: GOOGLE_PLACES_API_KEY,
-        },
-        timeout: 5000,
-      }
+    // 🔄 Use withRetry for automatic retry on network failures
+    const response = await withRetry(() =>
+      axios.get(
+        'https://maps.googleapis.com/maps/api/place/autocomplete/json',
+        {
+          params: {
+            input,
+            components: data.components || 'country:no',
+            language: 'no',
+            key: GOOGLE_PLACES_API_KEY,
+          },
+          timeout: 5000,
+        }
+      )
     );
 
     // Return only safe data to client
@@ -201,14 +235,16 @@ export const placeDetails = functions.https.onCall(async (data, context) => {
       throw new functions.https.HttpsError('internal', 'API not configured');
     }
 
-    const response = await axios.get('https://maps.googleapis.com/maps/api/place/details/json', {
-      params: {
-        place_id: data.place_id,
-        key: GOOGLE_PLACES_API_KEY,
-        language: 'no',
-      },
-      timeout: 5000,
-    });
+    const response = await withRetry(() =>
+      axios.get('https://maps.googleapis.com/maps/api/place/details/json', {
+        params: {
+          place_id: data.place_id,
+          key: GOOGLE_PLACES_API_KEY,
+          language: 'no',
+        },
+        timeout: 5000,
+      })
+    );
 
     // Return sanitized details
     const result = response.data.result || {};

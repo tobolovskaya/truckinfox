@@ -1,4 +1,4 @@
-import { fetchWithTimeout } from './fetchWithTimeout';
+import { fetchWithTimeout, fetchWithRetry } from './fetchWithTimeout';
 
 // Read API key from environment variables
 // In Expo, use EXPO_PUBLIC_ prefix for client-accessible variables
@@ -101,14 +101,18 @@ export const searchNorwegianPlaces = async (input: string): Promise<PlaceSuggest
   }
 
   try {
-    const response = await fetchWithTimeout(
+    // 🔄 Use fetchWithRetry for automatic retry on network failures
+    const response = await fetchWithRetry(
       `https://maps.googleapis.com/maps/api/place/autocomplete/json?` +
         `input=${encodeURIComponent(input)}&` +
         `components=country:no&` +
         `language=no&` +
         `key=${GOOGLE_PLACES_API_KEY}`,
-      { method: 'GET' },
-      10000 // 10 second timeout for autocomplete API
+      {
+        method: 'GET',
+        timeout: 10000, // 10 second timeout for autocomplete API
+        retries: 2, // 2 retries with exponential backoff (1s, 2s)
+      }
     );
 
     const data = (await response.json()) as PlacesAutocompleteResponse;
@@ -192,14 +196,18 @@ export const getPlaceDetails = async (placeId: string): Promise<PlaceDetails | n
   }
 
   try {
-    const response = await fetchWithTimeout(
+    // 🔄 Use fetchWithRetry for automatic retry on network failures
+    const response = await fetchWithRetry(
       `https://maps.googleapis.com/maps/api/place/details/json?` +
         `place_id=${placeId}&` +
         `fields=place_id,formatted_address,geometry,address_components&` +
         `language=no&` +
         `key=${GOOGLE_PLACES_API_KEY}`,
-      { method: 'GET' },
-      10000 // 10 second timeout for place details API
+      {
+        method: 'GET',
+        timeout: 10000, // 10 second timeout for place details API
+        retries: 2, // 2 retries with exponential backoff
+      }
     );
 
     const data = await response.json();
@@ -219,15 +227,19 @@ export const calculateDistance = async (
   destination: { lat: number; lng: number }
 ): Promise<DistanceMatrixResult | null> => {
   try {
-    const response = await fetchWithTimeout(
+    // 🔄 Use fetchWithRetry for automatic retry on network failures
+    const response = await fetchWithRetry(
       `https://maps.googleapis.com/maps/api/distancematrix/json?` +
         `origins=${origin.lat},${origin.lng}&` +
         `destinations=${destination.lat},${destination.lng}&` +
         `units=metric&` +
         `language=no&` +
         `key=${GOOGLE_PLACES_API_KEY}`,
-      { method: 'GET' },
-      10000 // 10 second timeout for distance matrix API
+      {
+        method: 'GET',
+        timeout: 10000, // 10 second timeout for distance matrix API
+        retries: 2, // 2 retries with exponential backoff
+      }
     );
 
     const data = await response.json();
