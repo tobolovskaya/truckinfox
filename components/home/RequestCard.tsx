@@ -77,8 +77,7 @@ export const RequestCard: React.FC<RequestCardProps> = ({
     typeof request.weight === 'number' ? formatWeight(request.weight) : t('weightUnknown');
   const dateText = request.pickup_date ? formatDate(request.pickup_date) : t('dateNotSet');
   const cargoType = request.cargo_type || 'other';
-  // Translate cargo type - falls back to key name if translation not found
-  const cargoTypeLabel = t(cargoType);
+  const cargoTypeLabel = React.useMemo(() => t(cargoType), [cargoType, t]);
   const cargoColors = getCargoTypeColors(cargoType);
   const cargoIcon = getCargoTypeIcon(cargoType);
 

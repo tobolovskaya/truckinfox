@@ -145,6 +145,7 @@ const buildConstraints = (options: UseCargoRequestsOptions) => {
       constraints.push(where('user_id', '==', userId));
       constraints.push(where('status', '==', 'active')); // Only active requests for "My" tab
     }
+    // Note: City filter is ignored for "My" tab since it shows user's own requests only
   } else {
     // All tab: apply cargo type and price filters
     if (filters.cargo_type) {

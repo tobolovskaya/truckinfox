@@ -81,14 +81,16 @@ const SkeletonBox = ({
 export const SkeletonCard = ({
   cardStyle,
   variantIndex = 0,
+  compact = true,
 }: {
   cardStyle?: StyleProp<ViewStyle>;
   variantIndex?: number;
+  compact?: boolean;
 }) => {
   const variant = SKELETON_VARIANTS[variantIndex % SKELETON_VARIANTS.length];
 
   return (
-    <View style={[styles.requestCard, cardStyle]}>
+    <View style={[styles.requestCard, compact && styles.requestCardCompact, cardStyle]}>
       {/* Photo skeleton - must match RequestCard image height (120px) */}
       <SkeletonBox width="100%" height={REQUEST_CARD_IMAGE_HEIGHT} style={styles.photoSkeleton} />
 
@@ -139,9 +141,12 @@ const styles = StyleSheet.create({
   requestCard: {
     backgroundColor: colors.white,
     borderRadius: borderRadius.lg,
-    padding: spacing.md,
+    padding: spacing.lg,
     marginBottom: spacing.lg,
     ...shadows.sm,
+  },
+  requestCardCompact: {
+    padding: spacing.md,
   },
   cardContent: {
     padding: 0,

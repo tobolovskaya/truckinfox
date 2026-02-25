@@ -218,7 +218,8 @@ export default function HomeScreen() {
         ListFooterComponent={
           loadingMore ? (
             <View style={styles.footerLoader}>
-              <ActivityIndicator color={colors.primary} />
+              <ActivityIndicator size="small" color={colors.primary} />
+              <Text style={styles.footerLoaderText}>{t('loadingMore')}</Text>
             </View>
           ) : null
         }
@@ -247,6 +248,7 @@ export default function HomeScreen() {
           loading ? (
             <SkeletonCard
               variantIndex={index + skeletonVariantSeed}
+              compact={true}
               cardStyle={{ width: cardWidth, marginBottom: gridGap }}
             />
           ) : (
@@ -291,6 +293,11 @@ const styles = StyleSheet.create({
   footerLoader: {
     paddingVertical: spacing.lg,
     alignItems: 'center',
+    gap: spacing.sm,
+  },
+  footerLoaderText: {
+    fontSize: fontSize.sm,
+    color: colors.text.secondary,
   },
   emptyState: {
     alignItems: 'center',
