@@ -17,7 +17,6 @@ import {
   doc,
   serverTimestamp,
 } from 'firebase/firestore';
-import { Platform } from 'react-native';
 import NetInfo from '@react-native-community/netinfo';
 
 export interface OfflineQueueItem {
@@ -233,35 +232,7 @@ export const initializeOfflineSync = (): (() => void) => {
     offlineSyncCleanup = null;
   }
 
-  // Listen for online/offline events
-  if (Platform.OS === 'web' && typeof window !== 'undefined' && typeof window.addEventListener === 'function') {
-    const handleOnline = () => {
-      console.log('🌐 Online detected - syncing offline queue...');
-      syncOfflineQueue().catch(error => {
-        console.error('Failed to sync offline queue:', error);
-      });
-    };
-
-    const handleOffline = () => {
-      console.log('📴 Offline detected - offline cache active');
-    };
-
-    window.addEventListener('online', handleOnline);
-    window.addEventListener('offline', handleOffline);
-
-    offlineSyncCleanup = () => {
-      window.removeEventListener('online', handleOnline);
-      window.removeEventListener('offline', handleOffline);
-    };
-
-    return () => {
-      if (offlineSyncCleanup) {
-        offlineSyncCleanup();
-        offlineSyncCleanup = null;
-      }
-    };
-  }
-
+  // Native online/offline listener
   const unsubscribe = NetInfo.addEventListener(state => {
     if (state.isConnected) {
       console.log('🌐 Online detected - syncing offline queue...');

@@ -46,9 +46,6 @@
       ],
       "googleServicesFile": "./google-services.json"
     },
-    "web": {
-      "favicon": "./assets/favicon.png"
-    },
     "plugins": [
       "expo-router",
       [
@@ -71,7 +68,6 @@
         }
       ],
       "expo-localization",
-      "expo-web-browser",
       "@react-native-community/datetimepicker"
     ],
     "updates": {

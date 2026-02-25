@@ -113,9 +113,6 @@ npm run ios
 
 # Android
 npm run android
-
-# Web
-npm run web
 ```
 
 ## 📱 Project Structure
