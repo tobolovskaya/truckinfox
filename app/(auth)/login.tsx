@@ -7,22 +7,13 @@ import {
   StyleSheet,
   ScrollView,
   Alert,
-  Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTranslation } from 'react-i18next';
-import { theme } from '../../theme/theme';
 import { trackUserLogin } from '../../utils/analytics';
-import {
-  colors,
-  spacing,
-  fontSize,
-  fontWeight,
-  borderRadius,
-  shadows,
-} from '../../lib/sharedStyles';
+import { colors, spacing, fontSize, fontWeight, borderRadius } from '../../lib/sharedStyles';
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
@@ -74,35 +65,22 @@ export default function LoginScreen() {
     }
   };
 
-
-
   return (
     <View style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        {/* Logo and Header */}
         <View style={styles.header}>
-          <View style={styles.logoContainer}>
-            <Ionicons name="car-sport" size={40} color={theme.iconColors.white} />
-          </View>
           <Text style={styles.title}>TruckinFox</Text>
-          <Text style={styles.subtitle}>{t('reliableLogisticsPartner')}</Text>
+          <Text style={styles.subtitle}>{t('signInToAccount')}</Text>
         </View>
 
-        {/* Login Form */}
         <View style={styles.formContainer}>
-          <View style={styles.formHeader}>
-            <Text style={styles.formTitle}>{t('signIn')}</Text>
-            <Text style={styles.formSubtitle}>{t('signInToAccount')}</Text>
-          </View>
-
-          {/* Email Field */}
           <View style={styles.inputContainer}>
             <Text style={styles.label}>{t('email')}</Text>
             <View style={styles.inputWrapper}>
               <Ionicons
                 name="mail-outline"
                 size={20}
-                color={theme.iconColors.gray.primary}
+                color={colors.text.secondary}
                 style={styles.inputIcon}
               />
               <TextInput
@@ -117,14 +95,13 @@ export default function LoginScreen() {
             </View>
           </View>
 
-          {/* Password Field */}
           <View style={styles.inputContainer}>
             <Text style={styles.label}>{t('password')}</Text>
             <View style={styles.inputWrapper}>
               <Ionicons
                 name="lock-closed-outline"
                 size={20}
-                color={theme.iconColors.gray.primary}
+                color={colors.text.secondary}
                 style={styles.inputIcon}
               />
               <TextInput
@@ -142,13 +119,12 @@ export default function LoginScreen() {
                 <Ionicons
                   name={showPassword ? 'eye-outline' : 'eye-off-outline'}
                   size={20}
-                  color={theme.iconColors.gray.primary}
+                  color={colors.text.secondary}
                 />
               </TouchableOpacity>
             </View>
           </View>
 
-          {/* Remember Me & Forgot Password */}
           <View style={styles.optionsRow}>
             <TouchableOpacity
               style={styles.rememberMe}
@@ -159,9 +135,7 @@ export default function LoginScreen() {
               accessibilityHint="Keep me logged in on this device"
             >
               <View style={[styles.checkbox, rememberMe && styles.checkboxChecked]}>
-                {rememberMe && (
-                  <Ionicons name="checkmark" size={16} color={theme.iconColors.white} />
-                )}
+                {rememberMe && <Ionicons name="checkmark" size={16} color={colors.white} />}
               </View>
               <Text style={styles.rememberText}>{t('rememberMe')}</Text>
             </TouchableOpacity>
@@ -175,7 +149,6 @@ export default function LoginScreen() {
             </TouchableOpacity>
           </View>
 
-          {/* Login Button */}
           <TouchableOpacity
             style={[styles.loginButton, loading && styles.loginButtonDisabled]}
             onPress={handleLogin}
@@ -190,7 +163,6 @@ export default function LoginScreen() {
             </Text>
           </TouchableOpacity>
 
-          {/* Sign Up Link */}
           <View style={styles.signUpContainer}>
             <Text style={styles.signUpText}>{t('noAccount')} </Text>
             <TouchableOpacity
@@ -202,11 +174,6 @@ export default function LoginScreen() {
               <Text style={styles.signUpLink}>{t('signUp')}</Text>
             </TouchableOpacity>
           </View>
-        </View>
-
-        {/* Footer */}
-        <View style={styles.footer}>
-          <Text style={styles.footerText}>© 2025 TruckinFox. {t('allRightsReserved')}</Text>
         </View>
       </ScrollView>
     </View>
@@ -222,54 +189,29 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     justifyContent: 'center',
     paddingHorizontal: spacing.lg,
-    paddingTop: spacing.xxxl,
-    paddingBottom: spacing.md,
+    paddingTop: spacing.xxl,
+    paddingBottom: spacing.lg,
   },
   header: {
-    alignItems: 'center',
-    marginBottom: spacing.xl,
-  },
-  logoContainer: {
-    width: 60,
-    height: 60,
-    backgroundColor: colors.primary,
-    borderRadius: borderRadius.md,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: spacing.md,
-    ...shadows.sm,
+    marginBottom: spacing.lg,
   },
   title: {
-    fontSize: fontSize.xxxl,
-    fontWeight: fontWeight.bold,
+    fontSize: fontSize.xxl,
+    fontWeight: fontWeight.semibold,
     color: colors.text.primary,
-    marginBottom: spacing.sm,
-    textAlign: 'center',
+    marginBottom: spacing.xs,
   },
   subtitle: {
-    fontSize: fontSize.sm,
+    fontSize: fontSize.md,
     color: colors.text.secondary,
-    textAlign: 'center',
   },
   formContainer: {
     backgroundColor: colors.white,
-    borderRadius: borderRadius.lg,
+    borderRadius: borderRadius.md,
+    borderWidth: 1,
+    borderColor: colors.border.light,
     padding: spacing.xl,
     marginBottom: spacing.xl,
-    ...shadows.sm,
-  },
-  formHeader: {
-    marginBottom: spacing.lg,
-  },
-  formTitle: {
-    fontSize: fontSize.xl,
-    fontWeight: fontWeight.bold,
-    color: colors.text.primary,
-    marginBottom: spacing.sm,
-  },
-  formSubtitle: {
-    fontSize: fontSize.sm,
-    color: colors.text.secondary,
   },
   inputContainer: {
     marginBottom: spacing.lg,
@@ -347,7 +289,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: spacing.xl,
-    ...shadows.primary,
   },
   loginButtonDisabled: {
     opacity: 0.6,
@@ -370,13 +311,5 @@ const styles = StyleSheet.create({
     fontSize: fontSize.sm,
     color: colors.primary,
     fontWeight: fontWeight.semibold,
-  },
-  footer: {
-    alignItems: 'center',
-  },
-  footerText: {
-    fontSize: fontSize.xs,
-    color: colors.text.tertiary,
-    textAlign: 'center',
   },
 });

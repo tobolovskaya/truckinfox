@@ -19,7 +19,6 @@ import {
   fontSize,
   fontWeight,
   borderRadius,
-  shadows,
 } from '../../lib/sharedStyles';
 
 type AccountType = 'private' | 'business';
@@ -298,26 +297,28 @@ const styles = StyleSheet.create({
   scrollContent: {
     flexGrow: 1,
     paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.xl,
+    paddingTop: spacing.xxl,
+    paddingBottom: spacing.lg,
   },
   header: {
-    marginBottom: spacing.md,
+    marginBottom: spacing.lg,
   },
   title: {
     fontSize: fontSize.xxl,
-    fontWeight: fontWeight.bold,
+    fontWeight: fontWeight.semibold,
     color: colors.text.primary,
     marginBottom: spacing.xs,
   },
   subtitle: {
-    fontSize: fontSize.sm,
+    fontSize: fontSize.md,
     color: colors.text.secondary,
   },
   formCard: {
     backgroundColor: colors.white,
-    borderRadius: borderRadius.xl,
-    padding: spacing.lg,
-    ...(shadows.md as Record<string, unknown>),
+    borderRadius: borderRadius.md,
+    borderWidth: 1,
+    borderColor: colors.border.light,
+    padding: spacing.xl,
   },
   inputGroup: {
     marginBottom: spacing.md,
@@ -325,15 +326,15 @@ const styles = StyleSheet.create({
   label: {
     fontSize: fontSize.sm,
     fontWeight: fontWeight.semibold,
-    color: colors.text.secondary,
+    color: colors.text.primary,
     marginBottom: spacing.xs,
   },
   input: {
+    height: 44,
     borderWidth: 1,
-    borderColor: colors.border.light,
-    borderRadius: borderRadius.md,
+    borderColor: colors.border.default,
+    borderRadius: borderRadius.sm,
     paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
     fontSize: fontSize.md,
     color: colors.text.primary,
     backgroundColor: colors.white,
@@ -370,17 +371,17 @@ const styles = StyleSheet.create({
     marginTop: spacing.xs,
   },
   passwordWrapper: {
+    height: 44,
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: colors.border.light,
-    borderRadius: borderRadius.md,
+    borderColor: colors.border.default,
+    borderRadius: borderRadius.sm,
     backgroundColor: colors.white,
   },
   passwordInput: {
     flex: 1,
     paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
     fontSize: fontSize.md,
     color: colors.text.primary,
   },
@@ -415,10 +416,11 @@ const styles = StyleSheet.create({
   },
   primaryButton: {
     backgroundColor: colors.primary,
-    borderRadius: borderRadius.lg,
-    paddingVertical: spacing.md,
+    borderRadius: borderRadius.sm,
+    height: 44,
     alignItems: 'center',
     justifyContent: 'center',
+    marginTop: spacing.xs,
   },
   primaryButtonDisabled: {
     opacity: 0.7,
@@ -426,7 +428,7 @@ const styles = StyleSheet.create({
   primaryButtonText: {
     color: colors.white,
     fontSize: fontSize.md,
-    fontWeight: fontWeight.bold,
+    fontWeight: fontWeight.semibold,
   },
   bottomRow: {
     flexDirection: 'row',

@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useAuth } from '../../contexts/AuthContext';
@@ -11,8 +10,6 @@ import {
   fontSize,
   fontWeight,
   borderRadius,
-  shadows,
-  gradients,
 } from '../../lib/sharedStyles';
 
 export default function LoggUtScreen() {
@@ -77,11 +74,11 @@ export default function LoggUtScreen() {
   };
 
   return (
-    <LinearGradient colors={gradients.primary} style={styles.container}>
+    <View style={styles.container}>
       <View style={styles.content}>
         {/* Icon */}
         <View style={styles.iconContainer}>
-          <Ionicons name="log-out-outline" size={64} color={colors.primary} />
+          <Ionicons name="log-out-outline" size={48} color={colors.primary} />
         </View>
 
         {/* Title and Message */}
@@ -157,35 +154,37 @@ export default function LoggUtScreen() {
           <Text style={styles.infoText}>{t('signOutInfo')}</Text>
         </View>
       </View>
-    </LinearGradient>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: colors.background,
   },
   content: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: spacing.xl,
+    paddingHorizontal: spacing.lg,
   },
   iconContainer: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
+    width: 88,
+    height: 88,
+    borderRadius: 44,
     backgroundColor: colors.white,
+    borderWidth: 1,
+    borderColor: colors.border.light,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: spacing.xl,
-    ...shadows.lg,
+    marginBottom: spacing.lg,
   },
   title: {
-    fontSize: fontSize.xxxl,
-    fontWeight: fontWeight.bold,
+    fontSize: fontSize.xxl,
+    fontWeight: fontWeight.semibold,
     color: colors.text.primary,
-    marginBottom: spacing.sm,
+    marginBottom: spacing.xs,
     textAlign: 'center',
   },
   message: {
@@ -201,9 +200,10 @@ const styles = StyleSheet.create({
     backgroundColor: colors.white,
     padding: spacing.md,
     borderRadius: borderRadius.md,
+    borderWidth: 1,
+    borderColor: colors.border.light,
     marginBottom: spacing.xl,
     width: '100%',
-    ...shadows.sm,
   },
   avatarSmall: {
     width: 48,
@@ -236,10 +236,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: colors.primary,
-    height: 50,
-    borderRadius: borderRadius.md,
+    height: 44,
+    borderRadius: borderRadius.sm,
     gap: spacing.sm,
-    ...shadows.primary,
   },
   signOutButtonText: {
     color: colors.white,
@@ -251,9 +250,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: colors.white,
-    height: 50,
-    borderRadius: borderRadius.md,
-    borderWidth: 2,
+    height: 44,
+    borderRadius: borderRadius.sm,
+    borderWidth: 1,
     borderColor: colors.error,
     gap: spacing.sm,
   },
@@ -266,8 +265,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: 'transparent',
-    height: 50,
-    borderRadius: borderRadius.md,
+    height: 44,
+    borderRadius: borderRadius.sm,
   },
   cancelButtonText: {
     color: colors.text.primary,
@@ -280,12 +279,12 @@ const styles = StyleSheet.create({
   infoCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: `${colors.info}15`,
+    backgroundColor: colors.white,
     padding: spacing.md,
     borderRadius: borderRadius.md,
     marginTop: spacing.xl,
-    borderLeftWidth: 3,
-    borderLeftColor: colors.info,
+    borderWidth: 1,
+    borderColor: colors.border.light,
   },
   infoText: {
     flex: 1,

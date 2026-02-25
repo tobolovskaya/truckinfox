@@ -17,7 +17,6 @@ import {
   fontSize,
   fontWeight,
   borderRadius,
-  shadows,
 } from '../../lib/sharedStyles';
 import { auth } from '../../lib/firebase';
 import { ScreenHeader } from '../../components/ScreenHeader';
@@ -64,42 +63,44 @@ export default function ForgotPasswordScreen() {
         <Text style={styles.title}>{t('forgotPasswordTitle')}</Text>
         <Text style={styles.subtitle}>{t('forgotPasswordSubtitle')}</Text>
 
-        <View style={styles.inputGroup}>
-          <Text style={styles.label}>{t('email')}</Text>
-          <TextInput
-            style={styles.input}
-            value={email}
-            onChangeText={setEmail}
-            placeholder={t('enterEmailAddress')}
-            placeholderTextColor={colors.text.tertiary}
-            keyboardType="email-address"
-            autoCapitalize="none"
-            autoCorrect={false}
-            autoComplete="email"
-          />
+        <View style={styles.formCard}>
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>{t('email')}</Text>
+            <TextInput
+              style={styles.input}
+              value={email}
+              onChangeText={setEmail}
+              placeholder={t('enterEmailAddress')}
+              placeholderTextColor={colors.text.tertiary}
+              keyboardType="email-address"
+              autoCapitalize="none"
+              autoCorrect={false}
+              autoComplete="email"
+            />
+          </View>
+
+          <TouchableOpacity
+            style={[styles.primaryButton, loading && styles.primaryButtonDisabled]}
+            onPress={handleSendReset}
+            disabled={loading}
+            accessibilityRole="button"
+            accessibilityLabel={t('sendResetLink')}
+          >
+            {loading ? (
+              <ActivityIndicator color={colors.white} />
+            ) : (
+              <Text style={styles.primaryButtonText}>{t('sendResetLink')}</Text>
+            )}
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            onPress={() => router.replace('/(auth)/login')}
+            accessibilityRole="button"
+            accessibilityLabel={t('backToLogin')}
+          >
+            <Text style={styles.backToLogin}>{t('backToLogin')}</Text>
+          </TouchableOpacity>
         </View>
-
-        <TouchableOpacity
-          style={[styles.primaryButton, loading && styles.primaryButtonDisabled]}
-          onPress={handleSendReset}
-          disabled={loading}
-          accessibilityRole="button"
-          accessibilityLabel={t('sendResetLink')}
-        >
-          {loading ? (
-            <ActivityIndicator color={colors.white} />
-          ) : (
-            <Text style={styles.primaryButtonText}>{t('sendResetLink')}</Text>
-          )}
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          onPress={() => router.replace('/(auth)/login')}
-          accessibilityRole="button"
-          accessibilityLabel={t('backToLogin')}
-        >
-          <Text style={styles.backToLogin}>{t('backToLogin')}</Text>
-        </TouchableOpacity>
       </View>
     </View>
   );
@@ -113,11 +114,11 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     paddingHorizontal: spacing.lg,
-    paddingTop: spacing.lg,
+    paddingTop: spacing.xxl,
   },
   title: {
-    fontSize: fontSize.xl,
-    fontWeight: fontWeight.bold,
+    fontSize: fontSize.xxl,
+    fontWeight: fontWeight.semibold,
     color: colors.text.primary,
     marginBottom: spacing.xs,
   },
@@ -126,29 +127,36 @@ const styles = StyleSheet.create({
     color: colors.text.secondary,
     marginBottom: spacing.lg,
   },
+  formCard: {
+    backgroundColor: colors.white,
+    borderRadius: borderRadius.md,
+    borderWidth: 1,
+    borderColor: colors.border.light,
+    padding: spacing.xl,
+  },
   inputGroup: {
     marginBottom: spacing.lg,
   },
   label: {
     fontSize: fontSize.sm,
     fontWeight: fontWeight.semibold,
-    color: colors.text.secondary,
+    color: colors.text.primary,
     marginBottom: spacing.xs,
   },
   input: {
     borderWidth: 1,
-    borderColor: colors.border.light,
-    borderRadius: borderRadius.md,
+    borderColor: colors.border.default,
+    borderRadius: borderRadius.sm,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
     fontSize: fontSize.md,
     backgroundColor: colors.white,
     color: colors.text.primary,
-    ...(shadows.sm as Record<string, unknown>),
   },
   primaryButton: {
     backgroundColor: colors.primary,
-    borderRadius: borderRadius.lg,
+    borderRadius: borderRadius.sm,
+    height: 44,
     paddingVertical: spacing.md,
     alignItems: 'center',
     justifyContent: 'center',
