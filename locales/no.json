@@ -635,5 +635,11 @@
   "toAddressMinLength": "Til-adresse må være minst 3 tegn",
   "priceMustBeNumber": "Pris må være et tall",
   "priceMustBePositive": "Pris må være større enn 0",
-  "priceMaxExceeded": "Pris kan ikke være større enn 1 000 000 NOK"
+  "priceMaxExceeded": "Pris kan ikke være større enn 1 000 000 NOK",
+  "deliveryTracking": "Leveringssporing",
+  "loadingDeliveryLocation": "Laster leveringsposisjon...",
+  "driver": "Sjåfør",
+  "followDriverLive": "Følg sjåførens posisjon i sanntid.",
+  "openLiveMap": "Åpne live-kart",
+  "signatureUnavailable": "Signatur utilgjengelig"
 }

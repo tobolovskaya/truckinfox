@@ -26,7 +26,7 @@ describe('checkDuplicateRequest', () => {
         },
       ],
       fromCache: false,
-      error: null,
+      error: undefined,
     });
 
     const error = await checkDuplicateRequest('user1', 'Oslo', 'Bergen');
@@ -44,7 +44,7 @@ describe('checkDuplicateRequest', () => {
         },
       ],
       fromCache: false,
-      error: null,
+      error: undefined,
     });
 
     const error = await checkDuplicateRequest('user1', 'Oslo', 'Trondheim');
@@ -62,7 +62,7 @@ describe('checkRequestRateLimit', () => {
     mockSafeQuery.mockResolvedValue({
       documents: [{ id: '1' }, { id: '2' }],
       fromCache: false,
-      error: null,
+      error: undefined,
     });
 
     const error = await checkRequestRateLimit('user1', 2, 60_000);
@@ -74,7 +74,7 @@ describe('checkRequestRateLimit', () => {
     mockSafeQuery.mockResolvedValue({
       documents: [{ id: '1' }],
       fromCache: false,
-      error: null,
+      error: undefined,
     });
 
     const error = await checkRequestRateLimit('user1', 2, 60_000);

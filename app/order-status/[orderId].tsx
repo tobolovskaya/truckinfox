@@ -504,6 +504,7 @@ export default function OrderStatusScreen() {
 
   const isCustomer = order?.customer_id === user?.uid;
   const isCarrier = order?.carrier_id === user?.uid;
+  const canTrackDelivery = order?.status === 'in_transit';
   const canConfirmDelivery = isCustomer && order?.status === 'in_transit';
   const canSubmitProof = isCarrier && order?.status === 'in_transit';
 
@@ -656,6 +657,24 @@ export default function OrderStatusScreen() {
           )}
         </View>
 
+        {/* Delivery Tracking */}
+        {canTrackDelivery && (
+          <View style={styles.section}>
+            <View style={styles.confirmationHeader}>
+              <Ionicons name="navigate-outline" size={24} color={theme.iconColors.primary} />
+              <Text style={styles.proofTitle}>{t('deliveryTracking')}</Text>
+            </View>
+            <Text style={styles.confirmationDescription}>{t('followDriverLive')}</Text>
+            <TouchableOpacity
+              style={styles.trackButton}
+              onPress={() => router.push(`/delivery/${order.id}`)}
+            >
+              <Ionicons name="map-outline" size={20} color={theme.iconColors.white} />
+              <Text style={styles.trackButtonText}>{t('openLiveMap')}</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
         {/* Proof of Delivery - For Carriers */}
         {canSubmitProof && (
           <View style={styles.section}>
@@ -716,7 +735,7 @@ export default function OrderStatusScreen() {
                         size={48}
                         color={theme.iconColors.gray.secondary}
                       />
-                      <Text style={styles.signatureErrorText}>Signature unavailable</Text>
+                      <Text style={styles.signatureErrorText}>{t('signatureUnavailable')}</Text>
                     </View>
                   ) : (
                     <Image
@@ -1043,6 +1062,20 @@ const styles = StyleSheet.create({
     color: colors.white,
     fontSize: fontSize.md,
     fontWeight: fontWeight.semibold,
+  },
+  trackButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.primary,
+    borderRadius: borderRadius.md,
+    paddingVertical: spacing.lg,
+    gap: spacing.sm,
+  },
+  trackButtonText: {
+    fontSize: fontSize.md,
+    fontWeight: fontWeight.semibold,
+    color: colors.white,
   },
   liveIndicator: {
     flexDirection: 'row',
