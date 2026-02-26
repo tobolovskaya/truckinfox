@@ -49,6 +49,10 @@ jest.mock('expo-router', () => ({
   },
 }));
 
+jest.mock('expo-linear-gradient', () => ({
+  LinearGradient: ({ children }) => children || null,
+}));
+
 jest.mock('react-native/Libraries/Animated/NativeAnimatedHelper', () => ({}), {
   virtual: true,
 });

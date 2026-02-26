@@ -3,13 +3,23 @@ import {
   checkRequestRateLimit,
   validateRequestData,
 } from '../../utils/requestValidation';
-import { safeQuery } from '../../lib/safeFirestoreOps';
+import { supabase } from '../../lib/supabase';
 
-jest.mock('../../lib/safeFirestoreOps', () => ({
-  safeQuery: jest.fn(),
+jest.mock('../../lib/supabase', () => ({
+  supabase: {
+    from: jest.fn(),
+  },
 }));
 
-const mockSafeQuery = safeQuery as jest.MockedFunction<typeof safeQuery>;
+const mockFrom = supabase.from as jest.Mock;
+
+const mockCargoRequestsResponse = (data: unknown[] | null, error: unknown = null) => {
+  const gt = jest.fn().mockResolvedValue({ data, error });
+  const eq = jest.fn(() => ({ gt }));
+  const select = jest.fn(() => ({ eq }));
+
+  mockFrom.mockReturnValue({ select });
+};
 
 describe('checkDuplicateRequest', () => {
   beforeEach(() => {
@@ -17,17 +27,13 @@ describe('checkDuplicateRequest', () => {
   });
 
   it('should detect duplicate requests', async () => {
-    mockSafeQuery.mockResolvedValue({
-      documents: [
+    mockCargoRequestsResponse([
         {
           user_id: 'user1',
           from_address: 'Oslo',
           to_address: 'Bergen',
         },
-      ],
-      fromCache: false,
-      error: undefined,
-    });
+      ]);
 
     const error = await checkDuplicateRequest('user1', 'Oslo', 'Bergen');
 
@@ -35,17 +41,13 @@ describe('checkDuplicateRequest', () => {
   });
 
   it('should allow different addresses', async () => {
-    mockSafeQuery.mockResolvedValue({
-      documents: [
+    mockCargoRequestsResponse([
         {
           user_id: 'user1',
           from_address: 'Oslo',
           to_address: 'Bergen',
         },
-      ],
-      fromCache: false,
-      error: undefined,
-    });
+      ]);
 
     const error = await checkDuplicateRequest('user1', 'Oslo', 'Trondheim');
 
@@ -59,11 +61,7 @@ describe('checkRequestRateLimit', () => {
   });
 
   it('should return error when request limit is reached', async () => {
-    mockSafeQuery.mockResolvedValue({
-      documents: [{ id: '1' }, { id: '2' }],
-      fromCache: false,
-      error: undefined,
-    });
+    mockCargoRequestsResponse([{ id: '1' }, { id: '2' }]);
 
     const error = await checkRequestRateLimit('user1', 2, 60_000);
 
@@ -71,11 +69,7 @@ describe('checkRequestRateLimit', () => {
   });
 
   it('should allow request when under limit', async () => {
-    mockSafeQuery.mockResolvedValue({
-      documents: [{ id: '1' }],
-      fromCache: false,
-      error: undefined,
-    });
+    mockCargoRequestsResponse([{ id: '1' }]);
 
     const error = await checkRequestRateLimit('user1', 2, 60_000);
 

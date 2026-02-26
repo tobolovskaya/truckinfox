@@ -67,6 +67,8 @@ jest.mock('../../components/SkeletonLoader', () => ({
   SkeletonLoader: () => null,
 }));
 
+jest.mock('../../assets/empty-cargo.svg', () => () => null);
+
 describe('Home filters persistence migration', () => {
   beforeEach(() => {
     jest.clearAllMocks();
