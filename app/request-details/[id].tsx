@@ -45,7 +45,7 @@ import {
 } from '../../utils/analytics';
 import { createChat } from '../../utils/chatManagement';
 import { colors, spacing, fontSize, borderRadius } from '../../lib/sharedStyles';
-import MapView, { Marker, Polyline, PROVIDER_GOOGLE } from 'react-native-maps';
+import MapView, { Marker, Polyline } from 'react-native-maps';
 import { sanitizeMessage } from '../../utils/sanitization';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
@@ -613,64 +613,67 @@ export default function RequestDetailsScreen() {
 
       case 'route':
         // Show map if coordinates are available, otherwise show text addresses
-        if (request?.from_lat && request?.from_lng && request?.to_lat && request?.to_lng) {
+        if (
+          request?.from_lat != null &&
+          request?.from_lng != null &&
+          request?.to_lat != null &&
+          request?.to_lng != null
+        ) {
           // Calculate center point and initial region
           const centerLat = (request.from_lat + request.to_lat) / 2;
           const centerLng = (request.from_lng + request.to_lng) / 2;
-          const latDelta = Math.abs(request.from_lat - request.to_lat) * 1.5 + 0.05;
-          const lngDelta = Math.abs(request.from_lng - request.to_lng) * 1.5 + 0.05;
+          const latDelta = Math.max(Math.abs(request.from_lat - request.to_lat) * 1.5, 0.05);
+          const lngDelta = Math.max(Math.abs(request.from_lng - request.to_lng) * 1.5, 0.05);
 
           return (
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>Rute</Text>
-              <MapView
-                style={styles.map}
-                provider={PROVIDER_GOOGLE}
-                initialRegion={{
-                  latitude: centerLat,
-                  longitude: centerLng,
-                  latitudeDelta: latDelta,
-                  longitudeDelta: lngDelta,
-                }}
-              >
-                {/* Pickup location marker */}
-                <Marker
-                  coordinate={{
-                    latitude: request.from_lat,
-                    longitude: request.from_lng,
+              <View style={styles.mapContainer}>
+                <MapView
+                  style={styles.map}
+                  initialRegion={{
+                    latitude: centerLat,
+                    longitude: centerLng,
+                    latitudeDelta: latDelta,
+                    longitudeDelta: lngDelta,
                   }}
-                  title="Pickup"
-                  description={request.from_address}
-                  pinColor="green"
-                />
+                >
+                  <Marker
+                    coordinate={{ latitude: request.from_lat, longitude: request.from_lng }}
+                    title={t('pickup')}
+                    description={request.from_address}
+                    pinColor="#4CAF50"
+                  />
 
-                {/* Delivery location marker */}
-                <Marker
-                  coordinate={{
-                    latitude: request.to_lat,
-                    longitude: request.to_lng,
-                  }}
-                  title="Delivery"
-                  description={request.to_address}
-                  pinColor="red"
-                />
+                  <Marker
+                    coordinate={{ latitude: request.to_lat, longitude: request.to_lng }}
+                    title={t('delivery') || 'Delivery'}
+                    description={request.to_address}
+                    pinColor="#FF7043"
+                  />
 
-                {/* Route line */}
-                <Polyline
-                  coordinates={[
-                    {
-                      latitude: request.from_lat,
-                      longitude: request.from_lng,
-                    },
-                    {
-                      latitude: request.to_lat,
-                      longitude: request.to_lng,
-                    },
-                  ]}
-                  strokeColor={colors.primary}
-                  strokeWidth={3}
-                />
-              </MapView>
+                  <Polyline
+                    coordinates={[
+                      { latitude: request.from_lat, longitude: request.from_lng },
+                      { latitude: request.to_lat, longitude: request.to_lng },
+                    ]}
+                    strokeColor="#FF7043"
+                    strokeWidth={3}
+                  />
+                </MapView>
+
+                {request?.distance_km != null && (
+                  <View style={styles.distanceBadge}>
+                    <Ionicons name="navigate-outline" size={16} color="#FFF" />
+                    <Text style={styles.distanceBadgeText}>
+                      {typeof request.distance_km === 'number'
+                        ? request.distance_km.toFixed(0)
+                        : request.distance_km}{' '}
+                      km
+                    </Text>
+                  </View>
+                )}
+              </View>
 
               {/* Route info below map */}
               <View style={styles.routeInfoBox}>
@@ -1406,6 +1409,26 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.md,
     overflow: 'hidden',
     marginBottom: spacing.md,
+  },
+  mapContainer: {
+    position: 'relative',
+  },
+  distanceBadge: {
+    position: 'absolute',
+    right: spacing.sm,
+    top: spacing.sm,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    backgroundColor: '#FF7043',
+    borderRadius: borderRadius.full,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+  },
+  distanceBadgeText: {
+    fontSize: fontSize.sm,
+    color: colors.white,
+    fontWeight: '600',
   },
   routeInfoBox: {
     backgroundColor: colors.backgroundLight,
