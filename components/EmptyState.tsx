@@ -18,10 +18,9 @@ interface EmptyStateProps {
   title: string;
   description: string;
   actions?: EmptyStateAction[];
-  tips?: string[];
 }
 
-export function EmptyState({ icon, title, description, actions, tips }: EmptyStateProps) {
+export function EmptyState({ icon, title, description, actions }: EmptyStateProps) {
   return (
     <View style={styles.container}>
       <View style={styles.content}>
@@ -68,21 +67,6 @@ export function EmptyState({ icon, title, description, actions, tips }: EmptySta
           </View>
         )}
 
-        {/* Tips */}
-        {tips && tips.length > 0 && (
-          <View style={styles.tipsContainer}>
-            <View style={styles.tipsHeader}>
-              <Ionicons name="bulb-outline" size={20} color={colors.primary} />
-              <Text style={styles.tipsTitle}>Tips</Text>
-            </View>
-            {tips.map((tip, index) => (
-              <View key={index} style={styles.tipItem}>
-                <View style={styles.tipBullet} />
-                <Text style={styles.tipText}>{tip}</Text>
-              </View>
-            ))}
-          </View>
-        )}
       </View>
     </View>
   );
@@ -161,41 +145,5 @@ const styles = StyleSheet.create({
     fontSize: fontSize.md,
     fontWeight: fontWeight.semibold,
     color: colors.primary,
-  },
-  tipsContainer: {
-    width: '100%',
-    backgroundColor: colors.backgroundLight,
-    borderRadius: borderRadius.lg,
-    padding: spacing.lg,
-  },
-  tipsHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs,
-    marginBottom: spacing.md,
-  },
-  tipsTitle: {
-    fontSize: fontSize.md,
-    fontWeight: fontWeight.semibold,
-    color: colors.text.primary,
-  },
-  tipItem: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    marginBottom: spacing.sm,
-  },
-  tipBullet: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: colors.primary,
-    marginTop: spacing.xxxs,
-    marginRight: spacing.sm,
-  },
-  tipText: {
-    flex: 1,
-    fontSize: fontSize.sm,
-    color: colors.text.secondary,
-    lineHeight: 20,
   },
 });
