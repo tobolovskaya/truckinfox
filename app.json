@@ -49,14 +49,6 @@
     "plugins": [
       "expo-router",
       [
-        "@sentry/react-native/expo",
-        {
-          "url": "https://sentry.io/",
-          "project": "react-native",
-          "organization": "knutsen-digital-studio"
-        }
-      ],
-      [
         "expo-location",
         {
           "locationAlwaysAndWhenInUsePermission": "Allow TruckinFox to use your location for real-time cargo tracking."

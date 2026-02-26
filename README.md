@@ -248,30 +248,6 @@ firebase deploy --only functions
 - HTTPS-only Cloud Functions
 - Input validation and sanitization
 
-## 🚨 Error Tracking (Sentry)
-
-Sentry is integrated via `@sentry/react-native` and initialized in [lib/sentry.ts](lib/sentry.ts).
-
-### Required variables
-
-- `EXPO_PUBLIC_SENTRY_DSN` - runtime DSN used by the mobile app
-- `SENTRY_AUTH_TOKEN` - build-time token for sourcemap upload
-- `SENTRY_ORG` - your Sentry organization slug
-- `SENTRY_PROJECT` - your Sentry project slug
-
-### EAS secrets (recommended)
-
-```bash
-eas secret:create --scope project --name EXPO_PUBLIC_SENTRY_DSN --value "<your_dsn>"
-eas secret:create --scope project --name SENTRY_AUTH_TOKEN --value "<your_auth_token>"
-eas secret:create --scope project --name SENTRY_ORG --value "<your_org>"
-eas secret:create --scope project --name SENTRY_PROJECT --value "<your_project>"
-```
-
-### Build with sourcemaps
-
-When building with EAS (`eas build --platform ios|android --profile production`), the Expo Sentry plugin (`@sentry/react-native/expo`) uses these variables to associate releases and upload sourcemaps automatically.
-
 ## 🌍 Internationalization
 
 The app supports:
