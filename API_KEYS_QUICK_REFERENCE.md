@@ -2,12 +2,12 @@
 
 ## ⚡ 30-Second Summary
 
-| Item | Status | Risk | Action |
-|------|--------|------|--------|
-| **Development** | ✅ Secure | Low | Keep using .env |
-| **Google Places Key** | ⚠️ Exposed | Medium | Migrate to Cloud Function in 3-6mo |
-| **Offline Fallback** | ✅ Working | None | Already protecting availability |
-| **Production** | 🔴 Not ready | High | Follow deployment guide before launch |
+| Item                  | Status       | Risk   | Action                                |
+| --------------------- | ------------ | ------ | ------------------------------------- |
+| **Development**       | ✅ Secure    | Low    | Keep using .env                       |
+| **Google Places Key** | ⚠️ Exposed   | Medium | Migrate to Cloud Function in 3-6mo    |
+| **Offline Fallback**  | ✅ Working   | None   | Already protecting availability       |
+| **Production**        | 🔴 Not ready | High   | Follow deployment guide before launch |
 
 ---
 
@@ -46,14 +46,14 @@ NEVER:         Package.json, source code, git commits
 
 ## 🛑 DO's and DON'Ts
 
-| ✅ DO | ❌ DON'T |
-|------|---------|
-| Store in `.env` | Hardcode in source |
-| Use `EXPO_PUBLIC_` prefix | Commit `.env` to git |
-| Test offline mode | Share key in Slack/email |
-| Rotate keys quarterly | Use same key for dev+prod |
-| Log errors, not keys | Include keys in error messages |
-| Set GCP restrictions | Leave API key unrestricted |
+| ✅ DO                     | ❌ DON'T                       |
+| ------------------------- | ------------------------------ |
+| Store in `.env`           | Hardcode in source             |
+| Use `EXPO_PUBLIC_` prefix | Commit `.env` to git           |
+| Test offline mode         | Share key in Slack/email       |
+| Rotate keys quarterly     | Use same key for dev+prod      |
+| Log errors, not keys      | Include keys in error messages |
+| Set GCP restrictions      | Leave API key unrestricted     |
 
 ---
 
@@ -70,20 +70,20 @@ NEVER:         Package.json, source code, git commits
 
 ## 📞 Who to Ask
 
-| Question | Contact | Resource |
-|----------|---------|----------|
-| "How do I set up locally?" | Mobile team | API_KEYS_DEPLOYMENT_GUIDE.md |
-| "What's our security plan?" | Security team | GOOGLE_PLACES_API_SECURITY.md |
-| "Is the key exposed?" | DevOps team | API_KEYS_SECURITY_CHECKLIST.md |
-| "When do we migrate?" | Tech lead | API_KEYS_PROTECTION_SUMMARY.md |
+| Question                    | Contact       | Resource                       |
+| --------------------------- | ------------- | ------------------------------ |
+| "How do I set up locally?"  | Mobile team   | API_KEYS_DEPLOYMENT_GUIDE.md   |
+| "What's our security plan?" | Security team | GOOGLE_PLACES_API_SECURITY.md  |
+| "Is the key exposed?"       | DevOps team   | API_KEYS_SECURITY_CHECKLIST.md |
+| "When do we migrate?"       | Tech lead     | API_KEYS_PROTECTION_SUMMARY.md |
 
 ---
 
 ## 🔐 Three Critical Files
 
-1. **GOOGLE_PLACES_API_SECURITY.md** — *Architecture & strategy*
-2. **API_KEYS_SECURITY_CHECKLIST.md** — *Audit & compliance*
-3. **API_KEYS_DEPLOYMENT_GUIDE.md** — *Step-by-step procedures*
+1. **GOOGLE_PLACES_API_SECURITY.md** — _Architecture & strategy_
+2. **API_KEYS_SECURITY_CHECKLIST.md** — _Audit & compliance_
+3. **API_KEYS_DEPLOYMENT_GUIDE.md** — _Step-by-step procedures_
 
 ---
 
@@ -121,6 +121,7 @@ NOW:              FUTURE (3-6 months):
 ## 📱 For Your Phone
 
 **Bookmark these**:
+
 1. Google Cloud Console: https://console.cloud.google.com
 2. Firebase Console: https://console.firebase.google.com
 3. Upstash Console: https://console.upstash.com
@@ -144,7 +145,7 @@ NOW:              FUTURE (3-6 months):
 ## 📞 Support
 
 - **Dev Setup Questions**: See API_KEYS_DEPLOYMENT_GUIDE.md
-- **Architecture Questions**: See GOOGLE_PLACES_API_SECURITY.md  
+- **Architecture Questions**: See GOOGLE_PLACES_API_SECURITY.md
 - **Security Audit**: See API_KEYS_SECURITY_CHECKLIST.md
 - **Emergency**: Call security team immediately + follow incident response guide
 

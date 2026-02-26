@@ -85,7 +85,7 @@ jest.mock('firebase/firestore', () => ({
   addDoc: jest.fn(),
   serverTimestamp: jest.fn(() => ({ seconds: 0, nanoseconds: 0 })),
   Timestamp: {
-    fromDate: jest.fn((date) => ({ toDate: () => date })),
+    fromDate: jest.fn(date => ({ toDate: () => date })),
   },
   writeBatch: jest.fn(),
 }));

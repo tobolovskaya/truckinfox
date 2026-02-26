@@ -267,15 +267,18 @@ useEffect(() => {
 ## Future Improvements
 
 1. **Advanced Caching**
+
    - Implement service worker for web
    - Offline-first architecture
    - Background sync
 
 2. **Code Splitting**
+
    - Dynamic imports for large screens
    - Route-based code splitting with Expo Router
 
 3. **Image Optimization**
+
    - CDN integration
    - Responsive images
    - Progressive JPEG/WebP

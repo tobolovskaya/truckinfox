@@ -21,24 +21,26 @@ Push Notification Batching optimizes how new cargo requests notify carriers by:
 ### Problem Solved
 
 **Before**: Each new request triggered individual notifications to each carrier
+
 ```
 New Request → Cloud Function
   → Get Carrier 1 → Send (Function invocation)
   → Get Carrier 2 → Send (Function invocation)
   → Get Carrier 3 → Send (Function invocation)
   ... N carriers = N function invocations
-  
+
 Cost: $0.40 per 1M function calls × N carriers = 💸 Expensive
 ```
 
 **After**: Batch all notifications in single Cloud Function
+
 ```
 New Request → Cloud Function
   → Query all Carriers (1 query)
   → Collect FCM tokens (array filter)
   → Send to all tokens simultaneously (1 invocation)
   → Track delivery (1 log)
-  
+
 Cost: $0.40 per 1M function calls regardless of carrier count = ✅ Efficient
 ```
 
@@ -46,11 +48,11 @@ Cost: $0.40 per 1M function calls regardless of carrier count = ✅ Efficient
 
 With 10 carriers per request, 100 requests/day:
 
-| Metric | Before | After | Savings |
-|--------|--------|-------|---------|
-| Daily Invocations | 1,000 | 100 | **90%** |
-| Monthly Cost | $0.40 | $0.04 | **$0.36** |
-| Notification Latency | 5-10s | 1-2s | **80% faster** |
+| Metric               | Before | After | Savings        |
+| -------------------- | ------ | ----- | -------------- |
+| Daily Invocations    | 1,000  | 100   | **90%**        |
+| Monthly Cost         | $0.40  | $0.04 | **$0.36**      |
+| Notification Latency | 5-10s  | 1-2s  | **80% faster** |
 
 ---
 
@@ -65,7 +67,7 @@ cargo_requests/{requestId} Created
          ↓
 Validate request data
     ├─ from_city (required)
-    ├─ cargo_type (required)  
+    ├─ cargo_type (required)
     └─ from_address (required)
          ↓
 Query carriers by service_area
@@ -96,6 +98,7 @@ Record notification history
 ### Data Flow
 
 **Input**: New Firestore document in `cargo_requests/{requestId}`
+
 ```typescript
 {
   from_city: "Oslo",           // Used for service area matching
@@ -108,6 +111,7 @@ Record notification history
 ```
 
 **Processing**:
+
 1. Extract `from_city` → Find carriers serving that city
 2. Check each carrier's `service_areas` array
 3. Validate FCM token exists and is valid
@@ -115,6 +119,7 @@ Record notification history
 5. Check rate limit: no more than 10 notifications/hour to same carrier
 
 **Output**: Notification delivered to carrier app via FCM
+
 ```json
 {
   "notification": {
@@ -131,6 +136,7 @@ Record notification history
 ```
 
 **Logging**: Delivery metrics stored in `notification_delivery_logs`
+
 ```typescript
 {
   request_id: "abc123",
@@ -158,14 +164,16 @@ Record notification history
 #### Step-by-Step Execution
 
 **Step 1: Validate Request Data**
+
 ```typescript
 if (!request.from_city || !request.cargo_type || !request.from_address) {
   console.warn('Incomplete request data');
-  return;  // Exit early - can't notify without location
+  return; // Exit early - can't notify without location
 }
 ```
 
 **Step 2: Query Carriers in Service Area**
+
 ```typescript
 const carriersQuery = await admin
   .firestore()
@@ -177,50 +185,53 @@ const carriersQuery = await admin
 ```
 
 **Step 3: Filter by FCM Token & Preferences**
+
 ```typescript
 for (const doc of carriersQuery.docs) {
   const carrier = doc.data();
-  
+
   // Skip if no token
   if (!carrier.fcm_token) continue;
-  
+
   // Skip if notifications disabled
   if (carrier.notification_preferences?.cargo_requests === false) continue;
-  
+
   // Skip if already notified in this hour (rate limiting)
   const recentCount = await checkRecentNotifications(doc.id, requestId);
   if (recentCount > 0) continue;
-  
+
   // Valid carrier - add token to batch
   carrierTokens.push(carrier.fcm_token);
 }
 ```
 
 **Step 4: Batch & Send Notifications**
+
 ```typescript
 // FCM supports max 500 tokens per sendEachForMulticast() call
 for (let i = 0; i < carrierTokens.length; i += 500) {
   const batch = carrierTokens.slice(i, i + 500);
-  
+
   const response = await admin.messaging().sendEachForMulticast({
     tokens: batch,
     notification: {
       title: 'New Cargo Available',
-      body: `${request.cargo_type} from ${request.from_address}`
+      body: `${request.cargo_type} from ${request.from_address}`,
     },
     data: {
       type: 'new_cargo_request',
       requestId: requestId,
       cargoType: request.cargo_type,
-      fromCity: request.from_city
-    }
+      fromCity: request.from_city,
+    },
   });
-  
+
   console.log(`Batch sent: ${response.successCount} delivered`);
 }
 ```
 
 **Step 5: Track Delivery**
+
 ```typescript
 // Log delivery metrics for monitoring
 await admin
@@ -231,21 +242,22 @@ await admin
     sent: totalSent,
     failed: totalFailed,
     success_rate: (totalSent / carrierTokens.length) * 100,
-    created_at: FieldValue.serverTimestamp()
+    created_at: FieldValue.serverTimestamp(),
   });
 ```
 
 **Step 6: Record Notification History**
+
 ```typescript
 // For each carrier that received notification,
 // create entry in notification_history for rate limiting
 // Automatically expires after 1 hour
 const batch = admin.firestore().batch();
-carrierIds.forEach((carrierId) => {
+carrierIds.forEach(carrierId => {
   batch.set(admin.firestore().collection('notification_history').doc(), {
     carrier_id: carrierId,
     request_id: requestId,
-    expires_at: new Date(Date.now() + 3600000)  // 1 hour TTL
+    expires_at: new Date(Date.now() + 3600000), // 1 hour TTL
   });
 });
 await batch.commit();
@@ -269,29 +281,26 @@ export const retryFailedNotifications = functions.pubsub
       .where('created_at', '>', new Date(Date.now() - 1800000))
       .limit(10)
       .get();
-    
+
     // 2. For each failed batch, retry the original carriers
     for (const log of failedLogs.docs) {
       const requestId = log.data().request_id;
-      const request = await admin.firestore()
-        .doc(`cargo_requests/${requestId}`)
-        .get();
-      
+      const request = await admin.firestore().doc(`cargo_requests/${requestId}`).get();
+
       // 3. Send again to all carriers in service area
-      const carriers = await admin.firestore()
+      const carriers = await admin
+        .firestore()
         .collection('users')
         .where('service_areas', 'array-contains', request.data().from_city)
         .get();
-      
+
       // 4. Extract tokens and resend
-      const tokens = carriers.docs
-        .map(d => d.data().fcm_token)
-        .filter(Boolean);
-      
+      const tokens = carriers.docs.map(d => d.data().fcm_token).filter(Boolean);
+
       if (tokens.length > 0) {
         await admin.messaging().sendEachForMulticast({
           tokens,
-          notification: { title: 'New Cargo Available (Retry)' }
+          notification: { title: 'New Cargo Available (Retry)' },
         });
       }
     }
@@ -320,6 +329,7 @@ export const retryFailedNotifications = functions.pubsub
 ```
 
 **Required Fields**:
+
 - `fcm_token` (string): Firebase Cloud Messaging token for push notifications
 - `service_areas` (array): City names where this carrier operates
 - `is_active` (boolean): Whether carrier is currently active
@@ -339,6 +349,7 @@ export const retryFailedNotifications = functions.pubsub
 ```
 
 **Required Fields**:
+
 - `from_city` (string): Pickup location city
 - `from_address` (string): Pickup location address
 - `cargo_type` (string): Type of cargo
@@ -397,10 +408,11 @@ For error tracking. Auto-created when exceptions occur:
 ### Batch Size
 
 ```typescript
-const batchSize = 500;  // FCM maximum per request
+const batchSize = 500; // FCM maximum per request
 ```
 
 **Considerations**:
+
 - FCM quota: 500 tokens per `sendEachForMulticast()` call (hard limit)
 - Network: Larger batches = slower individual requests
 - Recommended: Keep at 500 (FCM's maximum)
@@ -408,21 +420,25 @@ const batchSize = 500;  // FCM maximum per request
 ### Retry Policy
 
 ```typescript
-withRetry(async () => { /* operation */ }, 2)
+withRetry(async () => {
+  /* operation */
+}, 2);
 ```
 
 **Current Settings**:
+
 - Max retries: 2 additional attempts (3 total)
 - Exponential backoff: 1s → 2s → 4s delays
 - Applied to: Firestore queries, messaging sends, batch commits
 
 **Adjust**:
+
 ```typescript
 // More aggressive retry
-withRetry(operation, 3)  // 4 total attempts
+withRetry(operation, 3); // 4 total attempts
 
-// Less aggressive retry  
-withRetry(operation, 1)  // 2 total attempts
+// Less aggressive retry
+withRetry(operation, 1); // 2 total attempts
 ```
 
 ### Rate Limiting Per Carrier
@@ -444,6 +460,7 @@ if (recentNotifications.data().count > 0) {
 
 **Current**: Max 1 notification per carrier per hour per request  
 **To Increase**: Modify count check:
+
 ```typescript
 // Allow up to 5 per hour
 if (recentNotifications.data().count >= 5) skip;
@@ -456,11 +473,14 @@ if (recentNotifications.data().count >= 10) skip;
 
 ```typescript
 export const retryFailedNotifications = functions.pubsub
-  .schedule('every 30 minutes')  // ← Modify this
-  .onRun(async () => { /* ... */ });
+  .schedule('every 30 minutes') // ← Modify this
+  .onRun(async () => {
+    /* ... */
+  });
 ```
 
 **Schedule Options**:
+
 - `'every 15 minutes'` - More frequent retries
 - `'every 30 minutes'` - Current (recommended)
 - `'every 1 hours'` - Less frequent
@@ -473,8 +493,9 @@ export const retryFailedNotifications = functions.pubsub
 ### Key Metrics to Track
 
 1. **Delivery Success Rate**
+
    ```sql
-   SELECT 
+   SELECT
      request_id,
      sent,
      failed,
@@ -482,51 +503,55 @@ export const retryFailedNotifications = functions.pubsub
    FROM notification_delivery_logs
    WHERE created_at > DATE_SUB(NOW(), INTERVAL 7 DAY)
    ```
-   
+
    **Target**: > 95% success rate  
    **Alert**: If < 90%, investigate FCM token validity
 
 2. **Carriers Reached**
+
    ```sql
-   SELECT 
+   SELECT
      AVG(tokens_valid) as avg_carriers_reached,
      AVG(success_rate) as avg_success_rate
    FROM notification_delivery_logs
    WHERE created_at > DATE_SUB(NOW(), INTERVAL 24 HOUR)
    ```
-   
+
    **Insights**: How many carriers receive avg notification
 
 3. **Response Time**
+
    ```
    Measure time from request creation to all notifications sent
    ```
-   
+
    **Target**: < 5 seconds  
    **Bottleneck Check**: Query time, network, FCM response
 
 4. **Retry Effectiveness**
+
    ```sql
-   SELECT 
+   SELECT
      retry_round,
      AVG(success_count) as avg_success
    FROM retry_logs
    GROUP BY retry_round
    ```
-   
+
    **Insights**: Effectiveness of retry logic
 
 ### Firestore Indexes Required
 
 For optimal query performance, create these indexes:
 
-| Collection | Fields | Type |
-|------------|--------|------|
-| `users` | `user_type`, `service_areas`, `is_active` | Composite |
-| `notification_history` | `carrier_id`, `timestamp` | Composite |
-| `notification_delivery_logs` | `created_at`, `failed` | Ascending |
+| Collection                   | Fields                                    | Type      |
+| ---------------------------- | ----------------------------------------- | --------- |
+| `users`                      | `user_type`, `service_areas`, `is_active` | Composite |
+| `notification_history`       | `carrier_id`, `timestamp`                 | Composite |
+| `notification_delivery_logs` | `created_at`, `failed`                    | Ascending |
 
 **Create via Firestore Console**:
+
 1. Open Cloud Firestore
 2. Go to Indexes tab
 3. Create Composite Index for each row above
@@ -539,6 +564,7 @@ For optimal query performance, create these indexes:
 ### Common Errors & Fixes
 
 **Error: "Registration token is invalid"**
+
 ```
 Cause: FCM token expired or device uninstalled app
 Fix: Token validation should happen on carrier device
@@ -548,15 +574,17 @@ Fix: Token validation should happen on carrier device
 ```
 
 **Error: "Request limit exceeded"**
+
 ```
 Cause: Too many FCM requests to same token
-Fix: 
+Fix:
 - Batch size already optimized (500 max)
 - Implement token pooling per request
 - Stagger requests across time windows
 ```
 
 **Error: "Service unavailable"**
+
 ```
 Cause: FCM service temporarily down
 Fix:
@@ -566,6 +594,7 @@ Fix:
 ```
 
 **Error: "Invalid notification format"**
+
 ```
 Cause: title/body too long or invalid characters
 Fix:
@@ -585,6 +614,7 @@ console.error(...)  // ❌ Critical failures (should never happen)
 ```
 
 **View Logs**:
+
 ```bash
 # In Firebase Console
 Cloud Functions → Logs → Filter by function name
@@ -606,15 +636,14 @@ import * as admin from 'firebase-admin';
 import { sendBatchNotificationsOnNewRequest } from './index';
 
 describe('Push Notification Batching', () => {
-  
   it('should batch send to multiple carriers', async () => {
     // Create test request
     const request = {
       from_city: 'Oslo',
       cargo_type: 'Electronics',
-      from_address: 'Test St 123'
+      from_address: 'Test St 123',
     };
-    
+
     // Create test carriers with FCM tokens
     const carriers = [];
     for (let i = 0; i < 5; i++) {
@@ -623,45 +652,44 @@ describe('Push Notification Batching', () => {
         fcm_token: `token${i}`,
         service_areas: ['Oslo'],
         is_active: true,
-        notification_preferences: { cargo_requests: true }
+        notification_preferences: { cargo_requests: true },
       });
     }
-    
+
     // Mock admin.messaging().sendEachForMulticast()
-    const sendSpy = jest.spyOn(admin.messaging(), 'sendEachForMulticast')
-      .mockResolvedValue({
-        successCount: 5,
-        failureCount: 0,
-        responses: [],
-        failures: []
-      });
-    
+    const sendSpy = jest.spyOn(admin.messaging(), 'sendEachForMulticast').mockResolvedValue({
+      successCount: 5,
+      failureCount: 0,
+      responses: [],
+      failures: [],
+    });
+
     // Trigger function
     // (simulate with mock snap + context)
-    
+
     // Assert sendEachForMulticast called with batched tokens
     expect(sendSpy).toHaveBeenCalledWith(
       expect.objectContaining({
-        tokens: expect.arrayContaining(['token0', 'token1'])
+        tokens: expect.arrayContaining(['token0', 'token1']),
       })
     );
-    
+
     // Assert delivery logged
     // (check notification_delivery_logs collection)
   });
-  
+
   it('should skip carriers without FCM tokens', async () => {
     // Carriers without tokens should be filtered
   });
-  
+
   it('should respect notification preferences', async () => {
     // Carriers with cargo_requests: false should be skipped
   });
-  
+
   it('should enforce rate limiting', async () => {
     // Same carrier shouldn't get 2+ notifications per hour
   });
-  
+
   it('should retry failed notifications', async () => {
     // retryFailedNotifications should resend failed batches
   });
@@ -671,6 +699,7 @@ describe('Push Notification Batching', () => {
 ### Manual Testing
 
 **1. Create Test Request**
+
 ```bash
 firebase > Create document in cargo_requests
 
@@ -686,6 +715,7 @@ firebase > Create document in cargo_requests
 ```
 
 **2. Verify Carriers Have Setup**
+
 ```bash
 firebase > Check carrier documents
 
@@ -697,6 +727,7 @@ Each carrier needs:
 ```
 
 **3. Monitor Logs**
+
 ```bash
 gcloud functions logs read sendBatchNotificationsOnNewRequest \
   --limit 100 \
@@ -704,6 +735,7 @@ gcloud functions logs read sendBatchNotificationsOnNewRequest \
 ```
 
 **4. Verify Notification Delivery**
+
 ```bash
 firebase > Check notification_delivery_logs
 
@@ -713,6 +745,7 @@ Verify: success_rate is high (> 90%)
 ```
 
 **5. Check Rate Limiting**
+
 ```bash
 firebase > Create another request within 1 hour
 
@@ -726,38 +759,40 @@ Second request should skip previously notified carriers
 
 ### Time Complexity
 
-| Operation | Complexity | Notes |
-|-----------|------------|-------|
-| Query carriers | O(carriers) | Firestore index on service_areas |
-| Filter tokens | O(carriers) | In-memory filtering |
-| Batch build | O(carriers) | Split into 500-token chunks |
-| FCM send | O(batches) | Parallel for each 500-token batch |
-| History write | O(carriers) | Batch write |
-| **Total** | **O(carriers)** | Linear growth with request region |
+| Operation      | Complexity      | Notes                             |
+| -------------- | --------------- | --------------------------------- |
+| Query carriers | O(carriers)     | Firestore index on service_areas  |
+| Filter tokens  | O(carriers)     | In-memory filtering               |
+| Batch build    | O(carriers)     | Split into 500-token chunks       |
+| FCM send       | O(batches)      | Parallel for each 500-token batch |
+| History write  | O(carriers)     | Batch write                       |
+| **Total**      | **O(carriers)** | Linear growth with request region |
 
 ### Space Complexity
 
-| Data | Size | Notes |
-|------|------|-------|
-| carrierTokens array | O(carriers) | Tokens stored in memory |
-| notification_history | O(sent) | Persisted to Firestore |
-| delivery_logs | O(1) | Single document per request |
+| Data                 | Size        | Notes                       |
+| -------------------- | ----------- | --------------------------- |
+| carrierTokens array  | O(carriers) | Tokens stored in memory     |
+| notification_history | O(sent)     | Persisted to Firestore      |
+| delivery_logs        | O(1)        | Single document per request |
 
 ### Typical Execution Times
 
-| Scenario | Time |
-|----------|------|
-| 10 carriers | 1-2 seconds |
-| 50 carriers | 2-3 seconds |
-| 500 carriers | 3-5 seconds |
+| Scenario       | Time         |
+| -------------- | ------------ |
+| 10 carriers    | 1-2 seconds  |
+| 50 carriers    | 2-3 seconds  |
+| 500 carriers   | 3-5 seconds  |
 | 1000+ carriers | 5-10 seconds |
 
 **Bottlenecks**:
+
 1. Firestore query (50% of time)
 2. FCM sends (40% of time)
 3. History writes (10% of time)
 
 **Optimization Tips**:
+
 - Index on `service_areas` field (done by Cloud Functions)
 - Use `limit(1000)` if > 1000 carriers per region
 - Process carriers in batches of 100 during query
@@ -768,16 +803,17 @@ Second request should skip previously notified carriers
 
 ### Firebase Pricing Components
 
-| Component | Rate | Usage |
-|-----------|------|-------|
-| Cloud Functions | $0.40 per 1M invocations | 1 per request |
-| Firestore reads | $1.00 per 1M reads | ~2-3 per request (query + history) |
-| Firestore writes | $1.00 per 1M writes | ~1 per request (logs + history) |
-| FCM | Free (included) | Unlimited messages |
+| Component        | Rate                     | Usage                              |
+| ---------------- | ------------------------ | ---------------------------------- |
+| Cloud Functions  | $0.40 per 1M invocations | 1 per request                      |
+| Firestore reads  | $1.00 per 1M reads       | ~2-3 per request (query + history) |
+| Firestore writes | $1.00 per 1M writes      | ~1 per request (logs + history)    |
+| FCM              | Free (included)          | Unlimited messages                 |
 
 ### Cost Calculation
 
 **Before Batching** (Individual sends):
+
 ```
 1 new request × 10 carriers/request = 10 function invocations
 Cost = (10 × $0.40/1M) + (10 × 2 reads) + (10 × N writes)
@@ -787,6 +823,7 @@ Cost = (10 × $0.40/1M) + (10 × 2 reads) + (10 × N writes)
 ```
 
 **After Batching** (Single batch send):
+
 ```
 1 new request × 1 batch function = 1 function invocation
 Cost = (1 × $0.40/1M) + (1 × 2 reads) + (1 × N writes)
@@ -796,17 +833,18 @@ Cost = (1 × $0.40/1M) + (1 × 2 reads) + (1 × N writes)
 ```
 
 **Savings**: 90% reduction in function costs
+
 - From $0.09/month → $0.009/month
 - Breakeven on overhead: Immediate (~0 overhead)
 
 ### Scale Impact
 
-| Daily Requests | Before | After | Savings |
-|---|---|---|---|
-| 10 | $0.0009 | $0.00009 | 90% |
-| 100 | $0.009 | $0.0009 | 90% |
-| 1000 | $0.09 | $0.009 | 90% |
-| 10000 | $0.9 | $0.09 | 90% |
+| Daily Requests | Before  | After    | Savings |
+| -------------- | ------- | -------- | ------- |
+| 10             | $0.0009 | $0.00009 | 90%     |
+| 100            | $0.009  | $0.0009  | 90%     |
+| 1000           | $0.09   | $0.009   | 90%     |
+| 10000          | $0.9    | $0.09    | 90%     |
 
 **Note**: Slight offset by increased Firestore reads/writes for tracking, but FCM is free → net savings always 80%+
 
@@ -870,6 +908,7 @@ firebase deploy --only functions
 ### 1. Rate Limiting
 
 **Prevent**: DDoS by creating fake requests
+
 ```typescript
 // Rate limit per shipper
 const shipper = request.shipper_id;
@@ -882,6 +921,7 @@ if (count > 100) throw new Error('Rate limit exceeded');
 ### 2. FCM Token Security
 
 **Prevent**: Broadcasting to wrong devices
+
 ```typescript
 // Validate tokens before sending
 if (!fcm_token || !fcm_token.startsWith('f')) {
@@ -893,14 +933,16 @@ if (!fcm_token || !fcm_token.startsWith('f')) {
 ### 3. Service Area Validation
 
 **Prevent**: Notifications to unauthorized carriers
+
 ```typescript
 // Only send to carriers explicitly in service_area
-where('service_areas', 'array-contains', request.from_city)
+where('service_areas', 'array-contains', request.from_city);
 ```
 
 ### 4. Notification Content
 
 **Prevent**: Leaking sensitive info
+
 ```typescript
 // Only include safe data in notification
 notification: {
@@ -934,27 +976,29 @@ match /notification_history/{document=**} {
 ### Symptoms & Solutions
 
 **Symptom**: "Notifications not arriving"
+
 ```
 1. Check Firestore data
    - Does carrier have is_active: true?
    - Does carrier have valid fcm_token?
    - Does service_areas contain from_city?
-   
+
 2. Check logs
    firebase functions:log
    - Look for "Found X carriers"
    - Look for "Batch sent: Y delivered"
-   
+
 3. Check device
    - Is app installed on test device?
    - Is FCM enabled in app?
    - Is notification permission granted?
-   
+
 4. Check preferences
    - Is notification_preferences.cargo_requests: true?
 ```
 
 **Symptom**: "Function invocation rate too high"
+
 ```
 Solution: Increase batch size (already at FCM max of 500)
 - Or: Reduce retry frequency (increase retry schedule interval)
@@ -962,6 +1006,7 @@ Solution: Increase batch size (already at FCM max of 500)
 ```
 
 **Symptom**: "Missing notifications from some carriers"
+
 ```
 Likely cause: Rate limiting filtering them out
 - Check: Are multiple requests from this carrier in same hour?
@@ -970,6 +1015,7 @@ Likely cause: Rate limiting filtering them out
 ```
 
 **Symptom**: "Error: 'Quota exceeded'"
+
 ```
 Cause: Firebase Messaging quota limit
 Solution:
@@ -997,6 +1043,7 @@ debugLog('Starting batch notification', requestId);
 ```
 
 Redeploy and tail logs:
+
 ```bash
 firebase functions:log --tail
 ```
@@ -1008,27 +1055,32 @@ firebase functions:log --tail
 ### Planned Features
 
 1. **Smart Carrier Ranking**
+
    - Prioritize high-rated carriers
    - Send to top 5 first, then others
    - Adjust based on response time
 
 2. **Adaptive Batching**
+
    - Analyze FCM response times
    - Adjust batch size dynamically
    - Target 1-2 second sends
 
 3. **Notification Analytics**
+
    - Track: Click-through rate per carrier
    - Track: How many time-outs after notification
    - Optimize title/body based on performance
 
 4. **Carrier Preferences Profile**
+
    - Preferred cargo types
    - Distance limits
    - Weight preferences
    - Auto-filter before batching
 
 5. **Push Notification Fallback**
+
    - If FCM fails: Try email notification
    - If email fails: SMS
    - Auto-escalate by priority
@@ -1051,6 +1103,7 @@ firebase functions:log --tail
 ### Report Issues
 
 Include:
+
 - Function logs (last 50 lines)
 - Request ID that failed
 - Number of carriers affected
@@ -1060,10 +1113,10 @@ Include:
 
 ## Version History
 
-| Version | Date | Changes |
-|---------|------|---------|
-| 1.0 | 2024 | Initial implementation, batching, retries |
-| -- | Future | Smart ranking, adaptive batching, fallbacks |
+| Version | Date   | Changes                                     |
+| ------- | ------ | ------------------------------------------- |
+| 1.0     | 2024   | Initial implementation, batching, retries   |
+| --      | Future | Smart ranking, adaptive batching, fallbacks |
 
 ---
 

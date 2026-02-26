@@ -66,7 +66,6 @@ export function EmptyState({ icon, title, description, actions }: EmptyStateProp
             ))}
           </View>
         )}
-
       </View>
     </View>
   );

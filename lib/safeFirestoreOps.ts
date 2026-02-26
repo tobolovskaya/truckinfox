@@ -145,7 +145,9 @@ export const safeGetDoc = async (
 
     if (exists) {
       console.log(
-        `📖 Document retrieved (${fromCache ? 'from cache' : 'from server'}): ${collectionName}/${documentId}`
+        `📖 Document retrieved (${
+          fromCache ? 'from cache' : 'from server'
+        }): ${collectionName}/${documentId}`
       );
       return {
         data: { id: docSnap.id, ...docSnap.data() },

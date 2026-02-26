@@ -104,11 +104,13 @@ interface ScreenSectionProps {
 ### Profile Screens
 
 1. **app/profile/payments.tsx** ✅
+
    - Replaced custom header with ScreenHeader
    - Wrapped payment cards in ScreenSection
    - Removed 40+ lines of duplicate styling code
 
 2. **app/profile/edit.tsx** ✅
+
    - Replaced custom header with save button rightAction
    - Standardized form sections
    - Consistent spacing throughout

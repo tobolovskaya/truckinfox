@@ -28,16 +28,18 @@ async function safeSetDoc(
   documentId: string,
   data: any,
   merge?: boolean
-): Promise<SafeDocResult>
+): Promise<SafeDocResult>;
 ```
 
 **Parameters:**
+
 - `collectionName` (string, required): Firestore collection name
 - `documentId` (string, required): Document ID
 - `data` (any, required): Document data to set
 - `merge` (boolean, optional): Merge with existing doc. Default: false
 
 **Returns:**
+
 ```typescript
 {
   success: boolean;        // Operation succeeded (true = queued if offline)
@@ -47,16 +49,18 @@ async function safeSetDoc(
 ```
 
 **Behavior:**
+
 - If online: Writes to Firestore with `serverTimestamp()`
 - If offline: Queues operation in memory, returns `fromCache: true`
 - Automatically syncs when connection restored
 
 **Example:**
+
 ```typescript
 const result = await safeSetDoc('users', userId, {
   name: 'John Doe',
   email: 'john@example.com',
-  updatedAt: serverTimestamp()
+  updatedAt: serverTimestamp(),
 });
 
 if (result.success) {
@@ -77,15 +81,17 @@ async function safeUpdateDoc(
   collectionName: string,
   documentId: string,
   data: any
-): Promise<SafeDocResult>
+): Promise<SafeDocResult>;
 ```
 
 **Parameters:**
+
 - `collectionName` (string, required): Firestore collection name
 - `documentId` (string, required): Document ID
 - `data` (any, required): Fields to update
 
 **Returns:**
+
 ```typescript
 {
   success: boolean;
@@ -95,16 +101,18 @@ async function safeUpdateDoc(
 ```
 
 **Behavior:**
+
 - If online: Partial update to Firestore
 - If offline: Queues update, merges with local version
 - Updates `updatedAt` timestamp automatically
 - Only queues if at least one field changes
 
 **Example:**
+
 ```typescript
 const result = await safeUpdateDoc('requests', requestId, {
   status: 'completed',
-  completedAt: serverTimestamp()
+  completedAt: serverTimestamp(),
 });
 ```
 
@@ -115,17 +123,16 @@ const result = await safeUpdateDoc('requests', requestId, {
 Delete document with offline support.
 
 ```typescript
-async function safeDeleteDoc(
-  collectionName: string,
-  documentId: string
-): Promise<SafeDocResult>
+async function safeDeleteDoc(collectionName: string, documentId: string): Promise<SafeDocResult>;
 ```
 
 **Parameters:**
+
 - `collectionName` (string, required): Firestore collection name
 - `documentId` (string, required): Document ID
 
 **Returns:**
+
 ```typescript
 {
   success: boolean;
@@ -135,12 +142,14 @@ async function safeDeleteDoc(
 ```
 
 **Behavior:**
+
 - If online: Deletes from Firestore immediately
 - If offline: Marks for deletion, removes from local cache
 - Queues delete operation to execute when online
 - Prevents accessing deleted doc locally
 
 **Example:**
+
 ```typescript
 const result = await safeDeleteDoc('messages', messageId);
 
@@ -156,17 +165,16 @@ if (result.success) {
 Read single document with offline cache support.
 
 ```typescript
-async function safeGetDoc(
-  collectionName: string,
-  documentId: string
-): Promise<SafeGetResult>
+async function safeGetDoc(collectionName: string, documentId: string): Promise<SafeGetResult>;
 ```
 
 **Parameters:**
+
 - `collectionName` (string, required): Firestore collection name
 - `documentId` (string, required): Document ID
 
 **Returns:**
+
 ```typescript
 {
   success: boolean;
@@ -178,12 +186,14 @@ async function safeGetDoc(
 ```
 
 **Behavior:**
+
 - If online: Fetches from Firestore, updates cache
 - If offline: Returns from local cache
 - Returns `data = undefined` if document doesn't exist
 - Returns `fromCache: true` when using cached data
 
 **Example:**
+
 ```typescript
 const result = await safeGetDoc('users', userId);
 
@@ -205,15 +215,17 @@ Query documents with offline cache support.
 async function safeQuery(
   collectionName: string,
   constraints: QueryConstraint[]
-): Promise<SafeQueryResult>
+): Promise<SafeQueryResult>;
 ```
 
 **Parameters:**
+
 - `collectionName` (string, required): Firestore collection name
 - `constraints` (QueryConstraint[], required): Query constraints from Firebase
   - Use firebase/firestore: `where()`, `orderBy()`, `limit()`, etc.
 
 **Returns:**
+
 ```typescript
 {
   success: boolean;
@@ -224,12 +236,14 @@ async function safeQuery(
 ```
 
 **Behavior:**
+
 - If online: Executes query against Firestore
 - If offline: Queries local cached documents
 - Offline queries only search what's been cached
 - Includes pending queued operations
 
 **Example:**
+
 ```typescript
 import { where, orderBy, limit } from 'firebase/firestore';
 
@@ -237,7 +251,7 @@ const result = await safeQuery('requests', [
   where('status', '==', 'open'),
   where('userId', '==', currentUserId),
   orderBy('createdAt', 'desc'),
-  limit(10)
+  limit(10),
 ]);
 
 if (result.success) {
@@ -255,17 +269,16 @@ if (result.success) {
 Add new document with offline support.
 
 ```typescript
-async function safeAddDoc(
-  collectionName: string,
-  data: any
-): Promise<SafeAddResult>
+async function safeAddDoc(collectionName: string, data: any): Promise<SafeAddResult>;
 ```
 
 **Parameters:**
+
 - `collectionName` (string, required): Firestore collection name
 - `data` (any, required): Document data (ID auto-generated)
 
 **Returns:**
+
 ```typescript
 {
   success: boolean;
@@ -276,23 +289,25 @@ async function safeAddDoc(
 ```
 
 **Behavior:**
+
 - If online: Creates on Firestore (gets real ID)
 - If offline: Generates temporary UUID locally
 - Returns temporary ID that will update when synced
 - Queues operation for when connection restored
 
 **Example:**
+
 ```typescript
 const result = await safeAddDoc('messages', {
   conversationId: convId,
   text: 'Hello!',
   sender: userId,
-  createdAt: serverTimestamp()
+  createdAt: serverTimestamp(),
 });
 
 if (result.success) {
   const messageId = result.id; // Use this ID in UI
-  
+
   // Later, when synced, this ID becomes the real Firestore ID
   if (result.fromCache) {
     console.log('Message ID will update when synced');
@@ -307,15 +322,15 @@ if (result.success) {
 Batch multiple operations with offline support.
 
 ```typescript
-async function safeBatchWrite(
-  operations: BatchOperation[]
-): Promise<SafeBatchResult>
+async function safeBatchWrite(operations: BatchOperation[]): Promise<SafeBatchResult>;
 ```
 
 **Parameters:**
+
 - `operations` (BatchOperation[], required): Array of write operations
 
 **BatchOperation:**
+
 ```typescript
 {
   type: 'set' | 'update' | 'delete';
@@ -327,6 +342,7 @@ async function safeBatchWrite(
 ```
 
 **Returns:**
+
 ```typescript
 {
   success: boolean;
@@ -336,39 +352,38 @@ async function safeBatchWrite(
 ```
 
 **Behavior:**
+
 - If online: Executes all operations atomically
 - If offline: Queues entire batch as single unit
 - Either all operations succeed or all are queued
 - Maintains transactional consistency
 
 **Example:**
+
 ```typescript
 const result = await safeBatchWrite([
   {
     type: 'set',
     collection: 'requests',
     id: requestId,
-    data: { status: 'completed', completedAt: serverTimestamp() }
+    data: { status: 'completed', completedAt: serverTimestamp() },
   },
   {
     type: 'update',
     collection: 'users',
     id: userId,
-    data: { completedJobs: increment(1) }
+    data: { completedJobs: increment(1) },
   },
   {
     type: 'update',
     collection: 'analytics',
     id: 'daily_stats',
-    data: { completionsToday: increment(1) }
-  }
+    data: { completionsToday: increment(1) },
+  },
 ]);
 
 if (result.success) {
-  console.log(result.queued 
-    ? 'Batch queued for sync' 
-    : 'Batch executed immediately'
-  );
+  console.log(result.queued ? 'Batch queued for sync' : 'Batch executed immediately');
 }
 ```
 
@@ -384,14 +399,14 @@ Represents a single queued operation.
 
 ```typescript
 interface OfflineQueueItem {
-  id: string;                    // Unique queue item ID (UUID)
-  collectionName: string;        // Firestore collection
+  id: string; // Unique queue item ID (UUID)
+  collectionName: string; // Firestore collection
   operation: 'create' | 'update' | 'delete';
-  documentId: string;           // Document ID
-  data: any;                    // Document data
-  timestamp: number;            // Queue timestamp (milliseconds)
-  retries: number;              // Retry count (0-3)
-  lastError?: string;           // Last sync error message
+  documentId: string; // Document ID
+  data: any; // Document data
+  timestamp: number; // Queue timestamp (milliseconds)
+  retries: number; // Retry count (0-3)
+  lastError?: string; // Last sync error message
 }
 ```
 
@@ -407,32 +422,33 @@ async function queueOfflineOperation(
   operation: 'create' | 'update' | 'delete',
   documentId: string,
   data: any
-): Promise<string>
+): Promise<string>;
 ```
 
 **Parameters:**
+
 - `collectionName` (string): Firestore collection name
 - `operation` ('create'|'update'|'delete'): Operation type
 - `documentId` (string): Document ID
 - `data` (any): Document data
 
 **Returns:**
+
 - Unique queue item ID (string)
 
 **Behavior:**
+
 - Adds operation to in-memory queue
 - Doesn't execute immediately
 - Automatically syncs when online
 - Max 3 retries per operation
 
 **Example:**
+
 ```typescript
-const queueId = await queueOfflineOperation(
-  'requests',
-  'update',
-  'request_123',
-  { status: 'accepted' }
-);
+const queueId = await queueOfflineOperation('requests', 'update', 'request_123', {
+  status: 'accepted',
+});
 
 console.log('Queued with ID:', queueId);
 ```
@@ -444,12 +460,13 @@ console.log('Queued with ID:', queueId);
 Synchronize all queued operations to Firestore.
 
 ```typescript
-async function syncOfflineQueue(): Promise<SyncResult>
+async function syncOfflineQueue(): Promise<SyncResult>;
 ```
 
 **No parameters.**
 
 **Returns:**
+
 ```typescript
 {
   synced: number;              // Operations successfully synced
@@ -459,6 +476,7 @@ async function syncOfflineQueue(): Promise<SyncResult>
 ```
 
 **Behavior:**
+
 - Batch writes all operations to Firestore
 - Implements exponential backoff retry
 - Max 3 retries per operation (1s, 2s, 4s)
@@ -467,6 +485,7 @@ async function syncOfflineQueue(): Promise<SyncResult>
 - Can be manually triggered via `useSyncStatus().syncNow()`
 
 **Example:**
+
 ```typescript
 const result = await syncOfflineQueue();
 
@@ -484,20 +503,23 @@ if (result.errors.length > 0) {
 Get all queued operations.
 
 ```typescript
-function getPendingOfflineOperations(): OfflineQueueItem[]
+function getPendingOfflineOperations(): OfflineQueueItem[];
 ```
 
 **No parameters.**
 
 **Returns:**
+
 - Array of queued operations
 
 **Behavior:**
+
 - Synchronous function
 - Returns copy of queue
 - Ordered by timestamp (oldest first)
 
 **Example:**
+
 ```typescript
 const pending = getPendingOfflineOperations();
 
@@ -505,8 +527,7 @@ console.log(`${pending.length} operations pending`);
 
 pending.forEach(op => {
   console.log(
-    `${op.operation} on ${op.collectionName}/${op.documentId} ` +
-    `(attempt ${op.retries})`
+    `${op.operation} on ${op.collectionName}/${op.documentId} ` + `(attempt ${op.retries})`
   );
 });
 ```
@@ -518,10 +539,11 @@ pending.forEach(op => {
 Get queue statistics.
 
 ```typescript
-function getOfflineQueueStats(): QueueStats
+function getOfflineQueueStats(): QueueStats;
 ```
 
 **Returns:**
+
 ```typescript
 {
   total: number;
@@ -537,6 +559,7 @@ function getOfflineQueueStats(): QueueStats
 ```
 
 **Example:**
+
 ```typescript
 const stats = getOfflineQueueStats();
 
@@ -554,18 +577,20 @@ console.log(`Oldest: ${new Date(stats.oldestItem?.timestamp)}`);
 Initialize offline sync system (called on app start).
 
 ```typescript
-function initializeOfflineSync(): void
+function initializeOfflineSync(): void;
 ```
 
 **Called from:** `app/_layout.tsx` on mount
 
 **Behavior:**
+
 - Registers online/offline event listeners
 - Automatically syncs when connection restored
 - Sets up periodic status polling
 - Should be called once per app startup
 
 **Example:**
+
 ```typescript
 import { initializeOfflineSync } from '../lib/offlineSync';
 
@@ -586,20 +611,22 @@ export default function RootLayout() {
 Get current sync status (snapshot).
 
 ```typescript
-function getSyncStatus(): SyncStatus
+function getSyncStatus(): SyncStatus;
 ```
 
 **Returns:**
+
 ```typescript
 {
-  isPending: boolean;      // Any operations queued?
-  pendingCount: number;    // Number of queued operations
+  isPending: boolean; // Any operations queued?
+  pendingCount: number; // Number of queued operations
   status: 'synced' | 'pending' | 'syncing';
-  isOnline: boolean;       // Connection status
+  isOnline: boolean; // Connection status
 }
 ```
 
 **Example:**
+
 ```typescript
 const status = getSyncStatus();
 
@@ -615,15 +642,17 @@ if (status.status === 'pending') {
 Clear all queued operations (destructive).
 
 ```typescript
-function clearOfflineQueue(): number
+function clearOfflineQueue(): number;
 ```
 
 **Returns:**
+
 - Number of operations cleared
 
 **Warning:** This removes all pending operations permanently. Use cautiously.
 
 **Example:**
+
 ```typescript
 const cleared = clearOfflineQueue();
 console.log(`Cleared ${cleared} operations`);
@@ -640,10 +669,11 @@ React hook for monitoring offline sync status.
 Monitor sync status and control sync.
 
 ```typescript
-function useSyncStatus(): SyncStatusHook
+function useSyncStatus(): SyncStatusHook;
 ```
 
 **Returns:**
+
 ```typescript
 {
   isSyncing: boolean;              // Currently syncing?
@@ -656,6 +686,7 @@ function useSyncStatus(): SyncStatusHook
 ```
 
 **Behavior:**
+
 - Auto-syncs when connection restored
 - Updates pending count every 5 seconds
 - Returns immediately (no suspension)
@@ -663,34 +694,25 @@ function useSyncStatus(): SyncStatusHook
 - Manual `syncNow()` only works when online
 
 **Example:**
+
 ```typescript
 import { useSyncStatus } from '../hooks/useSyncStatus';
 
 export default function MyScreen() {
-  const { 
-    syncStatus, 
-    pendingCount, 
-    isSyncing, 
-    syncNow 
-  } = useSyncStatus();
+  const { syncStatus, pendingCount, isSyncing, syncNow } = useSyncStatus();
 
   return (
     <View>
       {isSyncing && <ActivityIndicator />}
-      
+
       {syncStatus === 'pending' && (
         <View>
           <Text>{pendingCount} changes pending</Text>
-          <Button 
-            onPress={syncNow}
-            title="Sync Now"
-          />
+          <Button onPress={syncNow} title="Sync Now" />
         </View>
       )}
-      
-      {syncStatus === 'synced' && (
-        <Text>✅ All changes synced</Text>
-      )}
+
+      {syncStatus === 'synced' && <Text>✅ All changes synced</Text>}
     </View>
   );
 }
@@ -707,21 +729,23 @@ React hook for monitoring network status.
 Monitor network connectivity.
 
 ```typescript
-function useNetworkStatus(): NetworkStatus
+function useNetworkStatus(): NetworkStatus;
 ```
 
 **Returns:**
+
 ```typescript
 {
-  isConnected: boolean;       // Has any network connection
+  isConnected: boolean; // Has any network connection
   isInternetReachable: boolean; // Can reach internet
   type: 'wifi' | 'cellular' | 'none' | 'unknown';
-  strength: number;           // Signal strength (0-100%)
-  isOnline: boolean;          // Same as isConnected (alias)
+  strength: number; // Signal strength (0-100%)
+  isOnline: boolean; // Same as isConnected (alias)
 }
 ```
 
 **Example:**
+
 ```typescript
 import { useNetworkStatus } from '../hooks/useNetworkStatus';
 
@@ -734,7 +758,9 @@ export default function NetworkIndicator() {
 
   return (
     <View>
-      <Text>{type.toUpperCase()} - {strength}%</Text>
+      <Text>
+        {type.toUpperCase()} - {strength}%
+      </Text>
     </View>
   );
 }
@@ -757,6 +783,7 @@ export default function NetworkIndicator() {
 ## Response Type Definitions
 
 ### SafeDocResult
+
 ```typescript
 interface SafeDocResult {
   success: boolean;
@@ -766,6 +793,7 @@ interface SafeDocResult {
 ```
 
 ### SafeGetResult
+
 ```typescript
 interface SafeGetResult {
   success: boolean;
@@ -777,6 +805,7 @@ interface SafeGetResult {
 ```
 
 ### SafeQueryResult
+
 ```typescript
 interface SafeQueryResult {
   success: boolean;
@@ -787,25 +816,28 @@ interface SafeQueryResult {
 ```
 
 ### SafeAddResult
+
 ```typescript
 interface SafeAddResult {
   success: boolean;
-  id?: string;           // Temporary if offline, real ID when synced
+  id?: string; // Temporary if offline, real ID when synced
   fromCache?: boolean;
   error?: string;
 }
 ```
 
 ### SafeBatchResult
+
 ```typescript
 interface SafeBatchResult {
   success: boolean;
-  queued?: boolean;      // true if entire batch was queued
+  queued?: boolean; // true if entire batch was queued
   error?: string;
 }
 ```
 
 ### SyncResult
+
 ```typescript
 interface SyncResult {
   synced: number;
@@ -815,6 +847,7 @@ interface SyncResult {
 ```
 
 ### QueueStats
+
 ```typescript
 interface QueueStats {
   total: number;
@@ -830,6 +863,7 @@ interface QueueStats {
 ```
 
 ### SyncStatus
+
 ```typescript
 interface SyncStatus {
   isPending: boolean;
@@ -840,6 +874,7 @@ interface SyncStatus {
 ```
 
 ### SyncStatusHook
+
 ```typescript
 interface SyncStatusHook {
   isSyncing: boolean;
@@ -852,6 +887,7 @@ interface SyncStatusHook {
 ```
 
 ### NetworkStatus
+
 ```typescript
 interface NetworkStatus {
   isConnected: boolean;
@@ -883,7 +919,7 @@ if (!result.success) {
 ```typescript
 const { isSyncing, pendingCount } = useSyncStatus();
 
-<ActivityIndicator animating={isSyncing || pendingCount > 0} />
+<ActivityIndicator animating={isSyncing || pendingCount > 0} />;
 ```
 
 ### Retry specific operation
@@ -905,7 +941,7 @@ while (attempts < 3) {
 ```typescript
 const result = await safeBatchWrite([
   { type: 'update', collection: 'orders', id: orderId, data: { paid: true } },
-  { type: 'update', collection: 'users', id: userId, data: { balance: decrement(amount) } }
+  { type: 'update', collection: 'users', id: userId, data: { balance: decrement(amount) } },
 ]);
 
 // Both sync together or queue together
@@ -917,19 +953,19 @@ const result = await safeBatchWrite([
 
 ### Common Errors
 
-| Error | Cause | Solution |
-|-------|-------|----------|
-| `PERMISSION_DENIED` | No Firestore permissions | Check security rules |
-| `INVALID_ARGUMENT` | Bad document data | Validate data before save |
-| `UNAVAILABLE` | Firestore temporarily down | Operational error, will retry |
-| `FAILED_PRECONDITION` | Offline persistence unavailable | Device storage full? |
+| Error                 | Cause                           | Solution                      |
+| --------------------- | ------------------------------- | ----------------------------- |
+| `PERMISSION_DENIED`   | No Firestore permissions        | Check security rules          |
+| `INVALID_ARGUMENT`    | Bad document data               | Validate data before save     |
+| `UNAVAILABLE`         | Firestore temporarily down      | Operational error, will retry |
+| `FAILED_PRECONDITION` | Offline persistence unavailable | Device storage full?          |
 
 ### Handling Offline Errors
 
 ```typescript
 try {
   const result = await safeSetDoc(collection, id, data);
-  
+
   if (result.success) {
     // Either synced (fromCache=false) or queued (fromCache=true)
     showStatus(result.fromCache ? 'Saved locally' : 'Synced');
@@ -948,19 +984,23 @@ try {
 ## Performance Considerations
 
 ### Queue Size
+
 - In-memory queue: 1000+ operations default
 - Recommended: Keep < 500 for best performance
 
 ### Sync Frequency
+
 - Auto-sync: When connection restored
 - Manual: User can trigger via `syncNow()`
 - Polling: Queue updates every 5 seconds
 
 ### Storage
+
 - React Native: Platform specific (iOS: unlimited, Android: varies)
 - Data: Compressed JSON with timestamps
 
 ### Bandwidth
+
 - Batch sync: All operations in single write
 - Retry backoff: 1s, 2s, 4s delays
 - Network check: Continuous monitoring
@@ -970,24 +1010,27 @@ try {
 ## Troubleshooting
 
 ### Queue not syncing
+
 1. Check `useSyncStatus().syncStatus`
 2. Verify network with `useNetworkStatus()`
 3. Check `getPendingOfflineOperations()` for errors
 4. See `lastError` in `useSyncStatus()`
 
 ### Data inconsistency
+
 1. Read from cache too long
 2. Solution: Call `syncNow()` to force sync
 3. Or: Wait for auto-sync on reconnect
 
 ### Large queue
+
 1. Phone offline for extended period
 2. Many writes accumulated
 3. Solution: Reduce operation frequency
 4. Or: Clear queue if data not important
 
 ### Memory issues
+
 1. Extremely large queue (100+ items)
 2. Solution: Sync more frequently
 3. Or: Clear ancient items with `clearOfflineQueue()`
-

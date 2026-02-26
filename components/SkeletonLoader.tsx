@@ -166,7 +166,9 @@ const SkeletonCard: React.FC<{
         <View style={styles.cardRouteBlock}>
           <View style={styles.cardRouteLine}>
             <SkeletonShimmer style={styles.cardRouteIcon} />
-            <SkeletonShimmer style={[styles.cardRoutePrimary, { width: variant.routePrimaryWidth }]} />
+            <SkeletonShimmer
+              style={[styles.cardRoutePrimary, { width: variant.routePrimaryWidth }]}
+            />
           </View>
           <View style={styles.cardRouteLine}>
             <SkeletonShimmer style={styles.cardRouteIcon} />

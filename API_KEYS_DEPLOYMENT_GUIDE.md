@@ -11,6 +11,7 @@ For **production**: Follow the migration path below to move API keys server-side
 ## 📋 Pre-Deployment Checklist
 
 ### Environment Variables ✅
+
 - [x] `.env` created with API keys
 - [x] `.env` added to `.gitignore`
 - [x] `.env.example` with placeholders committed
@@ -18,6 +19,7 @@ For **production**: Follow the migration path below to move API keys server-side
 - [x] `EXPO_PUBLIC_` prefix used for client-side vars
 
 ### Google Cloud Console Setup
+
 - [ ] Project: `truckinfox-8d5b2`
 - [ ] **Places API** enabled
 - [ ] **Maps API** enabled
@@ -28,6 +30,7 @@ For **production**: Follow the migration path below to move API keys server-side
 - [ ] Billing alerts set at $10 and $50
 
 ### Firebase Setup
+
 - [ ] Firebase project initialized
 - [ ] Cloud Functions enabled
 - [ ] Firestore security rules updated
@@ -40,6 +43,7 @@ For **production**: Follow the migration path below to move API keys server-side
 ### Step 1: Get Your API Keys
 
 #### Google Places API Key
+
 ```bash
 # In Google Cloud Console:
 # 1. Go to APIs & Services > Credentials
@@ -49,6 +53,7 @@ For **production**: Follow the migration path below to move API keys server-side
 ```
 
 #### Firebase Credentials
+
 ```bash
 # Already in your .env file:
 EXPO_PUBLIC_FIREBASE_API_KEY=AIzaSyDfuPykZ5BkcSSswXCTYkpsERZjw0XdG5c
@@ -105,6 +110,7 @@ npm start
 **Get Your Fingerprints:**
 
 For Android (SHA-1):
+
 ```bash
 # From EAS:
 eas credentials show --platform android
@@ -115,6 +121,7 @@ eas credentials show --platform android
 ```
 
 For iOS (Bundle ID + Team ID):
+
 ```bash
 # Your bundle ID (in app.json or Xcode):
 com.truckinfox
@@ -128,6 +135,7 @@ com.truckinfox
 ## 🚀 Production Deployment (Phase 2)
 
 ### When to Migrate to Cloud Functions?
+
 - ✅ After app is stable in production (1-3 months)
 - ✅ When user base is growing and quota concerns arise
 - ✅ When you want per-user rate limiting
@@ -136,6 +144,7 @@ com.truckinfox
 ### Migration Steps: Client-Side → Server-Side
 
 #### Step 1: Deploy Cloud Function
+
 ```bash
 # Copy the example to real Cloud Function:
 cp functions/src/placesProxyExample.ts functions/src/placesProxy.ts
@@ -148,6 +157,7 @@ firebase deploy --only functions
 ```
 
 #### Step 2: Set Server-Side API Key
+
 ```bash
 # Option A: Firebase CLI
 firebase functions:config:set places.api_key="YOUR_KEY_HERE"
@@ -164,6 +174,7 @@ firebase functions:config:get
 ```
 
 #### Step 3: Update Client Code
+
 ```typescript
 // OLD (Exposed):
 import { searchNorwegianPlaces } from './utils/googlePlaces';
@@ -176,6 +187,7 @@ const results = await searchPlaces('Oslo');
 ```
 
 #### Step 4: Test Cloud Function
+
 ```bash
 # Test with sample data:
 yarn test:functions
@@ -187,6 +199,7 @@ firebase functions:shell
 ```
 
 #### Step 5: Build & Deploy App
+
 ```bash
 # Build new app version with updated code:
 eas build --platform ios
@@ -197,6 +210,7 @@ eas submit
 ```
 
 #### Step 6: Remove Exposed Key from Client
+
 ```bash
 # Once all users have updated app:
 # Edit .env and remove:
@@ -215,6 +229,7 @@ git push
 ## 🔐 Security Best Practices by Environment
 
 ### Development
+
 ```
 ✅ Use .env file with actual keys
 ✅ Add .env to .gitignore
@@ -223,6 +238,7 @@ git push
 ```
 
 ### Staging
+
 ```
 ✅ Use different API keys from production
 ✅ Cloud Function deployed but not fully used
@@ -231,6 +247,7 @@ git push
 ```
 
 ### Production
+
 ```
 ✅ Cloud Function handles all API calls
 ✅ API key only in Cloud Function environment
@@ -244,25 +261,29 @@ git push
 ## 🧪 Testing Checklist
 
 ### Before Release to Production
+
 - [ ] Offline mode works (addresses show Norwegian cities only)
 - [ ] Online mode works (if API key configured)
 - [ ] No API key in JavaScript bundle:
+
   ```bash
   # For Android:
   unzip app-release.apk
   strings classes.dex | grep "AIzaSy"
   # Should return: (no results)
-  
+
   # For iOS:
   strings app.ipa | grep "AIzaSy"
   # Should return: (no results)
   ```
+
 - [ ] Home screen loads without errors
 - [ ] Address search works offline
 - [ ] Address search works online (if key available)
 - [ ] Error messages are user-friendly
 
 ### Performance Testing
+
 ```bash
 # Monitor API latency:
 npm run test:performance
@@ -279,28 +300,32 @@ npm run test:performance
 ### Immediate Actions (Within 1 Hour)
 
 1. **Disable the key**:
+
    ```bash
    # In Google Cloud Console > APIs & Services > Credentials
    # Right-click key > Delete
    ```
 
 2. **Generate new key**:
+
    ```bash
    # Create new API key
    # Apply same restrictions as before
    ```
 
 3. **Update environment**:
+
    ```bash
    # For Cloud Functions:
    firebase functions:config:set places.api_key="NEW_KEY"
    firebase deploy --only functions
-   
+
    # For .env (development):
    # Edit .env and update EXPO_PUBLIC_GOOGLE_PLACES_API_KEY
    ```
 
 4. **Monitor for abuse**:
+
    ```bash
    # Check Google Cloud Billing
    # Look for unusual API usage
@@ -313,6 +338,7 @@ npm run test:performance
    - [ ] Plan for code audit
 
 ### Medium-term Actions (Within 24 Hours)
+
 - [ ] Review git history for exposed key
 - [ ] Check API usage logs for unauthorized requests
 - [ ] Calculate potential damage (costs, data accessed)
@@ -320,6 +346,7 @@ npm run test:performance
 - [ ] Add monitoring/alerts
 
 ### Long-term Actions (Within 1 Week)
+
 - [ ] Implement automated key rotation
 - [ ] Add git hooks to prevent key commits
 - [ ] Conduct security audit
@@ -331,23 +358,27 @@ npm run test:performance
 ## 📊 Monitoring & Maintenance
 
 ### Weekly Tasks
+
 - [ ] Check Google Cloud Billing for anomalies
 - [ ] Review API usage trends
 - [ ] Verify Cloud Function health checks passing
 
 ### Monthly Tasks
+
 - [ ] Review access logs in Cloud Logging
 - [ ] Verify rate limiting is working
 - [ ] Check for security updates
 - [ ] Update documentation
 
 ### Quarterly Tasks
+
 - [ ] Review and rotate API keys
 - [ ] Audit all environments for exposed keys
 - [ ] Security training for team
 - [ ] Update incident response plan
 
 ### Key Rotation Schedule
+
 ```
 Firebase Keys:      Never (tied to project)
 Google API Keys:    Annually (March)
@@ -360,17 +391,20 @@ Cloud Function:     Managed by Firebase (auto)
 ## 🎓 Resources & References
 
 ### Official Documentation
+
 - [Google Cloud API Keys Best Practices](https://cloud.google.com/docs/authentication/api-keys)
 - [Firebase Cloud Functions Documentation](https://firebase.google.com/docs/functions)
 - [Expo Environment Variables](https://docs.expo.dev/build-reference/variables/)
 - [React Native Security](https://reactnative.dev/docs/security)
 
 ### Security Standards
+
 - [OWASP Mobile Top 10](https://owasp.org/www-project-mobile-top-10/)
 - [CWE-798: Use of Hard-coded Credentials](https://cwe.mitre.org/data/definitions/798.html)
 - [PCI DSS 3.4: Render PAN Unreadable](https://www.pcisecuritystandards.org/)
 
 ### Tools
+
 - [git-secrets](https://github.com/awslabs/git-secrets) - Prevent credential commits
 - [TruffleHog](https://github.com/trufflesecurity/trufflehog) - Scan for exposed secrets
 - [Snyk](https://snyk.io/) - Vulnerability scanning
@@ -382,6 +416,7 @@ Cloud Function:     Managed by Firebase (auto)
 Once you've completed all steps above, check these boxes:
 
 **Development Setup:**
+
 - [ ] .env file created and secured
 - [ ] API keys added to .env (not in code)
 - [ ] .gitignore protects .env
@@ -389,12 +424,14 @@ Once you've completed all steps above, check these boxes:
 - [ ] Online mode tested
 
 **Google Cloud Setup:**
+
 - [ ] API key created and restricted
 - [ ] Android restrictions configured
 - [ ] iOS restrictions configured
 - [ ] Billing alerts set
 
 **Security Hardening:**
+
 - [ ] No API keys in git history
 - [ ] No API keys will be in app bundle
 - [ ] Rate limiting configured
@@ -402,6 +439,7 @@ Once you've completed all steps above, check these boxes:
 - [ ] Monitoring set up
 
 **Documentation:**
+
 - [ ] Team trained on key management
 - [ ] Emergency procedures reviewed
 - [ ] Rotation schedule documented

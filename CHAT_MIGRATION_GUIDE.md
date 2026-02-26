@@ -3,11 +3,13 @@
 ## Зміни структури
 
 ### ❌ Стара структура (Nested)
+
 ```
 chats/{chatId}/messages/{messageId}
 ```
 
 ### ✅ Нова структура (Flat)
+
 ```
 messages/{messageId}
 ```
@@ -84,10 +86,10 @@ match /messages/{messageId} {
     request.auth.uid == resource.data.sender_id ||
     request.auth.uid == resource.data.receiver_id
   );
-  
+
   allow create: if isAuthenticated() &&
     request.auth.uid == request.resource.data.sender_id;
-  
+
   // Allow receiver to update read and delivered fields only
   allow update: if isAuthenticated() &&
     request.auth.uid == resource.data.receiver_id &&
@@ -122,27 +124,23 @@ import * as admin from 'firebase-admin';
 
 export async function migrateMessages() {
   const db = admin.firestore();
-  
+
   // Get all chats
   const chatsSnapshot = await db.collection('chats').get();
-  
+
   for (const chatDoc of chatsSnapshot.docs) {
     const chatId = chatDoc.id;
-    
+
     // Get all messages in this chat
-    const messagesSnapshot = await db
-      .collection('chats')
-      .doc(chatId)
-      .collection('messages')
-      .get();
-    
+    const messagesSnapshot = await db.collection('chats').doc(chatId).collection('messages').get();
+
     // Copy to new flat structure
     const batch = db.batch();
-    
+
     for (const messageDoc of messagesSnapshot.docs) {
       const messageData = messageDoc.data();
       const newMessageRef = db.collection('messages').doc();
-      
+
       batch.set(newMessageRef, {
         ...messageData,
         chat_id: chatId,
@@ -150,7 +148,7 @@ export async function migrateMessages() {
         delivered: messageData.delivered_at != null,
       });
     }
-    
+
     await batch.commit();
     console.log(`Migrated ${messagesSnapshot.size} messages from chat ${chatId}`);
   }
@@ -160,19 +158,23 @@ export async function migrateMessages() {
 ## Переваги нової структури
 
 ### ✅ Простота запитів
+
 - Не потрібно знати chat ID для отримання повідомлень
 - Можна легко отримати всі непрочитані повідомлення користувача
 - Ефективні запити по request_id
 
 ### ✅ Кращі індекси
+
 - Composite indexes оптимізовані для типових запитів
 - Швидше отримання повідомлень за фільтрами
 
 ### ✅ Масштабованість
+
 - Flat структура краща для великої кількості повідомлень
 - Легше робити аналітику та reporting
 
 ### ✅ Консистентність
+
 - `generateChatId()` гарантує однаковий chat_id незалежно від порядку користувачів
 - Сортування user IDs в chat_id запобігає дублюванню чатів
 
@@ -207,10 +209,10 @@ const messagesQuery = query(
   orderBy('created_at', 'asc')
 );
 
-const unsubscribe = onSnapshot(messagesQuery, (snapshot) => {
+const unsubscribe = onSnapshot(messagesQuery, snapshot => {
   const messages = snapshot.docs.map(doc => ({
     id: doc.id,
-    ...doc.data()
+    ...doc.data(),
   }));
   console.log('Messages:', messages);
 });
@@ -232,7 +234,7 @@ const batch = writeBatch(db);
 snapshot.docs.forEach(doc => {
   batch.update(doc.ref, {
     read: true,
-    read_at: serverTimestamp()
+    read_at: serverTimestamp(),
   });
 });
 
@@ -242,16 +244,19 @@ await batch.commit();
 ## Troubleshooting
 
 ### Помилка: "Missing or insufficient permissions"
+
 - Перевірте що Firestore Rules розгорнуті
 - Переконайтесь що користувач автентифікований
 - Перевірте що `sender_id` відповідає `request.auth.uid`
 
 ### Помилка: "The query requires an index"
+
 - Перейдіть за посиланням в помилці для створення index
 - Або розгорніть indexes: `firebase deploy --only firestore:indexes`
 - Зачекайте 10-30 хвилин на створення indexes
 
 ### Повідомлення не відображаються
+
 - Перевірте що `chat_id` генерується правильно
 - Використовуйте `generateChatId()` для консистентності
 - Перевірте Firebase Console для перегляду даних
@@ -259,5 +264,6 @@ await batch.commit();
 ## Підтримка
 
 Для питань та допомоги:
+
 - GitHub Issues: https://github.com/tobolovskaya/truckinfox/issues
 - Документація Firestore: https://firebase.google.com/docs/firestore

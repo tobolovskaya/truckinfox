@@ -1,11 +1,13 @@
 # Google Places API Security Guide
 
 ## Overview
+
 This document outlines best practices for protecting Google Places API keys in the TruckInFox mobile application. Since this is a React Native/Expo application, special care must be taken to prevent API key exposure in client-side code.
 
 ## Security Architecture
 
 ### Current Implementation
+
 - **Offline Fallback**: Norwegian cities database for when API is unavailable or key missing
 - **Environment Variables**: Key stored in `.env` with `EXPO_PUBLIC_` prefix (required for Expo)
 - **Graceful Degradation**: App works offline with reduced functionality
@@ -30,12 +32,12 @@ export const placesAutocomplete = functions.https.onCall(async (data, context) =
   }
 
   const googleApiKey = process.env.GOOGLE_PLACES_API_KEY; // Private server variable
-  
+
   const response = await fetch(
     `https://maps.googleapis.com/maps/api/place/autocomplete/json?` +
-    `input=${encodeURIComponent(data.input)}&` +
-    `components=country:no&` +
-    `key=${googleApiKey}`
+      `input=${encodeURIComponent(data.input)}&` +
+      `components=country:no&` +
+      `key=${googleApiKey}`
   );
 
   return response.json();
@@ -45,13 +47,16 @@ export const placesAutocomplete = functions.https.onCall(async (data, context) =
 ## Implementation Strategy
 
 ### Phase 1: Development (Current)
+
 ✅ Use environment variables with offline fallback
+
 - API key in `.env` file
 - Never committed to git (`.env` in `.gitignore`)
 - Offline access to Norwegian cities works without key
 - Suitable for local testing
 
 ### Phase 2: Production (Recommended)
+
 - Move API calls to **Firebase Cloud Functions**
 - Cloud Function stores API key via environment variables
 - Client calls Cloud Function instead of Google API directly
@@ -61,6 +66,7 @@ export const placesAutocomplete = functions.https.onCall(async (data, context) =
 ## Environment Variable Setup
 
 ### .env File Example
+
 ```dotenv
 # Google Places API Configuration
 EXPO_PUBLIC_GOOGLE_PLACES_API_KEY=AIzaSy...YOUR_KEY_HERE
@@ -90,6 +96,7 @@ GOOGLE_PLACES_API_KEY_PRIVATE=AIzaSy...YOUR_KEY_HERE  # Not used currently
 To minimize exposure in development:
 
 ### Google Cloud Console Steps:
+
 1. Navigate to APIs & Services > Credentials
 2. Find your API key
 3. Click to edit
@@ -107,11 +114,13 @@ To minimize exposure in development:
 ## Rate Limiting & Quota Management
 
 ### Google Cloud Console
+
 - Set **quota limits** per API to prevent accidental overage
 - Example: 1000 requests/day for Places API
 - Enable **billing alerts** at $50, $100, $500
 
 ### Application-Level Rate Limiting
+
 Implement throttling in the client:
 
 ```typescript
@@ -122,11 +131,11 @@ const MIN_REQUEST_INTERVAL_MS = 300; // Minimum 300ms between requests
 export const throttledPlacesSearch = (key: string) => {
   const now = Date.now();
   const lastTime = lastRequestTime[key] || 0;
-  
+
   if (now - lastTime < MIN_REQUEST_INTERVAL_MS) {
     return null; // Skip request
   }
-  
+
   lastRequestTime[key] = now;
   return true; // Allow request
 };
@@ -135,6 +144,7 @@ export const throttledPlacesSearch = (key: string) => {
 ## Handling Missing API Keys
 
 ### Graceful Degradation
+
 The app currently implements offline fallback:
 
 ```typescript
@@ -148,12 +158,14 @@ The app currently implements offline fallback:
 ## Secrets Management for CI/CD
 
 ### GitHub Actions Secrets (if deployed)
+
 1. Go to Repo Settings > Secrets and variables > Actions
 2. Click "New repository secret"
 3. Add `GOOGLE_PLACES_API_KEY` (development only - not recommended)
 4. Reference in workflow: `secrets.GOOGLE_PLACES_API_KEY`
 
 **Better approach**: Use Firebase CLI with service account:
+
 ```bash
 firebase functions:config:set places.api_key="$GOOGLE_PLACES_API_KEY"
 ```
@@ -161,6 +173,7 @@ firebase functions:config:set places.api_key="$GOOGLE_PLACES_API_KEY"
 ## Monitoring & Logging
 
 ### What to Log
+
 ```typescript
 // ✅ Safe to log
 console.log('Places API: 5 results returned');
@@ -172,6 +185,7 @@ console.log(`API response: ${JSON.stringify(response)}`); // May contain coordin
 ```
 
 ### Production Monitoring
+
 - Use Firebase Performance Monitoring to track API latency
 - Set up Cloud Logging alerts for API errors
 - Monitor quotas via GCP Console > Billing
@@ -179,15 +193,18 @@ console.log(`API response: ${JSON.stringify(response)}`); // May contain coordin
 ## Testing & QA
 
 ### Removing Client-Side Exposure
+
 Before production deployment:
 
 1. **Remove environment variable** from `.env`:
+
    ```bash
    # Remove this line before deploying to production
    EXPO_PUBLIC_GOOGLE_PLACES_API_KEY=...
    ```
 
 2. **Test offline mode**:
+
    ```bash
    # Temporarily unset the key
    unset EXPO_PUBLIC_GOOGLE_PLACES_API_KEY
@@ -215,17 +232,22 @@ Before production deployment:
 ## Migration Path: API Key Exposure → Proxy
 
 ### Step 1: Create Cloud Function
+
 ```bash
 firebase functions:new placesAutocomplete --typescript
 ```
 
 ### Step 2: Implement Proxy Logic
+
 See `functions/src/placesProxyExample.ts` (sample implementation)
 
 ### Step 3: Update Client Code
+
 ```typescript
 // OLD (Exposed)
-const response = await fetch(`https://maps.googleapis.com/maps/api/place/autocomplete/json?key=${GOOGLE_PLACES_API_KEY}`);
+const response = await fetch(
+  `https://maps.googleapis.com/maps/api/place/autocomplete/json?key=${GOOGLE_PLACES_API_KEY}`
+);
 
 // NEW (Proxied)
 const response = await fetch('https://api.myapp.com/places/autocomplete', {
@@ -235,6 +257,7 @@ const response = await fetch('https://api.myapp.com/places/autocomplete', {
 ```
 
 ### Step 4: Remove Exposed Key
+
 - Delete `EXPO_PUBLIC_GOOGLE_PLACES_API_KEY` from `.env`
 - Verify app still works in offline mode
 - Deploy to production

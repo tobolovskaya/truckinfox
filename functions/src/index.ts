@@ -545,7 +545,9 @@ export const sendBatchNotificationsOnNewRequest = functions.firestore
           totalFailed += response.failureCount;
 
           console.log(
-            `✅ Batch ${batchIndex + 1}/${batches.length}: ${response.successCount} sent, ${response.failureCount} failed`
+            `✅ Batch ${batchIndex + 1}/${batches.length}: ${response.successCount} sent, ${
+              response.failureCount
+            } failed`
           );
 
           // Log failed token indices for cleanup
@@ -617,7 +619,10 @@ export const sendBatchNotificationsOnNewRequest = functions.firestore
       // Step 6: Log success metrics
       console.log(
         `✅ Batch notification completed for request ${requestId}:`,
-        `${totalSent}/${carrierTokens.length} delivered (${((totalSent / carrierTokens.length) * 100).toFixed(1)}%)`
+        `${totalSent}/${carrierTokens.length} delivered (${(
+          (totalSent / carrierTokens.length) *
+          100
+        ).toFixed(1)}%)`
       );
     } catch (error) {
       console.error(`❌ Error in batch notification for ${requestId}:`, error);
@@ -731,7 +736,10 @@ export const retryFailedNotifications = functions.pubsub
       }
 
       console.log(
-        `✅ Retry completed: ${totalSuccessful}/${totalRetried} successful (${((totalSuccessful / totalRetried) * 100).toFixed(1)}%)`
+        `✅ Retry completed: ${totalSuccessful}/${totalRetried} successful (${(
+          (totalSuccessful / totalRetried) *
+          100
+        ).toFixed(1)}%)`
       );
       return null;
     } catch (error) {

@@ -16,7 +16,7 @@
    Action: Send notification to ALL carriers in service area via single batch
    Result: 90% fewer function invocations vs individual sends
 
-2. retryFailedNotifications  
+2. retryFailedNotifications
    Trigger: Every 30 minutes (PubSub schedule)
    Action: Retry any failed notifications from last 30 min
    Result: Improved delivery reliability
@@ -26,12 +26,12 @@
 
 ## What Changed
 
-| Before | After |
-|--------|-------|
-| 1 function invocation per carrier | 1 function invocation per request |
-| `send()` to individual carrier | `sendEachForMulticast()` to all carriers |
-| Manual retry logic per carrier | Auto-retry every 30 minutes |
-| No delivery tracking | Logged metrics + success rates |
+| Before                            | After                                    |
+| --------------------------------- | ---------------------------------------- |
+| 1 function invocation per carrier | 1 function invocation per request        |
+| `send()` to individual carrier    | `sendEachForMulticast()` to all carriers |
+| Manual retry logic per carrier    | Auto-retry every 30 minutes              |
+| No delivery tracking              | Logged metrics + success rates           |
 
 ---
 
@@ -40,10 +40,12 @@
 ### 1. Firestore Indexes ⚡
 
 Create composite index:
+
 - Collection: `users`
 - Fields: `user_type` (Asc), `service_areas` (Asc), `is_active` (Asc)
 
 **Via Firebase Console**:
+
 1. Firestore → Indexes tab
 2. Create new Composite Index
 3. Auto-suggestion for "Composite indexes" appears
@@ -53,6 +55,7 @@ Create composite index:
 ### 2. Carrier Document Setup 📋
 
 Each carrier needs:
+
 ```javascript
 {
   fcm_token: "your_fcm_token_here",  // From app on device
@@ -67,6 +70,7 @@ Each carrier needs:
 ### 3. Request Document Setup 📦
 
 Each cargo request needs:
+
 ```javascript
 {
   from_city: "Oslo",            // For carrier matching
@@ -109,17 +113,20 @@ Track: Log success/failure metrics
 ## Key Metrics
 
 ### Cost Savings
+
 - **Function Calls**: 90% reduction
 - **Time to Notify**: 80% faster (1-2s vs 5-10s)
 - **Monthly Cost**: ~$0.03 per 100 requests (vs $0.30 before)
 
 ### Reliability
+
 - **Service Area Filtering**: Prevents irrelevant notifications
 - **Preference Checking**: Respects carrier settings
 - **Rate Limiting**: Max 1 per carrier per hour per request
 - **Auto-Retry**: Every 30 minutes for failed sends
 
 ### Limits
+
 - **Max Tokens Per Batch**: 500 (FCM hard limit)
 - **Max Requests Per Hour (Per Carrier)**: 1 (configurable)
 - **Notification Timeout**: 5 seconds
@@ -130,23 +137,27 @@ Track: Log success/failure metrics
 ## Configuration Options
 
 ### Batch Size
+
 ```typescript
-const batchSize = 500;  // FCM maximum
+const batchSize = 500; // FCM maximum
 ```
 
 ### Retry Policy
+
 ```typescript
-withRetry(operation, 2)  // 3 total attempts: 1s, 2s, 4s delays
+withRetry(operation, 2); // 3 total attempts: 1s, 2s, 4s delays
 ```
 
 ### Rate Limit
+
 ```typescript
 // In checkRecentNotifications()
-if (recentNotifications.data().count > 0) skip;  // Current: 1 per hour
+if (recentNotifications.data().count > 0) skip; // Current: 1 per hour
 if (recentNotifications.data().count >= 5) skip; // Alternative: 5 per hour
 ```
 
 ### Retry Schedule
+
 ```typescript
 .schedule('every 30 minutes')  // Current
 .schedule('every 15 minutes')  // More frequent
@@ -158,8 +169,9 @@ if (recentNotifications.data().count >= 5) skip; // Alternative: 5 per hour
 ## Monitoring Dashboard
 
 ### Check Delivery Success
+
 ```sql
-SELECT 
+SELECT
   request_id,
   sent,
   failed,
@@ -171,13 +183,15 @@ WHERE created_at > DATE_SUB(NOW(), INTERVAL 1 DAY)
 **Target**: > 95% success rate
 
 ### Check Recent Errors
+
 ```bash
 firebase functions:log --tail | grep "❌"
 ```
 
 ### Check Retry Effectiveness
+
 ```sql
-SELECT 
+SELECT
   retry_round,
   AVG(success_count)
 FROM retry_logs
@@ -188,12 +202,12 @@ GROUP BY retry_round
 
 ## Common Issues & Fixes
 
-| Issue | Cause | Fix |
-|-------|-------|-----|
+| Issue                        | Cause                     | Fix                              |
+| ---------------------------- | ------------------------- | -------------------------------- |
 | "Notifications not arriving" | Carrier missing FCM token | Update user doc with valid token |
-| Slow notifications | Query too slow | Verify Firestore index created |
-| Some carriers skipped | Rate limit hit | Space out request creation |
-| High failure rate | Invalid tokens | Enable token validation on app |
+| Slow notifications           | Query too slow            | Verify Firestore index created   |
+| Some carriers skipped        | Rate limit hit            | Space out request creation       |
+| High failure rate            | Invalid tokens            | Enable token validation on app   |
 
 ---
 
@@ -210,20 +224,20 @@ GROUP BY retry_round
 
 ## Files Modified
 
-| File | Change |
-|------|--------|
+| File                     | Change                            |
+| ------------------------ | --------------------------------- |
 | `functions/src/index.ts` | +2 functions (batch send + retry) |
-| Status | ✅ 0 errors, fully typed |
+| Status                   | ✅ 0 errors, fully typed          |
 
 ---
 
 ## Performance
 
-| Scenario | Time |
-|----------|------|
-| 10 carriers | 1-2s |
-| 50 carriers | 2-3s |
-| 500 carriers | 3-5s |
+| Scenario       | Time  |
+| -------------- | ----- |
+| 10 carriers    | 1-2s  |
+| 50 carriers    | 2-3s  |
+| 500 carriers   | 3-5s  |
 | 1000+ carriers | 5-10s |
 
 **Bottleneck**: Firestore query (50% of time) → Ensure index created
@@ -245,12 +259,14 @@ firebase deploy --only functions
 
 **Firebase Console** → Cloud Functions → Logs panel  
 **Command Line**:
+
 ```bash
 firebase functions:log
 firebase functions:log --tail  # Follow logs live
 ```
 
 **Look for**:
+
 - ✅ "Batch sent: X delivered"
 - ⚠️ "Found Y carriers"
 - ❌ "Error in batch notification"

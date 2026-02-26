@@ -23,26 +23,31 @@ __tests__/
 ## Running Tests
 
 ### Run all tests
+
 ```bash
 npm test
 ```
 
 ### Run tests in watch mode
+
 ```bash
 npm test -- --watch
 ```
 
 ### Run tests with coverage
+
 ```bash
 npm test -- --coverage
 ```
 
 ### Run specific test file
+
 ```bash
 npm test -- __tests__/hooks/useCargoRequests.test.ts
 ```
 
 ### Run tests matching pattern
+
 ```bash
 npm test -- --testNamePattern="should fetch"
 ```
@@ -52,6 +57,7 @@ npm test -- --testNamePattern="should fetch"
 ### 1. Hook Tests
 
 #### useCargoRequests
+
 - Fetching and filtering cargo requests
 - Handling loading states
 - Error handling
@@ -59,6 +65,7 @@ npm test -- --testNamePattern="should fetch"
 - Cleanup on unmount
 
 #### useCurrentUser
+
 - User authentication flow
 - Profile data fetching
 - Loading states
@@ -66,12 +73,14 @@ npm test -- --testNamePattern="should fetch"
 - Verified user status checks
 
 #### useFilterState
+
 - Filter state management
 - Adding/removing filters
 - Clear all filters
 - Filter counting and activation checks
 
 #### useNotifications
+
 - Fetching user notifications
 - Marking as read
 - Deleting notifications
@@ -81,6 +90,7 @@ npm test -- --testNamePattern="should fetch"
 ### 2. Utility Tests
 
 #### Sanitization
+
 - XSS prevention (script injections)
 - HTML tag removal
 - SQL injection prevention
@@ -88,6 +98,7 @@ npm test -- --testNamePattern="should fetch"
 - Special character handling
 
 #### Fetch Utilities
+
 - Timeout handling
 - Automatic retry with exponential backoff
 - HTTP status code handling (4xx, 5xx)
@@ -95,6 +106,7 @@ npm test -- --testNamePattern="should fetch"
 - Error recovery and logging
 
 #### Analytics
+
 - Event tracking for:
   - Cargo request deletion
   - Review submissions
@@ -103,6 +115,7 @@ npm test -- --testNamePattern="should fetch"
 - Multiple account type support
 
 #### Google Places
+
 - Autocomplete suggestions
 - Place details retrieval
 - Distance calculations
@@ -112,6 +125,7 @@ npm test -- --testNamePattern="should fetch"
 ## Test Coverage
 
 Target coverage by area:
+
 - **Hooks**: 85%+
 - **Utilities**: 90%+
 - **Critical business logic**: 80%+
@@ -191,16 +205,19 @@ jest.useRealTimers();
 ## Debugging Tests
 
 ### Run single test
+
 ```bash
 npm test -- --testNamePattern="specific test"
 ```
 
 ### Debug mode
+
 ```bash
 node --inspect-brk node_modules/.bin/jest --runInBand
 ```
 
 ### Check test output
+
 ```bash
 npm test -- --verbose
 ```
@@ -225,15 +242,18 @@ This generates coverage reports for verification gates.
 ## Troubleshooting
 
 ### "Cannot find module" errors
+
 - Ensure mocks are properly configured in `jest.setup.js`
 - Check import paths match actual file locations
 
 ### "Timeout" errors
+
 - Increase timeout in test: `jest.setTimeout(10000)`
 - Check that promises are properly awaited
 - Verify `waitFor` conditions are achievable
 
 ### "Act" warnings
+
 - Wrap state changes in `act()`
 - Use `waitFor` instead of `setTimeout`
 

@@ -7,20 +7,26 @@ Complete guide for implementing and using offline-first features in TruckinFox.
 Choose your learning path based on your needs:
 
 ### 🚀 Quick Start (5 minutes)
+
 **For developers who want to start coding immediately:**
+
 1. Read [Offline-First Quick Reference](OFFLINE_FIRST_QUICK_REFERENCE.md)
 2. Copy/paste examples from [Code Examples](OFFLINE_FIRST_CODE_EXAMPLES.md)
 3. Reference [API Reference](OFFLINE_FIRST_API_REFERENCE.md) as needed
 
 ### 📖 Comprehensive Learning (30 minutes)
+
 **For developers who want to understand the system:**
+
 1. Read [Offline-First Guide](OFFLINE_FIRST_GUIDE.md) - Overview & features
 2. Study [Diagrams](OFFLINE_FIRST_DIAGRAMS.md) - System architecture
 3. Review [Code Examples](OFFLINE_FIRST_CODE_EXAMPLES.md) - Real patterns
 4. Deep dive [Implementation Details](OFFLINE_FIRST_IMPLEMENTATION.md)
 
 ### 🔍 Reference Lookup (as needed)
+
 **For developers implementing features:**
+
 1. [API Reference](OFFLINE_FIRST_API_REFERENCE.md) - Complete function docs
 2. [Quick Reference](OFFLINE_FIRST_QUICK_REFERENCE.md) - Cheat sheet
 3. [Code Examples](OFFLINE_FIRST_CODE_EXAMPLES.md) - Real-world patterns
@@ -47,6 +53,7 @@ The offline-first system is **fully implemented and production-ready**:
 ## 🎯 Core Concepts in 2 Minutes
 
 ### The Problem (Without Offline-First)
+
 ```
 User makes a change offline ❌
 App crashes or closes
@@ -55,6 +62,7 @@ User gets frustrated 😞
 ```
 
 ### The Solution (With Offline-First)
+
 ```
 User makes a change offline ✅
 Change saved to local cache ✅
@@ -87,6 +95,7 @@ Change automatically syncs to server ✅
 ### Step 0: Verify Setup ✅ (Already Done)
 
 Check files exist:
+
 ```bash
 lib/firebase.ts                    ✅ Yes
 lib/offlineSync.ts                 ✅ Yes
@@ -100,6 +109,7 @@ app/_layout.tsx (with init)        ✅ Yes
 ### Step 1: Replace Firestore Calls in Your Component
 
 **Before:**
+
 ```typescript
 import { addDoc, collection, doc, updateDoc } from 'firebase/firestore';
 
@@ -109,6 +119,7 @@ await updateDoc(doc(db, 'users', userId), { name: 'New Name' });
 ```
 
 **After:**
+
 ```typescript
 import { safeAddDoc, safeUpdateDoc } from '../lib/safeFirestoreOps';
 
@@ -125,7 +136,7 @@ const result = await safeAddDoc('users', userData);
 if (result.success) {
   // ✅ Success: Either synced to cloud or queued offline
   console.log('Data saved, ID:', result.id);
-  
+
   if (result.fromCache) {
     // 📴 Offline: Show user it's pending
     showMessage('📴 Saving locally. Will sync when online.');
@@ -173,12 +184,14 @@ export default function MyScreen() {
 ### Step 4: Test Actual Usage
 
 1. **Test online write:**
+
    - Go online
    - Make a change
    - Verify it appears immediately
    - Check cloud console
 
 2. **Test offline write:**
+
    - Go offline
    - Make a change
    - See "Saving locally" message
@@ -225,7 +238,7 @@ User Interface (React Components)
     ▼         ▼
   Cloud    Queue
   Write    + Cache
-   + 
+   +
   Cache
 ```
 
@@ -234,26 +247,28 @@ User Interface (React Components)
 ## 📋 File Map & Purpose
 
 ### Core Implementation
-| File | Purpose | Status |
-|------|---------|--------|
-| `lib/firebase.ts` | Firebase setup + persistence | ✅ Ready |
-| `lib/offlineSync.ts` | Queue management & sync | ✅ Ready |
-| `lib/safeFirestoreOps.ts` | Safe operation wrappers | ✅ Ready |
-| `hooks/useSyncStatus.ts` | Sync monitoring hook | ✅ Ready |
-| `hooks/useNetworkStatus.ts` | Network status hook | ✅ Ready |
-| `components/NetworkStatusBar.tsx` | Network UI display | ✅ Ready |
-| `app/_layout.tsx` | App initialization | ✅ Ready |
+
+| File                              | Purpose                      | Status   |
+| --------------------------------- | ---------------------------- | -------- |
+| `lib/firebase.ts`                 | Firebase setup + persistence | ✅ Ready |
+| `lib/offlineSync.ts`              | Queue management & sync      | ✅ Ready |
+| `lib/safeFirestoreOps.ts`         | Safe operation wrappers      | ✅ Ready |
+| `hooks/useSyncStatus.ts`          | Sync monitoring hook         | ✅ Ready |
+| `hooks/useNetworkStatus.ts`       | Network status hook          | ✅ Ready |
+| `components/NetworkStatusBar.tsx` | Network UI display           | ✅ Ready |
+| `app/_layout.tsx`                 | App initialization           | ✅ Ready |
 
 ### Documentation (You are here)
-| File | Purpose |
-|------|---------|
-| `OFFLINE_FIRST_GUIDE.md` | High-level overview & features |
-| `OFFLINE_FIRST_IMPLEMENTATION.md` | Detailed implementation details |
-| `OFFLINE_FIRST_DIAGRAMS.md` | Architecture & flow diagrams |
-| `OFFLINE_FIRST_CODE_EXAMPLES.md` | Real-world code patterns |
-| `OFFLINE_FIRST_API_REFERENCE.md` | Complete API documentation |
-| `OFFLINE_FIRST_QUICK_REFERENCE.md` | Quick lookup cheat sheet |
-| `OFFLINE_FIRST_INDEX.md` | This file |
+
+| File                               | Purpose                         |
+| ---------------------------------- | ------------------------------- |
+| `OFFLINE_FIRST_GUIDE.md`           | High-level overview & features  |
+| `OFFLINE_FIRST_IMPLEMENTATION.md`  | Detailed implementation details |
+| `OFFLINE_FIRST_DIAGRAMS.md`        | Architecture & flow diagrams    |
+| `OFFLINE_FIRST_CODE_EXAMPLES.md`   | Real-world code patterns        |
+| `OFFLINE_FIRST_API_REFERENCE.md`   | Complete API documentation      |
+| `OFFLINE_FIRST_QUICK_REFERENCE.md` | Quick lookup cheat sheet        |
+| `OFFLINE_FIRST_INDEX.md`           | This file                       |
 
 ---
 
@@ -362,6 +377,7 @@ Done!
 ## ⚠️ Common Mistakes
 
 ### ❌ Mistake 1: Direct Firebase Calls
+
 ```typescript
 // DON'T DO THIS
 const snap = await getDocs(collection(db, 'requests'));
@@ -369,6 +385,7 @@ await updateDoc(doc(db, 'requests', id), data);
 ```
 
 ### ✅ Fix
+
 ```typescript
 // DO THIS INSTEAD
 const result = await safeQuery('requests', []);
@@ -378,6 +395,7 @@ const result = await safeUpdateDoc('requests', id, data);
 ---
 
 ### ❌ Mistake 2: Ignoring `result.success`
+
 ```typescript
 // DON'T DO THIS
 const result = await safeAddDoc('requests', data);
@@ -385,6 +403,7 @@ const id = result.id; // Might be undefined!
 ```
 
 ### ✅ Fix
+
 ```typescript
 // DO THIS INSTEAD
 const result = await safeAddDoc('requests', data);
@@ -396,6 +415,7 @@ if (result.success) {
 ---
 
 ### ❌ Mistake 3: Not Handling Cached Data
+
 ```typescript
 // DON'T DO THIS
 const result = await safeGetDoc('requests', id);
@@ -403,6 +423,7 @@ displayRequestDetails(result.data); // Might be stale offline
 ```
 
 ### ✅ Fix
+
 ```typescript
 // DO THIS INSTEAD
 const result = await safeGetDoc('requests', id);
@@ -415,19 +436,27 @@ displayRequestDetails(result.data);
 ---
 
 ### ❌ Mistake 4: Not Showing Sync Status
+
 ```typescript
 // DON'T DO THIS
 // (Users don't know if their changes were saved)
 ```
 
 ### ✅ Fix
+
 ```typescript
 // DO THIS INSTEAD
 const { syncStatus } = useSyncStatus();
 
-{syncStatus === 'pending' && <PendingBadge />}
-{syncStatus === 'syncing' && <SyncingSpinner />}
-{syncStatus === 'synced' && <SyncedCheckmark />}
+{
+  syncStatus === 'pending' && <PendingBadge />;
+}
+{
+  syncStatus === 'syncing' && <SyncingSpinner />;
+}
+{
+  syncStatus === 'synced' && <SyncedCheckmark />;
+}
 ```
 
 ---
@@ -437,24 +466,28 @@ const { syncStatus } = useSyncStatus();
 ### Manual Testing (15 minutes)
 
 - [ ] **Online Write**
+
   - [ ] App online
   - [ ] Create/edit document
   - [ ] See immediate update
   - [ ] Check cloud console - data there ✅
 
 - [ ] **Offline Write**
+
   - [ ] Disable network
   - [ ] Create/edit document
   - [ ] See "Saving locally" message
   - [ ] Data shows in app ✅
 
 - [ ] **Offline → Online Sync**
+
   - [ ] Make changes offline
   - [ ] Enable network
   - [ ] See "Syncing..." message
   - [ ] See changes synced ✅
 
 - [ ] **Offline → Close → Online**
+
   - [ ] Make changes offline
   - [ ] Force close app
   - [ ] Reopen app
@@ -476,26 +509,32 @@ See `OFFLINE_FIRST_CODE_EXAMPLES.md` for test examples.
 ## 🎓 Learning Resources
 
 ### Understanding Firebase Offline
+
 - **Read**: [OFFLINE_FIRST_GUIDE.md](OFFLINE_FIRST_GUIDE.md)
 - Covers: Why offline matters, Firestore persistence, operation queuing
 
 ### Understanding the Implementation
+
 - **Read**: [OFFLINE_FIRST_IMPLEMENTATION.md](OFFLINE_FIRST_IMPLEMENTATION.md)
 - Covers: Each file, key functions, retry logic, error handling
 
 ### Visualizing the System
+
 - **Study**: [OFFLINE_FIRST_DIAGRAMS.md](OFFLINE_FIRST_DIAGRAMS.md)
 - Covers: Architecture diagram, data flow, network state machine
 
 ### Learning by Example
+
 - **Follow**: [OFFLINE_FIRST_CODE_EXAMPLES.md](OFFLINE_FIRST_CODE_EXAMPLES.md)
 - Covers: Real features, before/after patterns, complete examples
 
 ### Quick Reference
+
 - **Check**: [OFFLINE_FIRST_QUICK_REFERENCE.md](OFFLINE_FIRST_QUICK_REFERENCE.md)
 - Covers: Common patterns, imports cheat sheet, debug helpers
 
 ### Complete API Documentation
+
 - **Lookup**: [OFFLINE_FIRST_API_REFERENCE.md](OFFLINE_FIRST_API_REFERENCE.md)
 - Covers: Every function, parameters, return types, behavior
 
@@ -504,7 +543,9 @@ See `OFFLINE_FIRST_CODE_EXAMPLES.md` for test examples.
 ## 🆘 Troubleshooting
 
 ### Problem: Changes not syncing
+
 **Solution:**
+
 1. Check `useNetworkStatus().isConnected`
 2. Check `useSyncStatus().syncStatus`
 3. Check `getPendingOfflineOperations()`
@@ -512,21 +553,27 @@ See `OFFLINE_FIRST_CODE_EXAMPLES.md` for test examples.
 5. Force sync with `syncNow()`
 
 ### Problem: Stale data showing
+
 **Solution:**
+
 1. Check if `result.fromCache === true`
 2. Call `syncNow()` to update
 3. Add refresh button if needed
 4. Show "data may be outdated" warning
 
 ### Problem: Queue not clearing
+
 **Solution:**
+
 1. Check Firestore security rules
 2. Verify document IDs are correct
 3. Check `lastError` in `useSyncStatus()`
 4. May need explicit `syncNow()` call
 
 ### Problem: App crashing offline
+
 **Solution:**
+
 1. Always check `result.success`
 2. Don't assume online when accessing data
 3. Wrap promises in try/catch
@@ -547,6 +594,7 @@ See `OFFLINE_FIRST_CODE_EXAMPLES.md` for test examples.
 ## ✨ Next Steps
 
 ### Immediate (Today)
+
 1. ✅ Offline-first system is ready to use
 2. Read [Quick Reference](OFFLINE_FIRST_QUICK_REFERENCE.md) (5 min)
 3. Pick one feature to update (30 min)
@@ -554,13 +602,15 @@ See `OFFLINE_FIRST_CODE_EXAMPLES.md` for test examples.
 5. Deploy! 🚀
 
 ### Short Term (This Week)
-1. Update remaining features to use safe* wrappers
+
+1. Update remaining features to use safe\* wrappers
 2. Add sync status UI to all screens
 3. Test complete offline workflows
 4. Monitor queue size in production
 5. Gather user feedback
 
 ### Long Term (This Month)
+
 1. Analyze offline usage patterns
 2. Optimize cache management
 3. Consider conflict resolution
@@ -572,6 +622,7 @@ See `OFFLINE_FIRST_CODE_EXAMPLES.md` for test examples.
 ## 🎉 You're All Set!
 
 The offline-first system is **production-ready**:
+
 - ✅ Implementation complete
 - ✅ Fully tested
 - ✅ Comprehensively documented
@@ -584,11 +635,11 @@ Start with the [Quick Reference](OFFLINE_FIRST_QUICK_REFERENCE.md) and begin upd
 
 **Happy coding! 🚀**
 
-*For detailed information, see:*
+_For detailed information, see:_
+
 - 📖 [Offline-First Guide](OFFLINE_FIRST_GUIDE.md)
 - 🛠️ [Implementation Details](OFFLINE_FIRST_IMPLEMENTATION.md)
 - 📊 [Architecture Diagrams](OFFLINE_FIRST_DIAGRAMS.md)
 - 💡 [Code Examples](OFFLINE_FIRST_CODE_EXAMPLES.md)
 - 📚 [API Reference](OFFLINE_FIRST_API_REFERENCE.md)
 - ⚡ [Quick Reference](OFFLINE_FIRST_QUICK_REFERENCE.md)
-

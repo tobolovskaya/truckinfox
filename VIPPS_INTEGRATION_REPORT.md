@@ -322,16 +322,19 @@ Vipps provides a test app for simulation:
 ### Test Scenarios
 
 1. **Successful Payment**
+
    - Initiate payment
    - Approve in test app
    - Verify status updated
 
 2. **Failed Payment**
+
    - Initiate payment
    - Decline in test app
    - Verify error handling
 
 3. **Timeout**
+
    - Initiate payment
    - Don't respond
    - Verify timeout handling

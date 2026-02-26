@@ -1,7 +1,7 @@
-const appJson = require('./app.json')
+const appJson = require('./app.json');
 
 module.exports = ({ config }) => {
-  const fallback = config || appJson.expo
+  const fallback = config || appJson.expo;
 
   return {
     ...fallback,
@@ -12,5 +12,5 @@ module.exports = ({ config }) => {
         androidClientId: process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID || null,
       },
     },
-  }
-}
+  };
+};

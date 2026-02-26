@@ -122,10 +122,13 @@ export const usePaymentHistory = ({ userId, statusFilter }: UsePaymentHistoryOpt
           );
 
           const fallbackItems = fallbackSnapshot.docs
-            .map(doc => ({
-              id: doc.id,
-              ...doc.data(),
-            }) as PaymentRecord)
+            .map(
+              doc =>
+                ({
+                  id: doc.id,
+                  ...doc.data(),
+                } as PaymentRecord)
+            )
             .filter(item => !statusFilter || item.status === statusFilter)
             .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 

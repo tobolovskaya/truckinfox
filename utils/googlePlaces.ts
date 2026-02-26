@@ -9,7 +9,8 @@ const normalizeForSearch = (value: string): string =>
     .replace(/[\u0300-\u036f]/g, '')
     .toLowerCase();
 
-const getGooglePlacesApiKey = (): string | undefined => process.env.EXPO_PUBLIC_GOOGLE_PLACES_API_KEY;
+const getGooglePlacesApiKey = (): string | undefined =>
+  process.env.EXPO_PUBLIC_GOOGLE_PLACES_API_KEY;
 
 const buildOfflineCityResults = (input: string): PlaceSuggestion[] => {
   const normalizedInput = normalizeForSearch(input);

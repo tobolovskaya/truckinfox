@@ -11,7 +11,7 @@ This guide shows real code examples for implementing offline-first features in T
 async function saveRequest(requestData) {
   const docRef = await addDoc(collection(db, 'requests'), {
     ...requestData,
-    createdAt: serverTimestamp()
+    createdAt: serverTimestamp(),
   });
   return docRef.id;
 }
@@ -32,9 +32,9 @@ import { safeAddDoc, safeQuery } from '../lib/safeFirestoreOps';
 async function saveRequest(requestData) {
   const result = await safeAddDoc('requests', {
     ...requestData,
-    createdAt: serverTimestamp()
+    createdAt: serverTimestamp(),
   });
-  
+
   if (result.success) {
     // Result.id is temporary ID if offline
     return result.id;
@@ -46,7 +46,7 @@ async function saveRequest(requestData) {
 // ✅ Automatically reads from cache if offline
 async function loadRequests() {
   const result = await safeQuery('requests', []);
-  
+
   if (result.success) {
     return result.documents; // Cached or fresh from cloud
   } else {
@@ -80,20 +80,20 @@ export default function CreateRequestScreen() {
     pickupLocation: {},
     dropoffLocation: {},
     cargoType: '',
-    weight: ''
+    weight: '',
   });
 
   const handleSubmit = async () => {
     try {
       setLoading(true);
-      
+
       // ✅ Safe add with auto offline queue
       const result = await safeAddDoc('requests', {
         ...formData,
         userId: user.id,
         status: 'open',
         createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp()
+        updatedAt: serverTimestamp(),
       });
 
       if (result.success) {
@@ -103,7 +103,7 @@ export default function CreateRequestScreen() {
         } else {
           Toast.success('✅ Request created successfully');
         }
-        
+
         // Navigate back
         router.back();
       }
@@ -117,18 +117,15 @@ export default function CreateRequestScreen() {
   return (
     <View>
       {/* Form fields... */}
-      
+
       {/* ✅ Show sync status */}
       {syncStatus === 'pending' && (
         <View style={styles.syncAlert}>
           <Text>⏱️ {pendingCount} pending change(s)</Text>
         </View>
       )}
-      
-      <Button 
-        onPress={handleSubmit} 
-        disabled={loading}
-      >
+
+      <Button onPress={handleSubmit} disabled={loading}>
         {loading ? 'Saving...' : 'Create Request'}
       </Button>
     </View>
@@ -150,7 +147,7 @@ export async function acceptBid(requestId: string, bidId: string) {
     const result = await safeUpdateDoc('bids', bidId, {
       status: 'accepted',
       acceptedAt: serverTimestamp(),
-      acceptedBy: currentUserId
+      acceptedBy: currentUserId,
     });
 
     if (result.success) {
@@ -158,22 +155,22 @@ export async function acceptBid(requestId: string, bidId: string) {
       await safeUpdateDoc('requests', requestId, {
         status: 'bidAccepted',
         acceptedBidId: bidId,
-        updatedAt: serverTimestamp()
+        updatedAt: serverTimestamp(),
       });
 
       return {
         success: true,
         synced: !result.fromCache, // Did it sync immediately?
-        message: result.fromCache 
+        message: result.fromCache
           ? 'Bid accepted locally. Will sync when online.'
-          : 'Bid accepted successfully'
+          : 'Bid accepted successfully',
       };
     }
   } catch (error) {
     // Fallback queued automatically
     return {
       success: false,
-      error: error.message
+      error: error.message,
     };
   }
 }
@@ -186,13 +183,13 @@ function BidCard({ bid, requestId }) {
   const handleAccept = async () => {
     setAccepting(true);
     const result = await acceptBid(requestId, bid.id);
-    
+
     if (result.success) {
       Toast.success(result.message);
     } else {
       Toast.error(result.error);
     }
-    
+
     setAccepting(false);
   };
 
@@ -200,16 +197,11 @@ function BidCard({ bid, requestId }) {
     <Card>
       <Text>{bid.companyName}</Text>
       <Text>{bid.price} NOK</Text>
-      
+
       {/* Show pending indicator */}
-      {pendingCount > 0 && (
-        <Badge>⏱️ {pendingCount} pending</Badge>
-      )}
-      
-      <Button 
-        onPress={handleAccept}
-        disabled={accepting || bid.status === 'accepted'}
-      >
+      {pendingCount > 0 && <Badge>⏱️ {pendingCount} pending</Badge>}
+
+      <Button onPress={handleAccept} disabled={accepting || bid.status === 'accepted'}>
         {accepting ? 'Accepting...' : 'Accept Bid'}
       </Button>
     </Card>
@@ -239,12 +231,12 @@ export default function ChatScreen({ conversationId }) {
       senderId: currentUser.id,
       text: inputText.trim(),
       createdAt: serverTimestamp(),
-      status: 'pending' // Track message status
+      status: 'pending', // Track message status
     };
 
     try {
       setSending(true);
-      
+
       // ✅ Add to messages collection with offline queue
       const result = await safeAddDoc('messages', messageData);
 
@@ -253,9 +245,9 @@ export default function ChatScreen({ conversationId }) {
         const tempMessage = {
           id: result.id,
           ...messageData,
-          _fromCache: result.fromCache // Mark as pending
+          _fromCache: result.fromCache, // Mark as pending
         };
-        
+
         setMessages([...messages, tempMessage]);
         setInputText('');
 
@@ -307,10 +299,7 @@ export default function ChatScreen({ conversationId }) {
           placeholder="Type message..."
           editable={!sending}
         />
-        <Button 
-          onPress={sendMessage}
-          disabled={sending || !inputText.trim()}
-        >
+        <Button onPress={sendMessage} disabled={sending || !inputText.trim()}>
           {sending ? '⏳' : '📤'}
         </Button>
       </View>
@@ -324,10 +313,7 @@ export default function ChatScreen({ conversationId }) {
 **File**: `app/payment/checkout.tsx`
 
 ```typescript
-import { 
-  safeBatchWrite, 
-  safeGetDoc 
-} from '../../lib/safeFirestoreOps';
+import { safeBatchWrite, safeGetDoc } from '../../lib/safeFirestoreOps';
 import { useSyncStatus } from '../../hooks/useSyncStatus';
 
 export async function processPaymentWithOfflineSupport(
@@ -349,8 +335,8 @@ export async function processPaymentWithOfflineSupport(
           method: paymentMethod,
           status: 'processing',
           createdAt: serverTimestamp(),
-          processedAt: null
-        }
+          processedAt: null,
+        },
       },
       {
         type: 'update',
@@ -358,8 +344,8 @@ export async function processPaymentWithOfflineSupport(
         id: orderId,
         data: {
           paymentStatus: 'processing',
-          lastPaymentAttempt: serverTimestamp()
-        }
+          lastPaymentAttempt: serverTimestamp(),
+        },
       },
       {
         type: 'update',
@@ -367,18 +353,16 @@ export async function processPaymentWithOfflineSupport(
         id: currentUser.id,
         data: {
           lastPaymentDate: serverTimestamp(),
-          totalSpent: increment(paymentAmount)
-        }
-      }
+          totalSpent: increment(paymentAmount),
+        },
+      },
     ]);
 
     if (result.success) {
       return {
         success: true,
         queued: result.queued, // true if offline
-        message: result.queued 
-          ? 'Payment queued. Will process when online.'
-          : 'Payment processing'
+        message: result.queued ? 'Payment queued. Will process when online.' : 'Payment processing',
       };
     } else {
       throw new Error(result.error);
@@ -386,7 +370,7 @@ export async function processPaymentWithOfflineSupport(
   } catch (error) {
     return {
       success: false,
-      error: error.message
+      error: error.message,
     };
   }
 }
@@ -398,11 +382,7 @@ function CheckoutScreen() {
 
   const handlePayment = async () => {
     setProcessing(true);
-    const result = await processPaymentWithOfflineSupport(
-      orderId,
-      amount,
-      'card'
-    );
+    const result = await processPaymentWithOfflineSupport(orderId, amount, 'card');
 
     if (result.success) {
       Toast.success(result.message);
@@ -427,15 +407,12 @@ function CheckoutScreen() {
           message={`${pendingCount} transaction(s) waiting to sync`}
           buttons={[
             { text: 'OK', onPress: () => {} },
-            { text: 'Sync Now', onPress: syncNow }
+            { text: 'Sync Now', onPress: syncNow },
           ]}
         />
       )}
 
-      <Button 
-        onPress={handlePayment}
-        disabled={processing}
-      >
+      <Button onPress={handlePayment} disabled={processing}>
         {processing ? 'Processing...' : 'Complete Payment'}
       </Button>
     </View>
@@ -471,24 +448,27 @@ export async function updateProfileWithImage(
 
     // ✅ Safe update with offline queue
     // Even while image is uploading, profile update queues if offline
-    const result = await safeSetDoc('users', userId, {
-      ...profileData,
-      imageUrl,
-      updatedAt: serverTimestamp(),
-      lastEditedBy: 'mobile'
-    }, { merge: true }); // merge: true doesn't overwrite entire doc
+    const result = await safeSetDoc(
+      'users',
+      userId,
+      {
+        ...profileData,
+        imageUrl,
+        updatedAt: serverTimestamp(),
+        lastEditedBy: 'mobile',
+      },
+      { merge: true }
+    ); // merge: true doesn't overwrite entire doc
 
     return {
       success: result.success,
       synced: !result.fromCache,
-      message: result.fromCache
-        ? 'Profile saved locally. Syncing...'
-        : 'Profile updated'
+      message: result.fromCache ? 'Profile saved locally. Syncing...' : 'Profile updated',
     };
   } catch (error) {
     return {
       success: false,
-      error: error.message
+      error: error.message,
     };
   }
 }
@@ -502,11 +482,7 @@ export default function EditProfileScreen() {
 
   const handleSave = async () => {
     setSaving(true);
-    const result = await updateProfileWithImage(
-      user.id,
-      profileData,
-      selectedImage
-    );
+    const result = await updateProfileWithImage(user.id, profileData, selectedImage);
 
     if (result.success) {
       Toast.success(result.message);
@@ -522,23 +498,18 @@ export default function EditProfileScreen() {
   return (
     <View>
       {/* Form fields */}
-      
+
       {/* Show upload progress with sync info */}
       <View style={styles.statusSection}>
         {syncStatus === 'syncing' && (
-          <LottieView 
-            source={require('../../assets/syncing.json')}
-            autoPlay
-          />
+          <LottieView source={require('../../assets/syncing.json')} autoPlay />
         )}
         {syncStatus === 'pending' && (
-          <Text style={styles.pendingText}>
-            ⏱️ Your changes are pending sync
-          </Text>
+          <Text style={styles.pendingText}>⏱️ Your changes are pending sync</Text>
         )}
       </View>
 
-      <Button 
+      <Button
         onPress={handleSave}
         disabled={saving}
         title={saving ? 'Saving...' : 'Save Profile'}
@@ -571,11 +542,11 @@ const snap = await getDocs(query(collection(db, 'yourCollection'), where(...)));
 
 ```typescript
 // ✅ Replace with:
-import { 
-  safeAddDoc, 
-  safeUpdateDoc, 
-  safeDeleteDoc, 
-  safeQuery 
+import {
+  safeAddDoc,
+  safeUpdateDoc,
+  safeDeleteDoc,
+  safeQuery
 } from '../lib/safeFirestoreOps';
 
 // Then usage:
@@ -593,15 +564,13 @@ import { useSyncStatus } from '../hooks/useSyncStatus';
 
 export function YourComponent() {
   const { syncStatus, pendingCount } = useSyncStatus();
-  
+
   return (
     <View>
       {/* Your component UI */}
-      
+
       {/* Add sync indicator */}
-      {syncStatus === 'pending' && (
-        <Badge>⏱️ {pendingCount} pending</Badge>
-      )}
+      {syncStatus === 'pending' && <Badge>⏱️ {pendingCount} pending</Badge>}
     </View>
   );
 }
@@ -616,7 +585,7 @@ const result = await safeGetDoc('users', userId);
 if (result.success) {
   const userData = result.data;
   const isCached = result.fromCache;
-  
+
   // Show different UI if from cache
   if (isCached) {
     showCachedDataNotice();
@@ -660,7 +629,7 @@ describe('Offline Features', () => {
 
     // Come online
     mockNetworkStatus.isConnected = true;
-    
+
     // Trigger sync
     await syncOfflineQueue();
 
@@ -692,19 +661,14 @@ describe('Offline Features', () => {
 
 ```typescript
 async function deleteWithConfirmation(collectionName, docId) {
-  const confirmed = await showConfirmDialog(
-    'Delete this item?',
-    'This action cannot be undone.'
-  );
+  const confirmed = await showConfirmDialog('Delete this item?', 'This action cannot be undone.');
 
   if (confirmed) {
     const result = await safeDeleteDoc(collectionName, docId);
-    
+
     if (result.success) {
       Toast.success(
-        result.fromCache 
-          ? 'Deleted. Changes will sync when online.'
-          : 'Deleted successfully'
+        result.fromCache ? 'Deleted. Changes will sync when online.' : 'Deleted successfully'
       );
     }
   }
@@ -737,7 +701,7 @@ async function optimisticUpdate(collectionName, docId, newData) {
 ```typescript
 function SyncAwareComponent() {
   const { syncStatus, pendingCount, syncNow } = useSyncStatus();
-  
+
   // Auto-sync on critical conditions
   useEffect(() => {
     if (pendingCount > 10) {
@@ -783,7 +747,7 @@ import { useSyncStatus } from '../hooks/useSyncStatus';
 
 function DebugSyncStatus() {
   const { syncStatus, pendingCount, isSyncing, lastError } = useSyncStatus();
-  
+
   return (
     <View style={styles.debugBox}>
       <Text>Status: {syncStatus}</Text>
@@ -802,7 +766,7 @@ import { useNetworkStatus } from '../hooks/useNetworkStatus';
 
 function DebugNetwork() {
   const { isConnected, type, strength } = useNetworkStatus();
-  
+
   return (
     <View>
       <Text>Connected: {isConnected ? 'Yes' : 'No'}</Text>
@@ -827,4 +791,3 @@ function DebugNetwork() {
 8. **Clear queue periodically** to prevent stale data
 9. **Document async boundaries** where offline handling changes behavior
 10. **Show pending indicators** clearly in UI
-

@@ -173,7 +173,9 @@ export default function ReviewScreen() {
       });
 
       console.log(
-        `Updated rating for user ${reviewedId}: ${avgRating.toFixed(2)} (${reviewsSnap.size} reviews)`
+        `Updated rating for user ${reviewedId}: ${avgRating.toFixed(2)} (${
+          reviewsSnap.size
+        } reviews)`
       );
 
       // 📊 Track review submission

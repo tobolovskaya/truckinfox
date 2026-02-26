@@ -188,6 +188,7 @@ fontSize: fontSize.xxl,
 Two PowerShell scripts were created for systematic replacements:
 
 1. **fix-hardcoded-values.ps1** - Main automation script with 3 replacement maps:
+
    - Spacing replacements (40+ patterns)
    - Color replacements (30+ patterns)
    - FontSize replacements (15+ patterns)

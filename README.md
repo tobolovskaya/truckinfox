@@ -221,7 +221,6 @@ firebase deploy --only functions
 - [UI/UX Improvements](./UIUX_PERFORMANCE_IMPROVEMENTS.md)
 - [Vipps Integration](./VIPPS_INTEGRATION_REPORT.md)
 
-
 ## 🎨 Design System
 
 ### Colors

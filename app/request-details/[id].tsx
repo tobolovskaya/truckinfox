@@ -875,8 +875,8 @@ export default function RequestDetailsScreen() {
                       {bid.status === 'accepted'
                         ? 'Godtatt'
                         : bid.status === 'rejected'
-                          ? 'Avvist'
-                          : 'Venter'}
+                        ? 'Avvist'
+                        : 'Venter'}
                     </Text>
                   </View>
 

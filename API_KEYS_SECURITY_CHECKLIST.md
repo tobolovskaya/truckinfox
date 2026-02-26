@@ -2,13 +2,13 @@
 
 ## Quick Reference
 
-| Component | Status | Security Level |
-|-----------|--------|-----------------|
-| Firebase API Key | ✅ Env var (EXPOSED_PUBLIC) | Public (by design) |
-| Google Maps API Key | ✅ Env var (EXPOSED_PUBLIC) | ⚠️ **Public (should migrate)** |
+| Component             | Status                      | Security Level                 |
+| --------------------- | --------------------------- | ------------------------------ |
+| Firebase API Key      | ✅ Env var (EXPOSED_PUBLIC) | Public (by design)             |
+| Google Maps API Key   | ✅ Env var (EXPOSED_PUBLIC) | ⚠️ **Public (should migrate)** |
 | Google Places API Key | ✅ Env var (EXPOSED_PUBLIC) | ⚠️ **Public (should migrate)** |
-| Redis Token | ✅ Env var (EXPOSED_PUBLIC) | ⚠️ **Public (should rotate)** |
-| Cloud Functions Keys | ❌ Not configured | ✅ Protected (server-side) |
+| Redis Token           | ✅ Env var (EXPOSED_PUBLIC) | ⚠️ **Public (should rotate)**  |
+| Cloud Functions Keys  | ❌ Not configured           | ✅ Protected (server-side)     |
 
 ## 📋 Development Environment Checklist
 
@@ -21,6 +21,7 @@
 - [ ] Review `.gitignore` for any missing patterns
 
 ### Current Status
+
 ```
 ✅ .env is protected (in .gitignore)
 ✅ No keys in source code
@@ -31,6 +32,7 @@
 ## 🔒 API Key Restriction (Google Cloud Console)
 
 ### For Google Maps & Places APIs
+
 1. ✅ **Project**: truckinfox-8d5b2
 2. ✅ **APIs Enabled**:
    - [ ] Places API (should restrict to this only)
@@ -66,6 +68,7 @@
 ## 🛡️ Production Security Strategy
 
 ### ⚠️ Current Setup (Development Only)
+
 ```
 App ──(exposed key)──> Google API
 ❌ Keys visible in APK/IPA
@@ -74,6 +77,7 @@ App ──(exposed key)──> Google API
 ```
 
 ### ✅ Recommended Setup (Production)
+
 ```
 App ──(auth token)──> Cloud Function ──(server key)──> Google API
 ✅ Keys hidden from clients
@@ -86,6 +90,7 @@ App ──(auth token)──> Cloud Function ──(server key)──> Google AP
 ## 🚀 Migration Path: Client-Side → Server-Side
 
 ### Phase 1: Immediate (Current App)
+
 **Timeline**: Already implemented with offline fallback
 
 ```typescript
@@ -95,37 +100,44 @@ const results = await searchNorwegianPlaces('Oslo'); // Uses EXPO_PUBLIC_GOOGLE_
 ```
 
 **Risks**:
+
 - ⚠️ Key exposed in APK/IPA via reverse engineering
 - ⚠️ No per-user rate limiting
 - ⚠️ No request authentication/validation
 - ⚠️ Quota exhaustion with no control
 
 **Mitigations**:
+
 - ✅ Offline fallback (Norwegian cities)
 - ✅ KeyRestriction to Places API only
 - ✅ Application restrictions (Android/iOS package)
 - ✅ IP-based rate limiting (Google side)
 
 ### Phase 2: Production (3-6 months)
+
 **Migrate to Cloud Function proxy**
 
 1. **Deploy `placesProxyExample.ts`**:
+
    ```bash
    firebase deploy --only functions:placesAutocomplete,functions:placeDetails
    ```
 
 2. **Set server-side API key**:
+
    ```bash
    firebase functions:config:set places.api_key="YOUR_SECURE_KEY"
    ```
 
 3. **Update client code** to use `useSecurePlacesProxy()`:
+
    ```typescript
    const { searchPlaces } = useSecurePlacesProxy();
    const results = await searchPlaces('Oslo');
    ```
 
 4. **Remove from client**:
+
    ```diff
    - EXPO_PUBLIC_GOOGLE_PLACES_API_KEY=...
    ```
@@ -141,31 +153,32 @@ const results = await searchNorwegianPlaces('Oslo'); // Uses EXPO_PUBLIC_GOOGLE_
 
 ### Firebase API Keys (Safe - Public by Design)
 
-| Key | Value | Scope | Risk |
-|-----|-------|-------|------|
-| **EXPO_PUBLIC_FIREBASE_API_KEY** | AIzaSyDfuPykZ5Bkc... | Firebase Auth only | ✅ LOW (scoped) |
-| **EXPO_PUBLIC_FIREBASE_APP_ID** | 1:972027739699:web... | Firebase only | ✅ LOW (scoped) |
+| Key                              | Value                 | Scope              | Risk            |
+| -------------------------------- | --------------------- | ------------------ | --------------- |
+| **EXPO_PUBLIC_FIREBASE_API_KEY** | AIzaSyDfuPykZ5Bkc...  | Firebase Auth only | ✅ LOW (scoped) |
+| **EXPO_PUBLIC_FIREBASE_APP_ID**  | 1:972027739699:web... | Firebase only      | ✅ LOW (scoped) |
 
 **Why Safe**: Firebase API keys are restricted to specific resources and don't grant direct access to data.
 
 ### Google Maps/Places Keys (Requires Protection)
 
-| Key | Value | Scope | Risk | Status |
-|-----|-------|-------|------|--------|
-| **EXPO_PUBLIC_GOOGLE_MAPS_API_KEY** | AIzaSyCuRJZ-asbs... | Maps API | ⚠️ MEDIUM | EXPOSED |
-| **EXPO_PUBLIC_GOOGLE_PLACES_API_KEY** | (same as above) | Places API | ⚠️ MEDIUM | EXPOSED |
+| Key                                   | Value               | Scope      | Risk      | Status  |
+| ------------------------------------- | ------------------- | ---------- | --------- | ------- |
+| **EXPO_PUBLIC_GOOGLE_MAPS_API_KEY**   | AIzaSyCuRJZ-asbs... | Maps API   | ⚠️ MEDIUM | EXPOSED |
+| **EXPO_PUBLIC_GOOGLE_PLACES_API_KEY** | (same as above)     | Places API | ⚠️ MEDIUM | EXPOSED |
 
 **Why Risky**: Can be extracted from APK/IPA and used with high daily quotas ($1000+).
 
 ### Redis Credentials (Highly Sensitive)
 
-| Credential | Type | Risk | Status |
-|-----------|------|------|--------|
+| Credential                       | Type      | Risk            | Status  |
+| -------------------------------- | --------- | --------------- | ------- |
 | **EXPO_PUBLIC_REDIS_REST_TOKEN** | API Token | 🔴 **CRITICAL** | EXPOSED |
 
 **Why Critical**: Full read/write access to all Redis data if compromised.
 
 **Immediate Action**: ⚠️ **ROTATE THIS TOKEN NOW**
+
 ```bash
 # In Redis dashboard:
 # 1. Go to Upstash Console
@@ -177,16 +190,17 @@ const results = await searchNorwegianPlaces('Oslo'); // Uses EXPO_PUBLIC_GOOGLE_
 
 ## 🔄 Rotation Schedule
 
-| Credential | Rotation Frequency | Last Rotated | Next Rotation |
-|-----------|-------------------|------|---|
-| Firebase Keys | Never (tied to project) | N/A | N/A |
-| Google API Keys | Annually | (manual) | (manual) |
-| Redis Token | Every 6 months / if exposed | (manual) | (manual) |
-| Cloud Function Keys | Never (Firebase managed) | N/A | N/A |
+| Credential          | Rotation Frequency          | Last Rotated | Next Rotation |
+| ------------------- | --------------------------- | ------------ | ------------- |
+| Firebase Keys       | Never (tied to project)     | N/A          | N/A           |
+| Google API Keys     | Annually                    | (manual)     | (manual)      |
+| Redis Token         | Every 6 months / if exposed | (manual)     | (manual)      |
+| Cloud Function Keys | Never (Firebase managed)    | N/A          | N/A           |
 
 ## 🚨 Monitoring & Alerts
 
 ### Set Up Billing Alerts
+
 1. Go to Google Cloud Console > Billing
 2. Set alert thresholds:
    - ⚠️ Warning: $10/month
@@ -194,6 +208,7 @@ const results = await searchNorwegianPlaces('Oslo'); // Uses EXPO_PUBLIC_GOOGLE_
 3. Verify notifications sent to admin email
 
 ### Set Up Usage Monitoring
+
 ```bash
 # Monitor API quota usage
 gcloud compute project-info describe --project=truckinfox-8d5b2 \
@@ -206,7 +221,9 @@ gcloud logging read "resource.type=api" \
 ```
 
 ### Firebase Security Rules (Firestore)
+
 Verify rate limiting is enforced:
+
 ```
 rules_version = '2';
 service cloud.firestore {
@@ -228,6 +245,7 @@ service cloud.firestore {
 ## 🛠️ Tools & Utilities
 
 ### Scan for Exposed Keys
+
 ```bash
 # Check if keys are in git history
 git log -p | grep -i "EXPO_PUBLIC_GOOGLE"
@@ -240,19 +258,20 @@ git secrets --scan
 ```
 
 ### Validate Environment Setup
+
 ```typescript
 // Add to app startup
 const validateApiKeySetup = () => {
   const hasPlacesKey = !!process.env.EXPO_PUBLIC_GOOGLE_PLACES_API_KEY;
   const hasRedisToken = !!process.env.EXPO_PUBLIC_REDIS_REST_TOKEN;
-  
+
   if (!hasPlacesKey) {
     console.warn('⚠️ Places API key not configured - using offline mode');
   }
   if (hasRedisToken && hasRedisToken.includes('_PLACEHOLDER_')) {
     throw new Error('❌ Redis token contains placeholder - update .env');
   }
-  
+
   console.log('✅ API configuration valid');
 };
 ```
@@ -262,11 +281,13 @@ const validateApiKeySetup = () => {
 ### If API Key is Compromised
 
 1. **Immediate** (within 1 hour):
+
    - [ ] Rotate the exposed key in Google Cloud Console
    - [ ] Update `.env` file locally
    - [ ] Re-deploy app/functions with new key
 
 2. **Short-term** (within 24 hours):
+
    - [ ] Check Google Cloud Billing for suspicious activity
    - [ ] Review API logs for unauthorized requests
    - [ ] Notify Firebase support if Firebase key compromised
@@ -280,6 +301,7 @@ const validateApiKeySetup = () => {
    - [ ] Update incident response plan
 
 ### Example Emergency Commands
+
 ```bash
 # Disable a compromised API key immediately
 gcloud services api-keys list

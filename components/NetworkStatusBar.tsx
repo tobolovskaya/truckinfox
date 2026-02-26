@@ -13,11 +13,7 @@ export const NetworkStatusBar = () => {
   if (isSyncing || (pendingCount > 0 && !isConnected)) {
     return (
       <View style={styles.syncBanner}>
-        <Ionicons
-          name={isSyncing ? 'refresh' : 'cloud-offline'}
-          size={16}
-          color="white"
-        />
+        <Ionicons name={isSyncing ? 'refresh' : 'cloud-offline'} size={16} color="white" />
         <Text style={styles.syncText}>
           {isSyncing
             ? `Syncing ${pendingCount} operation${pendingCount !== 1 ? 's' : ''}...`

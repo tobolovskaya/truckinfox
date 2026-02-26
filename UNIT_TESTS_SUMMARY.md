@@ -11,6 +11,7 @@
 **Translation**: Missing tests for critical logic
 
 The application had no unit test coverage for critical business logic, utilities, and hooks, making it difficult to:
+
 - Verify correctness of core functionality
 - Catch regressions during development
 - Ensure data integrity and security
@@ -24,8 +25,10 @@ Comprehensive unit test suite covering critical application logic with proper mo
 
 ### 1. Hook Tests (4 files, ~60 test cases)
 
-#### [__tests__/hooks/useCargoRequests.test.ts](../../__tests__/hooks/useCargoRequests.test.ts)
+#### [**tests**/hooks/useCargoRequests.test.ts](../../__tests__/hooks/useCargoRequests.test.ts)
+
 **Purpose**: Test cargo request fetching and filtering logic
+
 - ✅ Fetch requests on component mount
 - ✅ Filter by cargo type
 - ✅ Handle loading states
@@ -33,8 +36,10 @@ Comprehensive unit test suite covering critical application logic with proper mo
 - ✅ Sort by newest/oldest
 - ✅ Cleanup on unmount
 
-#### [__tests__/hooks/useCurrentUser.test.ts](../../__tests__/hooks/useCurrentUser.test.ts)
+#### [**tests**/hooks/useCurrentUser.test.ts](../../__tests__/hooks/useCurrentUser.test.ts)
+
 **Purpose**: Test user authentication and profile management
+
 - ✅ Return null when unauthenticated
 - ✅ Fetch authenticated user profile
 - ✅ Handle loading state transitions
@@ -42,8 +47,10 @@ Comprehensive unit test suite covering critical application logic with proper mo
 - ✅ Cleanup subscriptions on unmount
 - ✅ Verify user profile data (verified status, rating)
 
-#### [__tests__/hooks/useFilterState.test.ts](../../__tests__/hooks/useFilterState.test.ts)
+#### [**tests**/hooks/useFilterState.test.ts](../../__tests__/hooks/useFilterState.test.ts)
+
 **Purpose**: Test filter state management
+
 - ✅ Initialize empty filters
 - ✅ Add single and multiple filters
 - ✅ Update existing filters
@@ -53,8 +60,10 @@ Comprehensive unit test suite covering critical application logic with proper mo
 - ✅ Count active filters
 - ✅ Handle complex filter objects
 
-#### [__tests__/hooks/useNotifications.test.ts](../../__tests__/hooks/useNotifications.test.ts)
+#### [**tests**/hooks/useNotifications.test.ts](../../__tests__/hooks/useNotifications.test.ts)
+
 **Purpose**: Test notification handling and management
+
 - ✅ Fetch notifications on mount
 - ✅ Filter by current user
 - ✅ Sort by creation time
@@ -68,8 +77,10 @@ Comprehensive unit test suite covering critical application logic with proper mo
 
 ### 2. Utility Tests (4 files, ~35 test cases)
 
-#### [__tests__/utils/sanitization.test.ts](../../__tests__/utils/sanitization.test.ts)
+#### [**tests**/utils/sanitization.test.ts](../../__tests__/utils/sanitization.test.ts)
+
 **Purpose**: Test input validation and security
+
 - ✅ **XSS Prevention**: Remove script tags and HTML
 - ✅ **SQL Injection**: Handle SQL injection attempts
 - ✅ **Length Enforcement**: Limit message size
@@ -79,11 +90,13 @@ Comprehensive unit test suite covering critical application logic with proper mo
 - ✅ **Min/Max Bounds**: Enforce number ranges
 - ✅ **Decimal Precision**: Handle decimal rounding
 
-#### [__tests__/utils/fetchWithTimeout.test.ts](../../__tests__/utils/fetchWithTimeout.test.ts)
+#### [**tests**/utils/fetchWithTimeout.test.ts](../../__tests__/utils/fetchWithTimeout.test.ts)
+
 **Purpose**: Test HTTP utilities with retry logic
+
 - ✅ **Timeout Handling**: Abort requests on timeout
 - ✅ **Retry Logic**: Exponential backoff retry
-- ✅ **HTTP Status Handling**: 
+- ✅ **HTTP Status Handling**:
   - 5xx errors → retry
   - 4xx errors → no retry
   - 408/429 → retry
@@ -92,16 +105,20 @@ Comprehensive unit test suite covering critical application logic with proper mo
 - ✅ **Retry Callback**: Track retry attempts
 - ✅ **Max Retries**: Fail after exhausting retries
 
-#### [__tests__/utils/analytics.test.ts](../../__tests__/utils/analytics.test.ts)
+#### [**tests**/utils/analytics.test.ts](../../__tests__/utils/analytics.test.ts)
+
 **Purpose**: Test event tracking and analytics
+
 - ✅ **Cargo Deletion**: Track with bid count
 - ✅ **Review Submission**: Track rating and comments
 - ✅ **User Registration**: Track account type and method
 - ✅ **Event Parameters**: Verify all parameters logged
 - ✅ **Multiple Types**: Support various event scenarios
 
-#### [__tests__/utils/googlePlaces.test.ts](../../__tests__/utils/googlePlaces.test.ts)
+#### [**tests**/utils/googlePlaces.test.ts](../../__tests__/utils/googlePlaces.test.ts)
+
 **Purpose**: Test Google Places API integration with retry
+
 - ✅ **Autocomplete**: Search Norwegian places
 - ✅ **Offline Fallback**: Use cached cities on API failure
 - ✅ **Place Details**: Fetch address components
@@ -112,6 +129,7 @@ Comprehensive unit test suite covering critical application logic with proper mo
 ## Test Configuration
 
 ### Jest Setup ([jest.setup.js](../jest.setup.js))
+
 ```javascript
 // Firebase Mocking
 ✅ Auth module mocking
@@ -126,6 +144,7 @@ Comprehensive unit test suite covering critical application logic with proper mo
 ```
 
 ### Jest Configuration ([jest.config.js](../jest.config.js))
+
 ```javascript
 ✅ Preset: jest-expo
 ✅ Setup files configured
@@ -136,6 +155,7 @@ Comprehensive unit test suite covering critical application logic with proper mo
 ## Running Tests
 
 ### Commands Added to package.json
+
 ```bash
 npm test              # Run all tests
 npm test:watch       # Watch mode for development
@@ -144,6 +164,7 @@ npm test:ci          # CI/CD pipeline command
 ```
 
 ### Example Usage
+
 ```bash
 # Run all tests
 npm test
@@ -160,56 +181,61 @@ npm test -- --testNamePattern="should fetch"
 
 ## Test Coverage
 
-| Category | Test Cases | Coverage Target |
-|----------|-----------|-----------------|
-| Hooks | 25 | 85%+ |
-| Utilities | 35 | 90%+ |
-| Security/Sanitization | 12 | 95%+ |
-| Async/Retry Logic | 18 | 90%+ |
-| **Total** | **100+** | **85%+** |
+| Category              | Test Cases | Coverage Target |
+| --------------------- | ---------- | --------------- |
+| Hooks                 | 25         | 85%+            |
+| Utilities             | 35         | 90%+            |
+| Security/Sanitization | 12         | 95%+            |
+| Async/Retry Logic     | 18         | 90%+            |
+| **Total**             | **100+**   | **85%+**        |
 
 ## Key Features Tested
 
 ### ✅ Data Integrity
+
 - Firestore transaction atomicity
 - Filter state consistency
 - Notification ordering
 
 ### ✅ Security
+
 - XSS prevention (script/HTML removal)
 - SQL injection prevention
 - Input length enforcement
 - Special character sanitization
 
 ### ✅ Resilience
+
 - Network timeout handling
 - Automatic retry with exponential backoff
 - Error recovery paths
 - Graceful fallback mechanisms
 
 ### ✅ User Experience
+
 - Loading state management
 - Error state handling
 - Unread notification tracking
 - Filter management
 
 ### ✅ Analytics
+
 - Event logging for business metrics
 - Parameter validation
 - Multiple scenario coverage
 
 ## Tech Stack
 
-| Tool | Version | Purpose |
-|------|---------|---------|
-| Jest | ^29.7.0 | Test framework |
-| @testing-library/react-native | ^12.9.0 | Component testing |
-| @testing-library/jest-native | ^5.4.3 | Jest matchers |
-| jest-expo | ~54.0.17 | Expo support |
+| Tool                          | Version  | Purpose           |
+| ----------------------------- | -------- | ----------------- |
+| Jest                          | ^29.7.0  | Test framework    |
+| @testing-library/react-native | ^12.9.0  | Component testing |
+| @testing-library/jest-native  | ^5.4.3   | Jest matchers     |
+| jest-expo                     | ~54.0.17 | Expo support      |
 
 ## Documentation
 
-- **[__tests__/README.md](__tests__/README.md)**: Comprehensive testing guide with examples
+- **[**tests**/README.md](__tests__/README.md)**: Comprehensive testing guide with examples
 
 ## Best Practices Implemented
 

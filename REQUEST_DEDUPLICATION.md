@@ -7,17 +7,20 @@ Implemented comprehensive request validation and deduplication system to prevent
 ## Features
 
 ### ✅ Deduplication
+
 - **Exact Match Detection**: Prevents identical requests within the past hour
 - **Fuzzy Matching**: Catches near-identical requests with address variations
 - **Offline-Safe**: Works with local cache when offline, verifies on sync
 - **User-Friendly**: Shows helpful error messages with next action
 
 ### ✅ Rate Limiting
+
 - **Configurable Limits**: Default 10 requests per hour
 - **Abuse Prevention**: Stops request spam without blocking legitimate users
 - **Graceful Degradation**: Allows offline but warns on sync if limit exceeded
 
 ### ✅ Data Validation
+
 - **Content Requirements**:
   - Title: 5-200 characters
   - Description: 10-2000 characters
@@ -28,6 +31,7 @@ Implemented comprehensive request validation and deduplication system to prevent
 - **Cargo Type**: Required selection
 
 ### ✅ Offline-First Integration
+
 - Uses `safeQuery` from offline-first architecture
 - Checks cloud when online, local cache when offline
 - Queues verification errors for retry on sync
@@ -42,37 +46,39 @@ Implemented comprehensive request validation and deduplication system to prevent
 export async function validateBeforeCreation(
   userId: string,
   requestData: CreateRequestForm
-): Promise<DeduplicationReport>
+): Promise<DeduplicationReport>;
 
 // Returns:
 interface DeduplicationReport {
-  isDuplicate: boolean;           // Duplicate found
-  rateLimited?: boolean;          // Rate limit exceeded
-  validationErrors?: string[];    // Data quality issues
-  error?: string;                 // Error message to show user
-  offlineMode?: boolean;          // Was checked offline
+  isDuplicate: boolean; // Duplicate found
+  rateLimited?: boolean; // Rate limit exceeded
+  validationErrors?: string[]; // Data quality issues
+  error?: string; // Error message to show user
+  offlineMode?: boolean; // Was checked offline
 }
 ```
 
 ### Functions
 
-| Function | Purpose | Returns |
-|----------|---------|---------|
-| `validateBeforeCreation()` | Complete validation pipeline | DeduplicationReport |
-| `checkDuplicateRequest()` | Exact address match in 1 hour | null or error message |
-| `checkFuzzyDuplicateRequest()` | Fuzzy address matching | null or error message |
-| `checkRequestRateLimit()` | Rate limiting (10/hour default) | null or error message |
-| `validateRequestData()` | Data quality checks | Array of error strings |
+| Function                       | Purpose                         | Returns                |
+| ------------------------------ | ------------------------------- | ---------------------- |
+| `validateBeforeCreation()`     | Complete validation pipeline    | DeduplicationReport    |
+| `checkDuplicateRequest()`      | Exact address match in 1 hour   | null or error message  |
+| `checkFuzzyDuplicateRequest()` | Fuzzy address matching          | null or error message  |
+| `checkRequestRateLimit()`      | Rate limiting (10/hour default) | null or error message  |
+| `validateRequestData()`        | Data quality checks             | Array of error strings |
 
 ### Integration in `app/(tabs)/create.tsx`
 
 **Before:**
+
 ```typescript
 // Direct Firebase calls without validation
 const requestRef = await addDoc(collection(db, 'cargo_requests'), {...});
 ```
 
 **After:**
+
 ```typescript
 // Comprehensive validation + offline support
 const validationReport = await validateBeforeCreation(userId, formData);
@@ -135,14 +141,17 @@ Offline:    Queue + cache
 ## Error Messages
 
 ### Duplicates
+
 - **Exact Match**: "You already have a similar request. Please check your active requests first."
 - **Fuzzy Match**: "You already have a similar request. Please check your active requests first."
 - **Reverse Direction**: "You recently created a similar request in the opposite direction."
 
 ### Rate Limiting
+
 - "Rate limit exceeded. You can create up to 10 requests per 60 minutes. Please wait before creating another."
 
 ### Data Quality
+
 - "Title must be at least 5 characters"
 - "Title cannot exceed 200 characters"
 - "Description must be at least 10 characters"
@@ -157,6 +166,7 @@ Offline:    Queue + cache
 - "Price cannot exceed 1,000,000 NOK"
 
 ### Offline Warnings
+
 - "⚠️ Cannot verify duplicates offline. Will check on sync."
 - "⚠️ Cannot verify rate limit offline."
 
@@ -187,14 +197,14 @@ Uses Levenshtein distance to detect similar addresses:
 
 ## Performance Characteristics
 
-| Operation | Time | Note |
-|-----------|------|------|
-| Data validation | <1ms | Synchronous, very fast |
-| Duplicate check (online) | 100-300ms | Firestore query |
-| Duplicate check (offline) | <50ms | Local cache only |
-| Fuzzy matching | 10-50ms | Per document compared |
-| Rate limit check | 100-300ms | Firestore query |
-| **Total validation** | **200-700ms** | Depends on results |
+| Operation                 | Time          | Note                   |
+| ------------------------- | ------------- | ---------------------- |
+| Data validation           | <1ms          | Synchronous, very fast |
+| Duplicate check (online)  | 100-300ms     | Firestore query        |
+| Duplicate check (offline) | <50ms         | Local cache only       |
+| Fuzzy matching            | 10-50ms       | Per document compared  |
+| Rate limit check          | 100-300ms     | Firestore query        |
+| **Total validation**      | **200-700ms** | Depends on results     |
 
 ## Configuration
 
@@ -240,6 +250,7 @@ if (calculateSimilarity(...) > 0.7) { ... }
 ## Offline Behavior
 
 ### When Offline
+
 - ✅ Checks local cache for exact duplicates
 - ✅ Validates data quality
 - ⚠️ **Cannot** check fuzzy duplicates (requires full cache)
@@ -248,6 +259,7 @@ if (calculateSimilarity(...) > 0.7) { ... }
 - ✅ Allows creation (will verify on sync)
 
 ### When Syncing
+
 - Verifies all offline-created requests against cloud
 - Auto-removes queued requests that are now duplicates
 - Logs deduplication on sync
@@ -293,6 +305,7 @@ if (calculateSimilarity(...) > 0.7) { ... }
 ### Unit Tests
 
 See `__tests__/utils/requestValidation.test.ts` for comprehensive test suite covering:
+
 - Exact duplicate detection
 - Fuzzy matching
 - Rate limiting
@@ -303,17 +316,20 @@ See `__tests__/utils/requestValidation.test.ts` for comprehensive test suite cov
 ## Security Considerations
 
 ### Input Sanitization
+
 - All addresses sanitized before comparison
 - Prevents XSS via address field
 - Normalizes unicode variations
 
 ### Rate Limiting
+
 - Prevents request spam/abuse
 - Configurable per deployment
 - Graceful offline handling
 - Logged for monitoring
 
 ### Privacy
+
 - No sensitive data cached locally
 - Validation doesn't expose other users' data
 - Only checks own past requests
@@ -340,12 +356,14 @@ See `__tests__/utils/requestValidation.test.ts` for comprehensive test suite cov
 ## Code Summary
 
 - **New File**: `utils/requestValidation.ts` (570 lines)
+
   - 1 main validation function
   - 6 helper functions
   - 2 type definitions
   - 100% TypeScript with JSDoc
 
 - **Modified File**: `app/(tabs)/create.tsx`
+
   - Added request validation pipeline
   - Replaced direct Firebase calls with safe operations
   - Enhanced error reporting
@@ -358,12 +376,14 @@ See `__tests__/utils/requestValidation.test.ts` for comprehensive test suite cov
 ## Maintenance
 
 ### Monitor These Metrics
+
 - Duplicate detection rate
 - False positive rate
 - Rate limit triggers
 - Offline verification success rate
 
 ### Adjust These Based on User Feedback
+
 - Duplicate detection time window
 - Fuzzy matching threshold
 - Rate limit per user

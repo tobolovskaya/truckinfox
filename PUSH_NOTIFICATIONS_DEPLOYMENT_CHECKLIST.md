@@ -9,6 +9,7 @@
 ## Pre-Deployment (5 min)
 
 - [ ] **Code Review**
+
   - [x] `sendBatchNotificationsOnNewRequest()` - New function for batch sends
   - [x] `retryFailedNotifications()` - Scheduled retry worker
   - [x] Zero TypeScript errors
@@ -44,6 +45,7 @@ firebase deploy --only functions
 ```
 
 **Verify Deployment**:
+
 ```bash
 firebase functions:list
 # Should show both new functions as "ACTIVE"
@@ -57,18 +59,19 @@ firebase functions:list
 
 **Required Composite Index**:
 
-| Collection | Field 1 | Field 2 | Field 3 |
-|---|---|---|---|
-| `users` | `user_type` (Asc) | `service_areas` (Asc) | `is_active` (Asc) |
+| Collection | Field 1           | Field 2               | Field 3           |
+| ---------- | ----------------- | --------------------- | ----------------- |
+| `users`    | `user_type` (Asc) | `service_areas` (Asc) | `is_active` (Asc) |
 
 **Via Firebase Console**:
+
 1. Open [Firebase Console](https://console.firebase.google.com)
 2. Select your project
 3. Go to **Firestore Database** → **Indexes** tab
 4. Click **"Create Index"**
 5. Collection: `users`
 6. Field: `user_type` (Set to Ascending)
-7. Field: `service_areas` (Set to Ascending) 
+7. Field: `service_areas` (Set to Ascending)
 8. Field: `is_active` (Set to Ascending)
 9. Click **"Create"**
 
@@ -80,7 +83,7 @@ Auto-delete old entries after 1 hour:
 
 1. Firestore → Collections → **notification_history**
 2. Right-click collection → **"Edit TTL Policy"**
-3. Select field: `expires_at` 
+3. Select field: `expires_at`
 4. Click **"Save"**
 
 This prevents notification_history from growing unbounded.
@@ -119,6 +122,7 @@ Create test carrier documents in Firestore:
 ```
 
 **How to get FCM token from Flutter app**:
+
 ```dart
 // In your Flutter app
 String? token = await FirebaseMessaging.instance.getToken();
@@ -149,6 +153,7 @@ firebase functions:log --tail
 Look for these log patterns:
 
 ✅ **Success indicators**:
+
 ```
 📬 Starting batch notification for request: abc123
 ✅ Found 1 carriers in Oslo
@@ -158,6 +163,7 @@ Look for these log patterns:
 ```
 
 ❌ **Error indicators**:
+
 ```
 ❌ Error in batch notification
 ⚠️ Incomplete request data
@@ -194,6 +200,7 @@ In Firestore Console, check collection `notification_delivery_logs`:
 Create another request from same carrier within 1 hour. It should be skipped.
 
 Check `notification_history` collection:
+
 ```javascript
 // Should only have 1 entry for carrier_test_1
 {
@@ -211,7 +218,7 @@ Check `notification_history` collection:
 
 ```sql
 -- Via Firestore console, run query:
-SELECT 
+SELECT
   request_id,
   sent,
   failed,
@@ -223,6 +230,7 @@ LIMIT 20
 ```
 
 **Alert if**:
+
 - Success rate drops below 90%
 - Frequent "0 carriers found" entries
 - Any "❌ Error" logs appearing
@@ -331,21 +339,21 @@ firebase deploy --only functions
 
 ### First 24 Hours
 
-| Metric | Expected |
-|--------|----------|
-| Functions deployed | 2 |
-| Index creation time | 1-5 min |
+| Metric                    | Expected    |
+| ------------------------- | ----------- |
+| Functions deployed        | 2           |
+| Index creation time       | 1-5 min     |
 | Test notification latency | 1-3 seconds |
-| Success rate | > 90% |
+| Success rate              | > 90%       |
 
 ### Steady State (After 1 week)
 
-| Metric | Expected |
-|--------|----------|
-| Avg notification latency | 1-2 seconds |
-| Success rate | > 95% |
-| Cost reduction | 90% vs individual sends |
-| Retry effectiveness | 80%+ of failed sends succeeded on retry |
+| Metric                   | Expected                                |
+| ------------------------ | --------------------------------------- |
+| Avg notification latency | 1-2 seconds                             |
+| Success rate             | > 95%                                   |
+| Cost reduction           | 90% vs individual sends                 |
+| Retry effectiveness      | 80%+ of failed sends succeeded on retry |
 
 ---
 
@@ -410,15 +418,16 @@ Questions? Contact Backend Team
 - [ ] Rollback plan documented
 - [ ] Documentation reviewed
 
-**Deployment Date**: ________________  
-**Deployed By**: ________________  
-**Approval**: ________________
+**Deployment Date**: ******\_\_\_\_******  
+**Deployed By**: ******\_\_\_\_******  
+**Approval**: ******\_\_\_\_******
 
 ---
 
 ## Support
 
 **Issues?**
+
 1. Check Cloud Functions logs: `firebase functions:log --tail`
 2. Review Firestore collections for error entries
 3. Contact Backend Team with:

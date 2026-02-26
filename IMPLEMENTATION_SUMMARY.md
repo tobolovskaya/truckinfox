@@ -225,6 +225,7 @@ npx expo start --tunnel
 Fixed 8 bugs discovered during post-deployment testing:
 
 1. **TypeScript Configuration Error** ([tsconfig.json](tsconfig.json#L19))
+
    - **Issue**: Invalid `"ignoreDeprecations": "6.0"` property causing compiler warnings
    - **Fix**: Removed invalid property
    - **Impact**: Clean TypeScript compilation
@@ -498,6 +499,7 @@ Implemented comprehensive analytics for all important user events with categoriz
 **New Analytics Events:**
 
 1. **cargo_created**: Enhanced cargo request tracking with:
+
    - Cargo type and pricing model
    - Weight category (under_100kg, 100_500kg, 500_1000kg, 1_5_tons, 5_10_tons, over_10_tons)
    - Price range (under_500, 500_1000, 1000_2500, 2500_5000, 5000_10000, over_10000)
@@ -505,11 +507,13 @@ Implemented comprehensive analytics for all important user events with categoriz
    - City extraction from addresses (from_city, to_city)
 
 2. **chat_opened**: Tracks when user opens a chat conversation with:
+
    - Request ID
    - Other user type (customer/carrier)
    - Chat ID for cross-referencing
 
 3. **message_sent**: Tracks message sending activity with:
+
    - Chat ID and request ID
    - Message length
    - Has attachment flag
@@ -1213,6 +1217,7 @@ Implemented efficient search infrastructure for scalable text search:
 Two-tier search strategy based on dataset size:
 
 1. **Client-Side Filtering** (for small datasets <100 items):
+
    - Used for: Conversations list, active orders
    - Benefits: Instant results, no network latency, works offline
    - Implementation: Simple JavaScript `.filter()` on in-memory data
@@ -1225,6 +1230,7 @@ Two-tier search strategy based on dataset size:
 **Implementation Details:**
 
 - Created `utils/search.ts` with search utilities:
+
   - `generateSearchTerms(fullName)`: Creates searchable terms array
   - `generateCargoSearchTerms(...)`: Creates cargo-specific search terms
   - `searchUsers(db, query, limit)`: Server-side user search
@@ -1232,10 +1238,12 @@ Two-tier search strategy based on dataset size:
   - `normalizeSearchQuery(query)`: Normalizes user input
 
 - Updated `contexts/AuthContext.tsx`:
+
   - Automatically adds `search_terms` field when creating users
   - Includes full name breakdown for flexible matching
 
 - Optimized `app/(tabs)/messages.tsx`:
+
   - Uses client-side filtering (optimal for conversations)
   - Added cargo title to search (full_name + message + title)
   - Documented trade-offs between client/server search
@@ -1593,6 +1601,7 @@ Implemented comprehensive screen standardization to ensure visual consistency ac
 **New Reusable Components:**
 
 1. **ScreenHeader Component** (`components/ScreenHeader.tsx`):
+
    - Standardized header for all screens with 44pt touch targets
    - Built-in safe area handling with useSafeAreaInsets()
    - Support for back button, title, and up to 2 right actions

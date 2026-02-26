@@ -11,19 +11,23 @@ The app now supports seamless offline-first functionality using Firebase Firesto
 ## Features
 
 ### ✅ Automatic Offline Persistence
+
 - **React Native**: Built-in SDK persistence
 
 ### ✅ Offline Operation Queuing
+
 - Automatic queuing of Firestore operations when offline
 - Exponential retry strategy with max 3 retries
 - Manual sync trigger and automatic sync on reconnect
 
 ### ✅ Offline-First Queries
+
 - All queries serve from local cache when offline
 - Seamless transition between online/offline queries
 - Clear visual indicators showing data source
 
 ### ✅ Network Status Tracking
+
 - Real-time connectivity monitoring
 - Sync status display with pending count
 - Error tracking and reporting
@@ -102,25 +106,15 @@ const documents = result.documents;
 import { useSyncStatus } from '../hooks/useSyncStatus';
 
 export function MyComponent() {
-  const { 
-    isSyncing, 
-    pendingCount, 
-    syncStatus,
-    lastError,
-    syncNow 
-  } = useSyncStatus();
+  const { isSyncing, pendingCount, syncStatus, lastError, syncNow } = useSyncStatus();
 
   return (
     <>
       {syncStatus === 'pending' && (
-        <button onClick={syncNow}>
-          Sync {pendingCount} pending changes
-        </button>
+        <button onClick={syncNow}>Sync {pendingCount} pending changes</button>
       )}
 
-      {lastError && (
-        <ErrorMessage>{lastError.message}</ErrorMessage>
-      )}
+      {lastError && <ErrorMessage>{lastError.message}</ErrorMessage>}
     </>
   );
 }
@@ -159,10 +153,7 @@ if (result.queued) {
 ### 5. Check Pending Operations
 
 ```typescript
-import { 
-  getPendingOfflineOperations, 
-  getOfflineQueueStats 
-} from '../lib/offlineSync';
+import { getPendingOfflineOperations, getOfflineQueueStats } from '../lib/offlineSync';
 
 // Get all pending operations
 const pending = getPendingOfflineOperations();
@@ -186,6 +177,7 @@ console.log('Queue stats:', {
 When the app starts, Firestore persistence is automatically enabled:
 
 **React Native**:
+
 - Persistence is enabled automatically by the SDK
 
 ### 2. Offline Operation Queuing
@@ -228,9 +220,9 @@ import { syncOfflineQueue } from '../lib/offlineSync';
 const result = await syncOfflineQueue();
 
 console.log({
-  synced: result.synced,      // Successfully synced operations
-  failed: result.failed,      // Failed operations
-  errors: result.errors,      // Detailed error list
+  synced: result.synced, // Successfully synced operations
+  failed: result.failed, // Failed operations
+  errors: result.errors, // Detailed error list
 });
 ```
 
@@ -320,7 +312,7 @@ const { lastError, syncNow } = useSyncStatus();
 
 if (lastError) {
   console.log('Sync failed:', lastError.message);
-  
+
   // Manually retry
   await syncNow();
 }
@@ -329,15 +321,18 @@ if (lastError) {
 ## Performance Considerations
 
 ### Online Mode
+
 - ✅ Normal Firestore latency (minimal overhead)
 - ✅ All operations go directly to cloud
 
 ### Offline Mode
+
 - ✅ Instant writes (queued locally)
 - ✅ Instant reads (from cache)
 - ✅ Zero cloud operations until sync
 
 ### Sync Mode
+
 - ✅ Batch operations for efficiency
 - ✅ Exponential backoff prevents server overload
 - ✅ Max 3 retries per operation
@@ -361,6 +356,7 @@ if (lastError) {
 ## Testing Offline Mode
 
 ### In React Native
+
 1. Toggle WiFi/Mobile data off
 2. App queues operations
 3. Enable connectivity
@@ -395,6 +391,7 @@ if (lastError) {
 **Symptom**: App loses data when offline
 
 **Solution**:
+
 ```typescript
 // Check if persistence is enabled
 import { getOfflineQueueStats } from '../lib/offlineSync';
@@ -410,6 +407,7 @@ initializeOfflineSync();
 **Symptom**: Operations not syncing after reconnect
 
 **Solution**:
+
 ```typescript
 // Manual sync
 const { syncNow } = useSyncStatus();
@@ -425,6 +423,7 @@ console.log('Pending:', pending);
 **Symptom**: Changes not appearing in UI
 
 **Solution**:
+
 ```typescript
 // Check from cache flag
 const result = await safeQuery('collection', []);
@@ -441,6 +440,6 @@ The offline-first architecture provides:
 ✅ **Automatic**: Sync happens without user action  
 ✅ **Reliable**: Exponential backoff and retry logic  
 ✅ **Observable**: UI shows sync status always  
-✅ **Simple**: Use `safe*` functions for automatic handling  
+✅ **Simple**: Use `safe*` functions for automatic handling
 
 This makes the TruckinFox app work reliably in any network condition!

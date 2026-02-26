@@ -83,7 +83,7 @@ type CargoRequestsQueryKey = [
   FilterState,
   SortOption,
   string,
-  string | undefined,
+  string | undefined
 ];
 
 const PAGE_SIZE = 20;

@@ -215,7 +215,9 @@ export const queryLocal = async (
     }));
 
     console.log(
-      `📖 Local query (${snapshot.metadata.fromCache ? 'from cache' : 'from server'}): ${collectionName}`,
+      `📖 Local query (${
+        snapshot.metadata.fromCache ? 'from cache' : 'from server'
+      }): ${collectionName}`,
       { count: results.length }
     );
 

@@ -71,8 +71,8 @@ export const RequestCard: React.FC<RequestCardProps> = ({
     request.price_type === 'negotiable'
       ? t('negotiable')
       : typeof request.price === 'number' && request.price > 0
-        ? formatCurrency(request.price)
-        : t('priceOnAgreement');
+      ? formatCurrency(request.price)
+      : t('priceOnAgreement');
   const weightText =
     typeof request.weight === 'number' ? formatWeight(request.weight) : t('weightUnknown');
   const dateText = request.pickup_date ? formatDate(request.pickup_date) : t('dateNotSet');
@@ -87,7 +87,9 @@ export const RequestCard: React.FC<RequestCardProps> = ({
       onPress={() => onPress(request)}
       activeOpacity={0.9}
       accessibilityRole="button"
-      accessibilityLabel={`${title}. ${t('from')} ${fromAddress} ${t('to')} ${toAddress}. ${priceText}`}
+      accessibilityLabel={`${title}. ${t('from')} ${fromAddress} ${t(
+        'to'
+      )} ${toAddress}. ${priceText}`}
       accessibilityHint={t('openRequestDetails')}
       accessible={true}
     >

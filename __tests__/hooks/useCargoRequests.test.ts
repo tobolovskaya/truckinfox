@@ -155,7 +155,14 @@ describe('useCargoRequests', () => {
 
     expect(mockSetQueryData).toHaveBeenCalled();
     expect(mockSetQueryData).toHaveBeenCalledWith(
-      ['cargoRequests', 'all', { city: '', cargo_type: '', price_min: '', price_max: '', price_type: '' }, 'newest', '', undefined],
+      [
+        'cargoRequests',
+        'all',
+        { city: '', cargo_type: '', price_min: '', price_max: '', price_type: '' },
+        'newest',
+        '',
+        undefined,
+      ],
       expect.any(Function)
     );
   });
