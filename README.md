@@ -217,8 +217,10 @@ firebase deploy --only functions
 
 - [Push Notifications Setup](./PUSH_NOTIFICATIONS_SETUP.md)
 - [Quick Deploy Guide](./QUICK_DEPLOY_SETUP.md)
+- [Firebase Error Monitoring Checklist](./FIREBASE_ERROR_MONITORING_CHECKLIST.md)
 - [UI/UX Improvements](./UIUX_PERFORMANCE_IMPROVEMENTS.md)
 - [Vipps Integration](./VIPPS_INTEGRATION_REPORT.md)
+
 
 ## 🎨 Design System
 
