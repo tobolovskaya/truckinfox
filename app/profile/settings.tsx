@@ -14,7 +14,6 @@ import { Ionicons } from '@expo/vector-icons';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { useAuth } from '../../contexts/AuthContext';
 import { useI18n } from '../../contexts/I18nContext';
-import { useThemeMode } from '../../contexts/ThemeContext';
 import { db } from '../../lib/firebase';
 import { ScreenHeader } from '../../components/ScreenHeader';
 import { spacing, fontSize, fontWeight, useAppThemeStyles } from '../../lib/sharedStyles';
@@ -37,8 +36,6 @@ export default function SettingsScreen() {
   const { t } = useTranslation();
   const { colors } = useAppThemeStyles();
   const styles = useMemo(() => createStyles(colors), [colors]);
-  const { themeMode, resolvedScheme, setThemeMode } = useThemeMode();
-  const isDarkMode = resolvedScheme === 'dark';
   const { currentLanguage, changeLanguage } = useI18n();
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
@@ -213,89 +210,6 @@ export default function SettingsScreen() {
                 </Text>
               </TouchableOpacity>
             </View>
-          </View>
-        </View>
-
-        {/* Push Notifications Section */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>{t('theme') || 'Theme'}</Text>
-
-          <View style={styles.settingsCard}>
-            <View style={styles.themeRow}>
-              <TouchableOpacity
-                style={[
-                  styles.themeOption,
-                  themeMode === 'light' && styles.themeOptionActive,
-                ]}
-                onPress={() => setThemeMode('light')}
-                accessibilityRole="button"
-                accessibilityLabel={t('light') || 'Light'}
-              >
-                <Ionicons
-                  name="sunny-outline"
-                  size={20}
-                  color={themeMode === 'light' ? colors.primary : colors.text.secondary}
-                />
-                <Text
-                  style={[
-                    styles.themeOptionText,
-                    themeMode === 'light' && styles.themeOptionTextActive,
-                  ]}
-                >
-                  {t('light') || 'Light'}
-                </Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[styles.themeOption, themeMode === 'dark' && styles.themeOptionActive]}
-                onPress={() => setThemeMode('dark')}
-                accessibilityRole="button"
-                accessibilityLabel={t('dark') || 'Dark'}
-              >
-                <Ionicons
-                  name="moon-outline"
-                  size={20}
-                  color={themeMode === 'dark' ? colors.primary : colors.text.secondary}
-                />
-                <Text
-                  style={[
-                    styles.themeOptionText,
-                    themeMode === 'dark' && styles.themeOptionTextActive,
-                  ]}
-                >
-                  {t('dark') || 'Dark'}
-                </Text>
-              </TouchableOpacity>
-            </View>
-
-            <TouchableOpacity
-              style={[styles.systemThemeButton, themeMode === 'system' && styles.themeOptionActive]}
-              onPress={() => setThemeMode('system')}
-              accessibilityRole="button"
-              accessibilityLabel={t('system') || 'System'}
-            >
-              <Ionicons
-                name="phone-portrait-outline"
-                size={16}
-                color={themeMode === 'system' ? colors.primary : colors.text.secondary}
-              />
-              <Text
-                style={[
-                  styles.systemThemeText,
-                  themeMode === 'system' && styles.themeOptionTextActive,
-                ]}
-              >
-                {t('system') || 'System'}
-              </Text>
-            </TouchableOpacity>
-
-            <Text style={styles.themeHint}>
-              {themeMode === 'system'
-                ? t('themeFollowsSystem') || 'Theme follows system settings'
-                : `${t('currentTheme') || 'Current theme'}: ${
-                    isDarkMode ? t('dark') || 'Dark' : t('light') || 'Light'
-                  }`}
-            </Text>
           </View>
         </View>
 
@@ -532,7 +446,7 @@ const createStyles = (colors: ReturnType<typeof useAppThemeStyles>['colors']) =>
     marginLeft: spacing.sm,
   },
   settingsCard: {
-    backgroundColor: colors.white,
+    backgroundColor: colors.surface,
     borderRadius: spacing.md,
     overflow: 'hidden',
   },
@@ -582,7 +496,7 @@ const createStyles = (colors: ReturnType<typeof useAppThemeStyles>['colors']) =>
     flex: 1,
     paddingVertical: spacing.md,
     borderRadius: spacing.sm,
-    backgroundColor: colors.background,
+    backgroundColor: colors.surfaceVariant,
     borderWidth: 1,
     borderColor: colors.border.default,
     alignItems: 'center',
@@ -598,61 +512,6 @@ const createStyles = (colors: ReturnType<typeof useAppThemeStyles>['colors']) =>
   },
   languageButtonTextActive: {
     color: colors.white,
-  },
-  themeRow: {
-    flexDirection: 'row',
-    gap: spacing.sm,
-    paddingHorizontal: spacing.md,
-    paddingTop: spacing.md,
-  },
-  themeOption: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: spacing.xs,
-    paddingVertical: spacing.md,
-    borderRadius: spacing.sm,
-    borderWidth: 1,
-    borderColor: colors.border.default,
-    backgroundColor: colors.background,
-  },
-  themeOptionActive: {
-    borderColor: colors.primary,
-    backgroundColor: `${colors.primary}14`,
-  },
-  themeOptionText: {
-    fontSize: fontSize.sm,
-    fontWeight: fontWeight.semibold,
-    color: colors.text.secondary,
-  },
-  themeOptionTextActive: {
-    color: colors.primary,
-  },
-  themeHint: {
-    fontSize: fontSize.xs,
-    color: colors.text.tertiary,
-    paddingHorizontal: spacing.md,
-    paddingTop: spacing.sm,
-    paddingBottom: spacing.md,
-  },
-  systemThemeButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: spacing.xs,
-    marginHorizontal: spacing.md,
-    marginTop: spacing.sm,
-    paddingVertical: spacing.sm,
-    borderRadius: spacing.sm,
-    borderWidth: 1,
-    borderColor: colors.border.default,
-    backgroundColor: colors.background,
-  },
-  systemThemeText: {
-    fontSize: fontSize.sm,
-    fontWeight: fontWeight.semibold,
-    color: colors.text.secondary,
   },
   savingIndicator: {
     flexDirection: 'row',

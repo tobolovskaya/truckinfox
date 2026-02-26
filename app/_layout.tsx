@@ -15,8 +15,6 @@ import { NotificationBannerProvider } from '../contexts/NotificationBannerContex
 import { ErrorBoundary } from '../components/ErrorBoundary';
 import { NetworkStatusBar } from '../components/NetworkStatusBar';
 import { theme } from '../theme/theme';
-import { darkTheme } from '../theme/darkTheme';
-import { ThemeProvider, useThemeMode } from '../contexts/ThemeContext';
 import { initializeOfflineSync } from '../lib/offlineSync';
 import { initializeGlobalErrorTracking } from '../lib/errorTracking';
 import 'react-native-url-polyfill/auto';
@@ -36,10 +34,8 @@ LogBox.ignoreLogs([
   'VirtualizedLists should never be nested',
 ]);
 
-function RootLayoutContent() {
+export default function RootLayout() {
   const router = useRouter();
-  const { resolvedScheme } = useThemeMode();
-  const currentTheme = resolvedScheme === 'dark' ? darkTheme : theme;
 
   const handleNotificationNavigation = (data: {
     type?: string;
@@ -117,7 +113,7 @@ function RootLayoutContent() {
             <AuthProvider>
               <ToastProvider>
                 <NotificationBannerProvider>
-                  <PaperProvider theme={currentTheme as any}>
+                  <PaperProvider theme={theme as any}>
                     <View style={{ flex: 1 }}>
                       <NetworkStatusBar />
                       <Stack screenOptions={{ headerShown: false }} />
@@ -130,13 +126,5 @@ function RootLayoutContent() {
         </QueryClientProvider>
       </GestureHandlerRootView>
     </ErrorBoundary>
-  );
-}
-
-export default function RootLayout() {
-  return (
-    <ThemeProvider>
-      <RootLayoutContent />
-    </ThemeProvider>
   );
 }
