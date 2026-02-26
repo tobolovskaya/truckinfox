@@ -71,7 +71,7 @@ export default function RootLayout() {
     let unsubscribe: (() => void) | undefined;
 
     const initializeNotificationHandlers = async () => {
-      const { onNotificationTap, getInitialNotification } = await import('../utils/fcm.js');
+      const { onNotificationTap, getInitialNotification } = require('../utils/fcm') as typeof import('../utils/fcm');
 
       unsubscribe = onNotificationTap((response: Notifications.NotificationResponse) => {
         const data = response.notification.request.content.data as {

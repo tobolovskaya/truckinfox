@@ -68,7 +68,7 @@ export default function EditProfileScreen() {
         setProfile({
           fullName: (data?.full_name as string) || user.displayName || '',
           email: (data?.email as string) || user.email || '',
-          phone: (data?.phone as string) || '',
+          phone: (data?.phone as string) || user.phoneNumber || '',
           companyName: (data?.company_name as string) || '',
           orgNumber: (data?.org_number as string) || '',
           avatarUrl: (data?.avatar_url as string) || user.photoURL || '',
@@ -97,7 +97,7 @@ export default function EditProfileScreen() {
       setSaving(true);
       // 🔐 Sanitize all user inputs
       const fullName = sanitizeInput(profile.fullName.trim(), 200);
-      const phone = sanitizeInput(profile.phone.trim(), 20);
+      const phone = sanitizeInput(profile.phone.trim(), 20).replace(/\s+/g, '');
       const isBusinessAccount = profile.userType === 'carrier';
       const companyName = isBusinessAccount
         ? sanitizeInput(profile.companyName.trim(), 200) || null
