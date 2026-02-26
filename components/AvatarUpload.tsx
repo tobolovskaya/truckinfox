@@ -11,7 +11,6 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { FirebaseError } from 'firebase/app';
 import * as ImagePicker from 'expo-image-picker';
-import * as ImageManipulator from 'expo-image-manipulator';
 import { storage, db } from '../lib/firebase';
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import { doc, updateDoc } from 'firebase/firestore';
@@ -21,6 +20,7 @@ import { useTranslation } from 'react-i18next';
 import { theme } from '../theme/theme';
 import { colors, spacing, fontSize, fontWeight, borderRadius } from '../lib/sharedStyles';
 import { fetchWithTimeout } from '../utils/fetchWithTimeout';
+import { compressImageForUpload } from '../utils/imageCompression';
 
 interface AvatarUploadProps {
   avatarUrl?: string;
@@ -33,13 +33,7 @@ export default function AvatarUpload({ avatarUrl, onUpload, size = 80 }: AvatarU
   const { t } = useTranslation();
   const [uploading, setUploading] = useState(false);
 
-  const compressImage = async (uri: string) => {
-    const manipResult = await ImageManipulator.manipulateAsync(uri, [{ resize: { width: 1200 } }], {
-      compress: 0.7,
-      format: ImageManipulator.SaveFormat.JPEG,
-    });
-    return manipResult.uri;
-  };
+  const compressImage = async (uri: string) => compressImageForUpload(uri);
 
   const pickImage = async () => {
     try {
