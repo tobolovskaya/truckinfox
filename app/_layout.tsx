@@ -2,7 +2,7 @@ import 'react-native-reanimated';
 import 'react-native-get-random-values';
 import React, { useEffect } from 'react';
 import { LogBox, View } from 'react-native';
-import { Stack } from 'expo-router';
+import { Stack, useRouter } from 'expo-router';
 import { PaperProvider } from 'react-native-paper';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -15,6 +15,7 @@ import { NetworkStatusBar } from '../components/NetworkStatusBar';
 import { theme } from '../theme/theme';
 import { initializeOfflineSync } from '../lib/offlineSync';
 import { initializeGlobalErrorTracking } from '../lib/errorTracking';
+import { getInitialNotification, onNotificationTap } from '../utils/fcm';
 import 'react-native-url-polyfill/auto';
 
 const queryClient = new QueryClient({
@@ -33,6 +34,22 @@ LogBox.ignoreLogs([
 ]);
 
 export default function RootLayout() {
+  const router = useRouter();
+
+  const handleNotificationNavigation = (data: {
+    type?: string;
+    order_id?: string;
+    request_id?: string;
+  }) => {
+    const { type, order_id, request_id } = data;
+
+    if (type === 'bid_accepted' && order_id) {
+      router.push(`/order-status/${order_id}`);
+    } else if (type === 'new_bid' && request_id) {
+      router.push(`/request-details/${request_id}`);
+    }
+  };
+
   // Initialize offline-first sync on app startup
   useEffect(() => {
     const cleanupOfflineSync = initializeOfflineSync();
@@ -43,6 +60,34 @@ export default function RootLayout() {
       cleanupOfflineSync();
     };
   }, []);
+
+  useEffect(() => {
+    const unsubscribe = onNotificationTap(response => {
+      const data = response.notification.request.content.data as {
+        type?: string;
+        order_id?: string;
+        request_id?: string;
+      };
+
+      handleNotificationNavigation(data);
+    });
+
+    getInitialNotification(response => {
+      if (!response) {
+        return;
+      }
+
+      const data = response.notification.request.content.data as {
+        type?: string;
+        order_id?: string;
+        request_id?: string;
+      };
+
+      handleNotificationNavigation(data);
+    });
+
+    return unsubscribe;
+  }, [router]);
 
   return (
     <ErrorBoundary>
