@@ -22,4 +22,11 @@ export const logEvent = {
       value: amount,
       currency: 'NOK',
     }),
+
+  appError: (source: string, message: string, hasStack: boolean) =>
+    logFirebaseEvent('app_error', {
+      source: source.slice(0, 40),
+      message: message.slice(0, 100),
+      has_stack: hasStack ? 1 : 0,
+    }),
 };

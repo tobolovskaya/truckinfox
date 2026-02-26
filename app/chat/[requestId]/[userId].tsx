@@ -586,7 +586,6 @@ export default function ChatScreen() {
 
   const handleFileSelected = async (file: { name?: string; size?: number; uri?: string }) => {
     try {
-      // TODO: Upload file to server and send as message
       const fileName = file.name || 'attachment';
       const fileSize = file.size ? `(${Math.round(file.size / 1024)}KB)` : '';
 

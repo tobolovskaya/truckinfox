@@ -99,7 +99,6 @@ export default function SecurityScreen() {
       subtitle: t('changePasswordSubtitle'),
       iconColor: colors.primary,
       onPress: () => {
-        // TODO: Navigate to change password screen
         Alert.alert(t('comingSoon'), 'Change password feature coming soon');
       },
     },
@@ -110,7 +109,6 @@ export default function SecurityScreen() {
       subtitle: t('twoFactorSubtitle'),
       iconColor: colors.success,
       onPress: () => {
-        // TODO: Navigate to 2FA setup
         Alert.alert(t('comingSoon'), 'Two-factor authentication coming soon');
       },
     },
@@ -121,7 +119,6 @@ export default function SecurityScreen() {
       subtitle: t('activeSessionsSubtitle'),
       iconColor: colors.info,
       onPress: () => {
-        // TODO: Navigate to active sessions
         Alert.alert(t('comingSoon'), 'Active sessions management coming soon');
       },
     },

@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, spacing, fontSize, fontWeight, borderRadius } from '../lib/sharedStyles';
+import { logEvent } from '../lib/analytics';
 
 interface Props {
   children: React.ReactNode;
@@ -24,8 +25,11 @@ export class ErrorBoundary extends React.Component<Props, State> {
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
     console.error('Error caught by boundary:', error, errorInfo);
-    // TODO: Log to error tracking service (Sentry, Firebase Crashlytics, etc.)
-    // Example: Sentry.captureException(error, { extra: errorInfo });
+    logEvent.appError(
+      'ErrorBoundary',
+      error.message || 'Unknown error',
+      Boolean(error.stack || errorInfo.componentStack)
+    );
   }
 
   handleReset = () => {
