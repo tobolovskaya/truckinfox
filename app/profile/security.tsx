@@ -1,4 +1,4 @@
-import React, { useState, type ComponentProps } from 'react';
+import React, { useEffect, useRef, useState, type ComponentProps } from 'react';
 import {
   View,
   Text,
@@ -8,9 +8,12 @@ import {
   Alert,
   ActivityIndicator,
   Platform,
+  TextInput,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { FirebaseRecaptchaVerifierModal } from 'expo-firebase-recaptcha';
+import { PhoneAuthProvider, PhoneMultiFactorGenerator, multiFactor } from 'firebase/auth';
 import { useTranslation } from 'react-i18next';
 import {
   colors,
@@ -22,12 +25,113 @@ import {
 } from '../../lib/sharedStyles';
 import { useAuth } from '../../contexts/AuthContext';
 import { ScreenHeader } from '../../components/ScreenHeader';
+import { auth } from '../../lib/firebase';
+
+const RecaptchaModal = FirebaseRecaptchaVerifierModal as unknown as React.ComponentType<any>;
 
 export default function SecurityScreen() {
   const router = useRouter();
   const { t } = useTranslation();
   const { user, signOut, signOutAllDevices } = useAuth();
   const [loading, setLoading] = useState(false);
+  const [twoFALoading, setTwoFALoading] = useState(false);
+  const [isTwoFAEnabled, setIsTwoFAEnabled] = useState(false);
+  const [phoneNumber, setPhoneNumber] = useState(user?.phoneNumber || '');
+  const [verificationId, setVerificationId] = useState<string | null>(null);
+  const [verificationCode, setVerificationCode] = useState('');
+  const recaptchaVerifier = useRef<FirebaseRecaptchaVerifierModal>(null);
+
+  const firebaseConfig = {
+    apiKey: process.env.EXPO_PUBLIC_FIREBASE_API_KEY || '',
+    projectId: process.env.EXPO_PUBLIC_FIREBASE_PROJECT_ID || '',
+    appId: process.env.EXPO_PUBLIC_FIREBASE_APP_ID || '',
+  };
+
+  useEffect(() => {
+    if (user?.phoneNumber) {
+      setPhoneNumber(user.phoneNumber);
+    }
+
+    if (auth.currentUser) {
+      setIsTwoFAEnabled(multiFactor(auth.currentUser).enrolledFactors.length > 0);
+    }
+  }, [user?.phoneNumber]);
+
+  const enable2FA = async () => {
+    if (Platform.OS === 'web') {
+      Alert.alert(t('error'), 'Two-factor authentication setup is supported on mobile only.');
+      return;
+    }
+
+    if (!auth.currentUser) {
+      Alert.alert(t('error'), t('somethingWentWrong'));
+      return;
+    }
+
+    if (!phoneNumber) {
+      Alert.alert(t('error'), 'No phone number found on your account.');
+      return;
+    }
+
+    if (!recaptchaVerifier.current) {
+      Alert.alert(t('error'), 'reCAPTCHA verifier is not ready yet. Please try again.');
+      return;
+    }
+
+    try {
+      setTwoFALoading(true);
+      const session = await multiFactor(auth.currentUser).getSession();
+
+      const phoneInfoOptions = {
+        phoneNumber,
+        session,
+      };
+
+      const provider = new PhoneAuthProvider(auth);
+      const nextVerificationId = await provider.verifyPhoneNumber(
+        phoneInfoOptions,
+        recaptchaVerifier.current
+      );
+
+      setVerificationId(nextVerificationId);
+      Alert.alert(t('twoFactorAuth'), 'Verification code sent. Enter it below to finish setup.');
+    } catch (error) {
+      console.error('Failed to start 2FA enrollment:', error);
+      Alert.alert(t('error'), 'Unable to start two-factor setup. Please try again.');
+    } finally {
+      setTwoFALoading(false);
+    }
+  };
+
+  const confirm2FA = async () => {
+    if (!auth.currentUser || !verificationId) {
+      Alert.alert(t('error'), t('somethingWentWrong'));
+      return;
+    }
+
+    if (!verificationCode.trim()) {
+      Alert.alert(t('error'), 'Please enter the verification code.');
+      return;
+    }
+
+    try {
+      setTwoFALoading(true);
+      const phoneCredential = PhoneAuthProvider.credential(verificationId, verificationCode.trim());
+      const multiFactorAssertion = PhoneMultiFactorGenerator.assertion(phoneCredential);
+
+      await multiFactor(auth.currentUser).enroll(multiFactorAssertion, 'primary-phone');
+
+      setIsTwoFAEnabled(true);
+      setVerificationId(null);
+      setVerificationCode('');
+      Alert.alert(t('twoFactorAuth'), 'Two-factor authentication enabled successfully.');
+    } catch (error) {
+      console.error('Failed to confirm 2FA enrollment:', error);
+      Alert.alert(t('error'), 'Invalid verification code. Please try again.');
+    } finally {
+      setTwoFALoading(false);
+    }
+  };
 
   const handleSignOut = async () => {
     Alert.alert(t('signOut'), t('confirmSignOut'), [
@@ -106,11 +210,11 @@ export default function SecurityScreen() {
       id: 'two-factor',
       icon: 'shield-checkmark-outline',
       title: t('twoFactorAuth'),
-      subtitle: t('twoFactorSubtitle'),
+      subtitle: isTwoFAEnabled
+        ? t('enabled') || 'Enabled'
+        : t('twoFactorSubtitle') || 'Add extra security to your account',
       iconColor: colors.success,
-      onPress: () => {
-        Alert.alert(t('comingSoon'), 'Two-factor authentication coming soon');
-      },
+      onPress: enable2FA,
     },
     {
       id: 'active-sessions',
@@ -145,6 +249,12 @@ export default function SecurityScreen() {
 
   return (
     <View style={styles.container}>
+      <RecaptchaModal
+        ref={recaptchaVerifier}
+        firebaseConfig={firebaseConfig}
+        attemptInvisibleVerification
+      />
+
       <ScreenHeader title={t('security')} onBackPress={() => router.back()} />
 
       <ScrollView
@@ -191,6 +301,41 @@ export default function SecurityScreen() {
             ))}
           </View>
         </View>
+
+        {verificationId ? (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>{t('twoFactorAuth')}</Text>
+            <View style={styles.card}>
+              <View style={styles.verificationContainer}>
+                <Text style={styles.verificationText}>Enter SMS verification code</Text>
+                <TextInput
+                  value={verificationCode}
+                  onChangeText={setVerificationCode}
+                  keyboardType="number-pad"
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  placeholder="123456"
+                  placeholderTextColor={colors.text.tertiary}
+                  style={styles.verificationInput}
+                  maxLength={6}
+                />
+                <TouchableOpacity
+                  style={[styles.confirmButton, twoFALoading && styles.confirmButtonDisabled]}
+                  onPress={confirm2FA}
+                  disabled={twoFALoading}
+                  accessibilityRole="button"
+                  accessibilityLabel="Confirm two-factor authentication"
+                >
+                  {twoFALoading ? (
+                    <ActivityIndicator size="small" color={colors.white} />
+                  ) : (
+                    <Text style={styles.confirmButtonText}>Confirm code</Text>
+                  )}
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        ) : null}
 
         {/* Sign Out Options */}
         <View style={styles.section}>
@@ -324,6 +469,40 @@ const styles = StyleSheet.create({
   optionSubtitle: {
     fontSize: fontSize.sm,
     color: colors.text.secondary,
+  },
+  verificationContainer: {
+    padding: spacing.lg,
+  },
+  verificationText: {
+    fontSize: fontSize.sm,
+    color: colors.text.secondary,
+    marginBottom: spacing.sm,
+  },
+  verificationInput: {
+    borderWidth: 1,
+    borderColor: colors.border.default,
+    borderRadius: borderRadius.md,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    fontSize: fontSize.lg,
+    color: colors.text.primary,
+    marginBottom: spacing.md,
+    letterSpacing: 2,
+  },
+  confirmButton: {
+    height: 48,
+    borderRadius: borderRadius.md,
+    backgroundColor: colors.primary,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  confirmButtonDisabled: {
+    opacity: 0.7,
+  },
+  confirmButtonText: {
+    color: colors.white,
+    fontSize: fontSize.md,
+    fontWeight: fontWeight.semibold,
   },
   warningCard: {
     flexDirection: 'row',
