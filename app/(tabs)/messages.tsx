@@ -18,6 +18,8 @@ import { collection, query, where, orderBy, onSnapshot, limit } from 'firebase/f
 import { batchFetchUsers, batchFetchRequests } from '../../utils/batchFetch';
 import Avatar from '../../components/Avatar';
 import { SkeletonLoader } from '../../components/SkeletonLoader';
+import { EmptyState } from '../../components/EmptyState';
+import EmptyCargoIllustration from '../../assets/empty-cargo.svg';
 import { colors, spacing, fontSize, fontWeight, borderRadius } from '../../lib/sharedStyles';
 import { formatDistanceToNow } from 'date-fns';
 import { ScreenHeader } from '../../components/ScreenHeader';
@@ -314,11 +316,26 @@ export default function MessagesScreen() {
   };
 
   const renderEmptyState = () => (
-    <View style={styles.emptyState}>
-      <Ionicons name="chatbubbles-outline" size={64} color={colors.text.tertiary} />
-      <Text style={styles.emptyTitle}>{t('noMessages')}</Text>
-      <Text style={styles.emptyText}>{t('startConversation')}</Text>
-    </View>
+    <EmptyState
+      icon="chatbubbles-outline"
+      title={t('noMessages') || 'No messages yet'}
+      description={t('startConversation') || 'Start your first conversation'}
+      illustration={EmptyCargoIllustration}
+      actions={[
+        {
+          label: t('createRequest') || 'Create request',
+          icon: 'add-outline',
+          variant: 'primary',
+          onPress: () => router.push('/(tabs)/create'),
+        },
+        {
+          label: t('browseMarketplace') || 'Browse marketplace',
+          icon: 'search-outline',
+          variant: 'secondary',
+          onPress: () => router.push('/(tabs)/home'),
+        },
+      ]}
+    />
   );
 
   if (loading) {
@@ -508,23 +525,5 @@ const styles = StyleSheet.create({
   },
   emptyContainer: {
     flex: 1,
-  },
-  emptyState: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: spacing.xl,
-  },
-  emptyTitle: {
-    fontSize: fontSize.lg,
-    fontWeight: fontWeight.bold,
-    color: colors.text.primary,
-    marginTop: spacing.lg,
-  },
-  emptyText: {
-    fontSize: fontSize.md,
-    color: colors.text.secondary,
-    textAlign: 'center',
-    marginTop: spacing.sm,
   },
 });

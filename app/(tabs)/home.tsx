@@ -5,12 +5,10 @@ import {
   RefreshControl,
   StyleSheet,
   Text,
-  TouchableOpacity,
   useWindowDimensions,
   View,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { colors, spacing, fontSize, fontWeight } from '../../lib/sharedStyles';
 import { useAuth } from '../../contexts/AuthContext';
@@ -23,6 +21,8 @@ import { HomeTabBar } from '../../components/home/HomeTabBar';
 import { HomeSearchBar } from '../../components/home/HomeSearchBar';
 import { HomeFilterSheet } from '../../components/home/HomeFilterSheet';
 import { HomeActiveFilters } from '../../components/home/HomeActiveFilters';
+import { EmptyState } from '../../components/EmptyState';
+import EmptyCargoIllustration from '../../assets/empty-cargo.svg';
 import { useTranslation } from 'react-i18next';
 import { useUnreadCount } from '../../hooks/useNotifications';
 import { useDebounce } from '../../hooks/useDebounce';
@@ -238,23 +238,28 @@ export default function HomeScreen() {
         }
         ListEmptyComponent={
           !loading ? (
-            <View style={styles.emptyState}>
-              <Ionicons name="cube-outline" size={64} color={colors.text.tertiary} />
-              <Text style={styles.emptyTitle}>
-                {activeTab === 'my' ? t('noMyRequests') : t('noCargoRequestsYet')}
-              </Text>
-              <Text style={styles.emptyText}>{t('createFirstCargoRequest')}</Text>
-              <TouchableOpacity
-                style={styles.createButton}
-                onPress={() => router.push('/(tabs)/create')}
-                accessibilityRole="button"
-                accessibilityLabel={t('createRequest')}
-                accessibilityHint={t('createRequestHint')}
-              >
-                <Ionicons name="add" size={20} color={colors.white} />
-                <Text style={styles.createButtonText}>{t('createRequest')}</Text>
-              </TouchableOpacity>
-            </View>
+            <EmptyState
+              icon="cube-outline"
+              title={t('noRequestsYet') || t('noCargoRequestsYet') || 'No requests yet'}
+              description={
+                t('createFirstRequest') || t('createFirstCargoRequest') || 'Create your first request'
+              }
+              illustration={EmptyCargoIllustration}
+              actions={[
+                {
+                  label: t('createRequest') || 'Create request',
+                  icon: 'add-outline',
+                  variant: 'primary',
+                  onPress: () => router.push('/(tabs)/create'),
+                },
+                {
+                  label: t('browseMarketplace') || 'Browse marketplace',
+                  icon: 'search-outline',
+                  variant: 'secondary',
+                  onPress: () => setActiveTab('all'),
+                },
+              ]}
+            />
           ) : null
         }
         renderItem={({ item, index }) =>
@@ -315,37 +320,5 @@ const styles = StyleSheet.create({
   footerLoaderText: {
     fontSize: fontSize.sm,
     color: colors.text.secondary,
-  },
-  emptyState: {
-    alignItems: 'center',
-    padding: spacing.xl,
-    marginTop: spacing.lg,
-  },
-  emptyTitle: {
-    fontSize: fontSize.lg,
-    fontWeight: fontWeight.bold,
-    color: colors.text.primary,
-    marginTop: spacing.lg,
-  },
-  emptyText: {
-    fontSize: fontSize.md,
-    color: colors.text.secondary,
-    textAlign: 'center',
-    marginTop: spacing.sm,
-    marginBottom: spacing.lg,
-  },
-  createButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.primary,
-    paddingHorizontal: spacing.xl,
-    paddingVertical: spacing.md,
-    borderRadius: 8,
-    gap: spacing.xs,
-  },
-  createButtonText: {
-    fontSize: fontSize.md,
-    fontWeight: fontWeight.semibold,
-    color: colors.white,
   },
 });

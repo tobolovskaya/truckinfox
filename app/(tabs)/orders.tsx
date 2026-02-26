@@ -7,7 +7,6 @@ import {
   FlatList,
   ActivityIndicator,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../contexts/AuthContext';
@@ -15,6 +14,8 @@ import { db } from '../../lib/firebase';
 import { collection, query, where, getDocs, orderBy } from 'firebase/firestore';
 import { colors, spacing, fontSize, fontWeight } from '../../lib/sharedStyles';
 import { ScreenHeader } from '../../components/ScreenHeader';
+import { EmptyState } from '../../components/EmptyState';
+import EmptyCargoIllustration from '../../assets/empty-cargo.svg';
 import { useUnreadCount } from '../../hooks/useNotifications';
 
 interface Order {
@@ -281,31 +282,26 @@ export default function OrdersScreen() {
           <ActivityIndicator size="large" color={colors.primary} />
         </View>
       ) : orders.length === 0 ? (
-        <View style={styles.emptyState}>
-          <Ionicons name="list-outline" size={64} color={colors.text.tertiary} />
-          <Text style={styles.emptyTitle}>{t('noOrdersFound')}</Text>
-          <Text style={styles.emptyText}>{t('createRequestToSeeOrders')}</Text>
-
-          <View style={styles.ctaRow}>
-            <TouchableOpacity
-              style={styles.primaryButton}
-              onPress={() => router.push('/(tabs)/create')}
-              accessibilityRole="button"
-              accessibilityLabel={t('createCargoRequest')}
-            >
-              <Text style={styles.primaryButtonText}>{t('createCargoRequest')}</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.secondaryButton}
-              onPress={() => router.push('/(tabs)/home')}
-              accessibilityRole="button"
-              accessibilityLabel={t('allRequests')}
-            >
-              <Text style={styles.secondaryButtonText}>{t('allRequests')}</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
+        <EmptyState
+          icon="list-outline"
+          title={t('noOrdersFound') || 'No orders yet'}
+          description={t('createRequestToSeeOrders') || 'Create a request to start getting orders'}
+          illustration={EmptyCargoIllustration}
+          actions={[
+            {
+              label: t('createRequest') || t('createCargoRequest') || 'Create request',
+              icon: 'add-outline',
+              variant: 'primary',
+              onPress: () => router.push('/(tabs)/create'),
+            },
+            {
+              label: t('browseMarketplace') || t('allRequests') || 'Browse marketplace',
+              icon: 'search-outline',
+              variant: 'secondary',
+              onPress: () => router.push('/(tabs)/home'),
+            },
+          ]}
+        />
       ) : (
         <FlatList
           data={orders}
@@ -382,54 +378,5 @@ const styles = StyleSheet.create({
     fontSize: fontSize.sm,
     fontWeight: fontWeight.semibold,
     color: colors.text.primary,
-  },
-  emptyState: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: spacing.xl,
-  },
-  emptyTitle: {
-    fontSize: fontSize.lg,
-    fontWeight: fontWeight.bold,
-    color: colors.text.primary,
-    marginTop: spacing.lg,
-  },
-  emptyText: {
-    fontSize: fontSize.md,
-    color: colors.text.secondary,
-    textAlign: 'center',
-    marginTop: spacing.sm,
-    marginBottom: spacing.lg,
-  },
-  ctaRow: {
-    width: '100%',
-    gap: spacing.sm,
-  },
-  primaryButton: {
-    height: 44,
-    borderRadius: 10,
-    backgroundColor: colors.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  primaryButtonText: {
-    color: colors.white,
-    fontSize: fontSize.md,
-    fontWeight: fontWeight.semibold,
-  },
-  secondaryButton: {
-    height: 44,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: colors.border.default,
-    backgroundColor: colors.white,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  secondaryButtonText: {
-    color: colors.text.primary,
-    fontSize: fontSize.md,
-    fontWeight: fontWeight.semibold,
   },
 });

@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import { SvgProps } from 'react-native-svg';
 import { colors, fontSize, fontWeight, spacing, borderRadius } from '../lib/sharedStyles';
 
 type IconName = React.ComponentProps<typeof Ionicons>['name'];
@@ -17,17 +18,25 @@ interface EmptyStateProps {
   icon: IconName;
   title: string;
   description: string;
+  illustration?: React.ComponentType<SvgProps>;
   actions?: EmptyStateAction[];
 }
 
-export function EmptyState({ icon, title, description, actions }: EmptyStateProps) {
+export function EmptyState({ icon, title, description, illustration, actions }: EmptyStateProps) {
+  const Illustration = illustration;
+
   return (
     <View style={styles.container}>
       <View style={styles.content}>
-        {/* Icon */}
-        <View style={styles.iconContainer}>
-          <Ionicons name={icon} size={80} color={colors.text.tertiary} />
-        </View>
+        {Illustration ? (
+          <View style={styles.illustrationContainer}>
+            <Illustration width={220} height={165} />
+          </View>
+        ) : (
+          <View style={styles.iconContainer}>
+            <Ionicons name={icon} size={80} color={colors.text.tertiary} />
+          </View>
+        )}
 
         {/* Title */}
         <Text style={styles.title}>{title}</Text>
@@ -50,7 +59,7 @@ export function EmptyState({ icon, title, description, actions }: EmptyStateProp
               >
                 {action.variant === 'primary' ? (
                   <LinearGradient
-                    colors={['#FF7043', '#FF8A65']}
+                    colors={[colors.primary, colors.info]}
                     style={styles.actionButtonGradient}
                   >
                     <Ionicons name={action.icon} size={20} color="white" />
@@ -92,6 +101,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: spacing.xl,
+  },
+  illustrationContainer: {
+    marginBottom: spacing.lg,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   title: {
     fontSize: fontSize.xxl,
