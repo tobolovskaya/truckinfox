@@ -12,7 +12,6 @@ import {
 import { KeyboardAwareFlatList } from 'react-native-keyboard-aware-scroll-view';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
-import { manipulateAsync, SaveFormat } from 'expo-image-manipulator';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTranslation } from 'react-i18next';
@@ -33,6 +32,7 @@ import { AddressAutocomplete } from '../../components/AddressAutocomplete';
 import { calculateDistance } from '../../utils/googlePlaces';
 import { geohashForLocation } from 'geofire-common';
 import { fetchWithTimeout } from '../../utils/fetchWithTimeout';
+import { compressImageForUpload } from '../../utils/imageCompression';
 import { LazyImage } from '../../components/LazyImage';
 import { generateCargoSearchTerms } from '../../utils/search';
 import { ScreenHeader } from '../../components/ScreenHeader';
@@ -455,18 +455,7 @@ export default function CreateRequestScreen() {
     return true;
   };
 
-  const compressImage = async (uri: string) => {
-    try {
-      const manipResult = await manipulateAsync(uri, [{ resize: { width: 1200 } }], {
-        compress: 0.7,
-        format: SaveFormat.JPEG,
-      });
-      return manipResult.uri;
-    } catch (error) {
-      console.error('Error compressing image:', error);
-      return uri;
-    }
-  };
+  const compressImage = async (uri: string) => compressImageForUpload(uri);
 
   const pickImages = async () => {
     try {

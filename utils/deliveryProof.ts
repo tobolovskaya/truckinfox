@@ -2,9 +2,9 @@ import { app, db } from '../lib/firebase';
 import { doc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { getFunctions, httpsCallable } from 'firebase/functions';
-import { manipulateAsync, SaveFormat } from 'expo-image-manipulator';
 import { trackDeliveryProofSubmitted } from './analytics';
 import { fetchWithTimeout } from './fetchWithTimeout';
+import { compressImageForUpload } from './imageCompression';
 
 const functions = getFunctions(app, 'europe-west1');
 
@@ -21,19 +21,6 @@ export interface DeliveryProofData {
   delivery_time: unknown; // Firestore timestamp
 }
 
-const compressPhoto = async (uri: string): Promise<string> => {
-  try {
-    const result = await manipulateAsync(uri, [{ resize: { width: 1200 } }], {
-      compress: 0.7,
-      format: SaveFormat.JPEG,
-    });
-    return result.uri;
-  } catch (error) {
-    console.error('Error compressing delivery photo:', error);
-    return uri;
-  }
-};
-
 /**
  * Upload a single image to Firebase Storage
  */
@@ -47,7 +34,7 @@ export const uploadImage = async (
     const storage = getStorage();
     const filename =
       type === 'signature' ? `signature_${Date.now()}.png` : `photo_${index}_${Date.now()}.jpg`;
-    const uriToUpload = type === 'photo' ? await compressPhoto(uri) : uri;
+    const uriToUpload = type === 'photo' ? await compressImageForUpload(uri) : uri;
 
     const storageRef = ref(storage, `delivery_proofs/${orderId}/${filename}`);
 

@@ -31,12 +31,12 @@ import {
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import * as ImagePicker from 'expo-image-picker';
-import { manipulateAsync, SaveFormat } from 'expo-image-manipulator';
 import AddressInput from '../../components/AddressInput';
 import { ScreenHeader } from '../../components/ScreenHeader';
 import { calculateDistance } from '../../utils/googlePlaces';
 import { geohashForLocation } from 'geofire-common';
 import { fetchWithTimeout } from '../../utils/fetchWithTimeout';
+import { compressImageForUpload } from '../../utils/imageCompression';
 import { LazyImage } from '../../components/LazyImage';
 import { colors, spacing, fontSize, borderRadius } from '../../lib/sharedStyles';
 import { generateCargoSearchTerms } from '../../utils/search';
@@ -384,18 +384,7 @@ export default function EditRequestScreen() {
     }
   };
 
-  const compressImage = async (uri: string) => {
-    try {
-      const manipResult = await manipulateAsync(uri, [{ resize: { width: 1200 } }], {
-        compress: 0.7,
-        format: SaveFormat.JPEG,
-      });
-      return manipResult.uri;
-    } catch (error) {
-      console.error('Error compressing image:', error);
-      return uri;
-    }
-  };
+  const compressImage = async (uri: string) => compressImageForUpload(uri);
 
   const pickImages = async () => {
     try {
