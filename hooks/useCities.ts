@@ -1,6 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
-import { db } from '../lib/firebase';
-import { collection, getDocs } from 'firebase/firestore';
+import { supabase } from '../lib/supabase';
 
 export function useCities() {
   const [cities, setCities] = useState<string[]>([]);
@@ -9,11 +8,16 @@ export function useCities() {
   const fetchCities = useCallback(async () => {
     try {
       setLoading(true);
-      const querySnapshot = await getDocs(collection(db, 'cargo_requests'));
-      const data = querySnapshot.docs.map(doc => doc.data());
+      const { data, error } = await supabase
+        .from('cargo_requests')
+        .select('from_address,to_address');
+
+      if (error) {
+        throw error;
+      }
 
       const citySet = new Set<string>();
-      data.forEach(item => {
+      (data || []).forEach(item => {
         // Extract city from address (simple approach)
         if (item.from_address) {
           const parts = item.from_address.split(',');

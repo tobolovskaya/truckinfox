@@ -18,32 +18,18 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTranslation } from 'react-i18next';
 import { useToast } from '../../contexts/ToastContext';
-import { db } from '../../lib/firebase';
+import { supabase } from '../../lib/supabase';
 import { triggerHapticFeedback } from '../../utils/haptics';
 import { SuccessAnimation } from '../../components/SuccessAnimation';
 import { LazyImage } from '../../components/LazyImage';
 import Avatar from '../../components/Avatar';
 import { ScreenHeader } from '../../components/ScreenHeader';
 import {
-  collection,
-  doc,
-  getDoc,
-  getDocs,
-  query,
-  where,
-  orderBy,
-  addDoc,
-  deleteDoc,
-  serverTimestamp,
-  runTransaction,
-  updateDoc,
-} from 'firebase/firestore';
-import {
   trackBidSubmitted,
   trackBidAccepted,
   trackCargoRequestDeleted,
 } from '../../utils/analytics';
-import { createChat } from '../../utils/chatManagement';
+import { generateChatId } from '../../utils/chatManagement';
 import { colors, spacing, fontSize, borderRadius } from '../../lib/sharedStyles';
 import MapView, { Marker, Polyline } from 'react-native-maps';
 import { sanitizeMessage } from '../../utils/sanitization';
@@ -126,24 +112,30 @@ export default function RequestDetailsScreen() {
   const fetchRequest = async () => {
     try {
       setLoading(true);
-      const docRef = doc(db, 'cargo_requests', id as string);
-      const docSnap = await getDoc(docRef);
+      const { data: requestRow, error: requestError } = await supabase
+        .from('cargo_requests')
+        .select('*')
+        .eq('id', id as string)
+        .maybeSingle();
 
-      if (!docSnap.exists()) {
+      if (requestError || !requestRow) {
         toast.error(t('failedToLoadRequest') || 'Request not found');
         triggerHapticFeedback.error();
         router.back();
         return;
       }
 
-      const data = { id: docSnap.id, ...docSnap.data() } as CargoRequest;
+      const data = { id: requestRow.id, ...requestRow } as CargoRequest;
 
       // Fetch customer info
       if (data.user_id) {
-        const userRef = doc(db, 'users', data.user_id);
-        const userSnap = await getDoc(userRef);
-        if (userSnap.exists()) {
-          data.users = userSnap.data() as CargoRequest['users'];
+        const { data: userRow } = await supabase
+          .from('users')
+          .select('full_name, user_type, rating, phone, avatar_url')
+          .eq('id', data.user_id)
+          .maybeSingle();
+        if (userRow) {
+          data.users = userRow as CargoRequest['users'];
         }
       }
 
@@ -159,29 +151,51 @@ export default function RequestDetailsScreen() {
 
   const fetchBids = async () => {
     try {
-      const bidsQuery = query(
-        collection(db, 'bids'),
-        where('request_id', '==', id),
-        orderBy('created_at', 'desc')
+      const { data: bidsRows, error: bidsError } = await supabase
+        .from('bids')
+        .select('id, price, message, status, created_at, carrier_id')
+        .eq('request_id', id as string)
+        .order('created_at', { ascending: false });
+
+      if (bidsError) {
+        throw bidsError;
+      }
+
+      const carrierIds = Array.from(
+        new Set((bidsRows || []).map(row => row.carrier_id).filter((value): value is string => Boolean(value)))
       );
 
-      const bidsSnap = await getDocs(bidsQuery);
-      const bidsData = await Promise.all(
-        bidsSnap.docs.map(async bidDoc => {
-          const bidData = { id: bidDoc.id, ...bidDoc.data() } as Bid;
+      const { data: carriersData } = carrierIds.length
+        ? await supabase
+            .from('users')
+            .select('id, full_name, user_type, rating, phone, avatar_url')
+            .in('id', carrierIds)
+        : { data: [] as Array<{ id: string; full_name: string | null; user_type: string | null; rating: number | null; phone: string | null; avatar_url: string | null }> };
 
-          // Fetch carrier user data
-          if (bidData.carrier_id) {
-            const carrierRef = doc(db, 'users', bidData.carrier_id);
-            const carrierSnap = await getDoc(carrierRef);
-            if (carrierSnap.exists()) {
-              bidData.users = carrierSnap.data() as Bid['users'];
-            }
-          }
+      const carrierById = new Map((carriersData || []).map(carrier => [carrier.id, carrier]));
 
-          return bidData;
-        })
-      );
+      const bidsData = (bidsRows || []).map(row => ({
+        id: row.id,
+        price: Number(row.price || 0),
+        message: row.message || '',
+        status: row.status || 'pending',
+        created_at: row.created_at,
+        carrier_id: row.carrier_id,
+        users: row.carrier_id
+          ? ((() => {
+              const carrier = carrierById.get(row.carrier_id);
+              return carrier
+                ? {
+                    full_name: carrier.full_name || '',
+                    user_type: carrier.user_type || 'carrier',
+                    rating: Number(carrier.rating || 0),
+                    phone: carrier.phone || '',
+                    avatar_url: carrier.avatar_url || undefined,
+                  }
+                : undefined;
+            })())
+          : undefined,
+      })) as Bid[];
 
       setBids(bidsData);
     } catch (error) {
@@ -214,14 +228,18 @@ export default function RequestDetailsScreen() {
       // 🔐 Sanitize bid message before sending
       const sanitizedMessage = bidMessage.trim() ? sanitizeMessage(bidMessage.trim(), 1000) : '';
 
-      await addDoc(collection(db, 'bids'), {
+      const { error: insertBidError } = await supabase.from('bids').insert({
         request_id: id,
         carrier_id: user.uid,
         price: amount,
         message: sanitizedMessage,
         status: 'pending',
-        created_at: serverTimestamp(),
+        created_at: new Date().toISOString(),
       });
+
+      if (insertBidError) {
+        throw insertBidError;
+      }
 
       // Track bid submitted
       trackBidSubmitted({
@@ -276,69 +294,91 @@ export default function RequestDetailsScreen() {
     triggerHapticFeedback.medium();
 
     try {
-      // 🔒 Fetch all other pending bids OUTSIDE transaction (more reliable)
-      const otherBidsQuery = query(
-        collection(db, 'bids'),
-        where('request_id', '==', id),
-        where('status', '==', 'pending')
-      );
-      const otherBidsSnap = await getDocs(otherBidsQuery);
-      const otherBidRefs = otherBidsSnap.docs
-        .filter(bidDoc => bidDoc.id !== bid.id)
-        .map(bidDoc => bidDoc.ref);
+      const { data: selectedBid, error: selectedBidError } = await supabase
+        .from('bids')
+        .select('id, status')
+        .eq('id', bid.id)
+        .maybeSingle();
 
-      // Use transaction for atomic operations
-      await runTransaction(db, async transaction => {
-        // 1. Verify bid is still pending
-        const bidRef = doc(db, 'bids', bid.id);
-        const bidDoc = await transaction.get(bidRef);
+      if (selectedBidError || !selectedBid) {
+        throw new Error('Bud ikke funnet');
+      }
 
-        if (!bidDoc.exists()) {
-          throw new Error('Bud ikke funnet');
-        }
+      if (selectedBid.status !== 'pending') {
+        throw new Error('Budet er ikke lenger tilgjengelig');
+      }
 
-        const bidData = bidDoc.data();
-        if (bidData?.status !== 'pending') {
-          throw new Error('Budet er ikke lenger tilgjengelig');
-        }
+      const { data: currentRequest, error: currentRequestError } = await supabase
+        .from('cargo_requests')
+        .select('status')
+        .eq('id', id as string)
+        .maybeSingle();
 
-        // 2. Verify request is still active
-        const requestRef = doc(db, 'cargo_requests', id as string);
-        const requestDoc = await transaction.get(requestRef);
+      if (currentRequestError || !currentRequest) {
+        throw new Error('Forespørsel ikke funnet');
+      }
 
-        if (!requestDoc.exists()) {
-          throw new Error('Forespørsel ikke funnet');
-        }
+      if (currentRequest.status !== 'active') {
+        throw new Error('Forespørselen er ikke lenger aktiv');
+      }
 
-        const requestData = requestDoc.data();
-        if (requestData?.status !== 'active') {
-          throw new Error('Forespørselen er ikke lenger aktiv');
-        }
+      const nowIso = new Date().toISOString();
 
-        // 3. Update bid status
-        transaction.update(bidRef, {
+      const { error: acceptedBidUpdateError } = await supabase
+        .from('bids')
+        .update({
           status: 'accepted',
-          accepted_at: serverTimestamp(),
-          updated_at: serverTimestamp(),
-        });
+          accepted_at: nowIso,
+          updated_at: nowIso,
+        })
+        .eq('id', bid.id)
+        .eq('status', 'pending');
 
-        // 4. Update request status
-        transaction.update(requestRef, {
+      if (acceptedBidUpdateError) {
+        throw acceptedBidUpdateError;
+      }
+
+      const { error: requestUpdateError } = await supabase
+        .from('cargo_requests')
+        .update({
           status: 'assigned',
           accepted_bid_id: bid.id,
-          updated_at: serverTimestamp(),
-        });
+          updated_at: nowIso,
+        })
+        .eq('id', id as string)
+        .eq('status', 'active');
 
-        // 5. 🔒 Reject other pending bids (atomic - using refs from before)
-        otherBidRefs.forEach(otherBidRef => {
-          transaction.update(otherBidRef, {
+      if (requestUpdateError) {
+        throw requestUpdateError;
+      }
+
+      const { data: otherPendingBids, error: otherPendingBidsError } = await supabase
+        .from('bids')
+        .select('id')
+        .eq('request_id', id as string)
+        .eq('status', 'pending')
+        .neq('id', bid.id);
+
+      if (otherPendingBidsError) {
+        throw otherPendingBidsError;
+      }
+
+      const otherBidIds = (otherPendingBids || []).map(item => item.id);
+      if (otherBidIds.length > 0) {
+        const { error: rejectOthersError } = await supabase
+          .from('bids')
+          .update({
             status: 'rejected',
-            rejected_at: serverTimestamp(),
+            rejected_at: nowIso,
             rejected_reason: 'Et annet bud ble godtatt',
-            updated_at: serverTimestamp(),
-          });
-        });
-      });
+            updated_at: nowIso,
+          })
+          .in('id', otherBidIds);
+
+        if (rejectOthersError) {
+          throw rejectOthersError;
+        }
+      }
 
       // Track bid accepted
       trackBidAccepted({
@@ -357,7 +397,25 @@ export default function RequestDetailsScreen() {
             carrierId: bid.carrier_id,
             currentUserId: user?.uid,
           });
-          await createChat(id as string, request.user_id, bid.carrier_id);
+
+          const chatId = generateChatId(id as string, request.user_id, bid.carrier_id);
+          const sorted = [request.user_id, bid.carrier_id].sort();
+          const { error: chatUpsertError } = await supabase.from('chats').upsert(
+            {
+              id: chatId,
+              request_id: id,
+              user_a_id: sorted[0],
+              user_b_id: sorted[1],
+              last_message: null,
+              last_message_at: null,
+              updated_at: new Date().toISOString(),
+            },
+            { onConflict: 'id' }
+          );
+
+          if (chatUpsertError) {
+            throw chatUpsertError;
+          }
         }
       } catch (chatError) {
         console.error('⚠️ Error creating chat (non-critical):', chatError);
@@ -403,11 +461,18 @@ export default function RequestDetailsScreen() {
       }
 
       // Reuse existing order for this accepted bid if it already exists
-      const existingOrderQuery = query(collection(db, 'orders'), where('bid_id', '==', bid.id));
-      const existingOrderSnap = await getDocs(existingOrderQuery);
+      const { data: existingOrders, error: existingOrdersError } = await supabase
+        .from('orders')
+        .select('id')
+        .eq('bid_id', bid.id)
+        .limit(1);
 
-      if (!existingOrderSnap.empty) {
-        router.push(`/payment/${existingOrderSnap.docs[0].id}` as never);
+      if (existingOrdersError) {
+        throw existingOrdersError;
+      }
+
+      if (existingOrders && existingOrders.length > 0) {
+        router.push(`/payment/${existingOrders[0].id}` as never);
         return;
       }
 
@@ -415,7 +480,10 @@ export default function RequestDetailsScreen() {
       const platformFee = Math.round(totalAmount * 0.1);
       const carrierAmount = totalAmount - platformFee;
 
-      const orderRef = await addDoc(collection(db, 'orders'), {
+      const nowIso = new Date().toISOString();
+      const { data: orderRow, error: orderInsertError } = await supabase
+        .from('orders')
+        .insert({
         request_id: id,
         customer_id: user.uid,
         carrier_id: bid.carrier_id,
@@ -425,16 +493,29 @@ export default function RequestDetailsScreen() {
         carrier_amount: carrierAmount,
         payment_status: 'pending',
         status: 'active',
-        created_at: serverTimestamp(),
-        payment_initiated_at: serverTimestamp(),
-      });
+        created_at: nowIso,
+        payment_initiated_at: nowIso,
+      })
+        .select('id')
+        .single();
 
-      await updateDoc(doc(db, 'bids', bid.id), {
-        order_id: orderRef.id,
-        updated_at: serverTimestamp(),
-      });
+      if (orderInsertError || !orderRow) {
+        throw orderInsertError || new Error('Failed to create order');
+      }
 
-      router.push(`/payment/${orderRef.id}` as never);
+      const { error: bidOrderUpdateError } = await supabase
+        .from('bids')
+        .update({
+          order_id: orderRow.id,
+          updated_at: nowIso,
+        })
+        .eq('id', bid.id);
+
+      if (bidOrderUpdateError) {
+        throw bidOrderUpdateError;
+      }
+
+      router.push(`/payment/${orderRow.id}` as never);
     } catch (error) {
       console.error('Navigation to payment error:', error);
       const errorMessage = error instanceof Error ? error.message : t('errorLoadingPayments');
@@ -498,20 +579,39 @@ export default function RequestDetailsScreen() {
 
     try {
       // Delete all bids for this request
-      const bidsQuery = query(collection(db, 'bids'), where('request_id', '==', id));
-      const bidsSnap = await getDocs(bidsQuery);
-      const deletePromises = bidsSnap.docs.map(bidDoc => deleteDoc(bidDoc.ref));
-      await Promise.all(deletePromises);
+      const { data: requestBids, error: requestBidsError } = await supabase
+        .from('bids')
+        .select('id')
+        .eq('request_id', id as string);
+
+      if (requestBidsError) {
+        throw requestBidsError;
+      }
+
+      const bidIds = (requestBids || []).map(row => row.id);
+      if (bidIds.length > 0) {
+        const { error: deleteBidsError } = await supabase.from('bids').delete().in('id', bidIds);
+        if (deleteBidsError) {
+          throw deleteBidsError;
+        }
+      }
 
       // Delete the cargo request
-      await deleteDoc(doc(db, 'cargo_requests', id as string));
+      const { error: deleteRequestError } = await supabase
+        .from('cargo_requests')
+        .delete()
+        .eq('id', id as string);
+
+      if (deleteRequestError) {
+        throw deleteRequestError;
+      }
 
       // 📊 Track request deletion
       trackCargoRequestDeleted({
         request_id: id as string,
         cargo_type: request?.cargo_type,
-        had_bids: bidsSnap.size > 0,
-        bid_count: bidsSnap.size,
+        had_bids: bidIds.length > 0,
+        bid_count: bidIds.length,
       });
 
       triggerHapticFeedback.success();

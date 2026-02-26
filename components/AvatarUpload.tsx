@@ -9,12 +9,8 @@ import {
   Image,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { FirebaseError } from 'firebase/app';
 import * as ImagePicker from 'expo-image-picker';
-import { storage, db } from '../lib/firebase';
-import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
-import { doc, updateDoc } from 'firebase/firestore';
-import { updateProfile } from 'firebase/auth';
+import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { useTranslation } from 'react-i18next';
 import { theme } from '../theme/theme';
@@ -70,9 +66,9 @@ export default function AvatarUpload({ avatarUrl, onUpload, size = 80 }: AvatarU
     try {
       // Create file name
       const fileExt = uri.split('.').pop() || 'jpg';
-      const fileName = `avatars/${user.uid}/avatar.${fileExt}`;
+      const fileName = `${user.uid}/avatar.${fileExt}`;
 
-      // Convert URI to blob for Firebase Storage with timeout
+      // Convert URI to blob for upload with timeout
       const response = await fetchWithTimeout(
         uri,
         {
@@ -82,26 +78,40 @@ export default function AvatarUpload({ avatarUrl, onUpload, size = 80 }: AvatarU
       ); // 15 second timeout for image download
       const blob = await response.blob();
 
-      // Upload to Firebase Storage
-      const storageRef = ref(storage, fileName);
-      await uploadBytes(storageRef, blob, {
+      const { error: uploadError } = await supabase.storage.from('avatars').upload(fileName, blob, {
         contentType: `image/${fileExt}`,
+        upsert: true,
       });
 
-      // Get download URL
-      const downloadURL = await getDownloadURL(storageRef);
+      if (uploadError) {
+        throw uploadError;
+      }
 
-      // Update user profile in Firestore
-      const userDocRef = doc(db, 'users', user.uid);
-      await updateDoc(userDocRef, {
-        avatar_url: downloadURL,
-        updated_at: new Date().toISOString(),
+      const {
+        data: { publicUrl: downloadURL },
+      } = supabase.storage.from('avatars').getPublicUrl(fileName);
+
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .update({
+          avatar_url: downloadURL,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', user.uid);
+
+      if (profileError) {
+        throw profileError;
+      }
+
+      const { error: authUpdateError } = await supabase.auth.updateUser({
+        data: {
+          avatar_url: downloadURL,
+        },
       });
 
-      // Update Firebase Auth profile
-      await updateProfile(user, {
-        photoURL: downloadURL,
-      });
+      if (authUpdateError) {
+        throw authUpdateError;
+      }
 
       onUpload(downloadURL);
       Alert.alert(t('success'), t('avatarUpdatedSuccessfully'));
@@ -126,32 +136,39 @@ export default function AvatarUpload({ avatarUrl, onUpload, size = 80 }: AvatarU
           try {
             setUploading(true);
 
-            // Remove from Firebase Storage
-            const fileExt = avatarUrl.split('.').pop()?.split('?')[0] || 'jpg';
-            const fileName = `avatars/${user.uid}/avatar.${fileExt}`;
-            const storageRef = ref(storage, fileName);
+            const storagePath = avatarUrl.includes('/object/public/avatars/')
+              ? avatarUrl.split('/object/public/avatars/')[1]?.split('?')[0]
+              : `${user.uid}/avatar.jpg`;
 
             try {
-              await deleteObject(storageRef);
-            } catch (error) {
-              const firebaseError = error as FirebaseError;
-              const ignoredCodes = ['storage/object-not-found', 'storage/unauthorized'];
-              if (!ignoredCodes.includes(firebaseError.code)) {
-                console.warn('Avatar delete warning:', error);
+              if (storagePath) {
+                await supabase.storage.from('avatars').remove([storagePath]);
               }
+            } catch (error) {
+              console.warn('Avatar delete warning:', error);
             }
 
-            // Update user profile in Firestore
-            const userDocRef = doc(db, 'users', user.uid);
-            await updateDoc(userDocRef, {
-              avatar_url: null,
-              updated_at: new Date().toISOString(),
+            const { error: profileError } = await supabase
+              .from('profiles')
+              .update({
+                avatar_url: null,
+                updated_at: new Date().toISOString(),
+              })
+              .eq('id', user.uid);
+
+            if (profileError) {
+              throw profileError;
+            }
+
+            const { error: authUpdateError } = await supabase.auth.updateUser({
+              data: {
+                avatar_url: null,
+              },
             });
 
-            // Update Firebase Auth profile
-            await updateProfile(user, {
-              photoURL: null,
-            });
+            if (authUpdateError) {
+              throw authUpdateError;
+            }
 
             onUpload('');
             Alert.alert(t('success'), t('avatarRemovedSuccessfully'));

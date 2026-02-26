@@ -1,15 +1,6 @@
 import { useCallback } from 'react';
 import { Alert } from 'react-native';
-import { db } from '../lib/firebase';
-import {
-  collection,
-  addDoc,
-  deleteDoc,
-  query,
-  where,
-  getDocs,
-  serverTimestamp,
-} from 'firebase/firestore';
+import { supabase } from '../lib/supabase';
 import { triggerHapticFeedback } from '../utils/haptics';
 import { i18n } from '../lib/i18n';
 
@@ -35,23 +26,29 @@ export function useFavorites(userId?: string) {
 
         if (isFavorite) {
           // Remove from favorites
-          const favoritesQuery = query(
-            collection(db, 'user_favorites'),
-            where('user_id', '==', userId),
-            where('request_id', '==', requestId)
-          );
-          const snapshot = await getDocs(favoritesQuery);
-          await Promise.all(snapshot.docs.map(doc => deleteDoc(doc.ref)));
+          const { error } = await supabase
+            .from('user_favorites')
+            .delete()
+            .eq('user_id', userId)
+            .eq('request_id', requestId);
+
+          if (error) {
+            throw error;
+          }
 
           // Call success callback with new status
           onSuccess?.(false);
         } else {
           // Add to favorites
-          await addDoc(collection(db, 'user_favorites'), {
+          const { error } = await supabase.from('user_favorites').insert({
             user_id: userId,
             request_id: requestId,
-            created_at: serverTimestamp(),
+            created_at: new Date().toISOString(),
           });
+
+          if (error) {
+            throw error;
+          }
 
           // Call success callback with new status
           onSuccess?.(true);
@@ -78,11 +75,15 @@ export function useFavorites(userId?: string) {
 
         triggerHapticFeedback.light();
 
-        await addDoc(collection(db, 'user_favorites'), {
+        const { error } = await supabase.from('user_favorites').insert({
           user_id: userId,
           request_id: requestId,
-          created_at: serverTimestamp(),
+          created_at: new Date().toISOString(),
         });
+
+        if (error) {
+          throw error;
+        }
         onSuccess?.();
       } catch (error) {
         console.error('Error adding favorite:', error);
@@ -102,13 +103,15 @@ export function useFavorites(userId?: string) {
 
         triggerHapticFeedback.light();
 
-        const favoritesQuery = query(
-          collection(db, 'user_favorites'),
-          where('user_id', '==', userId),
-          where('request_id', '==', requestId)
-        );
-        const snapshot = await getDocs(favoritesQuery);
-        await Promise.all(snapshot.docs.map(doc => deleteDoc(doc.ref)));
+        const { error } = await supabase
+          .from('user_favorites')
+          .delete()
+          .eq('user_id', userId)
+          .eq('request_id', requestId);
+
+        if (error) {
+          throw error;
+        }
         onSuccess?.();
       } catch (error) {
         console.error('Error removing favorite:', error);

@@ -17,11 +17,10 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useTranslation } from 'react-i18next';
 import { useToast } from '../../contexts/ToastContext';
 import { useNotifications } from '../../hooks/useNotifications';
-import { storage } from '../../lib/firebase';
+import { supabase } from '../../lib/supabase';
 import { trackCargoCreated } from '../../utils/analytics';
 import { sanitizeInput, sanitizeNumber } from '../../utils/sanitization';
 import { colors, spacing, fontSize, fontWeight, borderRadius } from '../../lib/sharedStyles';
-import { ref, uploadBytesResumable, getDownloadURL, UploadTaskSnapshot } from 'firebase/storage';
 import { useRouter } from 'expo-router';
 import { triggerHapticFeedback } from '../../utils/haptics';
 import { SuccessAnimation } from '../../components/SuccessAnimation';
@@ -36,7 +35,6 @@ import { compressImageForUpload } from '../../utils/imageCompression';
 import { LazyImage } from '../../components/LazyImage';
 import { generateCargoSearchTerms } from '../../utils/search';
 import { ScreenHeader } from '../../components/ScreenHeader';
-import { safeAddDoc, safeUpdateDoc } from '../../lib/safeFirestoreOps';
 import { validateBeforeCreation } from '../../utils/requestValidation';
 
 const CARGO_TYPES = [
@@ -514,11 +512,10 @@ export default function CreateRequestScreen() {
         const uri = images[i];
         const compressedUri = await compressImage(uri);
         const ext = uri.split('.').pop() || 'jpg';
-        const fileName = `request-images/${requestId}/${Date.now()}_${i}.${ext}`;
+        const filePath = `${requestId}/${Date.now()}_${i}.${ext}`;
         const imageKey = `image_${i + 1}`;
 
         try {
-          const storageRef = ref(storage, fileName);
           const response = await fetchWithTimeout(
             compressedUri,
             {
@@ -527,31 +524,24 @@ export default function CreateRequestScreen() {
             15000
           );
           const blob = await response.blob();
-          const uploadTask = uploadBytesResumable(storageRef, blob, {
+
+          const { error: uploadError } = await supabase.storage
+            .from('request-images')
+            .upload(filePath, blob, {
             contentType: 'image/jpeg',
+              upsert: false,
           });
 
-          await new Promise<void>((resolve, reject) => {
-            uploadTask.on(
-              'state_changed',
-              (snapshot: UploadTaskSnapshot) => {
-                const progress = snapshot.totalBytes
-                  ? (snapshot.bytesTransferred / snapshot.totalBytes) * 100
-                  : 0;
-                setUploadProgress(prev => ({ ...prev, [imageKey]: progress }));
-              },
-              (error: Error) => {
-                console.error(`Error uploading image ${i}:`, error);
-                reject(error);
-              },
-              async () => {
-                const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
-                uploadedUrls.push(downloadURL);
-                setUploadProgress(prev => ({ ...prev, [imageKey]: 100 }));
-                resolve();
-              }
-            );
-          });
+          if (uploadError) {
+            throw uploadError;
+          }
+
+          const {
+            data: { publicUrl },
+          } = supabase.storage.from('request-images').getPublicUrl(filePath);
+
+          uploadedUrls.push(publicUrl);
+          setUploadProgress(prev => ({ ...prev, [imageKey]: 100 }));
         } catch (error) {
           console.error(`Error uploading image ${i}:`, error);
           continue;
@@ -610,8 +600,9 @@ export default function CreateRequestScreen() {
         toAddress
       );
 
-      // ✅ Use safeAddDoc for offline-first support
-      const result = await safeAddDoc('cargo_requests', {
+      const { data: insertedRequest, error: insertError } = await supabase
+        .from('cargo_requests')
+        .insert({
         user_id: user?.uid,
         title,
         description,
@@ -634,13 +625,15 @@ export default function CreateRequestScreen() {
         price: formData.price_type === 'fixed' ? sanitizeNumber(formData.price, 0, 1000000) : 0,
         status: 'active',
         created_at: new Date().toISOString(),
-      });
+      })
+        .select('id')
+        .single();
 
-      if (!result.success) {
-        throw new Error(result.error || 'Failed to create request');
+      if (insertError || !insertedRequest) {
+        throw insertError || new Error('Failed to create request');
       }
 
-      const request = { id: result.id };
+      const request = { id: insertedRequest.id };
 
       trackCargoCreated({
         cargo_type: formData.cargo_type,
@@ -656,10 +649,16 @@ export default function CreateRequestScreen() {
         const imageUrls = await uploadImages(request.id);
 
         if (imageUrls.length > 0) {
-          // ✅ Use safeUpdateDoc for offline-first support
-          await safeUpdateDoc('cargo_requests', request.id, {
+          const { error: imagesUpdateError } = await supabase
+            .from('cargo_requests')
+            .update({
             images: imageUrls,
-          });
+          })
+            .eq('id', request.id);
+
+          if (imagesUpdateError) {
+            throw imagesUpdateError;
+          }
         }
       }
 
@@ -667,11 +666,7 @@ export default function CreateRequestScreen() {
       triggerHapticFeedback.success();
       setShowSuccessAnimation(true);
 
-      // ✅ Show appropriate message based on sync status
-      const successMessage = result.fromCache
-        ? `${t('requestCreated')} - ${t('syncingWhenOnline') || 'Will sync when online'}`
-        : t('requestCreated');
-      toast.success(successMessage);
+      toast.success(t('requestCreated'));
 
       await AsyncStorage.removeItem(DRAFT_KEY);
 

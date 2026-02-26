@@ -3,9 +3,12 @@
  * Handles deduplication, validation, and quality checks for cargo requests
  */
 
-import { where } from 'firebase/firestore';
-import { safeQuery } from '../lib/safeFirestoreOps';
-import { CargoRequest } from '../hooks/useCargoRequests';
+import { supabase } from '../lib/supabase';
+
+type CargoRequestLite = {
+  from_address?: string;
+  to_address?: string;
+};
 
 /**
  * Check for duplicate requests within the last hour
@@ -39,24 +42,19 @@ export async function checkDuplicateRequest(
     const normalizedFrom = normalizeAddress(fromAddress);
     const normalizedTo = normalizeAddress(toAddress);
 
-    const result = await safeQuery('cargo_requests', [
-      where('user_id', '==', userId),
-      where('created_at', '>', oneHourAgo),
-    ]);
+    const { data, error } = await supabase
+      .from('cargo_requests')
+      .select('from_address,to_address')
+      .eq('user_id', userId)
+      .gt('created_at', oneHourAgo);
 
-    if (result.error) {
-      // If offline and can't check, warning but allow (will deduplicate on sync)
-      if (result.fromCache) {
-        console.warn('⚠️ Cannot verify duplicates offline. Will check on sync.');
-        return null;
-      }
-      // On real error, suggest retry
+    if (error) {
       return 'Failed to check for duplicates. Please try again.';
     }
 
-    if (result.documents && result.documents.length > 0) {
-      for (const doc of result.documents) {
-        const existingRequest = doc as Partial<CargoRequest>;
+    if (data && data.length > 0) {
+      for (const doc of data) {
+        const existingRequest = doc as CargoRequestLite;
         const existingFromRaw = existingRequest.from_address || '';
         const existingToRaw = existingRequest.to_address || '';
         const existingFrom = normalizeAddress(existingFromRaw);
@@ -221,21 +219,17 @@ export async function checkRequestRateLimit(
   try {
     const windowStart = new Date(Date.now() - timeWindowMs).toISOString();
 
-    const result = await safeQuery('cargo_requests', [
-      where('user_id', '==', userId),
-      where('created_at', '>', windowStart),
-    ]);
+    const { data, error } = await supabase
+      .from('cargo_requests')
+      .select('id')
+      .eq('user_id', userId)
+      .gt('created_at', windowStart);
 
-    if (result.error) {
-      // If offline, can't check rate limit safely
-      if (result.fromCache) {
-        console.warn('⚠️ Cannot verify rate limit offline.');
-        return null;
-      }
+    if (error) {
       return 'Failed to check rate limit. Please try again.';
     }
 
-    const requestCount = result.documents?.length ?? 0;
+    const requestCount = data?.length ?? 0;
 
     if (requestCount >= maxRequests) {
       const cooldownMinutes = Math.ceil(timeWindowMs / 60000);

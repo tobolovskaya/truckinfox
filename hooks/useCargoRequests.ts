@@ -1,21 +1,7 @@
 import { useCallback, useEffect, useMemo } from 'react';
 import { Alert } from 'react-native';
 import { InfiniteData, useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
-import { FirebaseError } from 'firebase/app';
-import {
-  collection,
-  query,
-  where,
-  orderBy,
-  getDocs,
-  QueryConstraint,
-  doc,
-  getDoc,
-  limit,
-  startAfter,
-  DocumentSnapshot,
-} from 'firebase/firestore';
-import { db } from '../lib/firebase';
+import { supabase } from '../lib/supabase';
 import { i18n } from '../lib/i18n';
 import { normalizeSearchQuery } from '../utils/search';
 
@@ -73,7 +59,7 @@ interface UseCargoRequestsOptions {
 
 interface CargoRequestsPage {
   items: CargoRequest[];
-  lastVisible: DocumentSnapshot | null;
+  nextOffset: number | null;
   hasMore: boolean;
 }
 
@@ -177,72 +163,21 @@ const applyClientSideFilters = (
   return sortRequestsClientSide(filtered, sortBy);
 };
 
-const buildConstraints = (options: UseCargoRequestsOptions) => {
-  const { activeTab, filters, sortBy, searchQuery, userId } = options;
-  const constraints: QueryConstraint[] = [];
-
-  const normalizedSearchQuery = searchQuery?.trim() ? normalizeSearchQuery(searchQuery) : '';
-  if (normalizedSearchQuery) {
-    constraints.push(where('search_terms', 'array-contains', normalizedSearchQuery));
-  }
-
-  // Tab-specific constraints
-  if (activeTab === 'my') {
-    // My tab: only show current user's requests that are active
-    if (userId) {
-      constraints.push(where('user_id', '==', userId));
-      constraints.push(where('status', '==', 'active')); // Only active requests for "My" tab
-    }
-    // Note: City filter is ignored for "My" tab since it shows user's own requests only
-  } else {
-    // All tab: apply cargo type and price filters
-    if (filters.cargo_type) {
-      constraints.push(where('cargo_type', '==', filters.cargo_type));
-    }
-    if (filters.price_type) {
-      constraints.push(where('price_type', '==', filters.price_type));
-    }
-    if (filters.price_min && !isNaN(parseFloat(filters.price_min))) {
-      constraints.push(where('price', '>=', parseFloat(filters.price_min)));
-    }
-    if (filters.price_max && !isNaN(parseFloat(filters.price_max))) {
-      constraints.push(where('price', '<=', parseFloat(filters.price_max)));
-    }
-  }
-
-  switch (sortBy) {
-    case 'newest':
-      constraints.push(orderBy('created_at', 'desc'));
-      break;
-    case 'oldest':
-      constraints.push(orderBy('created_at', 'asc'));
-      break;
-    case 'priceLowToHigh':
-      constraints.push(orderBy('price', 'asc'));
-      break;
-    case 'priceHighToLow':
-      constraints.push(orderBy('price', 'desc'));
-      break;
-    case 'date':
-      constraints.push(orderBy('pickup_date', 'asc'));
-      break;
-    default:
-      constraints.push(orderBy('created_at', 'desc'));
-  }
-
-  return constraints;
-};
-
 const hydrateCargoRequest = async (
-  docSnapshot: DocumentSnapshot,
+  requestData: Record<string, unknown>,
   userId?: string
 ): Promise<CargoRequest | null> => {
-  if (!docSnapshot.exists()) {
+  const requestId = typeof requestData.id === 'string' ? requestData.id : undefined;
+  if (!requestId) {
     return null;
   }
 
-  const requestData = docSnapshot.data();
-  const requestUserId = typeof requestData.user_id === 'string' ? requestData.user_id : undefined;
+  const requestUserId =
+    typeof requestData.user_id === 'string'
+      ? requestData.user_id
+      : typeof requestData.customer_id === 'string'
+        ? requestData.customer_id
+        : undefined;
 
   let userData: CargoRequest['users'] = {
     full_name: 'Unknown User',
@@ -252,14 +187,18 @@ const hydrateCargoRequest = async (
 
   if (requestUserId) {
     try {
-      const userDoc = await getDoc(doc(db, 'users', requestUserId));
-      if (userDoc.exists()) {
-        const userDocData = userDoc.data() as Partial<CargoRequest['users']>;
+      const { data: userRow } = await supabase
+        .from('users')
+        .select('full_name, user_type, rating, avatar_url')
+        .eq('id', requestUserId)
+        .maybeSingle();
+
+      if (userRow) {
         userData = {
-          full_name: userDocData.full_name ?? 'Unknown User',
-          user_type: userDocData.user_type ?? 'customer',
-          rating: typeof userDocData.rating === 'number' ? userDocData.rating : 0,
-          avatar_url: userDocData.avatar_url,
+          full_name: userRow.full_name || 'Unknown User',
+          user_type: userRow.user_type || 'customer',
+          rating: typeof userRow.rating === 'number' ? userRow.rating : 0,
+          avatar_url: userRow.avatar_url || undefined,
         };
       }
     } catch (error) {
@@ -269,9 +208,11 @@ const hydrateCargoRequest = async (
 
   let bids: Bid[] = [];
   try {
-    const bidsQuery = query(collection(db, 'bids'), where('cargo_request_id', '==', docSnapshot.id));
-    const bidsSnapshot = await getDocs(bidsQuery);
-    bids = bidsSnapshot.docs.map(docItem => ({ id: docItem.id, ...docItem.data() }));
+    const { data: bidRows } = await supabase
+      .from('bids')
+      .select('*')
+      .eq('request_id', requestId);
+    bids = (bidRows || []).map(row => ({ id: row.id, ...row }));
   } catch (error) {
     console.warn('Failed to hydrate request bids', error);
   }
@@ -279,21 +220,22 @@ const hydrateCargoRequest = async (
   let isFavorite = false;
   if (userId) {
     try {
-      const favoritesQuery = query(
-        collection(db, 'user_favorites'),
-        where('cargo_request_id', '==', docSnapshot.id),
-        where('user_id', '==', userId)
-      );
-      const favoritesSnapshot = await getDocs(favoritesQuery);
-      isFavorite = !favoritesSnapshot.empty;
+      const { data: favoriteRows } = await supabase
+        .from('user_favorites')
+        .select('id')
+        .eq('request_id', requestId)
+        .eq('user_id', userId)
+        .limit(1);
+      isFavorite = Boolean(favoriteRows && favoriteRows.length > 0);
     } catch (error) {
       console.warn('Failed to hydrate request favorite status', error);
     }
   }
 
   return {
-    id: docSnapshot.id,
-    ...requestData,
+    ...(requestData as unknown as CargoRequest),
+    id: requestId,
+    user_id: requestUserId || '',
     users: userData,
     bids,
     is_favorite: isFavorite,
@@ -302,71 +244,74 @@ const hydrateCargoRequest = async (
 
 const fetchCargoRequestsPage = async (
   options: UseCargoRequestsOptions,
-  lastVisible: DocumentSnapshot | null
+  offset: number
 ): Promise<CargoRequestsPage> => {
   if (options.activeTab === 'my' && !options.userId) {
-    return { items: [], lastVisible: null, hasMore: false };
+    return { items: [], nextOffset: null, hasMore: false };
   }
 
-  const constraints = buildConstraints(options);
-  const pagingConstraints = lastVisible ? [startAfter(lastVisible)] : [];
+  const normalizedSearchQuery = options.searchQuery?.trim()
+    ? normalizeSearchQuery(options.searchQuery)
+    : '';
 
-  let querySnapshot;
-  let usedFallback = false;
+  let requestQuery = supabase.from('cargo_requests').select('*').range(offset, offset + PAGE_SIZE - 1);
 
-  try {
-    const requestsQuery = query(
-      collection(db, 'cargo_requests'),
-      ...constraints,
-      ...pagingConstraints,
-      limit(PAGE_SIZE)
-    );
-    querySnapshot = await getDocs(requestsQuery);
-  } catch (error: unknown) {
-    const canUseFallback =
-      error instanceof FirebaseError &&
-      (error.code === 'failed-precondition' ||
-        (options.activeTab === 'my' && options.userId && error.code === 'permission-denied'));
-
-    if (!canUseFallback) {
-      throw error;
-    }
-
-    usedFallback = true;
-    const fallbackConstraints: QueryConstraint[] = [];
-
-    if (options.activeTab === 'my' && options.userId) {
-      fallbackConstraints.push(where('user_id', '==', options.userId));
-    }
-
-    fallbackConstraints.push(orderBy('created_at', 'desc'));
-    if (lastVisible) {
-      fallbackConstraints.push(startAfter(lastVisible));
-    }
-
-    const fallbackQuery = query(
-      collection(db, 'cargo_requests'),
-      ...fallbackConstraints,
-      limit(PAGE_SIZE)
-    );
-
-    querySnapshot = await getDocs(fallbackQuery);
+  if (normalizedSearchQuery) {
+    requestQuery = requestQuery.contains('search_terms', [normalizedSearchQuery]);
   }
 
-  const lastDoc = querySnapshot.docs[querySnapshot.docs.length - 1] ?? null;
-  const hasMore = querySnapshot.docs.length === PAGE_SIZE;
+  if (options.activeTab === 'my' && options.userId) {
+    requestQuery = requestQuery.eq('user_id', options.userId).eq('status', 'active');
+  } else {
+    if (options.filters.cargo_type) {
+      requestQuery = requestQuery.eq('cargo_type', options.filters.cargo_type);
+    }
+    if (options.filters.price_type) {
+      requestQuery = requestQuery.eq('price_type', options.filters.price_type);
+    }
+    if (options.filters.price_min && !Number.isNaN(parseFloat(options.filters.price_min))) {
+      requestQuery = requestQuery.gte('price', parseFloat(options.filters.price_min));
+    }
+    if (options.filters.price_max && !Number.isNaN(parseFloat(options.filters.price_max))) {
+      requestQuery = requestQuery.lte('price', parseFloat(options.filters.price_max));
+    }
+  }
+
+  switch (options.sortBy) {
+    case 'oldest':
+      requestQuery = requestQuery.order('created_at', { ascending: true });
+      break;
+    case 'priceLowToHigh':
+      requestQuery = requestQuery.order('price', { ascending: true });
+      break;
+    case 'priceHighToLow':
+      requestQuery = requestQuery.order('price', { ascending: false });
+      break;
+    case 'date':
+      requestQuery = requestQuery.order('pickup_date', { ascending: true });
+      break;
+    case 'newest':
+    default:
+      requestQuery = requestQuery.order('created_at', { ascending: false });
+      break;
+  }
+
+  const { data: requestRows, error } = await requestQuery;
+  if (error) {
+    throw error;
+  }
 
   const hydrated = await Promise.all(
-    querySnapshot.docs.map(docSnapshot => hydrateCargoRequest(docSnapshot, options.userId))
+    (requestRows || []).map(row => hydrateCargoRequest(row as Record<string, unknown>, options.userId))
   );
+
   const data = hydrated.filter((request): request is CargoRequest => request !== null);
+  const filteredData = applyClientSideFilters(data, options);
 
-  let filteredData = data;
-  if (usedFallback || (options.filters.city && options.activeTab !== 'my')) {
-    filteredData = applyClientSideFilters(data, options);
-  }
+  const hasMore = (requestRows || []).length === PAGE_SIZE;
+  const nextOffset = hasMore ? offset + PAGE_SIZE : null;
 
-  return { items: filteredData, lastVisible: lastDoc, hasMore };
+  return { items: filteredData, nextOffset, hasMore };
 };
 
 export function useCargoRequests({
@@ -378,8 +323,6 @@ export function useCargoRequests({
 }: UseCargoRequestsOptions) {
   const queryClient = useQueryClient();
 
-  // Query key includes activeTab to ensure All/My tabs have separate cache
-  // This allows seamless switching without data reflow
   const queryKey = useMemo<CargoRequestsQueryKey>(
     () => ['cargoRequests', activeTab, filters, sortBy, searchQuery, userId],
     [activeTab, filters, sortBy, searchQuery, userId]
@@ -397,15 +340,15 @@ export function useCargoRequests({
   } = useInfiniteQuery<
     CargoRequestsPage,
     Error,
-    InfiniteData<CargoRequestsPage, DocumentSnapshot | null>,
+    InfiniteData<CargoRequestsPage, number>,
     CargoRequestsQueryKey,
-    DocumentSnapshot | null
+    number
   >({
     queryKey,
     queryFn: ({ pageParam }) =>
       fetchCargoRequestsPage({ activeTab, filters, sortBy, searchQuery, userId }, pageParam),
-    initialPageParam: null,
-    getNextPageParam: lastPage => (lastPage.hasMore ? lastPage.lastVisible : undefined),
+    initialPageParam: 0,
+    getNextPageParam: lastPage => (lastPage.hasMore && lastPage.nextOffset !== null ? lastPage.nextOffset : undefined),
     staleTime: 5 * 60 * 1000,
     gcTime: 30 * 60 * 1000,
   });
@@ -414,30 +357,27 @@ export function useCargoRequests({
 
   const setRequests = useCallback(
     (updater: CargoRequest[] | ((_prev: CargoRequest[]) => CargoRequest[])) => {
-      queryClient.setQueryData<InfiniteData<CargoRequestsPage, DocumentSnapshot | null>>(
-        queryKey,
-        oldData => {
-          if (!oldData?.pages) {
-            return oldData;
-          }
-
-          const currentItems = oldData.pages.flatMap((page: CargoRequestsPage) => page.items);
-          const nextItems = typeof updater === 'function' ? updater(currentItems) : updater;
-          const lastPage = oldData.pages[oldData.pages.length - 1] as CargoRequestsPage | undefined;
-
-          const nextPage: CargoRequestsPage = {
-            items: nextItems,
-            lastVisible: lastPage?.lastVisible ?? null,
-            hasMore: lastPage?.hasMore ?? false,
-          };
-
-          return {
-            ...oldData,
-            pages: [nextPage],
-            pageParams: oldData.pageParams.slice(0, 1),
-          };
+      queryClient.setQueryData<InfiniteData<CargoRequestsPage, number>>(queryKey, oldData => {
+        if (!oldData?.pages) {
+          return oldData;
         }
-      );
+
+        const currentItems = oldData.pages.flatMap((page: CargoRequestsPage) => page.items);
+        const nextItems = typeof updater === 'function' ? updater(currentItems) : updater;
+        const lastPage = oldData.pages[oldData.pages.length - 1] as CargoRequestsPage | undefined;
+
+        const nextPage: CargoRequestsPage = {
+          items: nextItems,
+          nextOffset: lastPage?.nextOffset ?? null,
+          hasMore: lastPage?.hasMore ?? false,
+        };
+
+        return {
+          ...oldData,
+          pages: [nextPage],
+          pageParams: oldData.pageParams.slice(0, 1),
+        };
+      });
     },
     [queryClient, queryKey]
   );

@@ -14,21 +14,10 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTranslation } from 'react-i18next';
 import { useToast } from '../../contexts/ToastContext';
-import { db, storage } from '../../lib/firebase';
+import { supabase } from '../../lib/supabase';
 import { sanitizeInput, sanitizeNumber } from '../../utils/sanitization';
 import { triggerHapticFeedback } from '../../utils/haptics';
 import { SuccessAnimation } from '../../components/SuccessAnimation';
-import {
-  collection,
-  doc,
-  getDoc,
-  getDocs,
-  query,
-  serverTimestamp,
-  updateDoc,
-  where,
-} from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import * as ImagePicker from 'expo-image-picker';
 import AddressInput from '../../components/AddressInput';
@@ -309,16 +298,19 @@ export default function EditRequestScreen() {
 
   const fetchRequest = async () => {
     try {
-      const requestRef = doc(db, 'cargo_requests', id as string);
-      const requestSnap = await getDoc(requestRef);
+      const { data: requestData, error: requestError } = await supabase
+        .from('cargo_requests')
+        .select('*')
+        .eq('id', id as string)
+        .maybeSingle();
 
-      if (!requestSnap.exists()) {
+      if (requestError || !requestData) {
         toast.error(t('requestNotFound'));
         router.back();
         return;
       }
 
-      const data = { id: requestSnap.id, ...requestSnap.data() } as CargoRequest;
+      const data = { id: requestData.id, ...requestData } as CargoRequest;
 
       if (data.user_id !== user?.uid) {
         toast.error(t('editOwnRequestOnly'));
@@ -326,14 +318,18 @@ export default function EditRequestScreen() {
         return;
       }
 
-      const bidsQuery = query(
-        collection(db, 'bids'),
-        where('request_id', '==', id),
-        where('status', '==', 'accepted')
-      );
-      const bidsSnap = await getDocs(bidsQuery);
+      const { data: acceptedBids, error: acceptedBidsError } = await supabase
+        .from('bids')
+        .select('id')
+        .eq('request_id', id as string)
+        .eq('status', 'accepted')
+        .limit(1);
 
-      if (!bidsSnap.empty) {
+      if (acceptedBidsError) {
+        throw acceptedBidsError;
+      }
+
+      if (acceptedBids && acceptedBids.length > 0) {
         toast.error(t('editNotAllowedAcceptedBids'));
         router.back();
         return;
@@ -449,10 +445,9 @@ export default function EditRequestScreen() {
       try {
         const compressedUri = await compressImage(uri);
         const ext = uri.split('.').pop() || 'jpg';
-        const fileName = `request-images/${requestId}_${i}_${Date.now()}.${ext}`;
+        const filePath = `${requestId}/${Date.now()}_${i}.${ext}`;
 
         try {
-          const storageRef = ref(storage, fileName);
           const response = await fetchWithTimeout(
             compressedUri,
             {
@@ -461,11 +456,23 @@ export default function EditRequestScreen() {
             15000
           );
           const blob = await response.blob();
-          await uploadBytes(storageRef, blob, {
+
+          const { error: uploadError } = await supabase.storage
+            .from('request-images')
+            .upload(filePath, blob, {
             contentType: 'image/jpeg',
+              upsert: false,
           });
 
-          const downloadURL = await getDownloadURL(storageRef);
+          if (uploadError) {
+            throw uploadError;
+          }
+
+          const {
+            data: { publicUrl },
+          } = supabase.storage.from('request-images').getPublicUrl(filePath);
+
+          const downloadURL = publicUrl;
           uploadedUrls.push(downloadURL);
         } catch (error) {
           console.error(`Error uploading image ${i}:`, error);
@@ -515,8 +522,6 @@ export default function EditRequestScreen() {
         toAddress
       );
 
-      const requestRef = doc(db, 'cargo_requests', id as string);
-
       const updateData: Record<string, unknown> = {
         title,
         description,
@@ -537,7 +542,7 @@ export default function EditRequestScreen() {
         delivery_date: formData.delivery_date.toISOString(),
         price_type: formData.price_type,
         price: formData.price_type === 'fixed' ? sanitizeNumber(formData.price, 0, 1000000) : 0,
-        updated_at: serverTimestamp(),
+        updated_at: new Date().toISOString(),
       };
 
       // Handle images if changed
@@ -551,7 +556,15 @@ export default function EditRequestScreen() {
         updateData.images = [];
       }
 
-      await updateDoc(requestRef, updateData);
+      const { error: updateError } = await supabase
+        .from('cargo_requests')
+        .update(updateData)
+        .eq('id', id as string)
+        .eq('user_id', user?.uid || '');
+
+      if (updateError) {
+        throw updateError;
+      }
 
       // Success feedback
       triggerHapticFeedback.success();
