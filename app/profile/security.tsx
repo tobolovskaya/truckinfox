@@ -14,6 +14,7 @@ import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { FirebaseRecaptchaVerifierModal } from 'expo-firebase-recaptcha';
 import { PhoneAuthProvider, PhoneMultiFactorGenerator, multiFactor } from 'firebase/auth';
+import { doc, setDoc } from 'firebase/firestore';
 import { useTranslation } from 'react-i18next';
 import {
   colors,
@@ -25,7 +26,8 @@ import {
 } from '../../lib/sharedStyles';
 import { useAuth } from '../../contexts/AuthContext';
 import { ScreenHeader } from '../../components/ScreenHeader';
-import { auth } from '../../lib/firebase';
+import { auth, db } from '../../lib/firebase';
+import { useCurrentUser } from '../../hooks/useCurrentUser';
 
 const RecaptchaModal = FirebaseRecaptchaVerifierModal as unknown as React.ComponentType<any>;
 
@@ -33,6 +35,7 @@ export default function SecurityScreen() {
   const router = useRouter();
   const { t } = useTranslation();
   const { user, signOut, signOutAllDevices } = useAuth();
+  const { currentUser } = useCurrentUser(user?.uid);
   const [loading, setLoading] = useState(false);
   const [twoFALoading, setTwoFALoading] = useState(false);
   const [isTwoFAEnabled, setIsTwoFAEnabled] = useState(false);
@@ -59,10 +62,16 @@ export default function SecurityScreen() {
       setPhoneNumber(user.phoneNumber);
     }
 
+    const profilePhone =
+      currentUser && typeof currentUser.phone === 'string' ? currentUser.phone.trim() : '';
+    if (!user?.phoneNumber && profilePhone) {
+      setPhoneNumber(profilePhone);
+    }
+
     if (auth.currentUser) {
       setIsTwoFAEnabled(multiFactor(auth.currentUser).enrolledFactors.length > 0);
     }
-  }, [user?.phoneNumber]);
+  }, [currentUser, user?.phoneNumber]);
 
   const enable2FA = async () => {
     if (Platform.OS === 'web') {
@@ -80,8 +89,14 @@ export default function SecurityScreen() {
       return;
     }
 
-    if (!phoneNumber) {
-      Alert.alert(t('error'), 'No phone number found on your account.');
+    const normalizedPhoneNumber = phoneNumber.replace(/\s+/g, '');
+    if (!normalizedPhoneNumber) {
+      Alert.alert(t('error'), 'Please enter a phone number for 2FA.');
+      return;
+    }
+
+    if (!/^\+\d{8,15}$/.test(normalizedPhoneNumber)) {
+      Alert.alert(t('error'), 'Phone number must be in international format, e.g. +4712345678.');
       return;
     }
 
@@ -95,7 +110,7 @@ export default function SecurityScreen() {
       const session = await multiFactor(auth.currentUser).getSession();
 
       const phoneInfoOptions = {
-        phoneNumber,
+        phoneNumber: normalizedPhoneNumber,
         session,
       };
 
@@ -121,6 +136,12 @@ export default function SecurityScreen() {
       return;
     }
 
+    const normalizedPhoneNumber = phoneNumber.replace(/\s+/g, '');
+    if (!/^\+\d{8,15}$/.test(normalizedPhoneNumber)) {
+      Alert.alert(t('error'), 'Phone number must be in international format, e.g. +4712345678.');
+      return;
+    }
+
     if (!verificationCode.trim()) {
       Alert.alert(t('error'), 'Please enter the verification code.');
       return;
@@ -133,9 +154,19 @@ export default function SecurityScreen() {
 
       await multiFactor(auth.currentUser).enroll(multiFactorAssertion, 'primary-phone');
 
+      await setDoc(
+        doc(db, 'users', auth.currentUser.uid),
+        {
+          phone: normalizedPhoneNumber,
+          updated_at: new Date().toISOString(),
+        },
+        { merge: true }
+      );
+
       setIsTwoFAEnabled(true);
       setVerificationId(null);
       setVerificationCode('');
+      setPhoneNumber(normalizedPhoneNumber);
       Alert.alert(t('twoFactorAuth'), 'Two-factor authentication enabled successfully.');
     } catch (error) {
       console.error('Failed to confirm 2FA enrollment:', error);
@@ -315,6 +346,27 @@ export default function SecurityScreen() {
             ))}
           </View>
         </View>
+
+        {!isTwoFAEnabled ? (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>{t('twoFactorAuth')}</Text>
+            <View style={styles.card}>
+              <View style={styles.verificationContainer}>
+                <Text style={styles.verificationText}>Phone number for two-factor authentication</Text>
+                <TextInput
+                  value={phoneNumber}
+                  onChangeText={setPhoneNumber}
+                  keyboardType="phone-pad"
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  placeholder="+4712345678"
+                  placeholderTextColor={colors.text.tertiary}
+                  style={styles.verificationInput}
+                />
+              </View>
+            </View>
+          </View>
+        ) : null}
 
         {verificationId ? (
           <View style={styles.section}>
