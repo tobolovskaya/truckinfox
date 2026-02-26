@@ -13,6 +13,7 @@ import {
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { FirebaseRecaptchaVerifierModal } from 'expo-firebase-recaptcha';
+import { FirebaseError } from 'firebase/app';
 import { PhoneAuthProvider, PhoneMultiFactorGenerator, multiFactor } from 'firebase/auth';
 import { doc, setDoc } from 'firebase/firestore';
 import { useTranslation } from 'react-i18next';
@@ -124,7 +125,14 @@ export default function SecurityScreen() {
       Alert.alert(t('twoFactorAuth'), 'Verification code sent. Enter it below to finish setup.');
     } catch (error) {
       console.error('Failed to start 2FA enrollment:', error);
-      Alert.alert(t('error'), 'Unable to start two-factor setup. Please try again.');
+      if (error instanceof FirebaseError && error.code === 'auth/operation-not-allowed') {
+        Alert.alert(
+          t('error'),
+          'SMS-based MFA is not enabled in Firebase. Enable Phone sign-in and Multi-factor Authentication in Firebase Console.'
+        );
+      } else {
+        Alert.alert(t('error'), 'Unable to start two-factor setup. Please try again.');
+      }
     } finally {
       setTwoFALoading(false);
     }
