@@ -49,6 +49,11 @@ jest.mock('expo-router', () => ({
   },
 }));
 
+jest.mock('@sentry/react-native', () => ({
+  init: jest.fn(),
+  captureException: jest.fn(),
+}));
+
 jest.mock('react-native/Libraries/Animated/NativeAnimatedHelper', () => ({}), {
   virtual: true,
 });
@@ -112,3 +117,4 @@ process.env.EXPO_PUBLIC_FIREBASE_API_KEY = 'test-api-key';
 process.env.EXPO_PUBLIC_FIREBASE_PROJECT_ID = 'test-project';
 process.env.EXPO_PUBLIC_FIREBASE_APP_ID = 'test-app-id';
 process.env.EXPO_PUBLIC_GOOGLE_PLACES_API_KEY = 'test-places-key';
+process.env.EXPO_PUBLIC_SENTRY_DSN = 'https://test-key@sentry.io/123';
