@@ -10,9 +10,8 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { sendPasswordResetEmail } from 'firebase/auth';
 import { colors, spacing, fontSize, fontWeight, borderRadius } from '../../lib/sharedStyles';
-import { auth } from '../../lib/firebase';
+import { supabase } from '../../lib/supabase';
 import { ScreenHeader } from '../../components/ScreenHeader';
 
 export default function ForgotPasswordScreen() {
@@ -38,7 +37,10 @@ export default function ForgotPasswordScreen() {
 
     setLoading(true);
     try {
-      await sendPasswordResetEmail(auth, trimmedEmail);
+      const { error } = await supabase.auth.resetPasswordForEmail(trimmedEmail);
+      if (error) {
+        throw error;
+      }
       Alert.alert(t('success'), t('resetEmailSent'));
       router.back();
     } catch (error: unknown) {

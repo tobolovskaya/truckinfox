@@ -83,6 +83,11 @@ Recommended approach:
 Firebase dependency and `lib/firebase.ts` were removed from the project.
 The codebase still contains legacy imports that should be migrated module-by-module to Supabase queries.
 
+Completed in this phase:
+
+- `contexts/AuthContext.tsx` migrated to `supabase.auth`
+- `app/(auth)/forgot-password.tsx` migrated to Supabase password reset flow
+
 ## 6) Progressive migration strategy from legacy Firebase code
 
 1. Replace legacy imports in `contexts/AuthContext.tsx` with Supabase Auth

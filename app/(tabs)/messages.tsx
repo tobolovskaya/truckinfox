@@ -13,9 +13,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTranslation } from 'react-i18next';
-import { db } from '../../lib/firebase';
-import { collection, query, where, orderBy, onSnapshot, limit } from 'firebase/firestore';
-import { batchFetchUsers, batchFetchRequests } from '../../utils/batchFetch';
+import { supabase } from '../../lib/supabase';
 import Avatar from '../../components/Avatar';
 import { SkeletonLoader } from '../../components/SkeletonLoader';
 import { EmptyState } from '../../components/EmptyState';
@@ -76,6 +74,14 @@ interface Conversation {
   is_last_message_mine: boolean;
 }
 
+const chunkArray = <T,>(items: T[], size: number): T[][] => {
+  const chunks: T[][] = [];
+  for (let index = 0; index < items.length; index += size) {
+    chunks.push(items.slice(index, index + size));
+  }
+  return chunks;
+};
+
 export default function MessagesScreen() {
   const { user } = useAuth();
   const { t } = useTranslation();
@@ -105,47 +111,18 @@ export default function MessagesScreen() {
     }
 
     try {
-      // 1. Fetch all messages involving this user
-      const messagesQuery = query(
-        collection(db, 'messages'),
-        where('sender_id', '==', user.uid),
-        orderBy('created_at', 'desc'),
-        limit(100)
-      );
+      const { data: allMessagesRaw, error: messagesError } = await supabase
+        .from('messages')
+        .select('id, content, sender_id, receiver_id, request_id, created_at, read_at')
+        .or(`sender_id.eq.${user.uid},receiver_id.eq.${user.uid}`)
+        .order('created_at', { ascending: false })
+        .limit(200);
 
-      const receivedQuery = query(
-        collection(db, 'messages'),
-        where('receiver_id', '==', user.uid),
-        orderBy('created_at', 'desc'),
-        limit(100)
-      );
+      if (messagesError) {
+        throw messagesError;
+      }
 
-      const [sentSnapshot, receivedSnapshot] = await Promise.all([
-        new Promise<FirestoreMessage[]>(resolve => {
-          const unsubscribe = onSnapshot(messagesQuery, snapshot => {
-            resolve(
-              snapshot.docs.map(doc => ({
-                id: doc.id,
-                ...(doc.data() as Omit<FirestoreMessage, 'id'>),
-              }))
-            );
-            unsubscribe();
-          });
-        }),
-        new Promise<FirestoreMessage[]>(resolve => {
-          const unsubscribe = onSnapshot(receivedQuery, snapshot => {
-            resolve(
-              snapshot.docs.map(doc => ({
-                id: doc.id,
-                ...(doc.data() as Omit<FirestoreMessage, 'id'>),
-              }))
-            );
-            unsubscribe();
-          });
-        }),
-      ]);
-
-      const allMessages = [...sentSnapshot, ...receivedSnapshot];
+      const allMessages = (allMessagesRaw || []) as FirestoreMessage[];
 
       if (allMessages.length === 0) {
         setConversations([]);
@@ -167,11 +144,43 @@ export default function MessagesScreen() {
         requestIdsSet.add(msg.request_id);
       });
 
-      // 3. ✅ BATCH FETCH: Fetch all users and requests in parallel
-      const [usersCache, requestsCache] = await Promise.all([
-        batchFetchUsers(Array.from(userIdsSet)),
-        batchFetchRequests(Array.from(requestIdsSet)),
-      ]);
+      const userIds = Array.from(userIdsSet);
+      const requestIds = Array.from(requestIdsSet);
+
+      const usersMap = new Map<string, { full_name?: string; user_type?: string; avatar_url?: string }>();
+      const requestsMap = new Map<string, { title?: string }>();
+
+      const userChunks = chunkArray(userIds, 50);
+      for (const chunk of userChunks) {
+        const { data: usersRows, error: usersError } = await supabase
+          .from('users')
+          .select('id, full_name, user_type, avatar_url')
+          .in('id', chunk);
+
+        if (usersError) {
+          throw usersError;
+        }
+
+        (usersRows || []).forEach(row => {
+          usersMap.set(row.id, row);
+        });
+      }
+
+      const requestChunks = chunkArray(requestIds, 50);
+      for (const chunk of requestChunks) {
+        const { data: requestRows, error: requestsError } = await supabase
+          .from('cargo_requests')
+          .select('id, title')
+          .in('id', chunk);
+
+        if (requestsError) {
+          throw requestsError;
+        }
+
+        (requestRows || []).forEach(row => {
+          requestsMap.set(row.id, row);
+        });
+      }
 
       // 4. Group messages by conversation (unique request_id + other_user_id)
       const conversationsMap = new Map<string, Conversation>();
@@ -185,8 +194,8 @@ export default function MessagesScreen() {
         const conversationKey = `${msg.request_id}_${otherUserId}`;
 
         // Get cached data (O(1) lookup)
-        const otherUser = usersCache.get(otherUserId);
-        const request = requestsCache.get(msg.request_id);
+        const otherUser = usersMap.get(otherUserId);
+        const request = requestsMap.get(msg.request_id);
 
         if (!otherUser || !request) return;
 
@@ -199,7 +208,7 @@ export default function MessagesScreen() {
             other_user_id: otherUserId,
             other_user_name: otherUser.full_name || 'Unknown User',
             other_user_type: otherUser.user_type || 'customer',
-            other_user_avatar: otherUser.profile_image_url,
+            other_user_avatar: otherUser.avatar_url,
             request_id: msg.request_id,
             request_title: request.title || 'Cargo Request',
             last_message: msg.content || '',

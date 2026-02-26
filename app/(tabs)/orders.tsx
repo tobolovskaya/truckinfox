@@ -10,8 +10,7 @@ import {
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../contexts/AuthContext';
-import { db } from '../../lib/firebase';
-import { collection, query, where, getDocs, orderBy } from 'firebase/firestore';
+import { supabase } from '../../lib/supabase';
 import { spacing, fontSize, fontWeight, useAppThemeStyles } from '../../lib/sharedStyles';
 import { ScreenHeader } from '../../components/ScreenHeader';
 import { EmptyState } from '../../components/EmptyState';
@@ -96,15 +95,6 @@ export default function OrdersScreen() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const indexWarningShownRef = useRef(false);
-
-  const isIndexUnavailableError = (error: unknown): boolean => {
-    const errorMessage = error instanceof Error ? error.message : String(error ?? '');
-    return (
-      errorMessage.includes('requires an index') ||
-      errorMessage.includes('index is currently building')
-    );
-  };
 
   const fetchOrders = useCallback(async () => {
     if (!user?.uid) {
@@ -113,80 +103,21 @@ export default function OrdersScreen() {
     }
 
     try {
-      // Fetch orders where user is customer OR carrier
-      const customerOrdersQuery = query(
-        collection(db, 'orders'),
-        where('customer_id', '==', user.uid),
-        orderBy('created_at', 'desc')
-      );
+      const { data, error } = await supabase
+        .from('orders')
+        .select(
+          'id, request_id, bid_id, customer_id, carrier_id, total_amount, status, payment_status, created_at'
+        )
+        .or(`customer_id.eq.${user.uid},carrier_id.eq.${user.uid}`)
+        .order('created_at', { ascending: false });
 
-      const carrierOrdersQuery = query(
-        collection(db, 'orders'),
-        where('carrier_id', '==', user.uid),
-        orderBy('created_at', 'desc')
-      );
-
-      const [customerSnap, carrierSnap] = await Promise.all([
-        getDocs(customerOrdersQuery),
-        getDocs(carrierOrdersQuery),
-      ]);
-
-      const customerOrders = customerSnap.docs.map(doc => ({
-        id: doc.id,
-        ...(doc.data() as Omit<Order, 'id'>),
-      }));
-
-      const carrierOrders = carrierSnap.docs.map(doc => ({
-        id: doc.id,
-        ...(doc.data() as Omit<Order, 'id'>),
-      }));
-
-      const allOrders = mergeAndSortOrders(customerOrders, carrierOrders);
-
-      setOrders(allOrders);
-    } catch (error: unknown) {
-      if (isIndexUnavailableError(error)) {
-        // Fallback: query without orderBy and sort locally
-        if (!indexWarningShownRef.current) {
-          console.warn('⏳ Orders index is being created. Using local fallback sorting...');
-          indexWarningShownRef.current = true;
-        }
-
-        try {
-          const customerOrdersQuery = query(
-            collection(db, 'orders'),
-            where('customer_id', '==', user.uid)
-          );
-
-          const carrierOrdersQuery = query(
-            collection(db, 'orders'),
-            where('carrier_id', '==', user.uid)
-          );
-
-          const [customerSnap, carrierSnap] = await Promise.all([
-            getDocs(customerOrdersQuery),
-            getDocs(carrierOrdersQuery),
-          ]);
-
-          const customerOrders = customerSnap.docs.map(doc => ({
-            id: doc.id,
-            ...(doc.data() as Omit<Order, 'id'>),
-          }));
-
-          const carrierOrders = carrierSnap.docs.map(doc => ({
-            id: doc.id,
-            ...(doc.data() as Omit<Order, 'id'>),
-          }));
-
-          const allOrders = mergeAndSortOrders(customerOrders, carrierOrders);
-
-          setOrders(allOrders);
-        } catch (fallbackError) {
-          console.error('Error fetching orders (fallback):', fallbackError);
-        }
-      } else {
-        console.error('Error fetching orders:', error);
+      if (error) {
+        throw error;
       }
+
+      setOrders((data || []) as Order[]);
+    } catch (error) {
+      console.error('Error fetching orders:', error);
     } finally {
       setLoading(false);
     }

@@ -1,16 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { FirebaseError } from 'firebase/app';
-import {
-  User,
-  signInWithEmailAndPassword,
-  createUserWithEmailAndPassword,
-  signOut as firebaseSignOut,
-  onAuthStateChanged,
-  updateProfile,
-} from 'firebase/auth';
-import { doc, setDoc } from 'firebase/firestore';
-import { auth, db } from '../lib/firebase';
-import { generateSearchTerms } from '../utils/search';
+import { AuthApiError, User as SupabaseUser } from '@supabase/supabase-js';
+import { supabase } from '../lib/supabase';
 
 // Strict TypeScript interfaces for auth data
 export interface SignUpData {
@@ -31,13 +21,20 @@ export interface AuthResult<T = void> {
 }
 
 interface AuthContextType {
-  user: User | null;
+  user: AppUser | null;
   loading: boolean;
-  signIn: (_email: string, _password: string) => Promise<AuthResult<User>>;
-  signUp: (_userData: SignUpData) => Promise<AuthResult<User>>;
+  signIn: (_email: string, _password: string) => Promise<AuthResult<AppUser>>;
+  signUp: (_userData: SignUpData) => Promise<AuthResult<AppUser>>;
   signOut: () => Promise<AuthResult>;
   signOutAllDevices: () => Promise<AuthResult>;
 }
+
+type AppUser = SupabaseUser & {
+  uid: string;
+  displayName: string | null;
+  phoneNumber: string | null;
+  photoURL: string | null;
+};
 
 // Input validation helpers
 const validateEmail = (email: string): string | null => {
@@ -77,28 +74,30 @@ const validateSignUpData = (userData: SignUpData): string | null => {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+const mapSupabaseUser = (user: SupabaseUser): AppUser => ({
+  ...user,
+  uid: user.id,
+  displayName:
+    (typeof user.user_metadata?.full_name === 'string' && user.user_metadata.full_name) || null,
+  phoneNumber:
+    (typeof user.user_metadata?.phone === 'string' && user.user_metadata.phone) || user.phone || null,
+  photoURL:
+    (typeof user.user_metadata?.avatar_url === 'string' && user.user_metadata.avatar_url) || null,
+});
+
 const getAuthErrorMessage = (error: unknown): { message: string; code?: string } => {
-  if (error instanceof FirebaseError) {
+  if (error instanceof AuthApiError) {
     switch (error.code) {
-      case 'auth/user-not-found':
-        return { message: 'Користувача не знайдено. Спочатку зареєструйтесь.', code: error.code };
-      case 'auth/invalid-credential':
-      case 'auth/wrong-password':
+      case 'invalid_credentials':
+      case 'email_not_confirmed':
         return { message: 'Невірний email або пароль.', code: error.code };
-      case 'auth/invalid-email':
+      case 'user_not_found':
+        return { message: 'Користувача не знайдено. Спочатку зареєструйтесь.', code: error.code };
+      case 'invalid_email':
         return { message: 'Невірний формат email.', code: error.code };
-      case 'auth/user-disabled':
-        return { message: 'Акаунт вимкнено. Зверніться до підтримки.', code: error.code };
-      case 'auth/too-many-requests':
+      case 'over_request_rate_limit':
+      case 'too_many_requests':
         return { message: 'Забагато спроб. Спробуйте пізніше.', code: error.code };
-      case 'auth/network-request-failed':
-        return { message: 'Nettverksfeil. Sjekk tilkoblingen og prov igjen.', code: error.code };
-      case 'auth/configuration-not-found':
-        return {
-          message:
-            'Налаштування Firebase Auth не знайдено. Увімкніть Email/Password у Firebase Console.',
-          code: error.code,
-        };
       default:
         return { message: error.message, code: error.code };
     }
@@ -108,20 +107,40 @@ const getAuthErrorMessage = (error: unknown): { message: string; code?: string }
 };
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<AppUser | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Listen for auth state changes
-    const unsubscribe = onAuthStateChanged(auth, user => {
-      setUser(user);
+    let isMounted = true;
+
+    const initializeSession = async () => {
+      const { data, error } = await supabase.auth.getSession();
+      if (error) {
+        console.error('Supabase getSession error:', error);
+      }
+
+      if (isMounted) {
+        setUser(data.session?.user ? mapSupabaseUser(data.session.user) : null);
+        setLoading(false);
+      }
+    };
+
+    initializeSession();
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ? mapSupabaseUser(session.user) : null);
       setLoading(false);
     });
 
-    return () => unsubscribe();
+    return () => {
+      isMounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
-  const signIn = async (email: string, password: string): Promise<AuthResult<User>> => {
+  const signIn = async (email: string, password: string): Promise<AuthResult<AppUser>> => {
     try {
       // Validate input before making API call
       const emailError = validateEmail(email);
@@ -134,16 +153,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return { success: false, error: passwordError };
       }
 
-      // Attempt sign in
-      const userCredential = await signInWithEmailAndPassword(
-        auth,
-        email.trim().toLowerCase(),
-        password
-      );
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: email.trim().toLowerCase(),
+        password,
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      if (!data.user) {
+        return {
+          success: false,
+          error: 'Не вдалося увійти. Спробуйте ще раз.',
+        };
+      }
 
       return {
         success: true,
-        data: userCredential.user,
+        data: mapSupabaseUser(data.user),
       };
     } catch (error) {
       console.error('Sign in error:', error);
@@ -156,7 +184,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const signUp = async (userData: SignUpData): Promise<AuthResult<User>> => {
+  const signUp = async (userData: SignUpData): Promise<AuthResult<AppUser>> => {
     try {
       // Validate all input before making API call
       const validationError = validateSignUpData(userData);
@@ -164,35 +192,51 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return { success: false, error: validationError };
       }
 
-      // Attempt sign up
-      const userCredential = await createUserWithEmailAndPassword(
-        auth,
-        userData.email.trim().toLowerCase(),
-        userData.password
-      );
+      const normalizedEmail = userData.email.trim().toLowerCase();
+      const fullName = userData.fullName.trim();
 
-      // Update user profile with display name
-      await updateProfile(userCredential.user, {
-        displayName: userData.fullName.trim(),
+      const { data, error } = await supabase.auth.signUp({
+        email: normalizedEmail,
+        password: userData.password,
+        options: {
+          data: {
+            full_name: fullName,
+            phone: userData.phone.trim(),
+            user_type: userData.userType,
+            company_name: userData.companyName?.trim() || null,
+            org_number: userData.orgNumber?.trim() || null,
+          },
+        },
       });
 
-      // Create user profile in Firestore
-      const fullName = userData.fullName.trim();
-      await setDoc(doc(db, 'users', userCredential.user.uid), {
-        email: userData.email.trim().toLowerCase(),
+      if (error) {
+        throw error;
+      }
+
+      if (!data.user) {
+        return {
+          success: false,
+          error: 'Не вдалося створити акаунт. Спробуйте ще раз.',
+        };
+      }
+
+      const { error: profileError } = await supabase.from('profiles').upsert({
+        id: data.user.id,
         full_name: fullName,
         phone: userData.phone.trim(),
         user_type: userData.userType,
         company_name: userData.companyName?.trim() || null,
         org_number: userData.orgNumber?.trim() || null,
-        search_terms: generateSearchTerms(fullName),
-        created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       });
 
+      if (profileError) {
+        throw profileError;
+      }
+
       return {
         success: true,
-        data: userCredential.user,
+        data: mapSupabaseUser(data.user),
       };
     } catch (error) {
       console.error('Sign up error:', error);
@@ -207,7 +251,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signOut = async (): Promise<AuthResult> => {
     try {
-      await firebaseSignOut(auth);
+      const { error } = await supabase.auth.signOut();
+      if (error) {
+        throw error;
+      }
       return { success: true };
     } catch (error) {
       console.error('Sign out failed:', error);
@@ -220,12 +267,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signOutAllDevices = async (): Promise<AuthResult> => {
     try {
-      // Firebase doesn't have a direct "sign out all devices" method
-      // To implement this, you would need to:
-      // 1. Store session tokens in Firestore
-      // 2. Revoke all tokens on sign out
-      // For now, we'll just sign out the current device
-      await firebaseSignOut(auth);
+      const { error } = await supabase.auth.signOut({ scope: 'global' });
+      if (error) {
+        throw error;
+      }
       return { success: true };
     } catch (error) {
       console.error('Sign out all devices failed:', error);
