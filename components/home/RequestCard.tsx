@@ -135,7 +135,9 @@ export const RequestCard: React.FC<RequestCardProps> = ({
           <TouchableOpacity
             onPress={() => onToggleFavorite(request.id)}
             accessibilityRole="button"
-            accessibilityLabel={request.is_favorite ? t('removeFromFavorites') : t('addToFavorites')}
+            accessibilityLabel={
+              request.is_favorite ? t('removeFromFavorites') : t('addToFavorites')
+            }
             accessibilityHint={request.is_favorite ? t('removeFavoriteHint') : t('addFavoriteHint')}
             accessibilityState={{ selected: request.is_favorite }}
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}

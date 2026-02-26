@@ -13,11 +13,7 @@ admin.initializeApp();
  * @param delayMs Initial delay in milliseconds (default: 1000)
  * @returns Result of the function
  */
-async function withRetry<T>(
-  fn: () => Promise<T>,
-  retries = 3,
-  delayMs = 1000
-): Promise<T> {
+async function withRetry<T>(fn: () => Promise<T>, retries = 3, delayMs = 1000): Promise<T> {
   let lastError: Error | null = null;
 
   for (let attempt = 0; attempt <= retries; attempt++) {
@@ -168,9 +164,12 @@ export const verifyCarrier = functions.https.onCall(async (data, context) => {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 10000);
       try {
-        return await fetch(`https://data.brreg.no/enhetsregisteret/api/enheter/${organizationNumber}`, {
-          signal: controller.signal,
-        });
+        return await fetch(
+          `https://data.brreg.no/enhetsregisteret/api/enheter/${organizationNumber}`,
+          {
+            signal: controller.signal,
+          }
+        );
       } finally {
         clearTimeout(timeoutId);
       }
@@ -585,10 +584,7 @@ export const sendBatchNotificationsOnNewRequest = functions.firestore
       };
 
       await withRetry(async () => {
-        return await admin
-          .firestore()
-          .collection('notification_delivery_logs')
-          .add(deliveryRecord);
+        return await admin.firestore().collection('notification_delivery_logs').add(deliveryRecord);
       }, 2);
 
       console.log(`📝 Logged notification delivery:`, deliveryRecord);
@@ -601,10 +597,7 @@ export const sendBatchNotificationsOnNewRequest = functions.firestore
       carrierIds.forEach((carrierId, index) => {
         if (index < totalSent) {
           // Only record successful sends
-          const historyRef = admin
-            .firestore()
-            .collection('notification_history')
-            .doc();
+          const historyRef = admin.firestore().collection('notification_history').doc();
           batch.set(historyRef, {
             carrier_id: carrierId,
             request_id: requestId,
@@ -687,10 +680,7 @@ export const retryFailedNotifications = functions.pubsub
 
         // Get the original request
         const requestDoc = await withRetry(async () => {
-          return await admin
-            .firestore()
-            .doc(`cargo_requests/${requestId}`)
-            .get();
+          return await admin.firestore().doc(`cargo_requests/${requestId}`).get();
         }, 1);
 
         if (!requestDoc.exists) {
@@ -712,9 +702,7 @@ export const retryFailedNotifications = functions.pubsub
         }, 2);
 
         // Attempt to send to failed carriers
-        const tokens = failedCarriers.docs
-          .map(d => d.data().fcm_token)
-          .filter(Boolean) as string[];
+        const tokens = failedCarriers.docs.map(d => d.data().fcm_token).filter(Boolean) as string[];
 
         if (tokens.length > 0) {
           try {

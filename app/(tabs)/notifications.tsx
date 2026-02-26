@@ -14,7 +14,9 @@ export default function NotificationsScreen() {
       <View style={styles.emptyState}>
         <Ionicons name="notifications-outline" size={64} color={colors.text.tertiary} />
         <Text style={styles.emptyTitle}>No notifications</Text>
-        <Text style={styles.emptyText}>You're all caught up. Create a request or browse marketplace activity.</Text>
+        <Text style={styles.emptyText}>
+          You're all caught up. Create a request or browse marketplace activity.
+        </Text>
 
         <View style={styles.ctaRow}>
           <TouchableOpacity

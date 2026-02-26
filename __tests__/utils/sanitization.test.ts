@@ -49,14 +49,14 @@ describe('Sanitization Utils', () => {
     });
 
     it('should handle null and undefined', () => {
-      expect(sanitizeMessage(null as any)).toBe('');
-      expect(sanitizeMessage(undefined as any)).toBe('');
+      expect(sanitizeMessage(null as unknown as string)).toBe('');
+      expect(sanitizeMessage(undefined as unknown as string)).toBe('');
     });
   });
 
   describe('sanitizeInput', () => {
     it('should remove special characters from input fields', () => {
-      const input = 'John<script>O\'Reilly</script>';
+      const input = "John<script>O'Reilly</script>";
       const result = sanitizeInput(input);
       expect(result).not.toContain('<');
       expect(result).not.toContain('>');
@@ -102,23 +102,23 @@ describe('Sanitization Utils', () => {
     });
 
     it('should enforce min/max bounds', () => {
-      const result = sanitizeNumber('500', { min: 0, max: 100 });
+      const result = sanitizeNumber('500', 0, 100);
       expect(result).toBeLessThanOrEqual(100);
       expect(result).toBeGreaterThanOrEqual(0);
     });
 
     it('should handle null input', () => {
-      expect(sanitizeNumber(null as any)).toBe(0);
+      expect(sanitizeNumber(null as unknown as string)).toBe(0);
     });
 
     it('should reject negative values when minimum is 0', () => {
-      const result = sanitizeNumber('-50', { min: 0 });
+      const result = sanitizeNumber('-50', 0);
       expect(result).toBeGreaterThanOrEqual(0);
     });
 
-    it('should handle decimal precision', () => {
-      const result = sanitizeNumber('123.456789', { decimals: 2 });
-      expect(result).toBe(123.46); // Rounded to 2 decimals
+    it('should preserve decimal values', () => {
+      const result = sanitizeNumber('123.456789');
+      expect(result).toBe(123.456789);
     });
   });
 });

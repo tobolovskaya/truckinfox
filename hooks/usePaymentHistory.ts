@@ -128,8 +128,7 @@ export const usePaymentHistory = ({ userId, statusFilter }: UsePaymentHistoryOpt
             }))
             .filter(item => !statusFilter || item.status === statusFilter)
             .sort(
-              (a, b) =>
-                new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+              (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
             ) as PaymentRecord[];
 
           return {

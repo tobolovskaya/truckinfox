@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useNetworkStatus } from './useNetworkStatus';
 import {
   syncOfflineQueue,
@@ -51,14 +51,11 @@ export const useSyncStatus = (): UseSyncStatusResult => {
   const [lastError, setLastError] = useState<Error | null>(null);
 
   // Update pending count from queue
-  const updatePendingCount = (): void => {
+  const updatePendingCount = useCallback((): void => {
     const hasPending = hasPendingOfflineOperations();
-    const count = getPendingOfflineOperations().length;
-
-    if (hasPending) {
-      setPendingCount(count);
-    }
-  };
+    const count = hasPending ? getPendingOfflineOperations().length : 0;
+    setPendingCount(count);
+  }, []);
 
   // Sync when connection restored
   useEffect(() => {
@@ -92,7 +89,7 @@ export const useSyncStatus = (): UseSyncStatusResult => {
     };
 
     performSync();
-  }, [isConnected]);
+  }, [isConnected, isSyncing, pendingCount, updatePendingCount]);
 
   // Update pending count periodically
   useEffect(() => {
@@ -103,7 +100,7 @@ export const useSyncStatus = (): UseSyncStatusResult => {
     }, 5000);
 
     return () => clearInterval(interval);
-  }, []);
+  }, [updatePendingCount]);
 
   // Manual sync handler
   const syncNow = async (): Promise<void> => {

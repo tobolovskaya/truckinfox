@@ -35,12 +35,10 @@ describe('useCurrentUser', () => {
   });
 
   it('should return null user when not authenticated', async () => {
-    (firebaseAuth.onAuthStateChanged as jest.Mock).mockImplementation(
-      (auth, callback) => {
-        callback(null);
-        return jest.fn();
-      }
-    );
+    (firebaseAuth.onAuthStateChanged as jest.Mock).mockImplementation((auth, callback) => {
+      callback(null);
+      return jest.fn();
+    });
 
     const { result } = renderHook(() => useCurrentUser());
 
@@ -50,23 +48,19 @@ describe('useCurrentUser', () => {
   });
 
   it('should fetch authenticated user profile', async () => {
-    (firebaseAuth.onAuthStateChanged as jest.Mock).mockImplementation(
-      (auth, callback) => {
-        callback(mockUser);
-        return jest.fn();
-      }
-    );
+    (firebaseAuth.onAuthStateChanged as jest.Mock).mockImplementation((auth, callback) => {
+      callback(mockUser);
+      return jest.fn();
+    });
 
-    (firebaseFirestore.onSnapshot as jest.Mock).mockImplementation(
-      (docRef, callback) => {
-        const mockSnapshot = {
-          exists: () => true,
-          data: () => mockUserProfile,
-        };
-        callback(mockSnapshot);
-        return jest.fn();
-      }
-    );
+    (firebaseFirestore.onSnapshot as jest.Mock).mockImplementation((docRef, callback) => {
+      const mockSnapshot = {
+        exists: () => true,
+        data: () => mockUserProfile,
+      };
+      callback(mockSnapshot);
+      return jest.fn();
+    });
 
     const { result } = renderHook(() => useCurrentUser());
 
@@ -77,12 +71,10 @@ describe('useCurrentUser', () => {
   });
 
   it('should handle loading state', async () => {
-    (firebaseAuth.onAuthStateChanged as jest.Mock).mockImplementation(
-      (auth, callback) => {
-        setTimeout(() => callback(mockUser), 100);
-        return jest.fn();
-      }
-    );
+    (firebaseAuth.onAuthStateChanged as jest.Mock).mockImplementation((auth, callback) => {
+      setTimeout(() => callback(mockUser), 100);
+      return jest.fn();
+    });
 
     const { result } = renderHook(() => useCurrentUser());
 
@@ -94,12 +86,10 @@ describe('useCurrentUser', () => {
   });
 
   it('should handle profile data fetch errors', async () => {
-    (firebaseAuth.onAuthStateChanged as jest.Mock).mockImplementation(
-      (auth, callback) => {
-        callback(mockUser);
-        return jest.fn();
-      }
-    );
+    (firebaseAuth.onAuthStateChanged as jest.Mock).mockImplementation((auth, callback) => {
+      callback(mockUser);
+      return jest.fn();
+    });
 
     (firebaseFirestore.onSnapshot as jest.Mock).mockImplementation(
       (docRef, callback, errorCallback) => {
@@ -134,23 +124,19 @@ describe('useCurrentUser', () => {
   });
 
   it('should have verified user profile', async () => {
-    (firebaseAuth.onAuthStateChanged as jest.Mock).mockImplementation(
-      (auth, callback) => {
-        callback(mockUser);
-        return jest.fn();
-      }
-    );
+    (firebaseAuth.onAuthStateChanged as jest.Mock).mockImplementation((auth, callback) => {
+      callback(mockUser);
+      return jest.fn();
+    });
 
-    (firebaseFirestore.onSnapshot as jest.Mock).mockImplementation(
-      (docRef, callback) => {
-        const mockSnapshot = {
-          exists: () => true,
-          data: () => mockUserProfile,
-        };
-        callback(mockSnapshot);
-        return jest.fn();
-      }
-    );
+    (firebaseFirestore.onSnapshot as jest.Mock).mockImplementation((docRef, callback) => {
+      const mockSnapshot = {
+        exists: () => true,
+        data: () => mockUserProfile,
+      };
+      callback(mockSnapshot);
+      return jest.fn();
+    });
 
     const { result } = renderHook(() => useCurrentUser());
 

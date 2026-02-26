@@ -20,7 +20,9 @@ export const NetworkStatusBar = () => {
           style={isSyncing ? { animation: 'spin' } : {}}
         />
         <Text style={styles.syncText}>
-          {isSyncing ? `Syncing ${pendingCount} operation${pendingCount !== 1 ? 's' : ''}...` : `${pendingCount} pending update${pendingCount !== 1 ? 's' : ''}`}
+          {isSyncing
+            ? `Syncing ${pendingCount} operation${pendingCount !== 1 ? 's' : ''}...`
+            : `${pendingCount} pending update${pendingCount !== 1 ? 's' : ''}`}
         </Text>
       </View>
     );

@@ -24,11 +24,7 @@ const GOOGLE_PLACES_API_KEY = process.env.GOOGLE_PLACES_API_KEY;
  * @param retries Number of retries (default: 2)
  * @param delayMs Initial delay in milliseconds (default: 1000)
  */
-async function withRetry<T>(
-  fn: () => Promise<T>,
-  retries = 2,
-  delayMs = 1000
-): Promise<T> {
+async function withRetry<T>(fn: () => Promise<T>, retries = 2, delayMs = 1000): Promise<T> {
   let lastError: Error | null = null;
 
   for (let attempt = 0; attempt <= retries; attempt++) {
@@ -162,18 +158,15 @@ export const placesAutocomplete = functions.https.onCall(async (data, context) =
     // Call Google Places API (server-side, key is protected)
     // 🔄 Use withRetry for automatic retry on network failures
     const response = await withRetry(() =>
-      axios.get(
-        'https://maps.googleapis.com/maps/api/place/autocomplete/json',
-        {
-          params: {
-            input,
-            components: data.components || 'country:no',
-            language: 'no',
-            key: GOOGLE_PLACES_API_KEY,
-          },
-          timeout: 5000,
-        }
-      )
+      axios.get('https://maps.googleapis.com/maps/api/place/autocomplete/json', {
+        params: {
+          input,
+          components: data.components || 'country:no',
+          language: 'no',
+          key: GOOGLE_PLACES_API_KEY,
+        },
+        timeout: 5000,
+      })
     );
 
     // Return only safe data to client

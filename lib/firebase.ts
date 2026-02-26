@@ -2,10 +2,7 @@ import { initializeApp, getApps, FirebaseApp } from 'firebase/app';
 import { Auth, initializeAuth, getAuth } from 'firebase/auth';
 // @ts-expect-error - getReactNativePersistence exists at runtime via React Native module resolution
 import { getReactNativePersistence } from 'firebase/auth';
-import {
-  Firestore,
-  getFirestore,
-} from 'firebase/firestore';
+import { Firestore, getFirestore } from 'firebase/firestore';
 import { FirebaseStorage, getStorage } from 'firebase/storage';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 

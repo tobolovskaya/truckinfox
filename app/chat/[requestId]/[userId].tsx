@@ -414,7 +414,9 @@ export default function ChatScreen() {
     }
   };
 
-  const convertToDate = (timestamp: any): Date => {
+  type TimestampLike = Date | string | number | { toDate?: () => Date } | null | undefined;
+
+  const convertToDate = (timestamp: TimestampLike): Date => {
     if (!timestamp) return new Date();
     // Handle Firestore Timestamp object
     if (timestamp.toDate && typeof timestamp.toDate === 'function') {
@@ -428,7 +430,7 @@ export default function ChatScreen() {
     return new Date(timestamp);
   };
 
-  const formatTime = (timestamp: any) => {
+  const formatTime = (timestamp: TimestampLike) => {
     const date = convertToDate(timestamp);
     if (isNaN(date.getTime())) {
       return '--:--';
@@ -436,7 +438,7 @@ export default function ChatScreen() {
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
 
-  const formatDate = (timestamp: any) => {
+  const formatDate = (timestamp: TimestampLike) => {
     const date = convertToDate(timestamp);
     if (isNaN(date.getTime())) {
       return 'Invalid Date';
@@ -650,7 +652,9 @@ export default function ChatScreen() {
         customCenter={
           <View style={styles.headerInfo}>
             <View style={styles.avatar}>
-              <Text style={styles.avatarInitials}>{getUserInitials(chatUser?.full_name || '')}</Text>
+              <Text style={styles.avatarInitials}>
+                {getUserInitials(chatUser?.full_name || '')}
+              </Text>
             </View>
             <View style={styles.headerText}>
               <Text style={styles.userName}>{chatUser?.full_name || t('unknownUser')}</Text>

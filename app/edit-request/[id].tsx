@@ -38,7 +38,7 @@ import { calculateDistance } from '../../utils/googlePlaces';
 import { geohashForLocation } from 'geofire-common';
 import { fetchWithTimeout } from '../../utils/fetchWithTimeout';
 import { LazyImage } from '../../components/LazyImage';
-import { colors, spacing, fontSize, fontWeight, borderRadius } from '../../lib/sharedStyles';
+import { colors, spacing, fontSize, borderRadius } from '../../lib/sharedStyles';
 import { generateCargoSearchTerms } from '../../utils/search';
 
 const CARGO_TYPES = [

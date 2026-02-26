@@ -89,7 +89,6 @@ async function run(): Promise<void> {
 
   let lastDoc: firestore.QueryDocumentSnapshot | null = null;
 
-  // eslint-disable-next-line no-constant-condition
   while (true) {
     let pageQuery: firestore.Query = db
       .collection('cargo_requests')

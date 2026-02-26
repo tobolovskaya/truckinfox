@@ -99,8 +99,12 @@ export default function EditProfileScreen() {
       const fullName = sanitizeInput(profile.fullName.trim(), 200);
       const phone = sanitizeInput(profile.phone.trim(), 20);
       const isBusinessAccount = profile.userType === 'carrier';
-      const companyName = isBusinessAccount ? sanitizeInput(profile.companyName.trim(), 200) || null : null;
-      const orgNumber = isBusinessAccount ? sanitizeInput(profile.orgNumber.trim(), 50) || null : null;
+      const companyName = isBusinessAccount
+        ? sanitizeInput(profile.companyName.trim(), 200) || null
+        : null;
+      const orgNumber = isBusinessAccount
+        ? sanitizeInput(profile.orgNumber.trim(), 50) || null
+        : null;
 
       await updateDoc(doc(db, 'users', user.uid), {
         full_name: fullName,

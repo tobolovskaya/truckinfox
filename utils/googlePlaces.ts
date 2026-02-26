@@ -1,4 +1,4 @@
-import { fetchWithTimeout, fetchWithRetry } from './fetchWithTimeout';
+import { fetchWithRetry } from './fetchWithTimeout';
 
 // Read API key from environment variables
 // In Expo, use EXPO_PUBLIC_ prefix for client-accessible variables

@@ -43,19 +43,17 @@ describe('useCargoRequests', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     const mockUnsubscribe = jest.fn();
-    (firebaseFirestore.onSnapshot as jest.Mock).mockImplementation(
-      (query, callback) => {
-        const mockSnapshot = {
-          docs: mockCargoRequests.map(req => ({
-            id: req.id,
-            data: () => req,
-          })),
-          empty: false,
-        };
-        callback(mockSnapshot);
-        return mockUnsubscribe;
-      }
-    );
+    (firebaseFirestore.onSnapshot as jest.Mock).mockImplementation((query, callback) => {
+      const mockSnapshot = {
+        docs: mockCargoRequests.map(req => ({
+          id: req.id,
+          data: () => req,
+        })),
+        empty: false,
+      };
+      callback(mockSnapshot);
+      return mockUnsubscribe;
+    });
   });
 
   it('should fetch cargo requests on mount', async () => {
