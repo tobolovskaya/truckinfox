@@ -47,6 +47,10 @@ function parseArgs(argv) {
             options.email = arg.slice('--email='.length).trim();
             return;
         }
+        if (arg.startsWith('--uid=')) {
+            options.uid = arg.slice('--uid='.length).trim();
+            return;
+        }
         if (arg.startsWith('--project=')) {
             options.projectId = arg.slice('--project='.length).trim();
             return;
@@ -63,10 +67,12 @@ function parseArgs(argv) {
 }
 function printUsage() {
     console.log('Usage:');
+    console.log('  npm run admin:grant -- --uid=<firebase-auth-uid>');
     console.log('  npm run admin:grant -- --email=user@example.com');
     console.log('  npm run admin:grant -- --email=user@example.com --project=your-firebase-project');
     console.log('  npm run admin:grant -- --email=user@example.com --credentials=./service-account.json');
     console.log('  npm run admin:grant -- user@example.com');
+    console.log('  npm run admin:revoke -- --uid=<firebase-auth-uid>');
     console.log('  npm run admin:revoke -- --email=user@example.com');
 }
 function initializeFirebase(options) {
@@ -94,41 +100,122 @@ function initializeFirebase(options) {
 async function run() {
     var _a, _b;
     const options = parseArgs(process.argv.slice(2));
-    const { email, revoke } = options;
-    if (!email) {
+    const { uid, email, revoke } = options;
+    const normalizedEmail = email === null || email === void 0 ? void 0 : email.trim().toLowerCase();
+    if (!normalizedEmail && !uid) {
         printUsage();
         process.exit(1);
     }
     initializeFirebase(options);
     const auth = admin.auth();
     const db = admin.firestore();
-    const user = await auth.getUserByEmail(email);
-    const existingClaims = (_a = user.customClaims) !== null && _a !== void 0 ? _a : {};
-    const nextClaims = Object.assign({}, existingClaims);
-    if (revoke) {
-        delete nextClaims.admin;
-    }
-    else {
-        nextClaims.admin = true;
-    }
-    await auth.setCustomUserClaims(user.uid, nextClaims);
-    const userRef = db.collection('users').doc(user.uid);
-    const userDoc = await userRef.get();
-    if (revoke) {
-        if (userDoc.exists) {
-            await userRef.set({ user_type: admin.firestore.FieldValue.delete() }, { merge: true });
+    try {
+        if (!normalizedEmail) {
+            throw new Error('Email is required for Auth API lookup');
         }
-        console.log(`✅ Admin role revoked for ${email} (${user.uid})`);
+        const user = await auth.getUserByEmail(normalizedEmail);
+        const existingClaims = (_a = user.customClaims) !== null && _a !== void 0 ? _a : {};
+        const nextClaims = Object.assign({}, existingClaims);
+        if (revoke) {
+            delete nextClaims.admin;
+        }
+        else {
+            nextClaims.admin = true;
+        }
+        await auth.setCustomUserClaims(user.uid, nextClaims);
+        const userRef = db.collection('users').doc(user.uid);
+        const userDoc = await userRef.get();
+        if (revoke) {
+            if (userDoc.exists) {
+                await userRef.set({ user_type: admin.firestore.FieldValue.delete() }, { merge: true });
+            }
+            console.log(`✅ Admin role revoked for ${normalizedEmail} (${user.uid})`);
+        }
+        else {
+            await userRef.set({
+                email: (_b = user.email) !== null && _b !== void 0 ? _b : normalizedEmail,
+                user_type: 'admin',
+                updated_at: new Date().toISOString(),
+            }, { merge: true });
+            console.log(`✅ Admin role granted for ${normalizedEmail} (${user.uid})`);
+        }
+        console.log('ℹ️ User must refresh token (sign out/in) to receive updated custom claims.');
+        return;
     }
-    else {
-        await userRef.set({
-            email: (_b = user.email) !== null && _b !== void 0 ? _b : email,
-            user_type: 'admin',
-            updated_at: new Date().toISOString(),
-        }, { merge: true });
-        console.log(`✅ Admin role granted for ${email} (${user.uid})`);
+    catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        const canFallbackToFirestore = (!normalizedEmail && Boolean(uid)) ||
+            message.includes('PERMISSION_DENIED') ||
+            message.includes('serviceusage.services.use') ||
+            message.includes('USER_PROJECT_DENIED');
+        if (!canFallbackToFirestore) {
+            throw error;
+        }
+        console.warn('⚠️ Auth API permissions are missing. Falling back to Firestore-only admin update.');
+        if (!normalizedEmail && uid) {
+            const userRef = db.collection('users').doc(uid);
+            if (revoke) {
+                await userRef.set({ user_type: admin.firestore.FieldValue.delete() }, { merge: true });
+                console.log(`✅ Admin role revoked in Firestore for UID ${uid}`);
+            }
+            else {
+                await userRef.set({
+                    user_type: 'admin',
+                    updated_at: new Date().toISOString(),
+                }, { merge: true });
+                console.log(`✅ Admin role granted in Firestore for UID ${uid}`);
+            }
+            console.log('ℹ️ Custom claims were not updated due to IAM permissions.');
+            console.log('ℹ️ App access works because admin check uses users.user_type === "admin".');
+            return;
+        }
+        const usersSnap = await db
+            .collection('users')
+            .where('email', '==', normalizedEmail)
+            .limit(1)
+            .get();
+        if (usersSnap.empty) {
+            if (!uid) {
+                throw new Error(`No user document found in Firestore for email ${normalizedEmail}. ` +
+                    'Provide --uid=<firebase-auth-uid> or create the user profile document first.');
+            }
+            const userRef = db.collection('users').doc(uid);
+            if (revoke) {
+                await userRef.set({ user_type: admin.firestore.FieldValue.delete() }, { merge: true });
+                console.log(`✅ Admin role revoked in Firestore for UID ${uid}`);
+            }
+            else {
+                const payload = {
+                    user_type: 'admin',
+                    updated_at: new Date().toISOString(),
+                };
+                if (normalizedEmail) {
+                    payload.email = normalizedEmail;
+                }
+                await userRef.set(payload, { merge: true });
+                console.log(`✅ Admin role granted in Firestore for UID ${uid}`);
+            }
+            console.log('ℹ️ Custom claims were not updated due to IAM permissions.');
+            console.log('ℹ️ App access works because admin check uses users.user_type === "admin".');
+            return;
+        }
+        const userDoc = usersSnap.docs[0];
+        const userRef = userDoc.ref;
+        if (revoke) {
+            await userRef.set({ user_type: admin.firestore.FieldValue.delete() }, { merge: true });
+            console.log(`✅ Admin role revoked in Firestore for ${normalizedEmail} (${userDoc.id})`);
+        }
+        else {
+            await userRef.set({
+                email: normalizedEmail,
+                user_type: 'admin',
+                updated_at: new Date().toISOString(),
+            }, { merge: true });
+            console.log(`✅ Admin role granted in Firestore for ${normalizedEmail} (${userDoc.id})`);
+        }
+        console.log('ℹ️ Custom claims were not updated due to IAM permissions.');
+        console.log('ℹ️ App access works because admin check uses users.user_type === "admin".');
     }
-    console.log('ℹ️ User must refresh token (sign out/in) to receive updated custom claims.');
 }
 run().catch(error => {
     const message = error instanceof Error ? error.message : String(error);

@@ -5,7 +5,6 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { colors, spacing, fontSize, fontWeight } from '../../lib/sharedStyles';
 import { useAuth } from '../../contexts/AuthContext';
-import { useCurrentUser } from '../../hooks/useCurrentUser';
 import Avatar from '../../components/Avatar';
 import { ScreenHeader } from '../../components/ScreenHeader';
 import { useUnreadCount } from '../../hooks/useNotifications';
@@ -15,10 +14,8 @@ type IoniconName = React.ComponentProps<typeof Ionicons>['name'];
 export default function ProfileScreen() {
   const router = useRouter();
   const { user, signOut } = useAuth();
-  const { currentUser } = useCurrentUser(user?.uid);
   const { t } = useTranslation();
   const { unreadCount } = useUnreadCount();
-  const isAdmin = currentUser?.user_type === 'admin';
 
   const handleSignOut = async () => {
     Alert.alert(t('signOut'), t('confirmSignOut'), [
@@ -74,16 +71,6 @@ export default function ProfileScreen() {
       label: t('helpSupport'),
       onPress: () => router.push('/profile/help'),
     },
-    ...(isAdmin
-      ? [
-          {
-            id: 'admin-dashboard',
-            icon: 'stats-chart-outline' as IoniconName,
-            label: 'Admin Dashboard',
-            onPress: () => router.push('/(admin)/dashboard'),
-          },
-        ]
-      : []),
   ];
 
   return (
