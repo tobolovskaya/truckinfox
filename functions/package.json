@@ -12,6 +12,8 @@
     "start": "npm run shell",
     "deploy": "firebase deploy --only functions",
     "logs": "firebase functions:log",
+    "admin:grant": "npm run build && node lib/setAdminRole.js",
+    "admin:revoke": "npm run build && node lib/setAdminRole.js --revoke",
     "backfill:search-terms": "npm run build && node lib/backfillCargoSearchTerms.js",
     "backfill:search-terms:apply": "npm run build && node lib/backfillCargoSearchTerms.js --apply"
   },
