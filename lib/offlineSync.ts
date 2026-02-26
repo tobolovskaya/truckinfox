@@ -1,26 +1,32 @@
 /**
  * Offline Sync Utilities
  *
- * Helps manage data sync between offline cache and Firestore
+ * Helps manage data sync between offline cache and Supabase
  * Automatically handles:
  * - Queuing writes when offline
  * - Syncing when online
  * - Conflict resolution
  */
 
-import { db } from './firebase';
-import {
-  collection,
-  query,
-  getDocs,
-  writeBatch,
-  doc,
-  serverTimestamp,
-  QueryConstraint,
-} from 'firebase/firestore';
+import { supabase } from './supabase';
 import NetInfo from '@react-native-community/netinfo';
 
 type OfflinePayload = Record<string, unknown>;
+type QueryConstraint = {
+  type: 'eq' | 'orderBy' | 'limit';
+  field: string;
+  value?: unknown;
+  direction?: 'asc' | 'desc';
+};
+
+const TABLE_ALIASES: Record<string, string> = {
+  users: 'users',
+  cargoRequests: 'cargo_requests',
+  cargo_requests: 'cargo_requests',
+};
+
+const resolveTableName = (collectionName: string): string =>
+  TABLE_ALIASES[collectionName] || collectionName;
 
 export interface OfflineQueueItem {
   id: string;
@@ -95,25 +101,38 @@ export const syncOfflineQueue = async (): Promise<{
 
   console.log(`🔄 Starting offline queue sync (${offlineQueue.size} items)...`);
 
-  const batch = writeBatch(db);
   const itemsToProcess = Array.from(offlineQueue.values());
 
   for (const item of itemsToProcess) {
     try {
-      const docRef = doc(db, item.collectionName, item.documentId);
+      const tableName = resolveTableName(item.collectionName);
 
       switch (item.operation) {
         case 'create':
         case 'update':
-          batch.set(docRef, {
-            ...item.data,
-            _offlineQueued: false,
-            _syncedAt: serverTimestamp(),
-          });
+          {
+            const payload = {
+              ...item.data,
+              id: item.documentId,
+              _offlineQueued: false,
+              _syncedAt: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+            };
+
+            const { error } = await supabase.from(tableName).upsert(payload);
+            if (error) {
+              throw error;
+            }
+          }
           break;
 
         case 'delete':
-          batch.delete(docRef);
+          {
+            const { error } = await supabase.from(tableName).delete().eq('id', item.documentId);
+            if (error) {
+              throw error;
+            }
+          }
           break;
       }
 
@@ -139,13 +158,7 @@ export const syncOfflineQueue = async (): Promise<{
     }
   }
 
-  try {
-    await batch.commit();
-    console.log(`✅ Offline queue synced: ${results.synced} succeeded, ${results.failed} failed`);
-  } catch (error) {
-    console.error('❌ Batch commit failed:', error);
-    results.failed = itemsToProcess.length;
-  }
+  console.log(`✅ Offline queue synced: ${results.synced} succeeded, ${results.failed} failed`);
 
   return results;
 };
@@ -206,18 +219,38 @@ export const queryLocal = async (
   constraints: QueryConstraint[] = []
 ): Promise<OfflinePayload[]> => {
   try {
-    const q = query(collection(db, collectionName), ...constraints);
-    const snapshot = await getDocs(q);
+    const tableName = resolveTableName(collectionName);
+    let dbQuery = supabase.from(tableName).select('*');
 
-    const results = snapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data(),
+    for (const constraint of constraints) {
+      if (constraint.type === 'eq') {
+        dbQuery = dbQuery.eq(constraint.field, constraint.value);
+      }
+
+      if (constraint.type === 'orderBy') {
+        dbQuery = dbQuery.order(constraint.field, {
+          ascending: (constraint.direction || 'asc') === 'asc',
+        });
+      }
+
+      if (constraint.type === 'limit' && typeof constraint.value === 'number') {
+        dbQuery = dbQuery.limit(constraint.value);
+      }
+    }
+
+    const { data, error } = await dbQuery;
+
+    if (error) {
+      throw error;
+    }
+
+    const results = (data || []).map(row => ({
+      id: String((row as Record<string, unknown>).id),
+      ...(row as Record<string, unknown>),
     }));
 
     console.log(
-      `📖 Local query (${
-        snapshot.metadata.fromCache ? 'from cache' : 'from server'
-      }): ${collectionName}`,
+      `📖 Local query (from server): ${collectionName}`,
       { count: results.length }
     );
 

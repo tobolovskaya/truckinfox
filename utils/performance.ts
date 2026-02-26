@@ -1,6 +1,3 @@
-import { trace } from 'firebase/performance';
-import { performance } from '../lib/firebase';
-
 /**
  * Start a performance trace
  * @param traceName - Name of the trace
@@ -8,62 +5,21 @@ import { performance } from '../lib/firebase';
  */
 export const startTrace = (traceName: string) => {
   try {
-    if (performance) {
-      const traceInstance = trace(performance, traceName);
-      traceInstance.start();
-      console.log(`⚡ Performance trace started: ${traceName}`);
+    const startTime = Date.now();
+    let stopped = false;
+    console.log(`⚡ Performance trace started: ${traceName}`);
 
-      let stopped = false;
-
-      // Return a wrapper with safe stop method
-      return {
-        stop: () => {
-          if (!stopped) {
-            try {
-              traceInstance.stop();
-              stopped = true;
-              console.log(`⚡ Performance trace stopped: ${traceName}`);
-            } catch {
-              console.debug(`Performance trace already stopped: ${traceName}`);
-            }
-          }
-        },
-        putAttribute: (attribute: string, value: string) => {
-          try {
-            if (!stopped) {
-              traceInstance.putAttribute(attribute, value);
-            }
-          } catch (error) {
-            console.debug('Error setting trace attribute:', error);
-          }
-        },
-        putMetric: (metricName: string, value: number) => {
-          try {
-            if (!stopped) {
-              traceInstance.putMetric(metricName, value);
-            }
-          } catch (error) {
-            console.debug('Error setting trace metric:', error);
-          }
-        },
-      };
-    } else {
-      // For native platforms, just log
-      const startTime = Date.now();
-      let stopped = false;
-      console.log(`⚡ Performance trace (console only): ${traceName}`);
-      return {
-        stop: () => {
-          if (!stopped) {
-            const duration = Date.now() - startTime;
-            console.log(`⚡ Performance trace stopped: ${traceName} (${duration}ms)`);
-            stopped = true;
-          }
-        },
-        putAttribute: () => {},
-        putMetric: () => {},
-      };
-    }
+    return {
+      stop: () => {
+        if (!stopped) {
+          const duration = Date.now() - startTime;
+          console.log(`⚡ Performance trace stopped: ${traceName} (${duration}ms)`);
+          stopped = true;
+        }
+      },
+      putAttribute: (_attribute: string, _value: string) => {},
+      putMetric: (_metricName: string, _value: number) => {},
+    };
   } catch (error) {
     console.error('Error starting performance trace:', error);
     return null;

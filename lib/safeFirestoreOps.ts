@@ -1,28 +1,40 @@
 /**
- * Safe Firestore Operations with Automatic Offline Fallback
+ * Safe Database Operations with Automatic Offline Fallback
  *
- * These utilities wrap Firestore operations to automatically handle offline scenarios
+ * These utilities wrap Supabase operations to automatically handle offline scenarios
  * by queuing operations locally and syncing when connection is restored
  */
 
-import {
-  doc,
-  setDoc,
-  updateDoc,
-  deleteDoc,
-  getDoc,
-  collection,
-  query,
-  getDocs,
-  addDoc,
-  QueryConstraint,
-  writeBatch,
-  serverTimestamp,
-} from 'firebase/firestore';
-import { db } from './firebase';
+import { supabase } from './supabase';
 import { queueOfflineOperation } from './offlineSync';
 
 type FirestorePayload = Record<string, unknown>;
+type QueryConstraint = {
+  type: 'eq' | 'orderBy' | 'limit';
+  field: string;
+  value?: unknown;
+  direction?: 'asc' | 'desc';
+};
+
+function shouldQueueOffline(errorMessage: string): boolean {
+  const message = errorMessage.toLowerCase();
+  return (
+    message.includes('offline') ||
+    message.includes('connectivity') ||
+    message.includes('network request failed') ||
+    message.includes('failed to fetch')
+  );
+}
+
+function mapCollectionName(collectionName: string): string {
+  const aliases: Record<string, string> = {
+    users: 'users',
+    cargoRequests: 'cargo_requests',
+    cargo_requests: 'cargo_requests',
+  };
+
+  return aliases[collectionName] || collectionName;
+}
 
 /**
  * Safely set document with offline fallback
@@ -34,23 +46,27 @@ export const safeSetDoc = async (
   merge = false
 ): Promise<{ success: boolean; fromCache?: boolean; error?: string }> => {
   try {
-    const docRef = doc(db, collectionName, documentId);
-    await setDoc(
-      docRef,
-      {
-        ...data,
-        updatedAt: serverTimestamp(),
-      },
-      { merge }
-    );
+    const tableName = mapCollectionName(collectionName);
+    const payload = {
+      ...data,
+      id: documentId,
+      updated_at: new Date().toISOString(),
+    };
+
+    const { error } = merge
+      ? await supabase.from(tableName).upsert(payload)
+      : await supabase.from(tableName).insert(payload);
+
+    if (error) {
+      throw error;
+    }
 
     console.log(`✅ Document set: ${collectionName}/${documentId}`);
     return { success: true };
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
 
-    // Queue operation if offline
-    if (errorMessage.includes('offline') || errorMessage.includes('connectivity')) {
+    if (shouldQueueOffline(errorMessage)) {
       queueOfflineOperation(collectionName, merge ? 'update' : 'create', documentId, {
         ...data,
         id: documentId,
@@ -72,19 +88,25 @@ export const safeUpdateDoc = async (
   data: FirestorePayload
 ): Promise<{ success: boolean; fromCache?: boolean; error?: string }> => {
   try {
-    const docRef = doc(db, collectionName, documentId);
-    await updateDoc(docRef, {
+    const tableName = mapCollectionName(collectionName);
+    const { error } = await supabase
+      .from(tableName)
+      .update({
       ...data,
-      updatedAt: serverTimestamp(),
-    });
+      updated_at: new Date().toISOString(),
+      })
+      .eq('id', documentId);
+
+    if (error) {
+      throw error;
+    }
 
     console.log(`✅ Document updated: ${collectionName}/${documentId}`);
     return { success: true };
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
 
-    // Queue operation if offline
-    if (errorMessage.includes('offline') || errorMessage.includes('connectivity')) {
+    if (shouldQueueOffline(errorMessage)) {
       queueOfflineOperation(collectionName, 'update', documentId, {
         ...data,
         id: documentId,
@@ -105,16 +127,19 @@ export const safeDeleteDoc = async (
   documentId: string
 ): Promise<{ success: boolean; fromCache?: boolean; error?: string }> => {
   try {
-    const docRef = doc(db, collectionName, documentId);
-    await deleteDoc(docRef);
+    const tableName = mapCollectionName(collectionName);
+    const { error } = await supabase.from(tableName).delete().eq('id', documentId);
+
+    if (error) {
+      throw error;
+    }
 
     console.log(`✅ Document deleted: ${collectionName}/${documentId}`);
     return { success: true };
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
 
-    // Queue operation if offline
-    if (errorMessage.includes('offline') || errorMessage.includes('connectivity')) {
+    if (shouldQueueOffline(errorMessage)) {
       queueOfflineOperation(collectionName, 'delete', documentId, { id: documentId });
       return { success: true, fromCache: true };
     }
@@ -137,26 +162,31 @@ export const safeGetDoc = async (
   error?: string;
 }> => {
   try {
-    const docRef = doc(db, collectionName, documentId);
-    const docSnap = await getDoc(docRef);
+    const tableName = mapCollectionName(collectionName);
+    const { data, error } = await supabase
+      .from(tableName)
+      .select('*')
+      .eq('id', documentId)
+      .maybeSingle();
 
-    const fromCache = docSnap.metadata.fromCache;
-    const exists = docSnap.exists();
+    if (error) {
+      throw error;
+    }
 
-    if (exists) {
+    if (data) {
       console.log(
         `📖 Document retrieved (${
-          fromCache ? 'from cache' : 'from server'
+          'from server'
         }): ${collectionName}/${documentId}`
       );
       return {
-        data: { id: docSnap.id, ...docSnap.data() },
-        fromCache,
+        data: { id: String((data as Record<string, unknown>).id), ...(data as Record<string, unknown>) },
+        fromCache: false,
         exists: true,
       };
     }
 
-    return { data: null, fromCache, exists: false };
+    return { data: null, fromCache: false, exists: false };
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     console.error(`❌ Failed to get document: ${collectionName}/${documentId}`, error);
@@ -172,25 +202,45 @@ export const safeQuery = async (
   constraints: QueryConstraint[] = []
 ): Promise<{ documents: FirestorePayload[]; fromCache: boolean; error?: string }> => {
   try {
-    const q = query(collection(db, collectionName), ...constraints);
-    const querySnapshot = await getDocs(q);
+    const tableName = mapCollectionName(collectionName);
+    let dbQuery = supabase.from(tableName).select('*');
 
-    const documents = querySnapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data(),
+    for (const constraint of constraints) {
+      if (constraint.type === 'eq') {
+        dbQuery = dbQuery.eq(constraint.field, constraint.value);
+      }
+
+      if (constraint.type === 'orderBy') {
+        dbQuery = dbQuery.order(constraint.field, {
+          ascending: (constraint.direction || 'asc') === 'asc',
+        });
+      }
+
+      if (constraint.type === 'limit' && typeof constraint.value === 'number') {
+        dbQuery = dbQuery.limit(constraint.value);
+      }
+    }
+
+    const { data, error } = await dbQuery;
+
+    if (error) {
+      throw error;
+    }
+
+    const documents = (data || []).map(row => ({
+      id: String((row as Record<string, unknown>).id),
+      ...(row as Record<string, unknown>),
     }));
 
-    const fromCache = querySnapshot.metadata.fromCache;
-
     console.log(
-      `📖 Query executed (${fromCache ? 'from cache' : 'from server'}): ${collectionName}`,
+      `📖 Query executed (from server): ${collectionName}`,
       {
         count: documents.length,
         constraints: constraints.length,
       }
     );
 
-    return { documents, fromCache };
+    return { documents, fromCache: false };
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     console.error(`❌ Query failed: ${collectionName}`, error);
@@ -206,19 +256,31 @@ export const safeAddDoc = async (
   data: FirestorePayload
 ): Promise<{ id?: string; success: boolean; fromCache?: boolean; error?: string }> => {
   try {
-    const docRef = await addDoc(collection(db, collectionName), {
+    const tableName = mapCollectionName(collectionName);
+    const payload = {
       ...data,
-      createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp(),
-    });
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
 
-    console.log(`✅ Document added: ${collectionName}/${docRef.id}`);
-    return { success: true, id: docRef.id };
+    const { data: inserted, error } = await supabase
+      .from(tableName)
+      .insert(payload)
+      .select('id')
+      .single();
+
+    if (error) {
+      throw error;
+    }
+
+    const insertedId = String((inserted as Record<string, unknown>).id);
+
+    console.log(`✅ Document added: ${collectionName}/${insertedId}`);
+    return { success: true, id: insertedId };
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
 
-    // Queue operation if offline (generate temporary ID)
-    if (errorMessage.includes('offline') || errorMessage.includes('connectivity')) {
+    if (shouldQueueOffline(errorMessage)) {
       const tempId = `offline_${Date.now()}_${Math.random()}`;
       queueOfflineOperation(collectionName, 'create', tempId, {
         ...data,
@@ -244,32 +306,55 @@ export const safeBatchWrite = async (
   }>
 ): Promise<{ success: boolean; queued?: number; error?: string }> => {
   try {
-    const batch = writeBatch(db);
-
     for (const op of operations) {
-      const docRef = doc(db, op.collection, op.id);
+      const tableName = mapCollectionName(op.collection);
 
       switch (op.type) {
         case 'set':
-          batch.set(docRef, op.data || {});
+          {
+            const { error } = await supabase.from(tableName).upsert({
+              ...(op.data || {}),
+              id: op.id,
+              updated_at: new Date().toISOString(),
+            });
+
+            if (error) {
+              throw error;
+            }
+          }
           break;
         case 'update':
-          batch.update(docRef, op.data || {});
+          {
+            const { error } = await supabase
+              .from(tableName)
+              .update({
+                ...(op.data || {}),
+                updated_at: new Date().toISOString(),
+              })
+              .eq('id', op.id);
+
+            if (error) {
+              throw error;
+            }
+          }
           break;
         case 'delete':
-          batch.delete(docRef);
+          {
+            const { error } = await supabase.from(tableName).delete().eq('id', op.id);
+            if (error) {
+              throw error;
+            }
+          }
           break;
       }
     }
 
-    await batch.commit();
     console.log(`✅ Batch write completed: ${operations.length} operations`);
     return { success: true };
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
 
-    // Queue all operations if batch fails offline
-    if (errorMessage.includes('offline') || errorMessage.includes('connectivity')) {
+    if (shouldQueueOffline(errorMessage)) {
       let queuedCount = 0;
       for (const op of operations) {
         const operation = op.type === 'set' ? 'create' : op.type;

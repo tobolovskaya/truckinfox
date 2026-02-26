@@ -1,12 +1,5 @@
-import { analytics } from './firebase';
-import { logEvent as firebaseLogEvent } from 'firebase/analytics';
-
 const logFirebaseEvent = (eventName: string, params?: Record<string, string | number>) => {
-  if (!analytics) {
-    return;
-  }
-
-  firebaseLogEvent(analytics, eventName, params);
+  console.log(`📊 Analytics event: ${eventName}`, params);
 };
 
 export const logEvent = {

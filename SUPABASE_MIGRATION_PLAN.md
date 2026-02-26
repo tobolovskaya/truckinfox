@@ -114,6 +114,9 @@ Completed in this phase:
 - `utils/idempotency.ts` migrated to Supabase idempotency checks
 - `utils/batchFetch.ts` migrated to Supabase batch fetch queries
 - `lib/firestore-helpers.ts` migrated to Supabase helper APIs
+- `utils/search.ts` migrated to Supabase search queries
+- `lib/safeFirestoreOps.ts` migrated to Supabase safe operation wrappers
+- `lib/offlineSync.ts` migrated to Supabase offline queue sync
 
 ## 6) Progressive migration strategy from legacy Firebase code
 

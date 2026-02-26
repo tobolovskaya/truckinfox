@@ -1,6 +1,3 @@
-import { logEvent as firebaseLogEvent } from 'firebase/analytics';
-import { analytics } from '../lib/firebase';
-
 type AnalyticsParams = Record<string, unknown>;
 
 /**
@@ -10,14 +7,7 @@ type AnalyticsParams = Record<string, unknown>;
  */
 export const logEvent = (eventName: string, params?: AnalyticsParams) => {
   try {
-    // Only log if analytics is initialized (web platform)
-    if (analytics) {
-      firebaseLogEvent(analytics, eventName, params);
-      console.log(`📊 Analytics: ${eventName}`, params);
-    } else {
-      // For native platforms, just log to console for now
-      console.log(`📊 Analytics (console only): ${eventName}`, params);
-    }
+    console.log(`📊 Analytics: ${eventName}`, params);
   } catch (error) {
     console.error('Error logging analytics event:', error);
   }

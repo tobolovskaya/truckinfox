@@ -1,4 +1,7 @@
-import type { DocumentData, Firestore } from 'firebase/firestore';
+import { supabase } from '../lib/supabase';
+
+type DocumentData = Record<string, unknown>;
+type Firestore = unknown;
 
 /**
  * Search utilities for generating searchable terms
@@ -141,8 +144,7 @@ export function normalizeSearchQuery(query: string): string {
  * @returns Array of matching user documents
  *
  * @example
- * import { db } from '../lib/firebase';
- * const users = await searchUsers(db, "john", 10);
+ * const users = await searchUsers(undefined, "john", 10);
  * // Returns up to 10 users with "john" in their name
  *
  * @note Requires users collection to have search_terms array field
@@ -153,35 +155,33 @@ export async function searchUsers(
   searchQuery: string,
   limit: number = 20
 ): Promise<Array<{ id: string } & DocumentData>> {
+  void db;
+
   if (!searchQuery || searchQuery.trim().length === 0) {
     return [];
   }
 
-  const {
-    collection,
-    query,
-    where,
-    getDocs,
-    orderBy,
-    limit: firestoreLimit,
-  } = await import('firebase/firestore');
-
   const normalizedQuery = normalizeSearchQuery(searchQuery);
 
   try {
-    const usersQuery = query(
-      collection(db, 'users'),
-      where('search_terms', 'array-contains', normalizedQuery),
-      orderBy('created_at', 'desc'),
-      firestoreLimit(limit)
-    );
+    const { data, error } = await supabase
+      .from('users')
+      .select('*')
+      .or(`full_name.ilike.%${normalizedQuery}%,email.ilike.%${normalizedQuery}%`)
+      .order('created_at', { ascending: false })
+      .limit(limit);
 
-    const snapshot = await getDocs(usersQuery);
+    if (error) {
+      throw error;
+    }
 
-    return snapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data(),
-    }));
+    return (data || []).map(row => {
+      const mapped = row as Record<string, unknown>;
+      return {
+        id: String(mapped.id),
+        ...mapped,
+      };
+    });
   } catch (error) {
     console.error('Error searching users:', error);
     return [];
@@ -199,8 +199,7 @@ export async function searchUsers(
  * @returns Array of matching cargo request documents
  *
  * @example
- * import { db } from '../lib/firebase';
- * const requests = await searchCargoRequests(db, "furniture oslo", 10);
+ * const requests = await searchCargoRequests(undefined, "furniture oslo", 10);
  * // Returns up to 10 cargo requests matching "furniture oslo"
  *
  * @note Requires cargo_requests collection to have search_terms array field
@@ -210,36 +209,36 @@ export async function searchCargoRequests(
   searchQuery: string,
   limit: number = 20
 ): Promise<Array<{ id: string } & DocumentData>> {
+  void db;
+
   if (!searchQuery || searchQuery.trim().length === 0) {
     return [];
   }
 
-  const {
-    collection,
-    query,
-    where,
-    getDocs,
-    orderBy,
-    limit: firestoreLimit,
-  } = await import('firebase/firestore');
-
   const normalizedQuery = normalizeSearchQuery(searchQuery);
 
   try {
-    const requestsQuery = query(
-      collection(db, 'cargo_requests'),
-      where('search_terms', 'array-contains', normalizedQuery),
-      where('status', '==', 'open'),
-      orderBy('created_at', 'desc'),
-      firestoreLimit(limit)
-    );
+    const { data, error } = await supabase
+      .from('cargo_requests')
+      .select('*')
+      .in('status', ['open', 'bidding'])
+      .or(
+        `title.ilike.%${normalizedQuery}%,description.ilike.%${normalizedQuery}%,from_address.ilike.%${normalizedQuery}%,to_address.ilike.%${normalizedQuery}%,cargo_type.ilike.%${normalizedQuery}%`
+      )
+      .order('created_at', { ascending: false })
+      .limit(limit);
 
-    const snapshot = await getDocs(requestsQuery);
+    if (error) {
+      throw error;
+    }
 
-    return snapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data(),
-    }));
+    return (data || []).map(row => {
+      const mapped = row as Record<string, unknown>;
+      return {
+        id: String(mapped.id),
+        ...mapped,
+      };
+    });
   } catch (error) {
     console.error('Error searching cargo requests:', error);
     return [];

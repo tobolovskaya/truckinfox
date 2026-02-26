@@ -5,15 +5,20 @@ import {
 } from '../../utils/analytics';
 
 const mockLogEvent = jest.fn();
+let consoleLogSpy: jest.SpyInstance;
 
-jest.mock('firebase/analytics', () => ({
-  logEvent: (_analytics: unknown, eventName: string, params?: unknown) =>
-    mockLogEvent(eventName, params),
-}));
+beforeAll(() => {
+  consoleLogSpy = jest.spyOn(console, 'log').mockImplementation((message?: unknown, ...args: unknown[]) => {
+    if (typeof message === 'string' && message.startsWith('📊 Analytics: ')) {
+      const eventName = message.replace('📊 Analytics: ', '');
+      mockLogEvent(eventName, args[0]);
+    }
+  });
+});
 
-jest.mock('../../lib/firebase', () => ({
-  analytics: {},
-}));
+afterAll(() => {
+  consoleLogSpy.mockRestore();
+});
 
 describe('Analytics Tracking', () => {
   beforeEach(() => {
