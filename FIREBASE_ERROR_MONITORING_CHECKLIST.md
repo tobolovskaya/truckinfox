@@ -14,6 +14,15 @@ This checklist keeps error monitoring fully on Firebase services.
 - [ ] Confirm `app_error` event appears after a forced test error.
 - [ ] Add event parameter filters for `source`, `has_stack`, and `message`.
 
+### Quick dashboard setup for `app_error`
+
+- [ ] Go to Analytics → Events → `app_error` → mark as conversion (optional for alert-style tracking).
+- [ ] In Reports, create a detail report with breakdown by parameter `source`.
+- [ ] Add a filter: `has_stack = 1` to prioritize actionable crashes first.
+- [ ] Add a second view grouped by `message` to find repeated failures.
+- [ ] Compare last 7 days vs previous period to catch regressions after releases.
+- [ ] Save an Exploration with dimensions: `Event name`, `source`, `message`; metric: `Event count`.
+
 ## 3) Optional Alerting via Cloud Functions
 
 - [ ] If needed, create a scheduled Cloud Function that queries high `app_error` frequency and sends alert (Slack/email).

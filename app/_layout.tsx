@@ -14,6 +14,7 @@ import { ErrorBoundary } from '../components/ErrorBoundary';
 import { NetworkStatusBar } from '../components/NetworkStatusBar';
 import { theme } from '../theme/theme';
 import { initializeOfflineSync } from '../lib/offlineSync';
+import { initializeGlobalErrorTracking } from '../lib/errorTracking';
 import 'react-native-url-polyfill/auto';
 
 const queryClient = new QueryClient({
@@ -34,9 +35,13 @@ LogBox.ignoreLogs([
 export default function RootLayout() {
   // Initialize offline-first sync on app startup
   useEffect(() => {
-    const cleanup = initializeOfflineSync();
+    const cleanupOfflineSync = initializeOfflineSync();
+    const cleanupErrorTracking = initializeGlobalErrorTracking();
 
-    return cleanup;
+    return () => {
+      cleanupErrorTracking();
+      cleanupOfflineSync();
+    };
   }, []);
 
   return (
