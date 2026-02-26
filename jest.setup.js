@@ -1,11 +1,11 @@
 import '@testing-library/jest-native/extend-expect';
 
 // Mock global fetch
-global.fetch = jest.fn();
+globalThis.fetch = jest.fn();
 
 // Mock AbortController and AbortSignal if not available
-if (!global.AbortController) {
-  global.AbortController = class AbortController {
+if (!globalThis.AbortController) {
+  globalThis.AbortController = class AbortController {
     signal = { aborted: false };
     abort() {
       this.signal.aborted = true;
@@ -13,8 +13,8 @@ if (!global.AbortController) {
   };
 }
 
-if (!global.AbortSignal) {
-  global.AbortSignal = class AbortSignal {
+if (!globalThis.AbortSignal) {
+  globalThis.AbortSignal = class AbortSignal {
     aborted = false;
   };
 }

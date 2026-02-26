@@ -1,4 +1,8 @@
-import { searchNorwegianPlaces, getPlaceDetails, calculateDistance } from '../../utils/googlePlaces';
+import {
+  searchNorwegianPlaces,
+  getPlaceDetails,
+  calculateDistance,
+} from '../../utils/googlePlaces';
 import * as fetchUtils from '../../utils/fetchWithTimeout';
 
 jest.mock('../../utils/fetchWithTimeout', () => ({
@@ -56,9 +60,7 @@ describe('Google Places Utils', () => {
     });
 
     it('should fall back to offline cities on API failure', async () => {
-      (fetchUtils.fetchWithRetry as jest.Mock).mockRejectedValueOnce(
-        new Error('Network error')
-      );
+      (fetchUtils.fetchWithRetry as jest.Mock).mockRejectedValueOnce(new Error('Network error'));
 
       process.env.EXPO_PUBLIC_GOOGLE_PLACES_API_KEY = 'test-key';
 
@@ -148,9 +150,7 @@ describe('Google Places Utils', () => {
     });
 
     it('should return null on API error', async () => {
-      (fetchUtils.fetchWithRetry as jest.Mock).mockRejectedValueOnce(
-        new Error('Network error')
-      );
+      (fetchUtils.fetchWithRetry as jest.Mock).mockRejectedValueOnce(new Error('Network error'));
 
       process.env.EXPO_PUBLIC_GOOGLE_PLACES_API_KEY = 'test-key';
 
@@ -236,9 +236,7 @@ describe('Google Places Utils', () => {
     });
 
     it('should return null on calculation error', async () => {
-      (fetchUtils.fetchWithRetry as jest.Mock).mockRejectedValueOnce(
-        new Error('Network error')
-      );
+      (fetchUtils.fetchWithRetry as jest.Mock).mockRejectedValueOnce(new Error('Network error'));
 
       process.env.EXPO_PUBLIC_GOOGLE_PLACES_API_KEY = 'test-key';
 

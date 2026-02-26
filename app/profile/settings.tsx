@@ -149,7 +149,11 @@ export default function SettingsScreen() {
     <View style={styles.container}>
       <ScreenHeader title={t('settings')} showBackButton={true} />
 
-      <ScrollView style={styles.content} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        style={styles.content}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
         {/* Language & Region Section */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>{t('languageRegion')}</Text>
@@ -160,7 +164,9 @@ export default function SettingsScreen() {
                 <Ionicons name="globe-outline" size={24} color={colors.primary} />
                 <View style={styles.settingTextContainer}>
                   <Text style={styles.settingLabel}>{t('language')}</Text>
-                  <Text style={styles.settingValue}>{currentLanguage === 'no' ? t('norwegian') : t('english')}</Text>
+                  <Text style={styles.settingValue}>
+                    {currentLanguage === 'no' ? t('norwegian') : t('english')}
+                  </Text>
                 </View>
               </View>
             </View>
@@ -169,19 +175,35 @@ export default function SettingsScreen() {
 
             <View style={styles.languageButtons}>
               <TouchableOpacity
-                style={[styles.languageButton, currentLanguage === 'no' && styles.languageButtonActive]}
+                style={[
+                  styles.languageButton,
+                  currentLanguage === 'no' && styles.languageButtonActive,
+                ]}
                 onPress={() => handleLanguageChange('no')}
               >
-                <Text style={[styles.languageButtonText, currentLanguage === 'no' && styles.languageButtonTextActive]}>
+                <Text
+                  style={[
+                    styles.languageButtonText,
+                    currentLanguage === 'no' && styles.languageButtonTextActive,
+                  ]}
+                >
                   {t('norwegian')}
                 </Text>
               </TouchableOpacity>
 
               <TouchableOpacity
-                style={[styles.languageButton, currentLanguage === 'en' && styles.languageButtonActive]}
+                style={[
+                  styles.languageButton,
+                  currentLanguage === 'en' && styles.languageButtonActive,
+                ]}
                 onPress={() => handleLanguageChange('en')}
               >
-                <Text style={[styles.languageButtonText, currentLanguage === 'en' && styles.languageButtonTextActive]}>
+                <Text
+                  style={[
+                    styles.languageButtonText,
+                    currentLanguage === 'en' && styles.languageButtonTextActive,
+                  ]}
+                >
                   {t('english')}
                 </Text>
               </TouchableOpacity>
@@ -206,7 +228,11 @@ export default function SettingsScreen() {
                 value={notificationSettings.push_notifications_enabled}
                 onValueChange={() => handleNotificationToggle('push_notifications_enabled')}
                 trackColor={{ false: colors.border.default, true: `${colors.primary}40` }}
-                thumbColor={notificationSettings.push_notifications_enabled ? colors.primary : colors.text.tertiary}
+                thumbColor={
+                  notificationSettings.push_notifications_enabled
+                    ? colors.primary
+                    : colors.text.tertiary
+                }
               />
             </View>
 
@@ -223,7 +249,11 @@ export default function SettingsScreen() {
                     value={notificationSettings.new_orders_notifications}
                     onValueChange={() => handleNotificationToggle('new_orders_notifications')}
                     trackColor={{ false: colors.border.default, true: `${colors.primary}40` }}
-                    thumbColor={notificationSettings.new_orders_notifications ? colors.primary : colors.text.tertiary}
+                    thumbColor={
+                      notificationSettings.new_orders_notifications
+                        ? colors.primary
+                        : colors.text.tertiary
+                    }
                   />
                 </View>
 
@@ -231,14 +261,22 @@ export default function SettingsScreen() {
 
                 <View style={styles.settingRow}>
                   <View style={styles.settingInfo}>
-                    <Ionicons name="checkmark-circle-outline" size={20} color={colors.text.secondary} />
+                    <Ionicons
+                      name="checkmark-circle-outline"
+                      size={20}
+                      color={colors.text.secondary}
+                    />
                     <Text style={styles.settingLabel}>{t('statusUpdatesNotifications')}</Text>
                   </View>
                   <Switch
                     value={notificationSettings.status_updates_notifications}
                     onValueChange={() => handleNotificationToggle('status_updates_notifications')}
                     trackColor={{ false: colors.border.default, true: `${colors.primary}40` }}
-                    thumbColor={notificationSettings.status_updates_notifications ? colors.primary : colors.text.tertiary}
+                    thumbColor={
+                      notificationSettings.status_updates_notifications
+                        ? colors.primary
+                        : colors.text.tertiary
+                    }
                   />
                 </View>
 
@@ -253,7 +291,9 @@ export default function SettingsScreen() {
                     value={notificationSettings.bid_notifications}
                     onValueChange={() => handleNotificationToggle('bid_notifications')}
                     trackColor={{ false: colors.border.default, true: `${colors.primary}40` }}
-                    thumbColor={notificationSettings.bid_notifications ? colors.primary : colors.text.tertiary}
+                    thumbColor={
+                      notificationSettings.bid_notifications ? colors.primary : colors.text.tertiary
+                    }
                   />
                 </View>
 
@@ -268,7 +308,11 @@ export default function SettingsScreen() {
                     value={notificationSettings.message_notifications}
                     onValueChange={() => handleNotificationToggle('message_notifications')}
                     trackColor={{ false: colors.border.default, true: `${colors.primary}40` }}
-                    thumbColor={notificationSettings.message_notifications ? colors.primary : colors.text.tertiary}
+                    thumbColor={
+                      notificationSettings.message_notifications
+                        ? colors.primary
+                        : colors.text.tertiary
+                    }
                   />
                 </View>
               </>
@@ -292,7 +336,9 @@ export default function SettingsScreen() {
                 value={privacySettings.show_phone_publicly}
                 onValueChange={() => handlePrivacyToggle('show_phone_publicly')}
                 trackColor={{ false: colors.border.default, true: `${colors.primary}40` }}
-                thumbColor={privacySettings.show_phone_publicly ? colors.primary : colors.text.tertiary}
+                thumbColor={
+                  privacySettings.show_phone_publicly ? colors.primary : colors.text.tertiary
+                }
               />
             </View>
 
@@ -309,7 +355,9 @@ export default function SettingsScreen() {
                 value={privacySettings.show_email_publicly}
                 onValueChange={() => handlePrivacyToggle('show_email_publicly')}
                 trackColor={{ false: colors.border.default, true: `${colors.primary}40` }}
-                thumbColor={privacySettings.show_email_publicly ? colors.primary : colors.text.tertiary}
+                thumbColor={
+                  privacySettings.show_email_publicly ? colors.primary : colors.text.tertiary
+                }
               />
             </View>
 
@@ -326,7 +374,9 @@ export default function SettingsScreen() {
                 value={privacySettings.allow_location_tracking}
                 onValueChange={() => handlePrivacyToggle('allow_location_tracking')}
                 trackColor={{ false: colors.border.default, true: `${colors.primary}40` }}
-                thumbColor={privacySettings.allow_location_tracking ? colors.primary : colors.text.tertiary}
+                thumbColor={
+                  privacySettings.allow_location_tracking ? colors.primary : colors.text.tertiary
+                }
               />
             </View>
           </View>
@@ -337,7 +387,10 @@ export default function SettingsScreen() {
           <Text style={styles.sectionTitle}>{t('otherSettings')}</Text>
 
           <View style={styles.settingsCard}>
-            <TouchableOpacity style={styles.settingRow} onPress={() => Alert.alert(t('info') || 'Info', 'Version 1.0.0')}>
+            <TouchableOpacity
+              style={styles.settingRow}
+              onPress={() => Alert.alert(t('info') || 'Info', 'Version 1.0.0')}
+            >
               <View style={styles.settingInfo}>
                 <Ionicons name="information-circle-outline" size={24} color={colors.primary} />
                 <View style={styles.settingTextContainer}>

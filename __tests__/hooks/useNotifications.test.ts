@@ -44,19 +44,17 @@ describe('useNotifications', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     const mockUnsubscribe = jest.fn();
-    (firebaseFirestore.onSnapshot as jest.Mock).mockImplementation(
-      (query, callback) => {
-        const mockSnapshot = {
-          docs: mockNotifications.map(notif => ({
-            id: notif.id,
-            data: () => notif,
-          })),
-          empty: false,
-        };
-        callback(mockSnapshot);
-        return mockUnsubscribe;
-      }
-    );
+    (firebaseFirestore.onSnapshot as jest.Mock).mockImplementation((query, callback) => {
+      const mockSnapshot = {
+        docs: mockNotifications.map(notif => ({
+          id: notif.id,
+          data: () => notif,
+        })),
+        empty: false,
+      };
+      callback(mockSnapshot);
+      return mockUnsubscribe;
+    });
   });
 
   it('should fetch user notifications on mount', async () => {
@@ -149,9 +147,7 @@ describe('useNotifications', () => {
       expect(result.current.loading).toBe(false);
     });
 
-    const newBidNotifications = result.current.notifications.filter(
-      n => n.type === 'new_bid'
-    );
+    const newBidNotifications = result.current.notifications.filter(n => n.type === 'new_bid');
     expect(newBidNotifications).toHaveLength(1);
     expect(newBidNotifications[0].title).toBe('New Bid Received');
   });

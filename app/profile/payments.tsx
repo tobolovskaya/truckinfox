@@ -7,7 +7,6 @@ import {
   TouchableOpacity,
   RefreshControl,
   ActivityIndicator,
-  Dimensions,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
@@ -17,8 +16,6 @@ import { ScreenHeader } from '../../components/ScreenHeader';
 import { EmptyState } from '../../components/EmptyState';
 import { usePaymentHistory, PaymentRecord } from '../../hooks/usePaymentHistory';
 
-const { width } = Dimensions.get('window');
-
 export default function PaymentsScreen() {
   const { t } = useTranslation();
   const { user } = useAuth();
@@ -27,12 +24,20 @@ export default function PaymentsScreen() {
   );
 
   const userId = user?.uid;
-  
-  const { payments, stats, isLoading, isFetchingNextPage, hasNextPage, fetchNextPage, error, refetch } =
-    usePaymentHistory({
-      userId: userId || '',
-      statusFilter: selectedStatus,
-    });
+
+  const {
+    payments,
+    stats,
+    isLoading,
+    isFetchingNextPage,
+    hasNextPage,
+    fetchNextPage,
+    error,
+    refetch,
+  } = usePaymentHistory({
+    userId: userId || '',
+    statusFilter: selectedStatus,
+  });
 
   const displayedPayments = useMemo(() => {
     if (!payments) return [];
@@ -85,17 +90,14 @@ export default function PaymentsScreen() {
     <View style={styles.paymentCard}>
       <View style={styles.paymentHeader}>
         <View style={styles.paymentInfo}>
-          <Text style={styles.paymentTitle}>{item.order_title || `Order ${item.order_id.slice(-6)}`}</Text>
+          <Text style={styles.paymentTitle}>
+            {item.order_title || `Order ${item.order_id.slice(-6)}`}
+          </Text>
           <Text style={styles.paymentDate}>{formatDate(item.created_at)}</Text>
         </View>
         <View style={styles.amountContainer}>
           <Text style={styles.amount}>{formatCurrency(item.amount, item.currency)}</Text>
-          <View
-            style={[
-              styles.statusBadge,
-              { backgroundColor: `${statusColors[item.status]}20` },
-            ]}
-          >
+          <View style={[styles.statusBadge, { backgroundColor: `${statusColors[item.status]}20` }]}>
             <Text style={[styles.statusText, { color: statusColors[item.status] }]}>
               {statusLabels[item.status]}
             </Text>
@@ -136,10 +138,7 @@ export default function PaymentsScreen() {
   const renderFilterButton = (status: PaymentRecord['status']) => (
     <TouchableOpacity
       key={status}
-      style={[
-        styles.filterButton,
-        selectedStatus === status && styles.filterButtonActive,
-      ]}
+      style={[styles.filterButton, selectedStatus === status && styles.filterButtonActive]}
       onPress={() => setSelectedStatus(selectedStatus === status ? undefined : status)}
     >
       <Text
@@ -173,9 +172,7 @@ export default function PaymentsScreen() {
         <View style={styles.statsSection}>
           <View style={styles.statCard}>
             <Text style={styles.statLabel}>{t('totalSpent') || 'Total Spent'}</Text>
-            <Text style={styles.statValue}>
-              {formatCurrency(stats.totalAmount, 'NOK')}
-            </Text>
+            <Text style={styles.statValue}>{formatCurrency(stats.totalAmount, 'NOK')}</Text>
           </View>
           <View style={styles.statCard}>
             <Text style={styles.statLabel}>{t('transactions') || 'Transactions'}</Text>
@@ -187,7 +184,7 @@ export default function PaymentsScreen() {
       {/* Filter Buttons */}
       <View style={styles.filterSection}>
         <View style={styles.filterButtons}>
-          {(['completed', 'pending', 'failed', 'refunded'] as const).map((status) =>
+          {(['completed', 'pending', 'failed', 'refunded'] as const).map(status =>
             renderFilterButton(status)
           )}
         </View>
@@ -210,7 +207,7 @@ export default function PaymentsScreen() {
         <FlatList
           data={displayedPayments}
           renderItem={renderPaymentCard}
-          keyExtractor={(item) => item.id}
+          keyExtractor={item => item.id}
           contentContainerStyle={styles.listContent}
           scrollEventThrottle={16}
           refreshControl={

@@ -218,21 +218,9 @@ describe('Analytics Tracking', () => {
       expect(mockLogEvent).toHaveBeenCalledTimes(3);
 
       // Verify call signatures
-      expect(mockLogEvent).toHaveBeenNthCalledWith(
-        1,
-        'cargo_request_deleted',
-        expect.any(Object)
-      );
-      expect(mockLogEvent).toHaveBeenNthCalledWith(
-        2,
-        'review_submitted',
-        expect.any(Object)
-      );
-      expect(mockLogEvent).toHaveBeenNthCalledWith(
-        3,
-        'user_registered',
-        expect.any(Object)
-      );
+      expect(mockLogEvent).toHaveBeenNthCalledWith(1, 'cargo_request_deleted', expect.any(Object));
+      expect(mockLogEvent).toHaveBeenNthCalledWith(2, 'review_submitted', expect.any(Object));
+      expect(mockLogEvent).toHaveBeenNthCalledWith(3, 'user_registered', expect.any(Object));
     });
   });
 });

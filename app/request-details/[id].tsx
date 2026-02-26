@@ -38,7 +38,11 @@ import {
   runTransaction,
   updateDoc,
 } from 'firebase/firestore';
-import { trackBidSubmitted, trackBidAccepted, trackCargoRequestDeleted } from '../../utils/analytics';
+import {
+  trackBidSubmitted,
+  trackBidAccepted,
+  trackCargoRequestDeleted,
+} from '../../utils/analytics';
 import { createChat } from '../../utils/chatManagement';
 import { colors, spacing, fontSize, borderRadius } from '../../lib/sharedStyles';
 import MapView, { Marker, Polyline, PROVIDER_GOOGLE } from 'react-native-maps';
@@ -695,7 +699,8 @@ export default function RequestDetailsScreen() {
                 <View style={styles.distanceInfo}>
                   <Ionicons name="navigate-outline" size={16} color={colors.text.secondary} />
                   <Text style={styles.distanceText}>
-                    {typeof request.distance_km === 'number' ? request.distance_km.toFixed(0) : '0'} km
+                    {typeof request.distance_km === 'number' ? request.distance_km.toFixed(0) : '0'}{' '}
+                    km
                   </Text>
                 </View>
               )}
@@ -734,7 +739,8 @@ export default function RequestDetailsScreen() {
                 <View style={styles.distanceInfo}>
                   <Ionicons name="navigate-outline" size={16} color={colors.text.secondary} />
                   <Text style={styles.distanceText}>
-                    {typeof request.distance_km === 'number' ? request.distance_km.toFixed(0) : '0'} km
+                    {typeof request.distance_km === 'number' ? request.distance_km.toFixed(0) : '0'}{' '}
+                    km
                   </Text>
                 </View>
               )}
@@ -755,7 +761,9 @@ export default function RequestDetailsScreen() {
                 <View style={styles.ratingRow}>
                   <Ionicons name="star" size={16} color="#FFA726" />
                   <Text style={styles.ratingText}>
-                    {typeof request.users.rating === 'number' ? request.users.rating.toFixed(1) : '0.0'}
+                    {typeof request.users.rating === 'number'
+                      ? request.users.rating.toFixed(1)
+                      : '0.0'}
                   </Text>
                 </View>
               </View>
@@ -835,7 +843,9 @@ export default function RequestDetailsScreen() {
                     <View style={styles.ratingRow}>
                       <Ionicons name="star" size={14} color="#FFA726" />
                       <Text style={styles.bidRating}>
-                        {typeof bid.users?.rating === 'number' ? bid.users.rating.toFixed(1) : '0.0'}
+                        {typeof bid.users?.rating === 'number'
+                          ? bid.users.rating.toFixed(1)
+                          : '0.0'}
                       </Text>
                     </View>
                   </View>

@@ -16,12 +16,13 @@ import {
   getDocs,
   addDoc,
   QueryConstraint,
-  WriteBatch,
   writeBatch,
   serverTimestamp,
 } from 'firebase/firestore';
 import { db } from './firebase';
 import { queueOfflineOperation } from './offlineSync';
+
+type FirestorePayload = Record<string, unknown>;
 
 /**
  * Safely set document with offline fallback
@@ -29,7 +30,7 @@ import { queueOfflineOperation } from './offlineSync';
 export const safeSetDoc = async (
   collectionName: string,
   documentId: string,
-  data: any,
+  data: FirestorePayload,
   merge = false
 ): Promise<{ success: boolean; fromCache?: boolean; error?: string }> => {
   try {
@@ -68,7 +69,7 @@ export const safeSetDoc = async (
 export const safeUpdateDoc = async (
   collectionName: string,
   documentId: string,
-  data: any
+  data: FirestorePayload
 ): Promise<{ success: boolean; fromCache?: boolean; error?: string }> => {
   try {
     const docRef = doc(db, collectionName, documentId);
@@ -129,7 +130,12 @@ export const safeDeleteDoc = async (
 export const safeGetDoc = async (
   collectionName: string,
   documentId: string
-): Promise<{ data: any; fromCache: boolean; exists: boolean; error?: string }> => {
+): Promise<{
+  data: FirestorePayload | null;
+  fromCache: boolean;
+  exists: boolean;
+  error?: string;
+}> => {
   try {
     const docRef = doc(db, collectionName, documentId);
     const docSnap = await getDoc(docRef);
@@ -162,7 +168,7 @@ export const safeGetDoc = async (
 export const safeQuery = async (
   collectionName: string,
   constraints: QueryConstraint[] = []
-): Promise<{ documents: any[]; fromCache: boolean; error?: string }> => {
+): Promise<{ documents: FirestorePayload[]; fromCache: boolean; error?: string }> => {
   try {
     const q = query(collection(db, collectionName), ...constraints);
     const querySnapshot = await getDocs(q);
@@ -195,7 +201,7 @@ export const safeQuery = async (
  */
 export const safeAddDoc = async (
   collectionName: string,
-  data: any
+  data: FirestorePayload
 ): Promise<{ id?: string; success: boolean; fromCache?: boolean; error?: string }> => {
   try {
     const docRef = await addDoc(collection(db, collectionName), {
@@ -232,7 +238,7 @@ export const safeBatchWrite = async (
     type: 'set' | 'update' | 'delete';
     collection: string;
     id: string;
-    data?: any;
+    data?: FirestorePayload;
   }>
 ): Promise<{ success: boolean; queued?: number; error?: string }> => {
   try {
@@ -264,7 +270,8 @@ export const safeBatchWrite = async (
     if (errorMessage.includes('offline') || errorMessage.includes('connectivity')) {
       let queuedCount = 0;
       for (const op of operations) {
-        queueOfflineOperation(op.collection, op.type as any, op.id, {
+        const operation = op.type === 'set' ? 'create' : op.type;
+        queueOfflineOperation(op.collection, operation, op.id, {
           ...op.data,
           id: op.id,
         });

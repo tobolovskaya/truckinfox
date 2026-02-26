@@ -1,5 +1,12 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, FlatList, ActivityIndicator } from 'react-native';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  FlatList,
+  ActivityIndicator,
+} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
@@ -88,18 +95,15 @@ export default function OrdersScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const indexWarningShownRef = useRef(false);
 
-  useEffect(() => {
-    if (user?.uid) {
-      fetchOrders();
-    }
-  }, [user?.uid]);
-
   const isIndexUnavailableError = (error: unknown): boolean => {
     const errorMessage = error instanceof Error ? error.message : String(error ?? '');
-    return errorMessage.includes('requires an index') || errorMessage.includes('index is currently building');
+    return (
+      errorMessage.includes('requires an index') ||
+      errorMessage.includes('index is currently building')
+    );
   };
 
-  const fetchOrders = async () => {
+  const fetchOrders = useCallback(async () => {
     if (!user?.uid) {
       setLoading(false);
       return;
@@ -144,7 +148,7 @@ export default function OrdersScreen() {
           console.warn('⏳ Orders index is being created. Using local fallback sorting...');
           indexWarningShownRef.current = true;
         }
-        
+
         try {
           const customerOrdersQuery = query(
             collection(db, 'orders'),
@@ -183,7 +187,13 @@ export default function OrdersScreen() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user?.uid]);
+
+  useEffect(() => {
+    if (user?.uid) {
+      fetchOrders();
+    }
+  }, [fetchOrders, user?.uid]);
 
   const handleRefresh = async () => {
     setRefreshing(true);
@@ -226,7 +236,10 @@ export default function OrdersScreen() {
           {item.cargo_title || t('order')} (#{item.id.slice(0, 8)})
         </Text>
         <View
-          style={[styles.statusBadge, { backgroundColor: getPaymentStatusColor(item.payment_status) }]}
+          style={[
+            styles.statusBadge,
+            { backgroundColor: getPaymentStatusColor(item.payment_status) },
+          ]}
         >
           <Text style={styles.statusBadgeText}>{t(item.payment_status)}</Text>
         </View>

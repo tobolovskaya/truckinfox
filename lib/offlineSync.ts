@@ -16,14 +16,18 @@ import {
   writeBatch,
   doc,
   serverTimestamp,
+  QueryConstraint,
 } from 'firebase/firestore';
 import NetInfo from '@react-native-community/netinfo';
+
+type OfflinePayload = Record<string, unknown>;
 
 export interface OfflineQueueItem {
   id: string;
   collectionName: string;
+  documentId: string;
   operation: 'create' | 'update' | 'delete';
-  data: any;
+  data: OfflinePayload;
   timestamp: number;
   retries: number;
   lastError?: string;
@@ -44,13 +48,14 @@ export const queueOfflineOperation = (
   collectionName: string,
   operation: 'create' | 'update' | 'delete',
   documentId: string,
-  data: any
+  data: OfflinePayload
 ): void => {
   const itemId = `${collectionName}_${documentId}_${Date.now()}`;
 
   const queueItem: OfflineQueueItem = {
     id: itemId,
     collectionName,
+    documentId,
     operation,
     data: {
       ...data,
@@ -95,7 +100,7 @@ export const syncOfflineQueue = async (): Promise<{
 
   for (const item of itemsToProcess) {
     try {
-      const docRef = doc(db, item.collectionName, item.data.id || '');
+      const docRef = doc(db, item.collectionName, item.documentId);
 
       switch (item.operation) {
         case 'create':
@@ -198,8 +203,8 @@ export const getOfflineQueueStats = (): {
  */
 export const queryLocal = async (
   collectionName: string,
-  constraints: any[] = []
-): Promise<any[]> => {
+  constraints: QueryConstraint[] = []
+): Promise<OfflinePayload[]> => {
   try {
     const q = query(collection(db, collectionName), ...constraints);
     const snapshot = await getDocs(q);
