@@ -15,6 +15,7 @@ import { NetworkStatusBar } from '../components/NetworkStatusBar';
 import { theme } from '../theme/theme';
 import { initializeOfflineSync } from '../lib/offlineSync';
 import 'react-native-url-polyfill/auto';
+import { Sentry } from '../lib/sentry';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -31,7 +32,7 @@ LogBox.ignoreLogs([
   'VirtualizedLists should never be nested',
 ]);
 
-export default function RootLayout() {
+export default Sentry.wrap(function RootLayout() {
   // Initialize offline-first sync on app startup
   useEffect(() => {
     const cleanup = initializeOfflineSync();
@@ -61,4 +62,4 @@ export default function RootLayout() {
       </GestureHandlerRootView>
     </ErrorBoundary>
   );
-}
+});
