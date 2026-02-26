@@ -1,7 +1,7 @@
 import 'react-native-reanimated';
 import 'react-native-get-random-values';
 import React, { useEffect } from 'react';
-import { LogBox, View, useColorScheme } from 'react-native';
+import { LogBox, View } from 'react-native';
 import { Stack, useRouter } from 'expo-router';
 import Constants from 'expo-constants';
 import type * as Notifications from 'expo-notifications';
@@ -16,6 +16,7 @@ import { ErrorBoundary } from '../components/ErrorBoundary';
 import { NetworkStatusBar } from '../components/NetworkStatusBar';
 import { theme } from '../theme/theme';
 import { darkTheme } from '../theme/darkTheme';
+import { ThemeProvider, useThemeMode } from '../contexts/ThemeContext';
 import { initializeOfflineSync } from '../lib/offlineSync';
 import { initializeGlobalErrorTracking } from '../lib/errorTracking';
 import 'react-native-url-polyfill/auto';
@@ -35,10 +36,10 @@ LogBox.ignoreLogs([
   'VirtualizedLists should never be nested',
 ]);
 
-export default function RootLayout() {
+function RootLayoutContent() {
   const router = useRouter();
-  const colorScheme = useColorScheme();
-  const currentTheme = colorScheme === 'dark' ? darkTheme : theme;
+  const { resolvedScheme } = useThemeMode();
+  const currentTheme = resolvedScheme === 'dark' ? darkTheme : theme;
 
   const handleNotificationNavigation = (data: {
     type?: string;
@@ -129,5 +130,13 @@ export default function RootLayout() {
         </QueryClientProvider>
       </GestureHandlerRootView>
     </ErrorBoundary>
+  );
+}
+
+export default function RootLayout() {
+  return (
+    <ThemeProvider>
+      <RootLayoutContent />
+    </ThemeProvider>
   );
 }

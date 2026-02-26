@@ -8,13 +8,13 @@ import {
   TouchableOpacity,
   Alert,
   ActivityIndicator,
-  useColorScheme,
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { useAuth } from '../../contexts/AuthContext';
 import { useI18n } from '../../contexts/I18nContext';
+import { useThemeMode } from '../../contexts/ThemeContext';
 import { db } from '../../lib/firebase';
 import { ScreenHeader } from '../../components/ScreenHeader';
 import { spacing, fontSize, fontWeight, useAppThemeStyles } from '../../lib/sharedStyles';
@@ -37,8 +37,8 @@ export default function SettingsScreen() {
   const { t } = useTranslation();
   const { colors } = useAppThemeStyles();
   const styles = useMemo(() => createStyles(colors), [colors]);
-  const colorScheme = useColorScheme();
-  const isDarkMode = colorScheme === 'dark';
+  const { themeMode, resolvedScheme, setThemeMode } = useThemeMode();
+  const isDarkMode = resolvedScheme === 'dark';
   const { currentLanguage, changeLanguage } = useI18n();
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
@@ -222,33 +222,79 @@ export default function SettingsScreen() {
 
           <View style={styles.settingsCard}>
             <View style={styles.themeRow}>
-              <View style={[styles.themeOption, !isDarkMode && styles.themeOptionActive]}>
+              <TouchableOpacity
+                style={[
+                  styles.themeOption,
+                  themeMode === 'light' && styles.themeOptionActive,
+                ]}
+                onPress={() => setThemeMode('light')}
+                accessibilityRole="button"
+                accessibilityLabel={t('light') || 'Light'}
+              >
                 <Ionicons
                   name="sunny-outline"
                   size={20}
-                  color={!isDarkMode ? colors.primary : colors.text.secondary}
+                  color={themeMode === 'light' ? colors.primary : colors.text.secondary}
                 />
                 <Text
-                  style={[styles.themeOptionText, !isDarkMode && styles.themeOptionTextActive]}
+                  style={[
+                    styles.themeOptionText,
+                    themeMode === 'light' && styles.themeOptionTextActive,
+                  ]}
                 >
                   {t('light') || 'Light'}
                 </Text>
-              </View>
+              </TouchableOpacity>
 
-              <View style={[styles.themeOption, isDarkMode && styles.themeOptionActive]}>
+              <TouchableOpacity
+                style={[styles.themeOption, themeMode === 'dark' && styles.themeOptionActive]}
+                onPress={() => setThemeMode('dark')}
+                accessibilityRole="button"
+                accessibilityLabel={t('dark') || 'Dark'}
+              >
                 <Ionicons
                   name="moon-outline"
                   size={20}
-                  color={isDarkMode ? colors.primary : colors.text.secondary}
+                  color={themeMode === 'dark' ? colors.primary : colors.text.secondary}
                 />
-                <Text style={[styles.themeOptionText, isDarkMode && styles.themeOptionTextActive]}>
+                <Text
+                  style={[
+                    styles.themeOptionText,
+                    themeMode === 'dark' && styles.themeOptionTextActive,
+                  ]}
+                >
                   {t('dark') || 'Dark'}
                 </Text>
-              </View>
+              </TouchableOpacity>
             </View>
 
+            <TouchableOpacity
+              style={[styles.systemThemeButton, themeMode === 'system' && styles.themeOptionActive]}
+              onPress={() => setThemeMode('system')}
+              accessibilityRole="button"
+              accessibilityLabel={t('system') || 'System'}
+            >
+              <Ionicons
+                name="phone-portrait-outline"
+                size={16}
+                color={themeMode === 'system' ? colors.primary : colors.text.secondary}
+              />
+              <Text
+                style={[
+                  styles.systemThemeText,
+                  themeMode === 'system' && styles.themeOptionTextActive,
+                ]}
+              >
+                {t('system') || 'System'}
+              </Text>
+            </TouchableOpacity>
+
             <Text style={styles.themeHint}>
-              {t('themeFollowsSystem') || 'Theme follows system settings'}
+              {themeMode === 'system'
+                ? t('themeFollowsSystem') || 'Theme follows system settings'
+                : `${t('currentTheme') || 'Current theme'}: ${
+                    isDarkMode ? t('dark') || 'Dark' : t('light') || 'Light'
+                  }`}
             </Text>
           </View>
         </View>
@@ -589,6 +635,24 @@ const createStyles = (colors: ReturnType<typeof useAppThemeStyles>['colors']) =>
     paddingHorizontal: spacing.md,
     paddingTop: spacing.sm,
     paddingBottom: spacing.md,
+  },
+  systemThemeButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.xs,
+    marginHorizontal: spacing.md,
+    marginTop: spacing.sm,
+    paddingVertical: spacing.sm,
+    borderRadius: spacing.sm,
+    borderWidth: 1,
+    borderColor: colors.border.default,
+    backgroundColor: colors.background,
+  },
+  systemThemeText: {
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.semibold,
+    color: colors.text.secondary,
   },
   savingIndicator: {
     flexDirection: 'row',

@@ -1,6 +1,7 @@
-import { StyleSheet, Platform, Appearance, useColorScheme } from 'react-native';
+import { StyleSheet, Platform, Appearance } from 'react-native';
 import { theme } from '../theme/theme';
 import { darkTheme } from '../theme/darkTheme';
+import { useThemeMode } from '../contexts/ThemeContext';
 
 const buildColors = (scheme: 'light' | 'dark' | null | undefined) => {
   const resolvedTheme = scheme === 'dark' ? darkTheme : theme;
@@ -74,10 +75,10 @@ export const getAppColors = (scheme?: 'light' | 'dark' | null) =>
 export const colors = getAppColors();
 
 export const useAppThemeStyles = () => {
-  const colorScheme = useColorScheme();
+  const { resolvedScheme } = useThemeMode();
 
   return {
-    colors: getAppColors(colorScheme),
+    colors: getAppColors(resolvedScheme),
     spacing,
     borderRadius,
     fontSize,
