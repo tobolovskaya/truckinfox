@@ -128,6 +128,55 @@ const sortRequestsClientSide = (requests: CargoRequest[], sortBy: SortOption): C
   return sorted;
 };
 
+const applyClientSideFilters = (
+  requests: CargoRequest[],
+  options: UseCargoRequestsOptions
+): CargoRequest[] => {
+  const { activeTab, filters, searchQuery, sortBy, userId } = options;
+  const normalizedSearchQuery = searchQuery?.trim() ? normalizeSearchQuery(searchQuery) : '';
+
+  let filtered = [...requests];
+
+  if (activeTab === 'my') {
+    filtered = filtered.filter(request => request.user_id === userId && request.status === 'active');
+  } else {
+    if (filters.cargo_type) {
+      filtered = filtered.filter(request => request.cargo_type === filters.cargo_type);
+    }
+    if (filters.price_type) {
+      filtered = filtered.filter(request => request.price_type === filters.price_type);
+    }
+    if (filters.price_min && !Number.isNaN(parseFloat(filters.price_min))) {
+      const min = parseFloat(filters.price_min);
+      filtered = filtered.filter(request => toNumber(request.price) >= min);
+    }
+    if (filters.price_max && !Number.isNaN(parseFloat(filters.price_max))) {
+      const max = parseFloat(filters.price_max);
+      filtered = filtered.filter(request => toNumber(request.price) <= max);
+    }
+  }
+
+  if (filters.city && activeTab !== 'my') {
+    const cityLower = filters.city.toLowerCase();
+    filtered = filtered.filter(
+      request =>
+        request.from_address?.toLowerCase().includes(cityLower) ||
+        request.to_address?.toLowerCase().includes(cityLower)
+    );
+  }
+
+  if (normalizedSearchQuery) {
+    filtered = filtered.filter(request => {
+      const terms = Array.isArray((request as { search_terms?: unknown }).search_terms)
+        ? ((request as { search_terms?: string[] }).search_terms ?? [])
+        : [];
+      return terms.includes(normalizedSearchQuery);
+    });
+  }
+
+  return sortRequestsClientSide(filtered, sortBy);
+};
+
 const buildConstraints = (options: UseCargoRequestsOptions) => {
   const { activeTab, filters, sortBy, searchQuery, userId } = options;
   const constraints: QueryConstraint[] = [];
@@ -250,7 +299,7 @@ const fetchCargoRequestsPage = async (
   const pagingConstraints = lastVisible ? [startAfter(lastVisible)] : [];
 
   let querySnapshot;
-  let usedMyTabFallback = false;
+  let usedFallback = false;
 
   try {
     const requestsQuery = query(
@@ -261,18 +310,23 @@ const fetchCargoRequestsPage = async (
     );
     querySnapshot = await getDocs(requestsQuery);
   } catch (error: unknown) {
-    const canUseMyTabFallback =
-      options.activeTab === 'my' &&
-      options.userId &&
+    const canUseFallback =
       error instanceof FirebaseError &&
-      (error.code === 'failed-precondition' || error.code === 'permission-denied');
+      (error.code === 'failed-precondition' ||
+        (options.activeTab === 'my' && options.userId && error.code === 'permission-denied'));
 
-    if (!canUseMyTabFallback) {
+    if (!canUseFallback) {
       throw error;
     }
 
-    usedMyTabFallback = true;
-    const fallbackConstraints: QueryConstraint[] = [where('user_id', '==', options.userId)];
+    usedFallback = true;
+    const fallbackConstraints: QueryConstraint[] = [];
+
+    if (options.activeTab === 'my' && options.userId) {
+      fallbackConstraints.push(where('user_id', '==', options.userId));
+    }
+
+    fallbackConstraints.push(orderBy('created_at', 'desc'));
     if (lastVisible) {
       fallbackConstraints.push(startAfter(lastVisible));
     }
@@ -295,18 +349,8 @@ const fetchCargoRequestsPage = async (
   const data = hydrated.filter((request): request is CargoRequest => request !== null);
 
   let filteredData = data;
-  if (options.activeTab === 'my' && usedMyTabFallback) {
-    filteredData = filteredData.filter(request => request.status === 'active');
-    filteredData = sortRequestsClientSide(filteredData, options.sortBy);
-  }
-
-  if (options.filters.city && options.activeTab !== 'my') {
-    const cityLower = options.filters.city.toLowerCase();
-    filteredData = data.filter(
-      request =>
-        request.from_address?.toLowerCase().includes(cityLower) ||
-        request.to_address?.toLowerCase().includes(cityLower)
-    );
+  if (usedFallback || (options.filters.city && options.activeTab !== 'my')) {
+    filteredData = applyClientSideFilters(data, options);
   }
 
   return { items: filteredData, lastVisible: lastDoc, hasMore };
