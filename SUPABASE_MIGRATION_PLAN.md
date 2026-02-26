@@ -117,6 +117,10 @@ Completed in this phase:
 - `utils/search.ts` migrated to Supabase search queries
 - `lib/safeFirestoreOps.ts` migrated to Supabase safe operation wrappers
 - `lib/offlineSync.ts` migrated to Supabase offline queue sync
+- `utils/analytics.ts`, `lib/analytics.ts`, `utils/performance.ts` migrated off Firebase runtime SDK usage
+- Jest setup/tests migrated off Firebase mocks (`jest.setup.js`, `__tests__/utils/analytics.test.ts`)
+
+Firebase import sweep is now clean for workspace source files (`ts/tsx/js/jsx`): no Firebase imports remain.
 
 ## 6) Progressive migration strategy from legacy Firebase code
 
