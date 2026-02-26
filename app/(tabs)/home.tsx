@@ -17,7 +17,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useCargoRequests, type SortOption } from '../../hooks/useCargoRequests';
 import { useCurrentUser } from '../../hooks/useCurrentUser';
 import { RequestCard } from '../../components/home/RequestCard';
-import { SkeletonCard } from '../../components/home/SkeletonCard';
+import { SkeletonLoader } from '../../components/SkeletonLoader';
 import { HomeHeader } from '../../components/home/HomeHeader';
 import { HomeTabBar } from '../../components/home/HomeTabBar';
 import { HomeSearchBar } from '../../components/home/HomeSearchBar';
@@ -246,10 +246,14 @@ export default function HomeScreen() {
         }
         renderItem={({ item, index }) =>
           loading ? (
-            <SkeletonCard
-              variantIndex={index + skeletonVariantSeed}
+            <SkeletonLoader
+              variant="card"
+              count={1}
+              layout="grid"
+              cardWidth={cardWidth}
+              cardGap={gridGap}
+              variantSeed={index + skeletonVariantSeed}
               compact={true}
-              cardStyle={{ width: cardWidth, marginBottom: gridGap }}
             />
           ) : (
             <RequestCard
