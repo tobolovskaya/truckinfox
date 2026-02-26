@@ -1,8 +1,8 @@
 /**
  * Geospatial Search Utilities
  *
- * Utilities for finding nearby cargo requests using geohash-based search.
- * Uses geofire-common for efficient geospatial queries with Firestore.
+ * Utilities for finding nearby cargo requests using location-based filtering.
+ * Uses geofire-common for geohash/distance helpers and Supabase for data access.
  *
  * Installation required:
  * npm install geofire-common
@@ -11,8 +11,7 @@
  */
 
 import { geohashForLocation, geohashQueryBounds, distanceBetween } from 'geofire-common';
-import { collection, query, where, orderBy, startAt, endAt, getDocs } from 'firebase/firestore';
-import { db } from '../lib/firebase';
+import { supabase } from '../lib/supabase';
 
 type GeoPointTuple = [number, number];
 
@@ -72,55 +71,58 @@ export async function findNearbyCargoRequests(
     const center: GeoPointTuple = [centerLat, centerLng];
     const radiusInM = radiusInKm * 1000;
 
-    // Calculate geohash query bounds
-    const bounds = geohashQueryBounds(center, radiusInM);
-    const promises = [];
+    // Keep geohash bounds utility call for compatibility with existing helper behavior.
+    // Supabase query below uses a bounding-box prefilter + exact distance filtering.
+    geohashQueryBounds(center, radiusInM);
 
-    // Create queries for each geohash range
-    for (const b of bounds) {
-      const geohashField = searchType === 'from' ? 'from_geohash' : 'to_geohash';
+    const latDelta = radiusInKm / 111;
+    const lngDenominator = Math.max(Math.cos((centerLat * Math.PI) / 180), 0.00001);
+    const lngDelta = radiusInKm / (111 * lngDenominator);
 
-      const q = query(
-        collection(db, 'cargo_requests'),
-        orderBy(geohashField),
-        startAt(b[0]),
-        endAt(b[1]),
-        where('status', '==', 'active')
-      );
+    const latField = searchType === 'from' ? 'from_lat' : 'to_lat';
+    const lngField = searchType === 'from' ? 'from_lng' : 'to_lng';
 
-      promises.push(getDocs(q));
+    const { data, error } = await supabase
+      .from('cargo_requests')
+      .select('*')
+      .in('status', ['open', 'bidding'])
+      .gte(latField, centerLat - latDelta)
+      .lte(latField, centerLat + latDelta)
+      .gte(lngField, centerLng - lngDelta)
+      .lte(lngField, centerLng + lngDelta)
+      .limit(500);
+
+    if (error) {
+      throw error;
     }
 
-    // Execute all queries in parallel
-    const snapshots = await Promise.all(promises);
+    const matchingDocs: CargoRequestResult[] = (data || [])
+      .map(row => {
+        const latRaw = row[latField as keyof typeof row];
+        const lngRaw = row[lngField as keyof typeof row];
+        const lat = typeof latRaw === 'number' ? latRaw : Number(latRaw);
+        const lng = typeof lngRaw === 'number' ? lngRaw : Number(lngRaw);
 
-    const matchingDocs: CargoRequestResult[] = [];
-
-    // Collect all matching documents
-    for (const snap of snapshots) {
-      for (const doc of snap.docs) {
-        const data = doc.data();
-        const lat = searchType === 'from' ? data.from_lat : data.to_lat;
-        const lng = searchType === 'from' ? data.from_lng : data.to_lng;
-
-        // Filter by exact distance
-        if (typeof lat === 'number' && typeof lng === 'number') {
-          const point: GeoPointTuple = [lat, lng];
-          const distanceInKm = distanceBetween(point, center);
-          const distanceInM = distanceInKm * 1000;
-
-          if (distanceInM <= radiusInM) {
-            matchingDocs.push({
-              id: doc.id,
-              ...data,
-              distance_to_search_center: distanceInKm,
-            });
-          }
+        if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+          return null;
         }
-      }
-    }
 
-    // Remove duplicates (geohash ranges can overlap)
+        const distanceInKm = distanceBetween([lat, lng], center);
+        const distanceInM = distanceInKm * 1000;
+
+        if (distanceInM > radiusInM) {
+          return null;
+        }
+
+        return {
+          id: row.id,
+          ...row,
+          weight: typeof row.weight_kg === 'number' ? row.weight_kg : Number(row.weight_kg),
+          distance_to_search_center: distanceInKm,
+        } as CargoRequestResult;
+      })
+      .filter((doc): doc is CargoRequestResult => Boolean(doc));
+
     const uniqueDocs = matchingDocs.filter(
       (doc, index, self) => index === self.findIndex(d => d.id === doc.id)
     );

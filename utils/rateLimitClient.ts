@@ -1,5 +1,4 @@
-import { app } from '../lib/firebase';
-import { FunctionsError, getFunctions, httpsCallable } from 'firebase/functions';
+import { supabase } from '../lib/supabase';
 
 /**
  * Rate Limit Error
@@ -49,23 +48,51 @@ export async function callFunction<T = unknown, R = unknown>(
   data: T
 ): Promise<R> {
   try {
-    const callable = httpsCallable<T, R>(getFunctions(app), functionName);
-    const result = await callable(data);
-    return result.data as R;
-  } catch (error: unknown) {
-    const functionError = error as FunctionsError & {
-      details?: { retryAfter?: number; resetAt?: number };
-    };
+    const { data: result, error } = await supabase.functions.invoke<R>(functionName, {
+      body: data as Record<string, unknown>,
+    });
 
-    // Check if it's a rate limit error
-    if (functionError.code === 'functions/resource-exhausted') {
-      const retryAfter = functionError.details?.retryAfter || 60000;
-      const resetAt = functionError.details?.resetAt || Date.now() + retryAfter;
+    if (error) {
+      const errorStatus =
+        typeof (error as { status?: unknown }).status === 'number'
+          ? ((error as { status: number }).status as number)
+          : undefined;
 
-      throw new RateLimitError(functionError.message, retryAfter, resetAt);
+      const errorContext = (error as { context?: unknown }).context;
+      const details =
+        typeof errorContext === 'object' && errorContext !== null
+          ? (errorContext as { retryAfter?: number; resetAt?: number })
+          : undefined;
+
+      if (errorStatus === 429) {
+        const retryAfter = details?.retryAfter || 60000;
+        const resetAt = details?.resetAt || Date.now() + retryAfter;
+        throw new RateLimitError(error.message, retryAfter, resetAt);
+      }
+
+      throw error;
     }
 
-    // Re-throw other errors
+    return result as R;
+  } catch (error: unknown) {
+    const functionError = error as {
+      status?: number;
+      code?: string;
+      message?: string;
+      context?: { retryAfter?: number; resetAt?: number };
+    };
+
+    if (functionError.code === 'functions/resource-exhausted' || functionError.status === 429) {
+      const retryAfter = functionError.context?.retryAfter || 60000;
+      const resetAt = functionError.context?.resetAt || Date.now() + retryAfter;
+
+      throw new RateLimitError(
+        functionError.message || 'Rate limit exceeded. Please try again later.',
+        retryAfter,
+        resetAt
+      );
+    }
+
     throw error;
   }
 }

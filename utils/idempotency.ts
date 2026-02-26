@@ -1,5 +1,6 @@
-import { db } from '../lib/firebase';
-import { collection, query, where, getDocs, type DocumentData } from 'firebase/firestore';
+import { supabase } from '../lib/supabase';
+
+type DocumentData = Record<string, unknown>;
 
 type IdempotencyDoc = { id: string } & DocumentData;
 
@@ -33,13 +34,23 @@ export async function checkIdempotency(
   idempotencyKey: string
 ): Promise<IdempotencyDoc | null> {
   try {
-    const q = query(collection(db, collectionName), where('idempotency_key', '==', idempotencyKey));
+    const { data, error } = await supabase
+      .from(collectionName)
+      .select('*')
+      .eq('idempotency_key', idempotencyKey)
+      .limit(1)
+      .maybeSingle();
 
-    const snapshot = await getDocs(q);
+    if (error) {
+      throw error;
+    }
 
-    if (!snapshot.empty) {
-      const doc = snapshot.docs[0];
-      return { id: doc.id, ...doc.data() };
+    if (data) {
+      const row = data as Record<string, unknown>;
+      return {
+        id: String(row.id),
+        ...row,
+      } as IdempotencyDoc;
     }
 
     return null;
@@ -62,17 +73,25 @@ export async function checkExistingPayment(
   statuses: string[] = ['initiated', 'paid', 'completed']
 ): Promise<IdempotencyDoc | null> {
   try {
-    const q = query(
-      collection(db, 'escrow_payments'),
-      where('order_id', '==', orderId),
-      where('status', 'in', statuses)
-    );
+    const { data, error } = await supabase
+      .from('escrow_payments')
+      .select('*')
+      .eq('order_id', orderId)
+      .in('status', statuses)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
 
-    const snapshot = await getDocs(q);
+    if (error) {
+      throw error;
+    }
 
-    if (!snapshot.empty) {
-      const doc = snapshot.docs[0];
-      return { id: doc.id, ...doc.data() };
+    if (data) {
+      const row = data as Record<string, unknown>;
+      return {
+        id: String(row.id),
+        ...row,
+      } as IdempotencyDoc;
     }
 
     return null;

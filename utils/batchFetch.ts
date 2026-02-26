@@ -1,14 +1,27 @@
 /**
  * Batch Fetch Utilities
  *
- * Optimized functions for fetching multiple documents from Firestore
+ * Optimized functions for fetching multiple rows from Supabase
  * to avoid N+1 query problems.
  */
 
-import { collection, query, where, getDocs, DocumentData } from 'firebase/firestore';
-import { db } from '../lib/firebase';
+import { supabase } from '../lib/supabase';
+
+type DocumentData = Record<string, unknown>;
 
 type BatchFetchedDocument = DocumentData & { id: string };
+
+const TABLE_ALIASES: Record<string, string> = {
+  users: 'users',
+  cargoRequests: 'cargo_requests',
+  cargo_requests: 'cargo_requests',
+  orders: 'orders',
+  bids: 'bids',
+};
+
+function resolveTableName(name: string): string {
+  return TABLE_ALIASES[name] || name;
+}
 
 /**
  * Split array into chunks of specified size
@@ -43,17 +56,10 @@ export async function batchFetchUsers(
   // Remove duplicates
   const uniqueIds = [...new Set(userIds)];
 
-  // Firestore 'in' query supports max 10 items
-  const chunks = chunkArray(uniqueIds, 10);
-
   try {
-    for (const chunk of chunks) {
-      const usersQuery = query(collection(db, 'users'), where('__name__', 'in', chunk));
-
-      const snapshot = await getDocs(usersQuery);
-      snapshot.docs.forEach(doc => {
-        cache.set(doc.id, { id: doc.id, ...doc.data() });
-      });
+    const rows = await batchFetchByIds('users', uniqueIds);
+    for (const row of rows) {
+      cache.set(row.id, row);
     }
   } catch (error) {
     console.error('Error batch fetching users:', error);
@@ -84,17 +90,10 @@ export async function batchFetchRequests(
   // Remove duplicates
   const uniqueIds = [...new Set(requestIds)];
 
-  // Firestore 'in' query supports max 10 items
-  const chunks = chunkArray(uniqueIds, 10);
-
   try {
-    for (const chunk of chunks) {
-      const requestsQuery = query(collection(db, 'cargo_requests'), where('__name__', 'in', chunk));
-
-      const snapshot = await getDocs(requestsQuery);
-      snapshot.docs.forEach(doc => {
-        cache.set(doc.id, { id: doc.id, ...doc.data() });
-      });
+    const rows = await batchFetchByIds('cargo_requests', uniqueIds);
+    for (const row of rows) {
+      cache.set(row.id, row);
     }
   } catch (error) {
     console.error('Error batch fetching cargo requests:', error);
@@ -119,16 +118,11 @@ export async function batchFetchOrders(
   }
 
   const uniqueIds = [...new Set(orderIds)];
-  const chunks = chunkArray(uniqueIds, 10);
 
   try {
-    for (const chunk of chunks) {
-      const ordersQuery = query(collection(db, 'orders'), where('__name__', 'in', chunk));
-
-      const snapshot = await getDocs(ordersQuery);
-      snapshot.docs.forEach(doc => {
-        cache.set(doc.id, { id: doc.id, ...doc.data() });
-      });
+    const rows = await batchFetchByIds('orders', uniqueIds);
+    for (const row of rows) {
+      cache.set(row.id, row);
     }
   } catch (error) {
     console.error('Error batch fetching orders:', error);
@@ -151,16 +145,11 @@ export async function batchFetchBids(bidIds: string[]): Promise<Map<string, Batc
   }
 
   const uniqueIds = [...new Set(bidIds)];
-  const chunks = chunkArray(uniqueIds, 10);
 
   try {
-    for (const chunk of chunks) {
-      const bidsQuery = query(collection(db, 'bids'), where('__name__', 'in', chunk));
-
-      const snapshot = await getDocs(bidsQuery);
-      snapshot.docs.forEach(doc => {
-        cache.set(doc.id, { id: doc.id, ...doc.data() });
-      });
+    const rows = await batchFetchByIds('bids', uniqueIds);
+    for (const row of rows) {
+      cache.set(row.id, row);
     }
   } catch (error) {
     console.error('Error batch fetching bids:', error);
@@ -187,20 +176,44 @@ export async function batchFetchDocuments(
   }
 
   const uniqueIds = [...new Set(documentIds)];
-  const chunks = chunkArray(uniqueIds, 10);
 
   try {
-    for (const chunk of chunks) {
-      const documentsQuery = query(collection(db, collectionName), where('__name__', 'in', chunk));
-
-      const snapshot = await getDocs(documentsQuery);
-      snapshot.docs.forEach(doc => {
-        cache.set(doc.id, { id: doc.id, ...doc.data() });
-      });
+    const rows = await batchFetchByIds(collectionName, uniqueIds);
+    for (const row of rows) {
+      cache.set(row.id, row);
     }
   } catch (error) {
     console.error(`Error batch fetching ${collectionName}:`, error);
   }
 
   return cache;
+}
+
+async function batchFetchByIds(
+  collectionName: string,
+  ids: string[]
+): Promise<BatchFetchedDocument[]> {
+  const rows: BatchFetchedDocument[] = [];
+  const tableName = resolveTableName(collectionName);
+  const chunks = chunkArray(ids, 100);
+
+  for (const chunk of chunks) {
+    const { data, error } = await supabase.from(tableName).select('*').in('id', chunk);
+
+    if (error) {
+      throw error;
+    }
+
+    const chunkRows = (data || []).map(row => {
+      const mapped = row as Record<string, unknown>;
+      return {
+        id: String(mapped.id),
+        ...mapped,
+      } as BatchFetchedDocument;
+    });
+
+    rows.push(...chunkRows);
+  }
+
+  return rows;
 }

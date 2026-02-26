@@ -105,6 +105,15 @@ Completed in this phase:
 - `hooks/usePaymentHistory.ts` migrated to Supabase payments pagination
 - `hooks/useFirestoreCollection.ts` replaced with Supabase query + Realtime hook
 - `hooks/useFirestoreDocument.ts` replaced with Supabase row + Realtime hook
+- `utils/notifications.ts` migrated to Supabase notifications + Realtime
+- `hooks/useSecurePlacesProxy.ts` migrated to Supabase Edge Functions proxy
+- `utils/rateLimitClient.ts` migrated to Supabase Edge Functions caller
+- `utils/fcm.ts` migrated to Supabase profile push token persistence
+- `utils/geoSearch.ts` migrated to Supabase location queries
+- `utils/orderCleanup.ts` migrated to Supabase order cleanup queries
+- `utils/idempotency.ts` migrated to Supabase idempotency checks
+- `utils/batchFetch.ts` migrated to Supabase batch fetch queries
+- `lib/firestore-helpers.ts` migrated to Supabase helper APIs
 
 ## 6) Progressive migration strategy from legacy Firebase code
 

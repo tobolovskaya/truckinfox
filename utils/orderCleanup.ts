@@ -5,8 +5,47 @@
  * Use these functions in Cloud Functions or scheduled tasks to maintain database health.
  */
 
-import { db } from '../lib/firebase';
-import { collection, query, where, getDocs, writeBatch, Timestamp } from 'firebase/firestore';
+import { supabase } from '../lib/supabase';
+
+const DELETE_BATCH_SIZE = 200;
+
+type PendingOrderRow = {
+  id: string;
+  created_at: string;
+};
+
+function toIsoBeforeMinutes(minutes: number): string {
+  const cutoff = new Date();
+  cutoff.setMinutes(cutoff.getMinutes() - minutes);
+  return cutoff.toISOString();
+}
+
+function toIsoBeforeHours(hours: number): string {
+  const cutoff = new Date();
+  cutoff.setHours(cutoff.getHours() - hours);
+  return cutoff.toISOString();
+}
+
+async function deleteOrdersByIds(orderIds: string[]): Promise<number> {
+  if (orderIds.length === 0) {
+    return 0;
+  }
+
+  let deleted = 0;
+
+  for (let index = 0; index < orderIds.length; index += DELETE_BATCH_SIZE) {
+    const batch = orderIds.slice(index, index + DELETE_BATCH_SIZE);
+    const { error } = await supabase.from('orders').delete().in('id', batch);
+
+    if (error) {
+      throw error;
+    }
+
+    deleted += batch.length;
+  }
+
+  return deleted;
+}
 
 /**
  * Clean up orders that have been pending for more than the specified duration
@@ -23,40 +62,25 @@ import { collection, query, where, getDocs, writeBatch, Timestamp } from 'fireba
  */
 export async function cleanupAbandonedOrders(maxAgeMinutes: number = 30): Promise<number> {
   try {
-    // Calculate the cutoff timestamp
-    const cutoffTime = new Date();
-    cutoffTime.setMinutes(cutoffTime.getMinutes() - maxAgeMinutes);
-    const cutoffTimestamp = Timestamp.fromDate(cutoffTime);
+    const cutoffIso = toIsoBeforeMinutes(maxAgeMinutes);
+    const { data, error } = await supabase
+      .from('orders')
+      .select('id')
+      .eq('payment_status', 'pending')
+      .lt('created_at', cutoffIso);
 
-    // Query for old pending orders
-    const abandonedOrdersQuery = query(
-      collection(db, 'orders'),
-      where('payment_status', '==', 'pending'),
-      where('payment_initiated_at', '<', cutoffTimestamp)
-    );
+    if (error) {
+      throw error;
+    }
 
-    const abandonedOrdersSnap = await getDocs(abandonedOrdersQuery);
+    const orderIds = (data || []).map(row => row.id);
 
-    if (abandonedOrdersSnap.empty) {
+    if (orderIds.length === 0) {
       console.log('No abandoned orders found');
       return 0;
     }
 
-    // Delete abandoned orders in batches (Firestore batch limit is 500)
-    const batchSize = 500;
-    let totalDeleted = 0;
-
-    for (let i = 0; i < abandonedOrdersSnap.docs.length; i += batchSize) {
-      const batch = writeBatch(db);
-      const batchDocs = abandonedOrdersSnap.docs.slice(i, i + batchSize);
-
-      batchDocs.forEach(orderDoc => {
-        batch.delete(orderDoc.ref);
-      });
-
-      await batch.commit();
-      totalDeleted += batchDocs.length;
-    }
+    const totalDeleted = await deleteOrdersByIds(orderIds);
 
     console.log(`Cleaned up ${totalDeleted} abandoned order(s)`);
     return totalDeleted;
@@ -74,26 +98,25 @@ export async function cleanupAbandonedOrders(maxAgeMinutes: number = 30): Promis
  */
 export async function cleanupRequestPendingOrders(requestId: string): Promise<number> {
   try {
-    const pendingOrdersQuery = query(
-      collection(db, 'orders'),
-      where('request_id', '==', requestId),
-      where('payment_status', '==', 'pending')
-    );
+    const { data, error } = await supabase
+      .from('orders')
+      .select('id')
+      .eq('request_id', requestId)
+      .eq('payment_status', 'pending');
 
-    const pendingOrdersSnap = await getDocs(pendingOrdersQuery);
+    if (error) {
+      throw error;
+    }
 
-    if (pendingOrdersSnap.empty) {
+    const orderIds = (data || []).map(row => row.id);
+
+    if (orderIds.length === 0) {
       return 0;
     }
 
-    const batch = writeBatch(db);
-    pendingOrdersSnap.docs.forEach(orderDoc => {
-      batch.delete(orderDoc.ref);
-    });
-
-    await batch.commit();
-    console.log(`Cleaned up ${pendingOrdersSnap.size} pending order(s) for request ${requestId}`);
-    return pendingOrdersSnap.size;
+    const deleted = await deleteOrdersByIds(orderIds);
+    console.log(`Cleaned up ${deleted} pending order(s) for request ${requestId}`);
+    return deleted;
   } catch (error) {
     console.error('Error cleaning up request pending orders:', error);
     throw error;
@@ -111,35 +134,35 @@ export async function getPendingOrderStats(): Promise<{
   recentOrders: number;
 }> {
   try {
-    const now = new Date();
-    const thirtyMinutesAgo = new Date(now.getTime() - 30 * 60 * 1000);
+    const thirtyMinutesAgoIso = toIsoBeforeMinutes(30);
 
-    // Get all pending orders
-    const allPendingQuery = query(
-      collection(db, 'orders'),
-      where('payment_status', '==', 'pending')
-    );
-    const allPendingSnap = await getDocs(allPendingQuery);
+    const { count: totalCount, error: totalError } = await supabase
+      .from('orders')
+      .select('id', { count: 'exact', head: true })
+      .eq('payment_status', 'pending');
 
-    // Count old vs recent
-    let oldCount = 0;
-    let recentCount = 0;
+    if (totalError) {
+      throw totalError;
+    }
 
-    allPendingSnap.docs.forEach(doc => {
-      const data = doc.data();
-      const initiatedAt = data.payment_initiated_at?.toDate() || data.created_at?.toDate();
+    const { count: oldCount, error: oldError } = await supabase
+      .from('orders')
+      .select('id', { count: 'exact', head: true })
+      .eq('payment_status', 'pending')
+      .lt('created_at', thirtyMinutesAgoIso);
 
-      if (initiatedAt && initiatedAt < thirtyMinutesAgo) {
-        oldCount++;
-      } else {
-        recentCount++;
-      }
-    });
+    if (oldError) {
+      throw oldError;
+    }
+
+    const total = totalCount || 0;
+    const oldOrders = oldCount || 0;
+    const recentOrders = Math.max(total - oldOrders, 0);
 
     return {
-      total: allPendingSnap.size,
-      oldOrders: oldCount,
-      recentOrders: recentCount,
+      total,
+      oldOrders,
+      recentOrders,
     };
   } catch (error) {
     console.error('Error getting pending order stats:', error);
@@ -162,44 +185,30 @@ export async function getPendingOrderStats(): Promise<{
  */
 export async function cleanupUnpaidOrders(): Promise<number> {
   try {
-    // Calculate cutoff time (24 hours ago)
-    const cutoffTime = new Date();
-    cutoffTime.setHours(cutoffTime.getHours() - 24);
-    const cutoffTimestamp = Timestamp.fromDate(cutoffTime);
+    const cutoffIso = toIsoBeforeHours(24);
 
-    console.log(`Cleaning up unpaid orders older than: ${cutoffTime.toISOString()}`);
+    console.log(`Cleaning up unpaid orders older than: ${cutoffIso}`);
 
-    // Query for unpaid orders older than 24 hours
-    const unpaidQuery = query(
-      collection(db, 'orders'),
-      where('payment_status', '==', 'pending'),
-      where('created_at', '<', cutoffTimestamp)
-    );
+    const { data, error } = await supabase
+      .from('orders')
+      .select('id')
+      .eq('payment_status', 'pending')
+      .lt('created_at', cutoffIso);
 
-    const unpaidSnap = await getDocs(unpaidQuery);
+    if (error) {
+      throw error;
+    }
 
-    if (unpaidSnap.empty) {
+    const orderIds = (data || []).map(row => row.id);
+
+    if (orderIds.length === 0) {
       console.log('No unpaid orders to clean up');
       return 0;
     }
 
-    console.log(`Found ${unpaidSnap.size} unpaid order(s) to delete`);
+    console.log(`Found ${orderIds.length} unpaid order(s) to delete`);
 
-    // Delete in batches (Firestore batch limit is 500)
-    const batchSize = 500;
-    let totalDeleted = 0;
-
-    for (let i = 0; i < unpaidSnap.docs.length; i += batchSize) {
-      const batch = writeBatch(db);
-      const batchDocs = unpaidSnap.docs.slice(i, i + batchSize);
-
-      batchDocs.forEach(orderDoc => {
-        batch.delete(orderDoc.ref);
-      });
-
-      await batch.commit();
-      totalDeleted += batchDocs.length;
-    }
+    const totalDeleted = await deleteOrdersByIds(orderIds);
 
     console.log(`✅ Successfully deleted ${totalDeleted} unpaid order(s)`);
     return totalDeleted;
@@ -226,33 +235,25 @@ export async function cleanupUnpaidOrders(): Promise<number> {
  */
 export async function cleanupOrdersByAge(maxAgeHours: number): Promise<number> {
   try {
-    const cutoffTime = new Date();
-    cutoffTime.setHours(cutoffTime.getHours() - maxAgeHours);
-    const cutoffTimestamp = Timestamp.fromDate(cutoffTime);
+    const cutoffIso = toIsoBeforeHours(maxAgeHours);
 
-    const ordersQuery = query(
-      collection(db, 'orders'),
-      where('payment_status', '==', 'pending'),
-      where('created_at', '<', cutoffTimestamp)
-    );
+    const { data, error } = await supabase
+      .from('orders')
+      .select('id')
+      .eq('payment_status', 'pending')
+      .lt('created_at', cutoffIso);
 
-    const ordersSnap = await getDocs(ordersQuery);
+    if (error) {
+      throw error;
+    }
 
-    if (ordersSnap.empty) {
+    const orderIds = (data || []).map(row => row.id);
+
+    if (orderIds.length === 0) {
       return 0;
     }
 
-    const batchSize = 500;
-    let totalDeleted = 0;
-
-    for (let i = 0; i < ordersSnap.docs.length; i += batchSize) {
-      const batch = writeBatch(db);
-      const batchDocs = ordersSnap.docs.slice(i, i + batchSize);
-
-      batchDocs.forEach(doc => batch.delete(doc.ref));
-      await batch.commit();
-      totalDeleted += batchDocs.length;
-    }
+    const totalDeleted = await deleteOrdersByIds(orderIds);
 
     console.log(`Cleaned up ${totalDeleted} orders older than ${maxAgeHours} hours`);
     return totalDeleted;

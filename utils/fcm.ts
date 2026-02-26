@@ -11,8 +11,7 @@
 
 import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
-import { doc, updateDoc, serverTimestamp } from 'firebase/firestore';
-import { db } from '../lib/firebase';
+import { supabase } from '../lib/supabase';
 
 // Configure notification behavior
 Notifications.setNotificationHandler({
@@ -82,15 +81,21 @@ export async function getFCMTokenAndSave(userId: string): Promise<string | null>
 
     console.log('✅ Push Token obtained:', token.substring(0, 30) + '...');
 
-    // Save token to user document
+    // Save token to user profile
     if (userId) {
-      const userRef = doc(db, 'users', userId);
-      await updateDoc(userRef, {
-        expo_push_token: token,
-        push_token_updated_at: serverTimestamp(),
-        platform: Platform.OS,
-      });
-      console.log('✅ Push token saved to Firestore');
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          push_token: token,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', userId);
+
+      if (error) {
+        throw error;
+      }
+
+      console.log('✅ Push token saved to Supabase profile');
     }
 
     return token;
@@ -123,11 +128,17 @@ export function subscribeToTokenRefresh(userId: string): () => void {
       console.log('🔄 Checked push token:', token.substring(0, 30) + '...');
 
       if (userId && token) {
-        const userRef = doc(db, 'users', userId);
-        await updateDoc(userRef, {
-          expo_push_token: token,
-          push_token_updated_at: serverTimestamp(),
-        });
+        const { error } = await supabase
+          .from('profiles')
+          .update({
+            push_token: token,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', userId);
+
+        if (error) {
+          throw error;
+        }
       }
     } catch (error) {
       console.error('❌ Error checking push token:', error);
@@ -223,12 +234,19 @@ export async function getInitialNotification(
 export async function clearFCMToken(userId: string): Promise<void> {
   try {
     if (userId) {
-      const userRef = doc(db, 'users', userId);
-      await updateDoc(userRef, {
-        expo_push_token: null,
-        push_token_updated_at: serverTimestamp(),
-      });
-      console.log('✅ Push token cleared from Firestore');
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          push_token: null,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', userId);
+
+      if (error) {
+        throw error;
+      }
+
+      console.log('✅ Push token cleared from Supabase profile');
     }
   } catch (error) {
     console.error('❌ Error clearing push token:', error);

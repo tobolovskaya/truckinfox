@@ -9,7 +9,7 @@
  * const results = await searchPlaces('Oslo');
  */
 
-import { getFunctions, httpsCallable } from 'firebase/functions';
+import { supabase } from '../lib/supabase';
 
 interface PlaceSuggestion {
   place_id: string;
@@ -48,7 +48,23 @@ interface HealthCheckResponse {
  * This keeps the API key server-side and prevents exposure in the client app
  */
 export const useSecurePlacesProxy = () => {
-  const functions = getFunctions();
+  const invokeWithFallback = async <T>(functionNames: string[], body: Record<string, unknown>) => {
+    let lastError: unknown = null;
+
+    for (const functionName of functionNames) {
+      const { data, error } = await supabase.functions.invoke<T>(functionName, { body });
+
+      if (!error) {
+        return data;
+      }
+
+      lastError = error;
+    }
+
+    throw lastError instanceof Error
+      ? lastError
+      : new Error('All Supabase function fallbacks failed');
+  };
 
   /**
    * Search for places using the Cloud Function proxy
@@ -59,15 +75,13 @@ export const useSecurePlacesProxy = () => {
    */
   const searchPlaces = async (input: string, components?: string): Promise<PlaceSuggestion[]> => {
     try {
-      // Call the Cloud Function instead of Google API directly
-      const placesAutocomplete = httpsCallable(functions, 'placesAutocomplete');
-
-      const result = await placesAutocomplete({
+      const data = await invokeWithFallback<PlacesAutocompleteResponse>(
+        ['places-autocomplete', 'placesAutocomplete'],
+        {
         input,
         components: components || 'country:no',
-      });
-
-      const data = result.data as PlacesAutocompleteResponse;
+        }
+      );
 
       return data.predictions || [];
     } catch (error) {
@@ -84,13 +98,12 @@ export const useSecurePlacesProxy = () => {
    */
   const getPlaceDetails = async (placeId: string): Promise<PlaceDetailsResult | null> => {
     try {
-      const placeDetails = httpsCallable(functions, 'placeDetails');
-
-      const result = await placeDetails({
-        place_id: placeId,
-      });
-
-      const data = result.data as PlaceDetailsResponse;
+      const data = await invokeWithFallback<PlaceDetailsResponse>(
+        ['place-details', 'placeDetails'],
+        {
+          place_id: placeId,
+        }
+      );
 
       return data.result || null;
     } catch (error) {
@@ -104,10 +117,10 @@ export const useSecurePlacesProxy = () => {
    */
   const checkHealth = async (): Promise<boolean> => {
     try {
-      const healthCheck = httpsCallable(functions, 'healthCheck');
-      const result = await healthCheck({});
-
-      const data = result.data as HealthCheckResponse;
+      const data = await invokeWithFallback<HealthCheckResponse>(
+        ['health-check', 'healthCheck'],
+        {}
+      );
 
       return data.status === 'ok';
     } catch (error) {

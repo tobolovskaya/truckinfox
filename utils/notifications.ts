@@ -6,21 +6,11 @@
  */
 
 import {
-  collection,
-  query,
-  where,
-  orderBy,
-  limit,
-  onSnapshot,
-  doc,
-  updateDoc,
-  deleteDoc,
-  serverTimestamp,
-  getDocs,
-  Timestamp,
-} from 'firebase/firestore';
-import { getFunctions, httpsCallable } from 'firebase/functions';
-import { db } from '../lib/firebase';
+  RealtimeChannel,
+} from '@supabase/supabase-js';
+import { supabase } from '../lib/supabase';
+
+type NotificationTimestamp = string | Date | { toDate: () => Date };
 
 export interface Notification {
   id: string;
@@ -31,8 +21,8 @@ export interface Notification {
   related_id: string;
   related_type: 'cargo_request' | 'order';
   read: boolean;
-  created_at: Timestamp;
-  read_at?: Timestamp;
+  created_at: NotificationTimestamp;
+  read_at?: NotificationTimestamp;
   // Additional data
   bid_id?: string;
   bid_amount?: number;
@@ -42,6 +32,45 @@ export interface Notification {
   customer_name?: string;
   order_status?: string;
   amount?: number;
+}
+
+type NotificationRow = {
+  id: string;
+  user_id: string;
+  type: Notification['type'];
+  title: string;
+  body: string;
+  related_id: string | null;
+  related_type: Notification['related_type'] | null;
+  read: boolean;
+  created_at: string;
+  read_at: string | null;
+  data: Record<string, unknown> | null;
+};
+
+function mapNotificationRow(row: NotificationRow): Notification {
+  const data = row.data || {};
+
+  return {
+    id: row.id,
+    user_id: row.user_id,
+    type: row.type,
+    title: row.title,
+    body: row.body,
+    related_id: row.related_id || '',
+    related_type: (row.related_type || 'order') as Notification['related_type'],
+    read: row.read,
+    created_at: row.created_at,
+    read_at: row.read_at || undefined,
+    bid_id: typeof data.bid_id === 'string' ? data.bid_id : undefined,
+    bid_amount: typeof data.bid_amount === 'number' ? data.bid_amount : undefined,
+    carrier_id: typeof data.carrier_id === 'string' ? data.carrier_id : undefined,
+    carrier_name: typeof data.carrier_name === 'string' ? data.carrier_name : undefined,
+    customer_id: typeof data.customer_id === 'string' ? data.customer_id : undefined,
+    customer_name: typeof data.customer_name === 'string' ? data.customer_name : undefined,
+    order_status: typeof data.order_status === 'string' ? data.order_status : undefined,
+    amount: typeof data.amount === 'number' ? data.amount : undefined,
+  };
 }
 
 /**
@@ -65,31 +94,53 @@ export function subscribeToNotifications(
   onUpdate: (_notifications: Notification[]) => void,
   maxNotifications: number = 50
 ): () => void {
-  const notificationsQuery = query(
-    collection(db, 'notifications'),
-    where('user_id', '==', userId),
-    orderBy('created_at', 'desc'),
-    limit(maxNotifications)
-  );
+  let channel: RealtimeChannel | null = null;
+  let isActive = true;
 
-  return onSnapshot(
-    notificationsQuery,
-    snapshot => {
-      const notifications: Notification[] = [];
+  const fetchNotifications = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('notifications')
+        .select('*')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false })
+        .limit(maxNotifications);
 
-      snapshot.forEach(doc => {
-        notifications.push({
-          id: doc.id,
-          ...doc.data(),
-        } as Notification);
-      });
+      if (error) {
+        throw error;
+      }
 
+      if (!isActive) {
+        return;
+      }
+
+      const notifications = (data || []).map(row => mapNotificationRow(row as NotificationRow));
       onUpdate(notifications);
-    },
-    error => {
+    } catch (error) {
       console.error('Error subscribing to notifications:', error);
     }
-  );
+  };
+
+  fetchNotifications();
+
+  channel = supabase
+    .channel(`notifications:${userId}`)
+    .on(
+      'postgres_changes',
+      {
+        event: '*',
+        schema: 'public',
+        table: 'notifications',
+        filter: `user_id=eq.${userId}`,
+      },
+      fetchNotifications
+    )
+    .subscribe();
+
+  return () => {
+    isActive = false;
+    channel?.unsubscribe();
+  };
 }
 
 /**
@@ -100,14 +151,17 @@ export function subscribeToNotifications(
  */
 export async function getUnreadNotificationCount(userId: string): Promise<number> {
   try {
-    const unreadQuery = query(
-      collection(db, 'notifications'),
-      where('user_id', '==', userId),
-      where('read', '==', false)
-    );
+    const { count, error } = await supabase
+      .from('notifications')
+      .select('id', { count: 'exact', head: true })
+      .eq('user_id', userId)
+      .eq('read', false);
 
-    const snapshot = await getDocs(unreadQuery);
-    return snapshot.size;
+    if (error) {
+      throw error;
+    }
+
+    return count || 0;
   } catch (error) {
     console.error('Error getting unread notification count:', error);
     return 0;
@@ -125,21 +179,40 @@ export function subscribeToUnreadCount(
   userId: string,
   onUpdate: (_count: number) => void
 ): () => void {
-  const unreadQuery = query(
-    collection(db, 'notifications'),
-    where('user_id', '==', userId),
-    where('read', '==', false)
-  );
+  let channel: RealtimeChannel | null = null;
+  let isActive = true;
 
-  return onSnapshot(
-    unreadQuery,
-    snapshot => {
-      onUpdate(snapshot.size);
-    },
-    error => {
+  const updateCount = async () => {
+    try {
+      const count = await getUnreadNotificationCount(userId);
+      if (isActive) {
+        onUpdate(count);
+      }
+    } catch (error) {
       console.error('Error subscribing to unread count:', error);
     }
-  );
+  };
+
+  updateCount();
+
+  channel = supabase
+    .channel(`notifications-unread:${userId}`)
+    .on(
+      'postgres_changes',
+      {
+        event: '*',
+        schema: 'public',
+        table: 'notifications',
+        filter: `user_id=eq.${userId}`,
+      },
+      updateCount
+    )
+    .subscribe();
+
+  return () => {
+    isActive = false;
+    channel?.unsubscribe();
+  };
 }
 
 /**
@@ -149,12 +222,17 @@ export function subscribeToUnreadCount(
  */
 export async function markNotificationAsRead(notificationId: string): Promise<void> {
   try {
-    const notificationRef = doc(db, 'notifications', notificationId);
+    const { error } = await supabase
+      .from('notifications')
+      .update({
+        read: true,
+        read_at: new Date().toISOString(),
+      })
+      .eq('id', notificationId);
 
-    await updateDoc(notificationRef, {
-      read: true,
-      read_at: serverTimestamp(),
-    });
+    if (error) {
+      throw error;
+    }
 
     console.log(`Marked notification ${notificationId} as read`);
   } catch (error) {
@@ -171,16 +249,50 @@ export async function markNotificationAsRead(notificationId: string): Promise<vo
  */
 export async function markAllNotificationsAsRead(): Promise<number> {
   try {
-    const functions = getFunctions();
-    const markAllRead = httpsCallable<void, { success: boolean; count: number }>(
-      functions,
-      'markAllNotificationsRead'
-    );
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser();
 
-    const result = await markAllRead();
-    console.log(`Marked ${result.data.count} notifications as read`);
+    if (userError) {
+      throw userError;
+    }
 
-    return result.data.count;
+    if (!user) {
+      return 0;
+    }
+
+    const { data: unreadRows, error: fetchError } = await supabase
+      .from('notifications')
+      .select('id')
+      .eq('user_id', user.id)
+      .eq('read', false);
+
+    if (fetchError) {
+      throw fetchError;
+    }
+
+    const unreadCount = unreadRows?.length || 0;
+
+    if (unreadCount === 0) {
+      return 0;
+    }
+
+    const { error: updateError } = await supabase
+      .from('notifications')
+      .update({
+        read: true,
+        read_at: new Date().toISOString(),
+      })
+      .eq('user_id', user.id)
+      .eq('read', false);
+
+    if (updateError) {
+      throw updateError;
+    }
+
+    console.log(`Marked ${unreadCount} notifications as read`);
+    return unreadCount;
   } catch (error) {
     console.error('Error marking all notifications as read:', error);
     throw error;
@@ -204,27 +316,31 @@ export async function deleteOldNotifications(
   try {
     const cutoffDate = new Date();
     cutoffDate.setDate(cutoffDate.getDate() - olderThanDays);
-    const cutoffTimestamp = Timestamp.fromDate(cutoffDate);
+    const cutoffIso = cutoffDate.toISOString();
 
-    const oldNotificationsQuery = query(
-      collection(db, 'notifications'),
-      where('user_id', '==', userId),
-      where('created_at', '<', cutoffTimestamp)
-    );
+    const { data: oldRows, error: oldRowsError } = await supabase
+      .from('notifications')
+      .select('id')
+      .eq('user_id', userId)
+      .lt('created_at', cutoffIso);
 
-    const snapshot = await getDocs(oldNotificationsQuery);
+    if (oldRowsError) {
+      throw oldRowsError;
+    }
 
-    if (snapshot.empty) {
+    if (!oldRows || oldRows.length === 0) {
       return 0;
     }
 
-    // Note: For large deletions, consider using a Cloud Function
-    // This client-side approach works for small batches
-    const deletePromises = snapshot.docs.map(doc => deleteDoc(doc.ref));
-    await Promise.all(deletePromises);
+    const ids = oldRows.map(row => row.id);
+    const { error: deleteError } = await supabase.from('notifications').delete().in('id', ids);
 
-    console.log(`Deleted ${snapshot.size} old notifications`);
-    return snapshot.size;
+    if (deleteError) {
+      throw deleteError;
+    }
+
+    console.log(`Deleted ${ids.length} old notifications`);
+    return ids.length;
   } catch (error) {
     console.error('Error deleting old notifications:', error);
     throw error;
@@ -282,8 +398,11 @@ export function getNotificationNavigation(notification: Notification): {
  * @param timestamp - Firestore timestamp
  * @returns Formatted string like "2 hours ago" or "Yesterday"
  */
-export function formatNotificationTime(timestamp: Timestamp): string {
-  const date = timestamp.toDate();
+export function formatNotificationTime(timestamp: NotificationTimestamp): string {
+  const date =
+    typeof timestamp === 'object' && timestamp !== null && 'toDate' in timestamp
+      ? (timestamp as { toDate: () => Date }).toDate()
+      : new Date(timestamp as string | number | Date);
   const now = new Date();
   const diffMs = now.getTime() - date.getTime();
   const diffMins = Math.floor(diffMs / 60000);
