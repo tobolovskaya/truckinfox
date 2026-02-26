@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
-import { colors, spacing, fontSize, fontWeight } from '../../lib/sharedStyles';
+import { spacing, fontSize, fontWeight, useAppThemeStyles } from '../../lib/sharedStyles';
 import { useAuth } from '../../contexts/AuthContext';
 import { ScreenHeader } from '../../components/ScreenHeader';
 import { EmptyState } from '../../components/EmptyState';
@@ -18,6 +18,8 @@ import { usePaymentHistory, PaymentRecord } from '../../hooks/usePaymentHistory'
 
 export default function PaymentsScreen() {
   const { t } = useTranslation();
+  const { colors } = useAppThemeStyles();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const { user } = useAuth();
   const [selectedStatus, setSelectedStatus] = useState<PaymentRecord['status'] | undefined>(
     undefined
@@ -241,7 +243,8 @@ export default function PaymentsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ReturnType<typeof useAppThemeStyles>['colors']) =>
+  StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,
@@ -434,4 +437,4 @@ const styles = StyleSheet.create({
     fontSize: fontSize.sm,
     fontWeight: '600',
   },
-});
+  });

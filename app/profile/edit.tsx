@@ -20,7 +20,13 @@ import { ScreenSection } from '../../components/ScreenSection';
 import AvatarUpload from '../../components/AvatarUpload';
 import { IOSButton } from '../../components/IOSButton';
 import { generateSearchTerms } from '../../utils/search';
-import { colors, spacing, fontSize, fontWeight, borderRadius } from '../../lib/sharedStyles';
+import {
+  spacing,
+  fontSize,
+  fontWeight,
+  borderRadius,
+  useAppThemeStyles,
+} from '../../lib/sharedStyles';
 import { sanitizeInput } from '../../utils/sanitization';
 
 type UserProfile = {
@@ -45,6 +51,8 @@ const emptyProfile: UserProfile = {
 
 export default function EditProfileScreen() {
   const { t } = useTranslation();
+  const { colors } = useAppThemeStyles();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const { user } = useAuth();
   const [profile, setProfile] = useState<UserProfile>(emptyProfile);
   const [loading, setLoading] = useState(true);
@@ -255,7 +263,8 @@ export default function EditProfileScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ReturnType<typeof useAppThemeStyles>['colors']) =>
+  StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,
@@ -333,4 +342,4 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
     marginTop: spacing.xl,
   },
-});
+  });
