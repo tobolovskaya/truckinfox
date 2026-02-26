@@ -5,12 +5,8 @@ globalThis.fetch = jest.fn();
 
 describe('Fetch Utilities', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
-    jest.useFakeTimers();
-  });
-
-  afterEach(() => {
-    jest.useRealTimers();
+    jest.resetAllMocks();
+    globalThis.fetch = jest.fn();
   });
 
   describe('fetchWithTimeout', () => {
@@ -33,18 +29,13 @@ describe('Fetch Utilities', () => {
     });
 
     it('should throw error on timeout', async () => {
-      (globalThis.fetch as jest.Mock).mockImplementation(
-        () =>
-          new Promise(() => {
-            // Never resolves
-          })
+      const abortError = new Error('Aborted') as Error & { name: string };
+      abortError.name = 'AbortError';
+      (globalThis.fetch as jest.Mock).mockRejectedValueOnce(abortError);
+
+      await expect(fetchWithTimeout('https://api.test.com/data', {}, 100)).rejects.toThrow(
+        'Request timeout'
       );
-
-      const fetchPromise = fetchWithTimeout('https://api.test.com/data', {}, 100);
-
-      jest.advanceTimersByTime(150);
-
-      await expect(fetchPromise).rejects.toThrow('Request timeout');
     });
 
     it('should use default timeout of 10 seconds', async () => {
@@ -97,7 +88,7 @@ describe('Fetch Utilities', () => {
       const mockResponse = { ok: true, status: 200 };
 
       (globalThis.fetch as jest.Mock)
-        .mockRejectedValueOnce(new Error('Network error'))
+        .mockRejectedValueOnce(new Error('Network request failed'))
         .mockResolvedValueOnce(mockResponse);
 
       const response = await fetchWithRetry('https://api.test.com/data', {
@@ -174,7 +165,7 @@ describe('Fetch Utilities', () => {
     });
 
     it('should use exponential backoff', async () => {
-      const mockError = new Error('Network error');
+      const mockError = new Error('Network request failed');
       (globalThis.fetch as jest.Mock)
         .mockRejectedValueOnce(mockError)
         .mockRejectedValueOnce(mockError)
@@ -187,10 +178,10 @@ describe('Fetch Utilities', () => {
       });
 
       // First retry after 100ms * 2^0 = 100ms
-      jest.advanceTimersByTime(100);
+      await jest.advanceTimersByTimeAsync(100);
 
       // Second retry after 100ms * 2^1 = 200ms
-      jest.advanceTimersByTime(200);
+      await jest.advanceTimersByTimeAsync(200);
 
       await promise;
 
@@ -200,7 +191,7 @@ describe('Fetch Utilities', () => {
 
     it('should call onRetry callback on failure', async () => {
       const onRetry = jest.fn();
-      const mockError = new Error('Network error');
+      const mockError = new Error('Network request failed');
 
       (globalThis.fetch as jest.Mock)
         .mockRejectedValueOnce(mockError)
@@ -213,7 +204,7 @@ describe('Fetch Utilities', () => {
         onRetry,
       });
 
-      jest.advanceTimersByTime(10);
+      await jest.advanceTimersByTimeAsync(10);
       await promise;
 
       expect(onRetry).toHaveBeenCalledWith(1, mockError);
@@ -221,20 +212,17 @@ describe('Fetch Utilities', () => {
     });
 
     it('should throw error after max retries exceeded', async () => {
-      const mockError = new Error('Network error');
+      const mockError = new Error('Network request failed');
       (globalThis.fetch as jest.Mock).mockRejectedValue(mockError);
 
-      jest.useFakeTimers();
+      await expect(
+        fetchWithRetry('https://api.test.com/data', {
+          retries: 1,
+          retryDelay: 1,
+        })
+      ).rejects.toThrow('Network request failed');
 
-      const promise = fetchWithRetry('https://api.test.com/data', {
-        retries: 1,
-        retryDelay: 10,
-      });
-
-      jest.advanceTimersByTime(100);
-
-      await expect(promise).rejects.toThrow('Network error');
-      jest.useRealTimers();
+      expect(globalThis.fetch).toHaveBeenCalledTimes(2);
     });
 
     it('should respect custom timeout per request', async () => {

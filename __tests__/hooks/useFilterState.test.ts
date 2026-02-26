@@ -2,177 +2,130 @@ import { renderHook, act } from '@testing-library/react-native';
 import { useFilterState } from '../../hooks/useFilterState';
 
 describe('useFilterState', () => {
-  it('should initialize with empty filters', () => {
+  it('should initialize with default state', () => {
     const { result } = renderHook(() => useFilterState());
 
-    expect(result.current.filters).toEqual({});
+    expect(result.current.filterState).toMatchObject({
+      city: '',
+      cargo_type: '',
+      price_min: '',
+      price_max: '',
+      price_type: '',
+      pickupDate: '',
+      citySearch: '',
+      isModalVisible: false,
+    });
   });
 
-  it('should add a single filter', () => {
+  it('should update cargo type', () => {
     const { result } = renderHook(() => useFilterState());
 
     act(() => {
-      result.current.setFilter('cargo_type', 'automotive');
+      result.current.setCargoType('automotive');
     });
 
-    expect(result.current.filters.cargo_type).toBe('automotive');
+    expect(result.current.filterState.cargo_type).toBe('automotive');
   });
 
-  it('should add multiple filters', () => {
+  it('should update multiple fields', () => {
     const { result } = renderHook(() => useFilterState());
 
     act(() => {
-      result.current.setFilter('cargo_type', 'automotive');
-      result.current.setFilter('status', 'open');
-      result.current.setFilter('min_weight', 1000);
+      result.current.setCity('Oslo');
+      result.current.setCargoType('automotive');
+      result.current.setPriceMin('1000');
+      result.current.setPriceMax('5000');
+      result.current.setPriceType('fixed');
     });
 
-    expect(result.current.filters).toEqual({
+    expect(result.current.filterState).toMatchObject({
+      city: 'Oslo',
       cargo_type: 'automotive',
-      status: 'open',
-      min_weight: 1000,
+      price_min: '1000',
+      price_max: '5000',
+      price_type: 'fixed',
     });
   });
 
-  it('should update existing filter', () => {
+  it('should apply filters and close modal', () => {
     const { result } = renderHook(() => useFilterState());
 
     act(() => {
-      result.current.setFilter('cargo_type', 'automotive');
+      result.current.openModal();
     });
 
-    expect(result.current.filters.cargo_type).toBe('automotive');
+    expect(result.current.filterState.isModalVisible).toBe(true);
 
     act(() => {
-      result.current.setFilter('cargo_type', 'general');
+      result.current.applyFilters({ city: 'Bergen', cargo_type: 'general' });
     });
 
-    expect(result.current.filters.cargo_type).toBe('general');
+    expect(result.current.filterState.city).toBe('Bergen');
+    expect(result.current.filterState.cargo_type).toBe('general');
+    expect(result.current.filterState.isModalVisible).toBe(false);
   });
 
-  it('should clear a single filter', () => {
+  it('should clear a single filter field', () => {
     const { result } = renderHook(() => useFilterState());
 
     act(() => {
-      result.current.setFilter('cargo_type', 'automotive');
-      result.current.setFilter('status', 'open');
+      result.current.setCargoType('automotive');
+      result.current.setCity('Trondheim');
     });
 
     act(() => {
       result.current.clearFilter('cargo_type');
     });
 
-    expect(result.current.filters.cargo_type).toBeUndefined();
-    expect(result.current.filters.status).toBe('open');
+    expect(result.current.filterState.cargo_type).toBe('');
+    expect(result.current.filterState.city).toBe('Trondheim');
   });
 
-  it('should clear all filters', () => {
+  it('should reset filters while preserving modal state', () => {
     const { result } = renderHook(() => useFilterState());
 
     act(() => {
-      result.current.setFilter('cargo_type', 'automotive');
-      result.current.setFilter('status', 'open');
-      result.current.setFilter('min_weight', 1000);
+      result.current.setCargoType('automotive');
+      result.current.setCity('Oslo');
+      result.current.openModal();
     });
 
     act(() => {
-      result.current.clearAllFilters();
+      result.current.resetFilters();
     });
 
-    expect(result.current.filters).toEqual({});
+    expect(result.current.filterState.cargo_type).toBe('');
+    expect(result.current.filterState.city).toBe('');
+    expect(result.current.filterState.isModalVisible).toBe(true);
   });
 
-  it('should check if filters are active', () => {
+  it('should manage modal visibility', () => {
     const { result } = renderHook(() => useFilterState());
 
-    expect(result.current.hasActiveFilters()).toBe(false);
+    expect(result.current.filterState.isModalVisible).toBe(false);
 
     act(() => {
-      result.current.setFilter('cargo_type', 'automotive');
+      result.current.openModal();
     });
 
-    expect(result.current.hasActiveFilters()).toBe(true);
+    expect(result.current.filterState.isModalVisible).toBe(true);
 
     act(() => {
-      result.current.clearAllFilters();
+      result.current.closeModal();
     });
 
-    expect(result.current.hasActiveFilters()).toBe(false);
+    expect(result.current.filterState.isModalVisible).toBe(false);
   });
 
-  it('should count active filters', () => {
-    const { result } = renderHook(() => useFilterState());
-
-    expect(result.current.getFilterCount()).toBe(0);
-
-    act(() => {
-      result.current.setFilter('cargo_type', 'automotive');
-      result.current.setFilter('status', 'open');
-    });
-
-    expect(result.current.getFilterCount()).toBe(2);
-
-    act(() => {
-      result.current.setFilter('min_weight', 1000);
-    });
-
-    expect(result.current.getFilterCount()).toBe(3);
-
-    act(() => {
-      result.current.clearFilter('cargo_type');
-    });
-
-    expect(result.current.getFilterCount()).toBe(2);
-  });
-
-  it('should handle filter ranges', () => {
+  it('should support range fields', () => {
     const { result } = renderHook(() => useFilterState());
 
     act(() => {
-      result.current.setFilter('price_min', 100);
-      result.current.setFilter('price_max', 500);
+      result.current.setPriceRange({ min: '100', max: '500' });
+      result.current.setWeightRange({ min: '10', max: '1000' });
     });
 
-    expect(result.current.filters.price_min).toBe(100);
-    expect(result.current.filters.price_max).toBe(500);
-  });
-
-  it('should preserve primitive values correctly', () => {
-    const { result } = renderHook(() => useFilterState());
-
-    act(() => {
-      result.current.setFilter('string_filter', 'test');
-      result.current.setFilter('number_filter', 42);
-      result.current.setFilter('boolean_filter', true);
-    });
-
-    expect(typeof result.current.filters.string_filter).toBe('string');
-    expect(typeof result.current.filters.number_filter).toBe('number');
-    expect(typeof result.current.filters.boolean_filter).toBe('boolean');
-  });
-
-  it('should handle null values', () => {
-    const { result } = renderHook(() => useFilterState());
-
-    act(() => {
-      result.current.setFilter('nullable_field', null);
-    });
-
-    expect(result.current.filters.nullable_field).toBeNull();
-  });
-
-  it('should support complex filter objects', () => {
-    const { result } = renderHook(() => useFilterState());
-
-    const complexFilter = {
-      location: { lat: 59.9, lng: 10.7 },
-      radius: 50,
-    };
-
-    act(() => {
-      result.current.setFilter('location_filter', complexFilter);
-    });
-
-    expect(result.current.filters.location_filter).toEqual(complexFilter);
+    expect(result.current.filterState.priceRange).toEqual({ min: '100', max: '500' });
+    expect(result.current.filterState.weightRange).toEqual({ min: '10', max: '1000' });
   });
 });

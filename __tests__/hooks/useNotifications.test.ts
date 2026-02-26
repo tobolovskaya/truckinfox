@@ -1,106 +1,110 @@
 import { renderHook, waitFor } from '@testing-library/react-native';
 import { useNotifications } from '../../hooks/useNotifications';
-import * as firebaseFirestore from 'firebase/firestore';
+import { useAuth } from '../../contexts/AuthContext';
+import {
+  subscribeToNotifications,
+  subscribeToUnreadCount,
+  markNotificationAsRead,
+  markAllNotificationsAsRead,
+} from '../../utils/notifications';
 
-jest.mock('firebase/firestore', () => ({
-  collection: jest.fn(),
-  query: jest.fn(),
-  where: jest.fn(),
-  orderBy: jest.fn(),
-  onSnapshot: jest.fn(),
-  updateDoc: jest.fn(),
-  deleteDoc: jest.fn(),
-  doc: jest.fn(),
+jest.mock('../../contexts/AuthContext', () => ({
+  useAuth: jest.fn(),
 }));
 
-jest.mock('firebase/auth', () => ({
-  getAuth: jest.fn(),
+jest.mock('../../utils/notifications', () => ({
+  subscribeToNotifications: jest.fn(),
+  subscribeToUnreadCount: jest.fn(),
+  markNotificationAsRead: jest.fn(),
+  markAllNotificationsAsRead: jest.fn(),
 }));
 
 describe('useNotifications', () => {
   const mockNotifications = [
     {
       id: 'notif1',
-      userId: 'user123',
+      user_id: 'user123',
       type: 'new_bid',
       title: 'New Bid Received',
       body: 'You have a new bid of 5000 NOK',
       read: false,
-      createdAt: new Date(),
-      data: { bidId: 'bid1', requestId: 'req1' },
+      created_at: { toDate: () => new Date() },
+      related_id: 'req1',
+      related_type: 'cargo_request',
     },
     {
       id: 'notif2',
-      userId: 'user123',
+      user_id: 'user123',
       type: 'bid_accepted',
       title: 'Bid Accepted! 🎉',
       body: 'Congratulations! Your bid has been accepted.',
       read: true,
-      createdAt: new Date(),
-      data: { bidId: 'bid2', requestId: 'req2' },
+      created_at: { toDate: () => new Date() },
+      related_id: 'req2',
+      related_type: 'cargo_request',
     },
   ];
 
   beforeEach(() => {
     jest.clearAllMocks();
-    const mockUnsubscribe = jest.fn();
-    (firebaseFirestore.onSnapshot as jest.Mock).mockImplementation((query, callback) => {
-      const mockSnapshot = {
-        docs: mockNotifications.map(notif => ({
-          id: notif.id,
-          data: () => notif,
-        })),
-        empty: false,
-      };
-      callback(mockSnapshot);
-      return mockUnsubscribe;
+    (useAuth as jest.Mock).mockReturnValue({
+      user: { uid: 'user123' },
     });
+
+    (subscribeToNotifications as jest.Mock).mockImplementation((userId, callback) => {
+      callback(mockNotifications);
+      return jest.fn();
+    });
+
+    (subscribeToUnreadCount as jest.Mock).mockImplementation((userId, callback) => {
+      callback(1);
+      return jest.fn();
+    });
+
+    (markNotificationAsRead as jest.Mock).mockResolvedValue(undefined);
+    (markAllNotificationsAsRead as jest.Mock).mockResolvedValue(1);
   });
 
-  it('should fetch user notifications on mount', async () => {
-    const { result } = renderHook(() => useNotifications('user123'));
+  it('should subscribe and expose user notifications', async () => {
+    const { result } = renderHook(() => useNotifications());
 
     await waitFor(() => {
       expect(result.current.loading).toBe(false);
     });
 
-    expect(firebaseFirestore.onSnapshot).toHaveBeenCalled();
-  });
-
-  it('should filter by current user', async () => {
-    const { result } = renderHook(() => useNotifications('user123'));
-
-    await waitFor(() => {
-      expect(result.current.loading).toBe(false);
-    });
-
-    expect(firebaseFirestore.where).toHaveBeenCalledWith('userId', '==', 'user123');
-  });
-
-  it('should sort notifications by newest first', async () => {
-    const { result } = renderHook(() => useNotifications('user123'));
-
-    await waitFor(() => {
-      expect(result.current.loading).toBe(false);
-    });
-
-    expect(firebaseFirestore.orderBy).toHaveBeenCalledWith('createdAt', 'desc');
-  });
-
-  it('should provide unread notification count', async () => {
-    const { result } = renderHook(() => useNotifications('user123'));
-
-    await waitFor(() => {
-      expect(result.current.loading).toBe(false);
-    });
-
-    expect(result.current.unreadCount).toBe(1); // Only notif1 is unread
+    expect(subscribeToNotifications).toHaveBeenCalledWith('user123', expect.any(Function), 50);
+    expect(subscribeToUnreadCount).toHaveBeenCalledWith('user123', expect.any(Function));
+    expect(result.current.notifications).toHaveLength(2);
+    expect(result.current.unreadCount).toBe(1);
   });
 
   it('should mark notification as read', async () => {
-    (firebaseFirestore.updateDoc as jest.Mock).mockResolvedValue(undefined);
+    const { result } = renderHook(() => useNotifications());
 
-    const { result } = renderHook(() => useNotifications('user123'));
+    await waitFor(() => {
+      expect(result.current.loading).toBe(false);
+    });
+
+    await result.current.markAsRead('notif1');
+    expect(markNotificationAsRead).toHaveBeenCalledWith('notif1');
+  });
+
+  it('should mark all notifications as read', async () => {
+    const { result } = renderHook(() => useNotifications());
+
+    await waitFor(() => {
+      expect(result.current.loading).toBe(false);
+    });
+
+    await result.current.markAllAsRead();
+    expect(markAllNotificationsAsRead).toHaveBeenCalled();
+  });
+
+  it('should handle action errors gracefully', async () => {
+    const expectedError = new Error('mark failed');
+    (markNotificationAsRead as jest.Mock).mockRejectedValueOnce(expectedError);
+
+    const { result } = renderHook(() => useNotifications());
 
     await waitFor(() => {
       expect(result.current.loading).toBe(false);
@@ -108,115 +112,51 @@ describe('useNotifications', () => {
 
     await result.current.markAsRead('notif1');
 
-    expect(firebaseFirestore.updateDoc).toHaveBeenCalled();
+    await waitFor(() => {
+      expect(result.current.error).toEqual(expectedError);
+    });
   });
 
-  it('should delete notification', async () => {
-    (firebaseFirestore.deleteDoc as jest.Mock).mockResolvedValue(undefined);
+  it('should reset state when user is not authenticated', async () => {
+    (useAuth as jest.Mock).mockReturnValue({ user: null });
 
-    const { result } = renderHook(() => useNotifications('user123'));
+    const { result } = renderHook(() => useNotifications());
 
     await waitFor(() => {
       expect(result.current.loading).toBe(false);
     });
 
-    await result.current.deleteNotification('notif1');
-
-    expect(firebaseFirestore.deleteDoc).toHaveBeenCalled();
+    expect(result.current.notifications).toEqual([]);
+    expect(result.current.unreadCount).toBe(0);
+    expect(subscribeToNotifications).not.toHaveBeenCalled();
+    expect(subscribeToUnreadCount).not.toHaveBeenCalled();
   });
 
-  it('should mark all notifications as read', async () => {
-    (firebaseFirestore.updateDoc as jest.Mock).mockResolvedValue(undefined);
+  it('should unsubscribe listeners on unmount', async () => {
+    const unsubscribeNotifications = jest.fn();
+    const unsubscribeUnread = jest.fn();
+    (subscribeToNotifications as jest.Mock).mockReturnValue(unsubscribeNotifications);
+    (subscribeToUnreadCount as jest.Mock).mockReturnValue(unsubscribeUnread);
 
-    const { result } = renderHook(() => useNotifications('user123'));
-
-    await waitFor(() => {
-      expect(result.current.loading).toBe(false);
-    });
-
-    await result.current.markAllAsRead();
-
-    // Should be called for unread notifications
-    expect(firebaseFirestore.updateDoc).toHaveBeenCalled();
-  });
-
-  it('should handle notification by type', async () => {
-    const { result } = renderHook(() => useNotifications('user123'));
-
-    await waitFor(() => {
-      expect(result.current.loading).toBe(false);
-    });
-
-    const newBidNotifications = result.current.notifications.filter(n => n.type === 'new_bid');
-    expect(newBidNotifications).toHaveLength(1);
-    expect(newBidNotifications[0].title).toBe('New Bid Received');
-  });
-
-  it('should clear all notifications', async () => {
-    (firebaseFirestore.deleteDoc as jest.Mock).mockResolvedValue(undefined);
-
-    const { result } = renderHook(() => useNotifications('user123'));
-
-    await waitFor(() => {
-      expect(result.current.loading).toBe(false);
-    });
-
-    await result.current.clearAll();
-
-    // Should delete all notifications
-    expect(firebaseFirestore.deleteDoc).toHaveBeenCalled();
-  });
-
-  it('should handle loading state', async () => {
-    const { result } = renderHook(() => useNotifications('user123'));
-
-    expect(result.current.loading).toBe(true);
-
-    await waitFor(() => {
-      expect(result.current.loading).toBe(false);
-    });
-  });
-
-  it('should handle errors gracefully', async () => {
-    (firebaseFirestore.onSnapshot as jest.Mock).mockImplementation(
-      (query, callback, errorCallback) => {
-        if (errorCallback) {
-          errorCallback(new Error('Firestore error'));
-        }
-        return jest.fn();
-      }
-    );
-
-    const { result } = renderHook(() => useNotifications('user123'));
-
-    await waitFor(() => {
-      expect(result.current.error).toBeDefined();
-    });
-  });
-
-  it('should unsubscribe on unmount', async () => {
-    const mockUnsubscribe = jest.fn();
-    (firebaseFirestore.onSnapshot as jest.Mock).mockReturnValue(mockUnsubscribe);
-
-    const { unmount } = renderHook(() => useNotifications('user123'));
+    const { unmount } = renderHook(() => useNotifications());
 
     unmount();
 
-    await waitFor(() => {
-      expect(mockUnsubscribe).toHaveBeenCalled();
-    });
+    expect(unsubscribeNotifications).toHaveBeenCalled();
+    expect(unsubscribeUnread).toHaveBeenCalled();
   });
 
-  it('should group notifications by type', async () => {
-    const { result } = renderHook(() => useNotifications('user123'));
+  it('should refresh subscriptions when refresh is called', async () => {
+    const { result } = renderHook(() => useNotifications());
 
     await waitFor(() => {
       expect(result.current.loading).toBe(false);
     });
 
-    const groupedByType = result.current.groupNotificationsByType();
+    result.current.refresh();
 
-    expect(groupedByType.new_bid).toHaveLength(1);
-    expect(groupedByType.bid_accepted).toHaveLength(1);
+    await waitFor(() => {
+      expect(subscribeToNotifications).toHaveBeenCalledTimes(2);
+    });
   });
 });

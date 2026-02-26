@@ -236,10 +236,19 @@ export function sanitizeNumber(
   min: number = Number.MIN_SAFE_INTEGER,
   max: number = Number.MAX_SAFE_INTEGER
 ): number {
+  const fallback = min === Number.MIN_SAFE_INTEGER ? 0 : min;
+
+  if (typeof value === 'string') {
+    const normalized = value.trim();
+    if (!normalized || !/^-?\d+(\.\d+)?$/.test(normalized)) {
+      return fallback;
+    }
+  }
+
   const num = typeof value === 'string' ? parseFloat(value) : value;
 
   if (isNaN(num) || !isFinite(num)) {
-    return min;
+    return fallback;
   }
 
   return Math.max(min, Math.min(max, num));

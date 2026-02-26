@@ -1,11 +1,39 @@
 import { fetchWithRetry } from './fetchWithTimeout';
 
-// Read API key from environment variables
-// In Expo, use EXPO_PUBLIC_ prefix for client-accessible variables
-const GOOGLE_PLACES_API_KEY = process.env.EXPO_PUBLIC_GOOGLE_PLACES_API_KEY;
+const normalizeForSearch = (value: string): string =>
+  value
+    .replace(/ø/gim, 'o')
+    .replace(/æ/gim, 'ae')
+    .replace(/å/gim, 'a')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase();
+
+const getGooglePlacesApiKey = (): string | undefined => process.env.EXPO_PUBLIC_GOOGLE_PLACES_API_KEY;
+
+const buildOfflineCityResults = (input: string): PlaceSuggestion[] => {
+  const normalizedInput = normalizeForSearch(input);
+
+  return norwegianCities
+    .filter(city => normalizeForSearch(city.name).includes(normalizedInput))
+    .map(city => ({
+      place_id: `offline_${city.name}`,
+      description: `${city.name}, Norge`,
+      structured_formatting: {
+        main_text: city.name,
+        secondary_text: 'Norge',
+      },
+      geometry: {
+        location: {
+          lat: city.lat,
+          lng: city.lng,
+        },
+      },
+    }));
+};
 
 // Validate API key exists
-if (!GOOGLE_PLACES_API_KEY) {
+if (!getGooglePlacesApiKey()) {
   console.warn(
     '⚠️ Google Places API key not found in environment variables.\n' +
       'Set EXPO_PUBLIC_GOOGLE_PLACES_API_KEY in your .env file.\n' +
@@ -81,23 +109,10 @@ export const searchNorwegianPlaces = async (input: string): Promise<PlaceSuggest
   }
 
   // If no API key, use offline fallback immediately
-  if (!GOOGLE_PLACES_API_KEY) {
-    return norwegianCities
-      .filter(city => city.name.toLowerCase().includes(input.toLowerCase()))
-      .map(city => ({
-        place_id: `offline_${city.name}`,
-        description: `${city.name}, Norge`,
-        structured_formatting: {
-          main_text: city.name,
-          secondary_text: 'Norge',
-        },
-        geometry: {
-          location: {
-            lat: city.lat,
-            lng: city.lng,
-          },
-        },
-      }));
+  const googlePlacesApiKey = getGooglePlacesApiKey();
+
+  if (!googlePlacesApiKey) {
+    return buildOfflineCityResults(input);
   }
 
   try {
@@ -107,7 +122,7 @@ export const searchNorwegianPlaces = async (input: string): Promise<PlaceSuggest
         `input=${encodeURIComponent(input)}&` +
         `components=country:no&` +
         `language=no&` +
-        `key=${GOOGLE_PLACES_API_KEY}`,
+        `key=${googlePlacesApiKey}`,
       {
         method: 'GET',
         timeout: 10000, // 10 second timeout for autocomplete API
@@ -125,42 +140,12 @@ export const searchNorwegianPlaces = async (input: string): Promise<PlaceSuggest
       }));
     } else {
       // Fallback to offline Norwegian cities
-      return norwegianCities
-        .filter(city => city.name.toLowerCase().includes(input.toLowerCase()))
-        .map(city => ({
-          place_id: `offline_${city.name}`,
-          description: `${city.name}, Norge`,
-          structured_formatting: {
-            main_text: city.name,
-            secondary_text: 'Norge',
-          },
-          geometry: {
-            location: {
-              lat: city.lat,
-              lng: city.lng,
-            },
-          },
-        }));
+      return buildOfflineCityResults(input);
     }
   } catch (error) {
     console.error('Places API error:', error);
     // Return offline fallback
-    return norwegianCities
-      .filter(city => city.name.toLowerCase().includes(input.toLowerCase()))
-      .map(city => ({
-        place_id: `offline_${city.name}`,
-        description: `${city.name}, Norge`,
-        structured_formatting: {
-          main_text: city.name,
-          secondary_text: 'Norge',
-        },
-        geometry: {
-          location: {
-            lat: city.lat,
-            lng: city.lng,
-          },
-        },
-      }));
+    return buildOfflineCityResults(input);
   }
 };
 
@@ -195,6 +180,12 @@ export const getPlaceDetails = async (placeId: string): Promise<PlaceDetails | n
     }
   }
 
+  const googlePlacesApiKey = getGooglePlacesApiKey();
+
+  if (!googlePlacesApiKey) {
+    return null;
+  }
+
   try {
     // 🔄 Use fetchWithRetry for automatic retry on network failures
     const response = await fetchWithRetry(
@@ -202,7 +193,7 @@ export const getPlaceDetails = async (placeId: string): Promise<PlaceDetails | n
         `place_id=${placeId}&` +
         `fields=place_id,formatted_address,geometry,address_components&` +
         `language=no&` +
-        `key=${GOOGLE_PLACES_API_KEY}`,
+        `key=${googlePlacesApiKey}`,
       {
         method: 'GET',
         timeout: 10000, // 10 second timeout for place details API
@@ -226,6 +217,12 @@ export const calculateDistance = async (
   origin: { lat: number; lng: number },
   destination: { lat: number; lng: number }
 ): Promise<DistanceMatrixResult | null> => {
+  const googlePlacesApiKey = getGooglePlacesApiKey();
+
+  if (!googlePlacesApiKey) {
+    return null;
+  }
+
   try {
     // 🔄 Use fetchWithRetry for automatic retry on network failures
     const response = await fetchWithRetry(
@@ -234,7 +231,7 @@ export const calculateDistance = async (
         `destinations=${destination.lat},${destination.lng}&` +
         `units=metric&` +
         `language=no&` +
-        `key=${GOOGLE_PLACES_API_KEY}`,
+        `key=${googlePlacesApiKey}`,
       {
         method: 'GET',
         timeout: 10000, // 10 second timeout for distance matrix API
