@@ -27,7 +27,8 @@ import { useTranslation } from 'react-i18next';
 import { useUnreadCount } from '../../hooks/useNotifications';
 import { useDebounce } from '../../hooks/useDebounce';
 
-const HOME_FILTERS_STORAGE_KEY = '@home_marketplace_filters';
+const HOME_FILTERS_STORAGE_KEY = 'home_filters';
+const LEGACY_HOME_FILTERS_STORAGE_KEY = '@home_marketplace_filters';
 
 type PersistedHomeState = {
   activeTab: 'all' | 'my';
@@ -95,10 +96,22 @@ export default function HomeScreen() {
   useEffect(() => {
     const loadPersistedState = async () => {
       try {
-        const rawState = await AsyncStorage.getItem(HOME_FILTERS_STORAGE_KEY);
+        const rawCurrentState = await AsyncStorage.getItem(HOME_FILTERS_STORAGE_KEY);
+        const rawLegacyState = rawCurrentState
+          ? null
+          : await AsyncStorage.getItem(LEGACY_HOME_FILTERS_STORAGE_KEY);
+        const rawState = rawCurrentState ?? rawLegacyState;
         if (!rawState) {
           setHasPersistedState(false);
           return;
+        }
+
+        if (!rawCurrentState && rawLegacyState) {
+          await AsyncStorage.setItem(HOME_FILTERS_STORAGE_KEY, rawLegacyState);
+          await AsyncStorage.removeItem(LEGACY_HOME_FILTERS_STORAGE_KEY);
+          if (__DEV__) {
+            console.info('Migrated home filters storage key to home_filters');
+          }
         }
 
         const state = JSON.parse(rawState) as Partial<PersistedHomeState>;
