@@ -30,16 +30,17 @@ import { CargoRequest } from '../hooks/useCargoRequests';
 export async function checkDuplicateRequest(
   userId: string,
   fromAddress: string,
-  toAddress: string
+  toAddress: string,
+  fuzzy: boolean = true
 ): Promise<string | null> {
   try {
-    // Check for requests from the same user in the past hour
+    // Check for requests from the same user in the past hour (single query path)
     const oneHourAgo = new Date(Date.now() - 3600000).toISOString();
+    const normalizedFrom = normalizeAddress(fromAddress);
+    const normalizedTo = normalizeAddress(toAddress);
 
     const result = await safeQuery('cargo_requests', [
       where('user_id', '==', userId),
-      where('from_address', '==', fromAddress),
-      where('to_address', '==', toAddress),
       where('created_at', '>', oneHourAgo),
     ]);
 
@@ -54,7 +55,42 @@ export async function checkDuplicateRequest(
     }
 
     if (result.documents && result.documents.length > 0) {
-      return 'You already have a similar request. Please check your active requests first.';
+      for (const doc of result.documents) {
+        const existingRequest = doc as Partial<CargoRequest>;
+        const existingFromRaw = existingRequest.from_address || '';
+        const existingToRaw = existingRequest.to_address || '';
+        const existingFrom = normalizeAddress(existingFromRaw);
+        const existingTo = normalizeAddress(existingToRaw);
+
+        // Strict exact matching
+        if (!fuzzy) {
+          if (existingFromRaw === fromAddress && existingToRaw === toAddress) {
+            return 'You already have a similar request. Please check your active requests first.';
+          }
+          continue;
+        }
+
+        // Normalized exact match
+        if (existingFrom === normalizedFrom && existingTo === normalizedTo) {
+          return 'You already have a similar request. Please check your active requests first.';
+        }
+
+        // Similarity match for near-identical addresses
+        const sameDirectionFromSimilarity = calculateSimilarity(normalizedFrom, existingFrom);
+        const sameDirectionToSimilarity = calculateSimilarity(normalizedTo, existingTo);
+
+        if (sameDirectionFromSimilarity > 0.8 && sameDirectionToSimilarity > 0.8) {
+          return 'You already have a similar request. Please check your active requests first.';
+        }
+
+        // Reverse direction with high similarity
+        const reverseFromSimilarity = calculateSimilarity(normalizedFrom, existingTo);
+        const reverseToSimilarity = calculateSimilarity(normalizedTo, existingFrom);
+
+        if (reverseFromSimilarity > 0.8 && reverseToSimilarity > 0.8) {
+          return 'You recently created a similar request in the opposite direction.';
+        }
+      }
     }
 
     return null;
@@ -82,53 +118,7 @@ export async function checkFuzzyDuplicateRequest(
   fromAddress: string,
   toAddress: string
 ): Promise<string | null> {
-  try {
-    // Normalize addresses for comparison
-    const normalizedFrom = normalizeAddress(fromAddress);
-    const normalizedTo = normalizeAddress(toAddress);
-    const oneHourAgo = new Date(Date.now() - 3600000).toISOString();
-
-    const result = await safeQuery('cargo_requests', [
-      where('user_id', '==', userId),
-      where('created_at', '>', oneHourAgo),
-    ]);
-
-    if (result.error) {
-      // Offline: can't do fuzzy match, just check exact
-      return checkDuplicateRequest(userId, fromAddress, toAddress);
-    }
-
-    if (!result.documents) {
-      return null;
-    }
-
-    // Check for fuzzy matches
-    for (const doc of result.documents) {
-      const existingRequest = doc as Partial<CargoRequest>;
-      const existingFrom = normalizeAddress(existingRequest.from_address || '');
-      const existingTo = normalizeAddress(existingRequest.to_address || '');
-
-      // If addresses match after normalization, it's a duplicate
-      if (existingFrom === normalizedFrom && existingTo === normalizedTo) {
-        return 'You already have a similar request. Please check your active requests first.';
-      }
-
-      // Check for reverse direction with high similarity
-      if (
-        existingFrom === normalizedTo &&
-        existingTo === normalizedFrom &&
-        calculateSimilarity(normalizedFrom, normalizedTo) > 0.8
-      ) {
-        return 'You recently created a similar request in the opposite direction.';
-      }
-    }
-
-    return null;
-  } catch (error) {
-    console.error('Error checking fuzzy duplicates:', error);
-    // Fall back to exact check
-    return checkDuplicateRequest(userId, fromAddress, toAddress);
-  }
+  return checkDuplicateRequest(userId, fromAddress, toAddress, true);
 }
 
 /**
