@@ -1,6 +1,6 @@
 # 🚚 TruckinFox
 
-TruckinFox is a comprehensive cargo transportation platform connecting customers with verified carriers across Norway. Built with React Native, Expo, and Firebase.
+TruckinFox is a comprehensive cargo transportation platform connecting customers with verified carriers across Norway. Built with React Native, Expo, and Supabase.
 
 ## ✨ Features
 
@@ -26,9 +26,9 @@ TruckinFox is a comprehensive cargo transportation platform connecting customers
 
 - 🌍 **Multi-language**: Norwegian (Bokmål) and English
 - 📱 **iOS & Android**: Native mobile experience
-- 🔐 **Secure Authentication**: Firebase Auth with email/phone
+- 🔐 **Secure Authentication**: Supabase Auth
 - 🔔 **Push Notifications**: Real-time updates
-- 📊 **Analytics**: Firebase Performance Monitoring
+- 📊 **Analytics**: App analytics and monitoring
 - 🎨 **Modern UI**: iOS-native styled components
 - 🟠 **Warm Design**: Orange monochrome color palette (#FF7043)
 
@@ -45,11 +45,10 @@ TruckinFox is a comprehensive cargo transportation platform connecting customers
 
 ### Backend
 
-- **Firebase Authentication** - User management
-- **Firestore** - Real-time database
-- **Firebase Storage** - File uploads
-- **Cloud Functions** - Serverless backend
-- **Firebase Cloud Messaging** - Push notifications
+- **Supabase Auth** - User management
+- **PostgreSQL (Supabase)** - Primary database
+- **Supabase Storage** - File uploads
+- **Supabase Realtime** - Live chat and tracking updates
 
 ### Payments & Services
 
@@ -64,7 +63,7 @@ TruckinFox is a comprehensive cargo transportation platform connecting customers
 - npm or yarn
 - Expo CLI
 - iOS Simulator (Mac) or Android Emulator
-- Firebase account
+- Supabase project (cloud or self-hosted)
 - Vipps merchant account (for payments)
 
 ## 🚀 Quick Start
@@ -90,12 +89,11 @@ Copy the example environment file:
 cp .env.example .env
 ```
 
-Edit `.env` with your Firebase and API credentials:
+Edit `.env` with your Supabase and API credentials:
 
 ```env
-FIREBASE_API_KEY=your_api_key
-FIREBASE_AUTH_DOMAIN=your_project.firebaseapp.com
-FIREBASE_PROJECT_ID=your_project_id
+EXPO_PUBLIC_SUPABASE_URL=http://127.0.0.1:54321
+EXPO_PUBLIC_SUPABASE_ANON_KEY=your_anon_key
 # ... other credentials
 ```
 
@@ -135,7 +133,7 @@ truckinfox/
 │   ├── I18nContext.tsx
 │   └── ...
 ├── lib/                  # Core libraries
-│   ├── firebase.ts
+│   ├── supabase.ts
 │   ├── i18n.ts
 │   └── ...
 ├── hooks/                # Custom React hooks
@@ -145,7 +143,6 @@ truckinfox/
 ├── locales/              # Translation files
 │   ├── en/
 │   └── no/
-├── functions/            # Firebase Cloud Functions
 └── mocks/                # Test data
 
 ```
@@ -191,35 +188,30 @@ eas build --platform ios --profile production
 eas build --platform android --profile production
 ```
 
-## 🔥 Firebase Setup
-
-### 1. Create Firebase Project
-
-1. Go to [Firebase Console](https://console.firebase.google.com/)
-2. Create a new project
-3. Add iOS and Android apps
-4. Download configuration files
-
-### 2. Deploy Firebase
-
-```bash
-# Deploy Firestore rules
-firebase deploy --only firestore:rules
-
-# Deploy Cloud Functions
-cd functions
-npm run build
-cd ..
-firebase deploy --only functions
-```
-
 ## 📚 Documentation
 
 - [Push Notifications Setup](./PUSH_NOTIFICATIONS_SETUP.md)
 - [Quick Deploy Guide](./QUICK_DEPLOY_SETUP.md)
-- [Firebase Error Monitoring Checklist](./FIREBASE_ERROR_MONITORING_CHECKLIST.md)
 - [UI/UX Improvements](./UIUX_PERFORMANCE_IMPROVEMENTS.md)
 - [Vipps Integration](./VIPPS_INTEGRATION_REPORT.md)
+- [Supabase Schema & RLS](./supabase/README.md)
+- [Supabase Migration Plan](./SUPABASE_MIGRATION_PLAN.md)
+
+## 🐘 Supabase (Self-host via Docker)
+
+You can run Supabase on your own server and avoid cloud subscription costs.
+
+### Local Docker stack
+
+```bash
+supabase start
+supabase db reset
+```
+
+- API URL: `http://127.0.0.1:54321`
+- DB URL: `postgresql://postgres:postgres@127.0.0.1:54322/postgres`
+
+Use `supabase/schema.sql` as the source of truth for TruckinFox tables and RLS policies.
 
 ## 🎨 Design System
 
@@ -243,10 +235,9 @@ firebase deploy --only functions
 
 ## 🔐 Security
 
-- Firestore security rules implemented
-- Storage security rules implemented
+- Supabase RLS policies implemented
+- Supabase Storage policies implemented
 - Environment variables for sensitive data
-- HTTPS-only Cloud Functions
 - Input validation and sanitization
 
 ## 🌍 Internationalization
@@ -277,7 +268,7 @@ This project is proprietary and confidential.
 ## 🙏 Acknowledgments
 
 - Expo team for the amazing development platform
-- Firebase team for the comprehensive backend solution
+- Supabase team for the open-source backend platform
 - Vipps for payment integration
 - Norwegian design inspiration for the warm orange palette
 

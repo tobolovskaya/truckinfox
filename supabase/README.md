@@ -277,3 +277,34 @@ model Message {
 - `JSONB metadata/data` для еволюції схеми без частих міграцій.
 - Окремі таблиці `orders/payments/escrow_payments` для чистої доменної логіки на backend.
 - RLS для клієнта + `service_role` для серверних воркерів/cron/API.
+
+---
+
+## Self-host Supabase через Docker
+
+### Локально / staging
+
+```bash
+supabase start
+supabase db reset
+```
+
+Після цього застосуйте ваші env у мобільному застосунку:
+
+- `EXPO_PUBLIC_SUPABASE_URL=http://127.0.0.1:54321`
+- `EXPO_PUBLIC_SUPABASE_ANON_KEY=<anon-key-from-supabase-status-or-dashboard>`
+
+### Продакшн на власному сервері
+
+- Розгорніть офіційний Supabase self-host stack (Docker Compose) на Linux VM
+- Налаштуйте TLS через Nginx/Caddy
+- Тримайте `service_role` ключ тільки на Node.js backend
+- У мобільний клієнт передавайте лише `anon` ключ
+
+## Рекомендований порядок міграції TruckinFox
+
+1. Залишити Firebase як primary у production
+2. Підняти Supabase паралельно (dual-run)
+3. Перенести realtime-модулі першими: `messages`, `tracking`, `notifications`
+4. Перенести бізнес-сутності: `orders`, `payments`, `escrow_payments`
+5. Перенести Auth останнім етапом
