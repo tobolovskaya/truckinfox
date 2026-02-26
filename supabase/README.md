@@ -1,0 +1,220 @@
+# TruckInfoX — Supabase Schema Guide
+
+Цей документ описує схему бази даних Supabase (PostgreSQL), надає рекомендації з реальних підключень та інтеграції з Node.js ORM.
+
+## Таблиці та зв'язки
+
+```
+auth.users (Supabase built-in)
+    │
+    └─── profiles (1:1)
+              │
+              ├─── trucks (1:N) ──── tracking (1:N)
+              │
+              ├─── cargo_requests (1:N) ──── bids (1:N)
+              │
+              └─── chats (N:M через user_a_id / user_b_id) ──── messages (1:N)
+```
+
+### profiles
+Розширює стандартну таблицю `auth.users`. Зберігає публічний профіль: ім'я, тип акаунту (`customer` / `carrier`), регіон (`country_code`, `language`), рейтинг.
+
+### trucks
+Вантажівки перевізника. Поля: `plate_number`, `model`, `capacity_kg`, `volume_m3`, `truck_type`, `status`. Прив'язані до `profiles` через `carrier_id`.
+
+### cargo_requests
+Запити на перевезення вантажу від замовників. Містять маршрут (адреси + координати), вагу, тип вантажу, ціну, статус (`open` → `in_transit` → `delivered`). Повнотекстовий пошук через `search_tokens` (GIN-індекс).
+
+### bids
+Ставки перевізників на запити. Унікальна пара `(request_id, carrier_id)`. Після прийняття — `cargo_requests.accepted_bid_id` вказує на цю ставку.
+
+### tracking
+GPS-позиції вантажівок (широта, довгота, швидкість, напрямок). Прив'язані до `trucks` та опціонально до активного `cargo_requests`. Рекомендовано підписуватися на INSERT через Supabase Realtime.
+
+### chats
+Чат-сесія між двома користувачами (`user_a_id`, `user_b_id`) у контексті замовлення (`request_id`). Зберігає кількість непрочитаних та останнє повідомлення для швидкого відображення у списку чатів.
+
+### messages
+Окремі повідомлення з підтримкою тексту та медіа-вкладень (шлях у Supabase Storage). Статус доставки/читання через `delivered_at` / `read_at`.
+
+---
+
+## Supabase Storage — структура бакетів
+
+| Бакет | Шлях об'єкта | Призначення |
+|---|---|---|
+| `trucks` | `trucks/{truck_id}/{filename}` | Фото вантажівок |
+| `cargo` | `cargo/{request_id}/{filename}` | Фото вантажу |
+| `chat` | `chat/{chat_id}/{message_id}/{filename}` | Медіа у повідомленнях |
+| `avatars` | `avatars/{user_id}/{filename}` | Аватари користувачів |
+
+---
+
+## Рекомендації для Realtime та Node.js Backend
+
+### Supabase Realtime (клієнт / мобільний застосунок)
+
+```typescript
+import { createClient } from '@supabase/supabase-js';
+
+const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+// Підписка на нові повідомлення у конкретному чаті
+const chatChannel = supabase
+  .channel(`chat:${chatId}`)
+  .on(
+    'postgres_changes',
+    { event: 'INSERT', schema: 'public', table: 'messages', filter: `chat_id=eq.${chatId}` },
+    (payload) => console.log('Нове повідомлення:', payload.new)
+  )
+  .subscribe();
+
+// Підписка на GPS-позиції вантажівки
+const trackingChannel = supabase
+  .channel(`tracking:${truckId}`)
+  .on(
+    'postgres_changes',
+    { event: 'INSERT', schema: 'public', table: 'tracking', filter: `truck_id=eq.${truckId}` },
+    (payload) => console.log('Нова позиція:', payload.new)
+  )
+  .subscribe();
+
+// Відписка при виході з екрану
+chatChannel.unsubscribe();
+trackingChannel.unsubscribe();
+```
+
+### Node.js з Supabase (service_role — обхід RLS)
+
+```typescript
+import { createClient } from '@supabase/supabase-js';
+
+// Використовуйте service_role ЛИШЕ на сервері, ніколи у клієнтському коді
+const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+
+// Отримати список вантажівок із останніми позиціями
+const { data: trucks } = await supabaseAdmin
+  .from('trucks_latest_position')
+  .select('*')
+  .eq('carrier_id', carrierId);
+```
+
+---
+
+## Інтеграція з Node.js ORM
+
+### TypeORM
+
+```typescript
+// entities/Message.ts
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, CreateDateColumn } from 'typeorm';
+import { Chat } from './Chat';
+import { Profile } from './Profile';
+
+@Entity('messages')
+export class Message {
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
+
+  @ManyToOne(() => Chat, (chat) => chat.messages, { onDelete: 'CASCADE' })
+  chat: Chat;
+
+  @Column({ name: 'chat_id' })
+  chatId: string;
+
+  @ManyToOne(() => Profile)
+  sender: Profile;
+
+  @Column({ name: 'sender_id' })
+  senderId: string;
+
+  @Column({ nullable: true })
+  content: string;
+
+  @Column({ name: 'media_url', nullable: true })
+  mediaUrl: string;
+
+  @Column({ name: 'delivered_at', nullable: true })
+  deliveredAt: Date;
+
+  @Column({ name: 'read_at', nullable: true })
+  readAt: Date;
+
+  @CreateDateColumn({ name: 'created_at' })
+  createdAt: Date;
+}
+```
+
+### Sequelize
+
+```typescript
+// models/Message.js
+const { Model, DataTypes } = require('sequelize');
+
+class Message extends Model {}
+
+Message.init(
+  {
+    id: { type: DataTypes.UUID, defaultValue: DataTypes.UUIDV4, primaryKey: true },
+    chatId: { type: DataTypes.UUID, allowNull: false, field: 'chat_id' },
+    senderId: { type: DataTypes.UUID, allowNull: false, field: 'sender_id' },
+    content: { type: DataTypes.TEXT },
+    mediaUrl: { type: DataTypes.TEXT, field: 'media_url' },
+    senderType: {
+      type: DataTypes.ENUM('customer', 'carrier', 'system'),
+      field: 'sender_type',
+    },
+    deliveredAt: { type: DataTypes.DATE, field: 'delivered_at' },
+    readAt: { type: DataTypes.DATE, field: 'read_at' },
+    deletedAt: { type: DataTypes.DATE, field: 'deleted_at' },
+    createdAt: { type: DataTypes.DATE, field: 'created_at' },
+  },
+  { sequelize, tableName: 'messages', timestamps: false }
+);
+
+// Зв'язки
+Message.belongsTo(Chat, { foreignKey: 'chatId' });
+Message.belongsTo(Profile, { as: 'sender', foreignKey: 'senderId' });
+```
+
+### Prisma
+
+```prisma
+// schema.prisma (фрагмент)
+
+model Message {
+  id          String    @id @default(uuid()) @db.Uuid
+  chatId      String    @map("chat_id") @db.Uuid
+  senderId    String    @map("sender_id") @db.Uuid
+  content     String?
+  mediaUrl    String?   @map("media_url")
+  mediaType   String?   @map("media_type")
+  senderType  String?   @map("sender_type")
+  deliveredAt DateTime? @map("delivered_at")
+  readAt      DateTime? @map("read_at")
+  deletedAt   DateTime? @map("deleted_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+
+  chat   Chat    @relation(fields: [chatId], references: [id], onDelete: Cascade)
+  sender Profile @relation(fields: [senderId], references: [id], onDelete: Cascade)
+
+  @@index([chatId, createdAt])
+  @@index([senderId])
+  @@map("messages")
+}
+```
+
+---
+
+## Корисні підказки щодо схеми
+
+| Аспект | Рішення у схемі |
+|---|---|
+| Первинні ключі | UUID v4 (`uuid_generate_v4()`) — безпечно для розподілених систем |
+| Часові мітки | `TIMESTAMPTZ` — зберігає часовий пояс, сумісний із JavaScript `Date` |
+| М'яке видалення | `deleted_at TIMESTAMPTZ` — повідомлення не видаляються фізично |
+| Мультирегіональність | `country_code CHAR(2)` (ISO 3166-1) + `language VARCHAR(10)` (BCP 47) |
+| Повнотекстовий пошук | `TSVECTOR` з GIN-індексом у `cargo_requests` |
+| Реальний час | `ALTER PUBLICATION supabase_realtime ADD TABLE …` для messages, tracking, chats |
+| Безпека | RLS увімкнено на всіх таблицях; Node.js backend використовує `service_role` |
+| ORM | Усі поля з `snake_case` назвами — стандарт для Sequelize/TypeORM/Prisma маппінгу |
