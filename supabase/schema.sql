@@ -396,6 +396,268 @@ CREATE INDEX IF NOT EXISTS idx_messages_unread      ON public.messages(chat_id, 
   WHERE read_at IS NULL AND deleted_at IS NULL;
 
 -- =============================================================================
+-- СУМІСНІСТЬ CHAT-ПОТОКУ (поточний клієнт Firebase-style)
+-- =============================================================================
+-- Поточний RN-клієнт читає/пише messages через request_id + sender_id/receiver_id
+-- без явного chat_id. Ці поля дають змогу мігрувати поступово.
+ALTER TABLE public.messages
+  ADD COLUMN IF NOT EXISTS request_id UUID REFERENCES public.cargo_requests(id) ON DELETE SET NULL,
+  ADD COLUMN IF NOT EXISTS receiver_id UUID REFERENCES public.profiles(id) ON DELETE SET NULL;
+
+CREATE INDEX IF NOT EXISTS idx_messages_request_id_created_at
+  ON public.messages(request_id, created_at ASC)
+  WHERE request_id IS NOT NULL;
+
+CREATE INDEX IF NOT EXISTS idx_messages_receiver_unread
+  ON public.messages(receiver_id, request_id, read_at)
+  WHERE receiver_id IS NOT NULL AND read_at IS NULL AND deleted_at IS NULL;
+
+-- =============================================================================
+-- ТАБЛИЦЯ: orders
+-- =============================================================================
+-- Замовлення створюється після прийняття ставки (або напряму).
+-- Поля вирівняні з існуючим мобільним кодом: total_amount/platform_fee/carrier_amount,
+-- status/payment_status, request_id, bid_id.
+CREATE TABLE IF NOT EXISTS public.orders (
+  id                  UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  request_id          UUID REFERENCES public.cargo_requests(id) ON DELETE SET NULL,
+  bid_id              UUID REFERENCES public.bids(id) ON DELETE SET NULL,
+
+  customer_id         UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+  carrier_id          UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+
+  total_amount        NUMERIC(12, 2) NOT NULL CHECK (total_amount >= 0),
+  platform_fee        NUMERIC(12, 2) NOT NULL DEFAULT 0 CHECK (platform_fee >= 0),
+  carrier_amount      NUMERIC(12, 2) NOT NULL DEFAULT 0 CHECK (carrier_amount >= 0),
+  currency            CHAR(3) NOT NULL DEFAULT 'NOK',
+
+  status              TEXT NOT NULL DEFAULT 'active'
+                        CHECK (status IN ('pending', 'active', 'in_transit', 'delivered', 'cancelled', 'disputed')),
+  payment_status      TEXT NOT NULL DEFAULT 'pending'
+                        CHECK (payment_status IN ('pending', 'initiated', 'paid', 'failed', 'refunded', 'released')),
+
+  started_at          TIMESTAMPTZ,
+  delivered_at        TIMESTAMPTZ,
+  cancelled_at        TIMESTAMPTZ,
+
+  delivery_photos     TEXT[],
+  delivery_signature_url TEXT,
+  completion_note     TEXT,
+
+  metadata            JSONB NOT NULL DEFAULT '{}'::jsonb,
+
+  created_at          TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at          TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TRIGGER trg_orders_updated_at
+  BEFORE UPDATE ON public.orders
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+CREATE INDEX IF NOT EXISTS idx_orders_customer_created
+  ON public.orders(customer_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_orders_carrier_created
+  ON public.orders(carrier_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_orders_request_id ON public.orders(request_id)
+  WHERE request_id IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_orders_bid_id ON public.orders(bid_id)
+  WHERE bid_id IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_orders_status ON public.orders(status);
+CREATE INDEX IF NOT EXISTS idx_orders_payment_status ON public.orders(payment_status);
+
+-- =============================================================================
+-- ТАБЛИЦЯ: payments
+-- =============================================================================
+-- Історія платежів для екрану payment history.
+CREATE TABLE IF NOT EXISTS public.payments (
+  id                  UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id             UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+  order_id            UUID REFERENCES public.orders(id) ON DELETE SET NULL,
+
+  amount              NUMERIC(12, 2) NOT NULL CHECK (amount >= 0),
+  currency            CHAR(3) NOT NULL DEFAULT 'NOK',
+  status              TEXT NOT NULL DEFAULT 'pending'
+                        CHECK (status IN ('pending', 'completed', 'failed', 'refunded')),
+  payment_method      TEXT NOT NULL DEFAULT 'vipps',
+  description         TEXT,
+  invoice_url         TEXT,
+  reference_id        TEXT,
+
+  created_at          TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at          TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TRIGGER trg_payments_updated_at
+  BEFORE UPDATE ON public.payments
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+CREATE INDEX IF NOT EXISTS idx_payments_user_created
+  ON public.payments(user_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_payments_order_id ON public.payments(order_id)
+  WHERE order_id IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_payments_status ON public.payments(status);
+
+-- =============================================================================
+-- ТАБЛИЦЯ: escrow_payments
+-- =============================================================================
+-- Платіжний escrow lifecycle (initiated -> paid -> released/refunded).
+CREATE TABLE IF NOT EXISTS public.escrow_payments (
+  id                  UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  order_id            UUID NOT NULL REFERENCES public.orders(id) ON DELETE CASCADE,
+  request_id          UUID REFERENCES public.cargo_requests(id) ON DELETE SET NULL,
+  bid_id              UUID REFERENCES public.bids(id) ON DELETE SET NULL,
+
+  customer_id         UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+  carrier_id          UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+
+  total_amount        NUMERIC(12, 2) NOT NULL CHECK (total_amount >= 0),
+  platform_fee        NUMERIC(12, 2) NOT NULL DEFAULT 0 CHECK (platform_fee >= 0),
+  carrier_amount      NUMERIC(12, 2) NOT NULL DEFAULT 0 CHECK (carrier_amount >= 0),
+  currency            CHAR(3) NOT NULL DEFAULT 'NOK',
+
+  status              TEXT NOT NULL DEFAULT 'initiated'
+                        CHECK (status IN ('initiated', 'paid', 'released', 'refunded', 'failed', 'expired')),
+  provider            TEXT NOT NULL DEFAULT 'vipps',
+  provider_order_id   TEXT,
+  payment_url         TEXT,
+
+  idempotency_key     TEXT NOT NULL,
+  metadata            JSONB NOT NULL DEFAULT '{}'::jsonb,
+
+  created_at          TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at          TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+
+  UNIQUE (idempotency_key)
+);
+
+CREATE TRIGGER trg_escrow_payments_updated_at
+  BEFORE UPDATE ON public.escrow_payments
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+CREATE INDEX IF NOT EXISTS idx_escrow_order_id ON public.escrow_payments(order_id);
+CREATE INDEX IF NOT EXISTS idx_escrow_customer_created
+  ON public.escrow_payments(customer_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_escrow_carrier_created
+  ON public.escrow_payments(carrier_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_escrow_status ON public.escrow_payments(status);
+
+-- =============================================================================
+-- ТАБЛИЦЯ: user_favorites
+-- =============================================================================
+CREATE TABLE IF NOT EXISTS public.user_favorites (
+  id                  UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id             UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+  request_id          UUID NOT NULL REFERENCES public.cargo_requests(id) ON DELETE CASCADE,
+  created_at          TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  UNIQUE (user_id, request_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_user_favorites_user_created
+  ON public.user_favorites(user_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_user_favorites_request_id ON public.user_favorites(request_id);
+
+-- =============================================================================
+-- ТАБЛИЦЯ: reviews
+-- =============================================================================
+CREATE TABLE IF NOT EXISTS public.reviews (
+  id                  UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  order_id            UUID REFERENCES public.orders(id) ON DELETE SET NULL,
+  reviewer_id         UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+  reviewed_id         UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+
+  rating              SMALLINT NOT NULL CHECK (rating BETWEEN 1 AND 5),
+  comment             TEXT,
+
+  created_at          TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+
+  CHECK (reviewer_id <> reviewed_id),
+  UNIQUE (order_id, reviewer_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_reviews_reviewed_created
+  ON public.reviews(reviewed_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_reviews_reviewer_created
+  ON public.reviews(reviewer_id, created_at DESC);
+
+-- =============================================================================
+-- ТАБЛИЦЯ: notifications
+-- =============================================================================
+CREATE TABLE IF NOT EXISTS public.notifications (
+  id                  UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id             UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+
+  type                TEXT NOT NULL
+                        CHECK (type IN ('new_bid', 'bid_accepted', 'payment_success', 'order_status_change')),
+  title               TEXT NOT NULL,
+  body                TEXT NOT NULL,
+
+  related_id          UUID,
+  related_type        TEXT CHECK (related_type IN ('cargo_request', 'order', NULL)),
+
+  read                BOOLEAN NOT NULL DEFAULT FALSE,
+  read_at             TIMESTAMPTZ,
+
+  data                JSONB NOT NULL DEFAULT '{}'::jsonb,
+  created_at          TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_notifications_user_created
+  ON public.notifications(user_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_notifications_user_unread
+  ON public.notifications(user_id, read, created_at DESC)
+  WHERE read = FALSE;
+
+-- =============================================================================
+-- ТАБЛИЦЯ: deliveries
+-- =============================================================================
+-- Поточний клієнт читає документ deliveries/{order_id}. У SQL тримаємо 1:1 рядок на order_id.
+CREATE TABLE IF NOT EXISTS public.deliveries (
+  order_id             UUID PRIMARY KEY REFERENCES public.orders(id) ON DELETE CASCADE,
+
+  current_latitude     NUMERIC(10, 7),
+  current_longitude    NUMERIC(10, 7),
+  route                JSONB,
+
+  updated_at           TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- =============================================================================
+-- ТАБЛИЦЯ: typing_indicators
+-- =============================================================================
+CREATE TABLE IF NOT EXISTS public.typing_indicators (
+  request_id          UUID NOT NULL REFERENCES public.cargo_requests(id) ON DELETE CASCADE,
+  user_id             UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+  typing              BOOLEAN NOT NULL DEFAULT FALSE,
+  "timestamp"         TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  PRIMARY KEY (request_id, user_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_typing_indicators_request_timestamp
+  ON public.typing_indicators(request_id, "timestamp" DESC);
+
+-- =============================================================================
+-- СУМІСНІСТЬ ІМЕН: users (view)
+-- =============================================================================
+-- Firebase-код використовує колекцію users. Для SQL зберігаємо canonical таблицю
+-- profiles та надаємо read-only view users для простішої міграції.
+CREATE OR REPLACE VIEW public.users AS
+SELECT
+  p.id,
+  p.full_name,
+  p.phone,
+  p.avatar_url,
+  p.user_type,
+  p.company_name,
+  p.org_number,
+  p.country_code,
+  p.language,
+  p.rating,
+  p.push_token,
+  p.created_at,
+  p.updated_at
+FROM public.profiles p;
+
+-- =============================================================================
 -- ROW LEVEL SECURITY (RLS)
 -- =============================================================================
 -- RLS гарантує, що кожен користувач може бачити лише свої дані.
@@ -409,6 +671,14 @@ ALTER TABLE public.bids           ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.tracking       ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.chats          ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.messages       ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.orders         ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.payments       ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.escrow_payments ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.user_favorites ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.reviews        ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.notifications  ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.deliveries     ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.typing_indicators ENABLE ROW LEVEL SECURITY;
 
 -- ---------------------------------------------------------------------------
 -- profiles: кожен читає будь-який профіль, оновлює лише свій
@@ -557,6 +827,123 @@ CREATE POLICY "Receiver can mark messages as read"
     )
   );
 
+-- ---------------------------------------------------------------------------
+-- orders / payments / escrow
+-- ---------------------------------------------------------------------------
+CREATE POLICY "Order participants can view orders"
+  ON public.orders FOR SELECT
+  USING (auth.uid() = customer_id OR auth.uid() = carrier_id);
+
+CREATE POLICY "Customers can create orders"
+  ON public.orders FOR INSERT
+  WITH CHECK (auth.uid() = customer_id);
+
+CREATE POLICY "Order participants can update orders"
+  ON public.orders FOR UPDATE
+  USING (auth.uid() = customer_id OR auth.uid() = carrier_id);
+
+CREATE POLICY "Users can view own payments"
+  ON public.payments FOR SELECT
+  USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can insert own payments"
+  ON public.payments FOR INSERT
+  WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can view own escrow payments"
+  ON public.escrow_payments FOR SELECT
+  USING (auth.uid() = customer_id OR auth.uid() = carrier_id);
+
+CREATE POLICY "Customers can create escrow payments"
+  ON public.escrow_payments FOR INSERT
+  WITH CHECK (auth.uid() = customer_id);
+
+CREATE POLICY "Escrow participants can update escrow state"
+  ON public.escrow_payments FOR UPDATE
+  USING (auth.uid() = customer_id OR auth.uid() = carrier_id);
+
+-- ---------------------------------------------------------------------------
+-- favorites / reviews / notifications
+-- ---------------------------------------------------------------------------
+CREATE POLICY "Users can manage own favorites"
+  ON public.user_favorites FOR ALL
+  USING (auth.uid() = user_id)
+  WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Authenticated users can create reviews"
+  ON public.reviews FOR INSERT
+  WITH CHECK (auth.uid() = reviewer_id);
+
+CREATE POLICY "Users can view reviews where they are involved"
+  ON public.reviews FOR SELECT
+  USING (auth.uid() = reviewer_id OR auth.uid() = reviewed_id);
+
+CREATE POLICY "Users can view own notifications"
+  ON public.notifications FOR SELECT
+  USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can update own notifications"
+  ON public.notifications FOR UPDATE
+  USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can delete own notifications"
+  ON public.notifications FOR DELETE
+  USING (auth.uid() = user_id);
+
+-- ---------------------------------------------------------------------------
+-- deliveries / typing indicators
+-- ---------------------------------------------------------------------------
+CREATE POLICY "Order participants can view delivery"
+  ON public.deliveries FOR SELECT
+  USING (
+    EXISTS (
+      SELECT 1 FROM public.orders o
+      WHERE o.id = order_id
+        AND (o.customer_id = auth.uid() OR o.carrier_id = auth.uid())
+    )
+  );
+
+CREATE POLICY "Carrier can upsert delivery"
+  ON public.deliveries FOR INSERT
+  WITH CHECK (
+    EXISTS (
+      SELECT 1 FROM public.orders o
+      WHERE o.id = order_id
+        AND o.carrier_id = auth.uid()
+    )
+  );
+
+CREATE POLICY "Carrier can update delivery"
+  ON public.deliveries FOR UPDATE
+  USING (
+    EXISTS (
+      SELECT 1 FROM public.orders o
+      WHERE o.id = order_id
+        AND o.carrier_id = auth.uid()
+    )
+  );
+
+CREATE POLICY "Users can view typing indicators for request they belong to"
+  ON public.typing_indicators FOR SELECT
+  USING (
+    EXISTS (
+      SELECT 1 FROM public.cargo_requests cr
+      WHERE cr.id = request_id
+        AND (
+          cr.customer_id = auth.uid()
+          OR EXISTS (
+            SELECT 1 FROM public.bids b
+            WHERE b.request_id = cr.id AND b.carrier_id = auth.uid()
+          )
+        )
+    )
+  );
+
+CREATE POLICY "Users can manage own typing indicators"
+  ON public.typing_indicators FOR ALL
+  USING (auth.uid() = user_id)
+  WITH CHECK (auth.uid() = user_id);
+
 -- =============================================================================
 -- SUPABASE REALTIME
 -- =============================================================================
@@ -567,6 +954,9 @@ CREATE POLICY "Receiver can mark messages as read"
 ALTER PUBLICATION supabase_realtime ADD TABLE public.messages;
 ALTER PUBLICATION supabase_realtime ADD TABLE public.tracking;
 ALTER PUBLICATION supabase_realtime ADD TABLE public.chats;
+ALTER PUBLICATION supabase_realtime ADD TABLE public.notifications;
+ALTER PUBLICATION supabase_realtime ADD TABLE public.deliveries;
+ALTER PUBLICATION supabase_realtime ADD TABLE public.typing_indicators;
 
 -- =============================================================================
 -- АВТОМАТИЧНЕ СТВОРЕННЯ ПРОФІЛЮ ПІСЛЯ РЕЄСТРАЦІЇ
