@@ -3,6 +3,8 @@ import 'react-native-get-random-values';
 import React, { useEffect } from 'react';
 import { LogBox, View } from 'react-native';
 import { Stack, useRouter } from 'expo-router';
+import Constants from 'expo-constants';
+import type * as Notifications from 'expo-notifications';
 import { PaperProvider } from 'react-native-paper';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -15,7 +17,6 @@ import { NetworkStatusBar } from '../components/NetworkStatusBar';
 import { theme } from '../theme/theme';
 import { initializeOfflineSync } from '../lib/offlineSync';
 import { initializeGlobalErrorTracking } from '../lib/errorTracking';
-import { getInitialNotification, onNotificationTap } from '../utils/fcm';
 import 'react-native-url-polyfill/auto';
 
 const queryClient = new QueryClient({
@@ -62,31 +63,46 @@ export default function RootLayout() {
   }, []);
 
   useEffect(() => {
-    const unsubscribe = onNotificationTap(response => {
-      const data = response.notification.request.content.data as {
-        type?: string;
-        order_id?: string;
-        request_id?: string;
-      };
+    const isExpoGo = Constants.appOwnership === 'expo';
+    if (isExpoGo) {
+      return;
+    }
 
-      handleNotificationNavigation(data);
-    });
+    let unsubscribe: (() => void) | undefined;
 
-    getInitialNotification(response => {
-      if (!response) {
-        return;
-      }
+    const initializeNotificationHandlers = async () => {
+      const { onNotificationTap, getInitialNotification } = await import('../utils/fcm.js');
 
-      const data = response.notification.request.content.data as {
-        type?: string;
-        order_id?: string;
-        request_id?: string;
-      };
+      unsubscribe = onNotificationTap((response: Notifications.NotificationResponse) => {
+        const data = response.notification.request.content.data as {
+          type?: string;
+          order_id?: string;
+          request_id?: string;
+        };
 
-      handleNotificationNavigation(data);
-    });
+        handleNotificationNavigation(data);
+      });
 
-    return unsubscribe;
+      await getInitialNotification((response: Notifications.NotificationResponse | null) => {
+        if (!response) {
+          return;
+        }
+
+        const data = response.notification.request.content.data as {
+          type?: string;
+          order_id?: string;
+          request_id?: string;
+        };
+
+        handleNotificationNavigation(data);
+      });
+    };
+
+    void initializeNotificationHandlers();
+
+    return () => {
+      unsubscribe?.();
+    };
   }, [router]);
 
   return (

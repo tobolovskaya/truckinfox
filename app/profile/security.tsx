@@ -43,9 +43,16 @@ export default function SecurityScreen() {
 
   const firebaseConfig = {
     apiKey: process.env.EXPO_PUBLIC_FIREBASE_API_KEY || '',
+    authDomain: process.env.EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN || '',
     projectId: process.env.EXPO_PUBLIC_FIREBASE_PROJECT_ID || '',
     appId: process.env.EXPO_PUBLIC_FIREBASE_APP_ID || '',
   };
+
+  const isRecaptchaConfigReady =
+    !!firebaseConfig.apiKey &&
+    !!firebaseConfig.authDomain &&
+    !!firebaseConfig.projectId &&
+    !!firebaseConfig.appId;
 
   useEffect(() => {
     if (user?.phoneNumber) {
@@ -60,6 +67,11 @@ export default function SecurityScreen() {
   const enable2FA = async () => {
     if (Platform.OS === 'web') {
       Alert.alert(t('error'), 'Two-factor authentication setup is supported on mobile only.');
+      return;
+    }
+
+    if (!isRecaptchaConfigReady) {
+      Alert.alert(t('error'), 'Firebase reCAPTCHA configuration is incomplete.');
       return;
     }
 
@@ -249,11 +261,13 @@ export default function SecurityScreen() {
 
   return (
     <View style={styles.container}>
-      <RecaptchaModal
-        ref={recaptchaVerifier}
-        firebaseConfig={firebaseConfig}
-        attemptInvisibleVerification
-      />
+      {isRecaptchaConfigReady ? (
+        <RecaptchaModal
+          ref={recaptchaVerifier}
+          firebaseConfig={firebaseConfig}
+          attemptInvisibleVerification
+        />
+      ) : null}
 
       <ScreenHeader title={t('security')} onBackPress={() => router.back()} />
 
