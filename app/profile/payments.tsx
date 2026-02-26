@@ -48,7 +48,7 @@ export default function PaymentsScreen() {
 
   const statusColors: Record<PaymentRecord['status'], string> = {
     completed: colors.success,
-    pending: colors.warning,
+    pending: colors.status.warning,
     failed: colors.error,
     refunded: colors.info,
   };
@@ -290,7 +290,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.md,
     borderBottomWidth: 1,
-    borderBottomColor: colors.divider,
+    borderBottomColor: colors.border.default,
   },
   filterButtons: {
     flexDirection: 'row',
@@ -303,7 +303,7 @@ const styles = StyleSheet.create({
     borderRadius: spacing.lg,
     backgroundColor: colors.white,
     borderWidth: 1,
-    borderColor: colors.divider,
+    borderColor: colors.border.default,
   },
   filterButtonActive: {
     backgroundColor: colors.primary,
@@ -371,7 +371,7 @@ const styles = StyleSheet.create({
   },
   divider: {
     height: 1,
-    backgroundColor: colors.divider,
+    backgroundColor: colors.border.default,
     marginVertical: spacing.md,
   },
   paymentDetails: {
@@ -401,7 +401,7 @@ const styles = StyleSheet.create({
     marginTop: spacing.md,
     paddingVertical: spacing.sm,
     borderTopWidth: 1,
-    borderTopColor: colors.divider,
+    borderTopColor: colors.border.default,
     gap: spacing.xs,
   },
   invoiceButtonText: {

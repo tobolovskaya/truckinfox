@@ -17,7 +17,6 @@ export const NetworkStatusBar = () => {
           name={isSyncing ? 'refresh' : 'cloud-offline'}
           size={16}
           color="white"
-          style={isSyncing ? { animation: 'spin' } : {}}
         />
         <Text style={styles.syncText}>
           {isSyncing

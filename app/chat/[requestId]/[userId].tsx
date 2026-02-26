@@ -419,12 +419,19 @@ export default function ChatScreen() {
   const convertToDate = (timestamp: TimestampLike): Date => {
     if (!timestamp) return new Date();
     // Handle Firestore Timestamp object
-    if (timestamp.toDate && typeof timestamp.toDate === 'function') {
+    if (
+      typeof timestamp === 'object' &&
+      'toDate' in timestamp &&
+      typeof timestamp.toDate === 'function'
+    ) {
       return timestamp.toDate();
     }
     // Handle Date object
     if (timestamp instanceof Date) {
       return timestamp;
+    }
+    if (typeof timestamp !== 'string' && typeof timestamp !== 'number') {
+      return new Date();
     }
     // Handle string
     return new Date(timestamp);

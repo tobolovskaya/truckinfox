@@ -87,35 +87,70 @@ export default function UserProfileScreen() {
       const reviewsData = await Promise.all(
         reviewsSnap.docs.map(async reviewDoc => {
           const reviewData = { id: reviewDoc.id, ...reviewDoc.data() } as Record<string, unknown>;
+          const reviewerId =
+            typeof reviewData.reviewer_id === 'string' ? reviewData.reviewer_id : undefined;
+          const orderId = typeof reviewData.order_id === 'string' ? reviewData.order_id : undefined;
+
+          const review: Review = {
+            id: reviewDoc.id,
+            rating: typeof reviewData.rating === 'number' ? reviewData.rating : 0,
+            comment: typeof reviewData.comment === 'string' ? reviewData.comment : '',
+            created_at:
+              typeof reviewData.created_at === 'string'
+                ? reviewData.created_at
+                : new Date().toISOString(),
+            reviewer: {
+              full_name: 'Unknown User',
+              user_type: 'private',
+            },
+            orders: {
+              cargo_requests: {
+                title: '',
+              },
+            },
+          };
 
           // Fetch reviewer data
-          if (reviewData.reviewer_id) {
-            const reviewerRef = doc(db, 'users', reviewData.reviewer_id);
+          if (reviewerId) {
+            const reviewerRef = doc(db, 'users', reviewerId);
             const reviewerSnap = await getDoc(reviewerRef);
             if (reviewerSnap.exists()) {
-              reviewData.reviewer = reviewerSnap.data();
+              const reviewerData = reviewerSnap.data() as Record<string, unknown>;
+              review.reviewer = {
+                full_name:
+                  typeof reviewerData.full_name === 'string'
+                    ? reviewerData.full_name
+                    : 'Unknown User',
+                user_type:
+                  typeof reviewerData.user_type === 'string' ? reviewerData.user_type : 'private',
+              };
             }
           }
 
           // Fetch order and cargo request data
-          if (reviewData.order_id) {
-            const orderRef = doc(db, 'orders', reviewData.order_id);
+          if (orderId) {
+            const orderRef = doc(db, 'orders', orderId);
             const orderSnap = await getDoc(orderRef);
             if (orderSnap.exists()) {
-              const orderData = orderSnap.data();
-              if (orderData.request_id) {
-                const requestRef = doc(db, 'cargo_requests', orderData.request_id);
+              const orderData = orderSnap.data() as Record<string, unknown>;
+              const requestId =
+                typeof orderData.request_id === 'string' ? orderData.request_id : undefined;
+              if (requestId) {
+                const requestRef = doc(db, 'cargo_requests', requestId);
                 const requestSnap = await getDoc(requestRef);
                 if (requestSnap.exists()) {
-                  reviewData.orders = {
-                    cargo_requests: requestSnap.data(),
+                  const requestData = requestSnap.data() as Record<string, unknown>;
+                  review.orders = {
+                    cargo_requests: {
+                      title: typeof requestData.title === 'string' ? requestData.title : '',
+                    },
                   };
                 }
               }
             }
           }
 
-          return reviewData;
+          return review;
         })
       );
 
