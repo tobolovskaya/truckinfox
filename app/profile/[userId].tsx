@@ -5,8 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { ScreenHeader } from '../../components/ScreenHeader';
-import { db } from '../../lib/firebase';
-import { doc, getDoc, collection, query, where, orderBy, limit, getDocs } from 'firebase/firestore';
+import { supabase } from '../../lib/supabase';
 import { theme } from '../../theme/theme';
 import {
   colors,
@@ -54,21 +53,41 @@ export default function UserProfileScreen() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchProfile();
-    fetchReviews();
+    const loadData = async () => {
+      await Promise.all([fetchProfile(), fetchReviews()]);
+      setLoading(false);
+    };
+
+    loadData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const fetchProfile = async () => {
     try {
-      const userRef = doc(db, 'users', userId as string);
-      const userSnap = await getDoc(userRef);
+      if (!userId || typeof userId !== 'string') {
+        throw new Error('Invalid user ID');
+      }
 
-      if (!userSnap.exists()) {
+      const { data, error } = await supabase
+        .from('users')
+        .select('id, full_name, user_type, company_name, rating, created_at, avatar_url')
+        .eq('id', userId)
+        .single();
+
+      if (error || !data) {
         throw new Error('User not found');
       }
 
-      setProfile({ id: userSnap.id, ...userSnap.data() } as UserProfile);
+      setProfile({
+        id: data.id,
+        full_name: data.full_name || '',
+        user_type: data.user_type || 'customer',
+        company_name: data.company_name || undefined,
+        rating: Number(data.rating || 0),
+        total_reviews: 0,
+        created_at: data.created_at || new Date().toISOString(),
+        avatar_url: data.avatar_url || undefined,
+      });
     } catch (error) {
       console.error('Error fetching profile:', error);
     }
@@ -76,89 +95,85 @@ export default function UserProfileScreen() {
 
   const fetchReviews = async () => {
     try {
-      const reviewsQuery = query(
-        collection(db, 'reviews'),
-        where('reviewed_id', '==', userId),
-        orderBy('created_at', 'desc'),
-        limit(10)
+      if (!userId || typeof userId !== 'string') {
+        return;
+      }
+
+      const { data: reviewsRows, error: reviewsError } = await supabase
+        .from('reviews')
+        .select('id, rating, comment, created_at, reviewer_id, order_id')
+        .eq('reviewed_id', userId)
+        .order('created_at', { ascending: false })
+        .limit(10);
+
+      if (reviewsError) {
+        throw reviewsError;
+      }
+
+      const rows = reviewsRows || [];
+      const reviewerIds = Array.from(
+        new Set(rows.map(row => row.reviewer_id).filter((value): value is string => Boolean(value)))
+      );
+      const orderIds = Array.from(
+        new Set(rows.map(row => row.order_id).filter((value): value is string => Boolean(value)))
       );
 
-      const reviewsSnap = await getDocs(reviewsQuery);
-      const reviewsData = await Promise.all(
-        reviewsSnap.docs.map(async reviewDoc => {
-          const reviewData = { id: reviewDoc.id, ...reviewDoc.data() } as Record<string, unknown>;
-          const reviewerId =
-            typeof reviewData.reviewer_id === 'string' ? reviewData.reviewer_id : undefined;
-          const orderId = typeof reviewData.order_id === 'string' ? reviewData.order_id : undefined;
+      const [{ data: reviewersData }, { data: ordersData }] = await Promise.all([
+        reviewerIds.length
+          ? supabase.from('users').select('id, full_name, user_type').in('id', reviewerIds)
+          : Promise.resolve({ data: [] as Array<{ id: string; full_name: string | null; user_type: string | null }> }),
+        orderIds.length
+          ? supabase.from('orders').select('id, request_id').in('id', orderIds)
+          : Promise.resolve({ data: [] as Array<{ id: string; request_id: string | null }> }),
+      ]);
 
-          const review: Review = {
-            id: reviewDoc.id,
-            rating: typeof reviewData.rating === 'number' ? reviewData.rating : 0,
-            comment: typeof reviewData.comment === 'string' ? reviewData.comment : '',
-            created_at:
-              typeof reviewData.created_at === 'string'
-                ? reviewData.created_at
-                : new Date().toISOString(),
-            reviewer: {
-              full_name: 'Unknown User',
-              user_type: 'private',
-            },
-            orders: {
-              cargo_requests: {
-                title: '',
-              },
-            },
-          };
-
-          // Fetch reviewer data
-          if (reviewerId) {
-            const reviewerRef = doc(db, 'users', reviewerId);
-            const reviewerSnap = await getDoc(reviewerRef);
-            if (reviewerSnap.exists()) {
-              const reviewerData = reviewerSnap.data() as Record<string, unknown>;
-              review.reviewer = {
-                full_name:
-                  typeof reviewerData.full_name === 'string'
-                    ? reviewerData.full_name
-                    : 'Unknown User',
-                user_type:
-                  typeof reviewerData.user_type === 'string' ? reviewerData.user_type : 'private',
-              };
-            }
-          }
-
-          // Fetch order and cargo request data
-          if (orderId) {
-            const orderRef = doc(db, 'orders', orderId);
-            const orderSnap = await getDoc(orderRef);
-            if (orderSnap.exists()) {
-              const orderData = orderSnap.data() as Record<string, unknown>;
-              const requestId =
-                typeof orderData.request_id === 'string' ? orderData.request_id : undefined;
-              if (requestId) {
-                const requestRef = doc(db, 'cargo_requests', requestId);
-                const requestSnap = await getDoc(requestRef);
-                if (requestSnap.exists()) {
-                  const requestData = requestSnap.data() as Record<string, unknown>;
-                  review.orders = {
-                    cargo_requests: {
-                      title: typeof requestData.title === 'string' ? requestData.title : '',
-                    },
-                  };
-                }
-              }
-            }
-          }
-
-          return review;
-        })
+      const requestIds = Array.from(
+        new Set((ordersData || []).map(orderRow => orderRow.request_id).filter((value): value is string => Boolean(value)))
       );
+
+      const { data: requestsData } = requestIds.length
+        ? await supabase.from('cargo_requests').select('id, title').in('id', requestIds)
+        : { data: [] as Array<{ id: string; title: string | null }> };
+
+      const reviewerById = new Map(
+        (reviewersData || []).map(item => [item.id, item])
+      );
+      const orderById = new Map((ordersData || []).map(item => [item.id, item]));
+      const requestById = new Map((requestsData || []).map(item => [item.id, item]));
+
+      const reviewsData: Review[] = rows.map(row => {
+        const reviewer = row.reviewer_id ? reviewerById.get(row.reviewer_id) : undefined;
+        const orderRow = row.order_id ? orderById.get(row.order_id) : undefined;
+        const request = orderRow?.request_id ? requestById.get(orderRow.request_id) : undefined;
+
+        return {
+          id: row.id,
+          rating: Number(row.rating || 0),
+          comment: row.comment || '',
+          created_at: row.created_at || new Date().toISOString(),
+          reviewer: {
+            full_name: reviewer?.full_name || 'Unknown User',
+            user_type: reviewer?.user_type || 'private',
+          },
+          orders: {
+            cargo_requests: {
+              title: request?.title || '',
+            },
+          },
+        };
+      });
 
       setReviews(reviewsData);
+      setProfile(prev =>
+        prev
+          ? {
+              ...prev,
+              total_reviews: reviewsData.length,
+            }
+          : prev
+      );
     } catch (error) {
       console.error('Error fetching reviews:', error);
-    } finally {
-      setLoading(false);
     }
   };
 

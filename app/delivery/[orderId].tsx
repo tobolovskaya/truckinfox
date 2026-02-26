@@ -4,8 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import MapView, { Marker, Polyline } from 'react-native-maps';
-import { doc, onSnapshot } from 'firebase/firestore';
-import { db } from '../../lib/firebase';
+import { supabase } from '../../lib/supabase';
 import { ScreenHeader } from '../../components/ScreenHeader';
 import { colors, fontSize, spacing } from '../../lib/sharedStyles';
 
@@ -14,9 +13,10 @@ type Coordinates = {
   longitude: number;
 };
 
-type DeliveryDocument = {
-  current_location?: Coordinates;
-  route?: Coordinates[];
+type DeliveryRow = {
+  current_latitude: number | null;
+  current_longitude: number | null;
+  route?: unknown;
 };
 
 const DEFAULT_REGION = {
@@ -55,35 +55,66 @@ export default function DeliveryTrackingScreen() {
       return;
     }
 
-    const deliveryRef = doc(db, 'deliveries', orderIdString);
-    const unsubscribe = onSnapshot(
-      deliveryRef,
-      snapshot => {
-        if (!snapshot.exists()) {
-          setDriverLocation(null);
-          setRoute([]);
-          setLoading(false);
-          return;
-        }
+    const loadDelivery = async () => {
+      const { data } = await supabase
+        .from('deliveries')
+        .select('current_latitude,current_longitude,route')
+        .eq('order_id', orderIdString)
+        .maybeSingle();
 
-        const data = snapshot.data() as DeliveryDocument;
-
-        setDriverLocation(isValidCoordinate(data.current_location) ? data.current_location : null);
-
-        if (Array.isArray(data.route)) {
-          setRoute(data.route.filter(isValidCoordinate));
-        } else {
-          setRoute([]);
-        }
-
+      if (!data) {
+        setDriverLocation(null);
+        setRoute([]);
         setLoading(false);
-      },
-      () => {
-        setLoading(false);
+        return;
       }
-    );
 
-    return unsubscribe;
+      const row = data as DeliveryRow;
+
+      if (
+        typeof row.current_latitude === 'number' &&
+        Number.isFinite(row.current_latitude) &&
+        typeof row.current_longitude === 'number' &&
+        Number.isFinite(row.current_longitude)
+      ) {
+        setDriverLocation({
+          latitude: row.current_latitude,
+          longitude: row.current_longitude,
+        });
+      } else {
+        setDriverLocation(null);
+      }
+
+      if (Array.isArray(row.route)) {
+        setRoute(row.route.filter(isValidCoordinate));
+      } else {
+        setRoute([]);
+      }
+
+      setLoading(false);
+    };
+
+    loadDelivery();
+
+    const channel = supabase
+      .channel(`delivery:${orderIdString}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'deliveries',
+          filter: `order_id=eq.${orderIdString}`,
+        },
+        () => {
+          loadDelivery();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      channel.unsubscribe();
+    };
   }, [orderIdString]);
 
   const initialRegion = useMemo(() => {

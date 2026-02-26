@@ -19,21 +19,7 @@ import { useTranslation } from 'react-i18next';
 import { sanitizeMessage } from '../../../utils/sanitization';
 import { trackTypingDetected, trackChatOpened, trackMessageSent } from '../../../utils/analytics';
 import { startTrace, PerformanceTraces } from '../../../utils/performance';
-import { db } from '../../../lib/firebase';
-import {
-  collection,
-  query,
-  where,
-  orderBy,
-  onSnapshot,
-  addDoc,
-  serverTimestamp,
-  doc,
-  getDoc,
-  setDoc,
-  updateDoc,
-  getDocs,
-} from 'firebase/firestore';
+import { supabase } from '../../../lib/supabase';
 
 import { LinearGradient } from 'expo-linear-gradient';
 import * as ImagePicker from 'expo-image-picker';
@@ -63,6 +49,16 @@ interface Message {
     user_type: string;
   };
 }
+
+type MessageRow = {
+  id: string;
+  content: string | null;
+  sender_id: string;
+  receiver_id: string | null;
+  created_at: string | null;
+  delivered_at: string | null;
+  read_at: string | null;
+};
 
 interface ChatUser {
   id: string;
@@ -131,53 +127,74 @@ export default function ChatScreen() {
   useEffect(() => {
     if (!requestId || !userId || !user?.uid) return;
 
-    const typingDocRef = doc(db, 'typing_indicators', `${requestId}_${userId}`);
+    const channel = supabase
+      .channel(`typing:${requestId}:${userId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'typing_indicators',
+          filter: `request_id=eq.${requestId}`,
+        },
+        payload => {
+          const row = (payload.new || payload.old) as
+            | { user_id?: string; typing?: boolean; timestamp?: string }
+            | undefined;
 
-    const unsubscribe = onSnapshot(typingDocRef, doc => {
-      if (doc.exists()) {
-        const data = doc.data();
-        const lastTyping = data.timestamp?.toMillis();
-        const now = Date.now();
+          if (!row || row.user_id !== userId) {
+            return;
+          }
 
-        // Consider typing if updated within last 3 seconds
-        const isTyping = data.typing && lastTyping && now - lastTyping < 3000;
+          const now = Date.now();
+          const lastTyping = row.timestamp ? new Date(row.timestamp).getTime() : 0;
+          const isTyping = Boolean(row.typing) && now - lastTyping < 3000;
 
-        if (isTyping && !otherUserTyping) {
-          // Start performance trace
-          typingTraceRef.current = startTrace(PerformanceTraces.TYPING_INDICATOR_LATENCY);
-          lastTypingStartRef.current = now;
-
-          // Track analytics
-          trackTypingDetected({
-            chat_id: requestId,
-          });
-        } else if (!isTyping && otherUserTyping && typingTraceRef.current) {
-          // Stop performance trace
-          typingTraceRef.current.stop();
-          typingTraceRef.current = null;
-
-          // Track response time
-          const responseTime = Date.now() - lastTypingStartRef.current;
-          if (responseTime > 0) {
+          if (isTyping && !otherUserTyping) {
+            typingTraceRef.current = startTrace(PerformanceTraces.TYPING_INDICATOR_LATENCY);
+            lastTypingStartRef.current = now;
             trackTypingDetected({
               chat_id: requestId,
-              response_time: responseTime,
             });
-          }
-        }
+          } else if (!isTyping && otherUserTyping && typingTraceRef.current) {
+            typingTraceRef.current.stop();
+            typingTraceRef.current = null;
 
-        setOtherUserTyping(isTyping);
-      } else {
-        setOtherUserTyping(false);
-        if (typingTraceRef.current) {
-          typingTraceRef.current.stop();
-          typingTraceRef.current = null;
+            const responseTime = Date.now() - lastTypingStartRef.current;
+            if (responseTime > 0) {
+              trackTypingDetected({
+                chat_id: requestId,
+                response_time: responseTime,
+              });
+            }
+          }
+
+          setOtherUserTyping(isTyping);
         }
+      )
+      .subscribe();
+
+    const timeoutId = setInterval(async () => {
+      const { data } = await supabase
+        .from('typing_indicators')
+        .select('typing,timestamp')
+        .eq('request_id', requestId)
+        .eq('user_id', userId)
+        .maybeSingle();
+
+      if (!data) {
+        setOtherUserTyping(false);
+        return;
       }
-    });
+
+      const now = Date.now();
+      const lastTyping = data.timestamp ? new Date(data.timestamp).getTime() : 0;
+      setOtherUserTyping(Boolean(data.typing) && now - lastTyping < 3000);
+    }, 3000);
 
     return () => {
-      unsubscribe();
+      clearInterval(timeoutId);
+      channel.unsubscribe();
       if (typingTraceRef.current) {
         typingTraceRef.current.stop();
       }
@@ -191,12 +208,19 @@ export default function ChatScreen() {
         return;
       }
 
-      // Fetch chat user info from Firebase
-      const userDoc = await getDoc(doc(db, 'users', userId));
-      if (userDoc.exists()) {
-        const userData = userDoc.data();
+      const { data: userData, error } = await supabase
+        .from('users')
+        .select('id, full_name, user_type, rating')
+        .eq('id', userId)
+        .single();
+
+      if (error) {
+        throw error;
+      }
+
+      if (userData) {
         setChatUser({
-          id: userDoc.id,
+          id: userData.id,
           full_name: userData.full_name || userData.display_name || 'Unknown User',
           user_type: userData.user_type || userData.role || 'customer',
           rating: userData.rating || 0,
@@ -225,36 +249,58 @@ export default function ChatScreen() {
         return;
       }
 
-      // Set up real-time listener for messages (flat structure)
       const chatId = generateChatId(requestId, user.uid, userId);
-      const messagesQuery = query(
-        collection(db, 'messages'),
-        where('chat_id', '==', chatId),
-        orderBy('created_at', 'asc')
-      );
 
-      const unsubscribe = onSnapshot(
-        messagesQuery,
-        snapshot => {
-          const fetchedMessages = snapshot.docs.map(doc => ({
-            id: doc.id,
-            ...doc.data(),
-            sender: {
-              full_name: doc.data().sender_name || 'Unknown',
-              user_type: doc.data().sender_type || 'customer',
-            },
-          })) as Message[];
+      const loadMessages = async () => {
+        const { data, error } = await supabase
+          .from('messages')
+          .select('id, content, sender_id, receiver_id, created_at, delivered_at, read_at')
+          .eq('chat_id', chatId)
+          .order('created_at', { ascending: true });
 
-          setMessages(fetchedMessages);
-          setLoading(false);
-        },
-        error => {
-          console.error('Error fetching messages:', error);
-          setLoading(false);
+        if (error) {
+          throw error;
         }
-      );
 
-      return unsubscribe;
+        const fetchedMessages = ((data || []) as MessageRow[]).map(message => ({
+          id: message.id,
+          content: message.content || '',
+          sender_id: message.sender_id,
+          receiver_id: message.receiver_id || '',
+          created_at: message.created_at || new Date().toISOString(),
+          delivered_at: message.delivered_at,
+          read_at: message.read_at,
+          sender: {
+            full_name: message.sender_id === user.uid ? user.displayName || 'You' : chatUser?.full_name || 'Unknown',
+            user_type: message.sender_id === user.uid ? 'customer' : chatUser?.user_type || 'customer',
+          },
+        }));
+
+        setMessages(fetchedMessages);
+        setLoading(false);
+      };
+
+      await loadMessages();
+
+      const channel = supabase
+        .channel(`messages:${chatId}`)
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'messages',
+            filter: `chat_id=eq.${chatId}`,
+          },
+          async () => {
+            await loadMessages();
+          }
+        )
+        .subscribe();
+
+      return () => {
+        channel.unsubscribe();
+      };
     } catch (error) {
       console.error('Error setting up messages listener:', error);
       setLoading(false);
@@ -282,20 +328,20 @@ export default function ChatScreen() {
       // Create deterministic chat ID (sorted user IDs)
       const chatId = generateChatId(requestId, user.uid, userId);
 
-      // Add message to flat messages collection
-      await addDoc(collection(db, 'messages'), {
+      const { error } = await supabase.from('messages').insert({
         chat_id: chatId,
         request_id: requestId,
         content: sanitizedMessage,
         sender_id: user.uid,
         receiver_id: userId,
-        sender_name: user.displayName || 'Unknown',
         sender_type: 'customer',
-        created_at: serverTimestamp(),
-        delivered_at: serverTimestamp(),
-        read: false,
-        delivered: true,
+        created_at: new Date().toISOString(),
+        delivered_at: new Date().toISOString(),
       });
+
+      if (error) {
+        throw error;
+      }
 
       // Track message sent
       trackMessageSent({
@@ -321,24 +367,18 @@ export default function ChatScreen() {
 
     try {
       const chatId = generateChatId(requestId, user.uid, userId);
-      const messagesQuery = query(
-        collection(db, 'messages'),
-        where('chat_id', '==', chatId),
-        where('receiver_id', '==', user.uid),
-        where('read', '==', false)
-      );
-
-      const unreadMessagesSnapshot = await getDocs(messagesQuery);
-
-      // Mark all unread messages as read
-      const updatePromises = unreadMessagesSnapshot.docs.map(messageDoc =>
-        updateDoc(messageDoc.ref, {
-          read: true,
-          read_at: serverTimestamp(),
+      const { error } = await supabase
+        .from('messages')
+        .update({
+          read_at: new Date().toISOString(),
         })
-      );
+        .eq('chat_id', chatId)
+        .eq('receiver_id', user.uid)
+        .is('read_at', null);
 
-      await Promise.all(updatePromises);
+      if (error) {
+        throw error;
+      }
     } catch (error) {
       console.error('Error marking messages as read:', error);
     }
@@ -391,26 +431,26 @@ export default function ChatScreen() {
 
     // Update typing indicator
     if (text.length > 0) {
-      const typingDocRef = doc(db, 'typing_indicators', `${requestId}_${user.uid}`);
-      await setDoc(
-        typingDocRef,
+      await supabase.from('typing_indicators').upsert(
         {
-          userId: user.uid,
+          request_id: requestId,
+          user_id: user.uid,
           typing: true,
-          timestamp: serverTimestamp(),
+          timestamp: new Date().toISOString(),
         },
-        { merge: true }
+        { onConflict: 'request_id,user_id' }
       );
 
       // Clear typing after 3 seconds of inactivity
       typingTimeoutRef.current = setTimeout(async () => {
-        await setDoc(
-          typingDocRef,
+        await supabase.from('typing_indicators').upsert(
           {
+            request_id: requestId,
+            user_id: user.uid,
             typing: false,
-            timestamp: serverTimestamp(),
+            timestamp: new Date().toISOString(),
           },
-          { merge: true }
+          { onConflict: 'request_id,user_id' }
         );
       }, 3000);
     }

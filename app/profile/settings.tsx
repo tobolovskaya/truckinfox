@@ -11,10 +11,9 @@ import {
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
-import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { useAuth } from '../../contexts/AuthContext';
 import { useI18n } from '../../contexts/I18nContext';
-import { db } from '../../lib/firebase';
+import { supabase } from '../../lib/supabase';
 import { ScreenHeader } from '../../components/ScreenHeader';
 import { spacing, fontSize, fontWeight, useAppThemeStyles } from '../../lib/sharedStyles';
 
@@ -61,20 +60,32 @@ export default function SettingsScreen() {
       }
 
       try {
-        const snapshot = await getDoc(doc(db, 'users', user.uid));
-        const data = snapshot.exists() ? snapshot.data() : null;
+        const {
+          data: { user: authUser },
+          error,
+        } = await supabase.auth.getUser();
 
-        if (data?.notification_settings) {
+        if (error) {
+          throw error;
+        }
+
+        const metadata = authUser?.user_metadata as Record<string, unknown> | undefined;
+        const notificationData = metadata?.notification_settings as
+          | Partial<NotificationSettings>
+          | undefined;
+        const privacyData = metadata?.privacy_settings as Partial<PrivacySettings> | undefined;
+
+        if (notificationData) {
           setNotificationSettings(prev => ({
             ...prev,
-            ...data.notification_settings,
+            ...notificationData,
           }));
         }
 
-        if (data?.privacy_settings) {
+        if (privacyData) {
           setPrivacySettings(prev => ({
             ...prev,
-            ...data.privacy_settings,
+            ...privacyData,
           }));
         }
       } catch (error) {
@@ -105,17 +116,35 @@ export default function SettingsScreen() {
 
     try {
       setSaving(true);
-      const updates: Record<string, unknown> = {};
+      const {
+        data: { user: authUser },
+        error: getUserError,
+      } = await supabase.auth.getUser();
+
+      if (getUserError) {
+        throw getUserError;
+      }
+
+      const currentMetadata = (authUser?.user_metadata || {}) as Record<string, unknown>;
+      const nextMetadata: Record<string, unknown> = {
+        ...currentMetadata,
+      };
 
       if (notifSettings) {
-        updates.notification_settings = notifSettings;
+        nextMetadata.notification_settings = notifSettings;
       }
       if (privacySettingsUpdate) {
-        updates.privacy_settings = privacySettingsUpdate;
+        nextMetadata.privacy_settings = privacySettingsUpdate;
       }
-      updates.updated_at = new Date().toISOString();
+      nextMetadata.updated_at = new Date().toISOString();
 
-      await updateDoc(doc(db, 'users', user.uid), updates);
+      const { error: updateError } = await supabase.auth.updateUser({
+        data: nextMetadata,
+      });
+
+      if (updateError) {
+        throw updateError;
+      }
     } catch (error) {
       console.error('Failed to update settings:', error);
       Alert.alert(t('error'), t('somethingWentWrong'));

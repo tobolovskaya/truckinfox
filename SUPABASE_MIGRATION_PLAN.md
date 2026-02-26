@@ -87,6 +87,10 @@ Completed in this phase:
 
 - `contexts/AuthContext.tsx` migrated to `supabase.auth`
 - `app/(auth)/forgot-password.tsx` migrated to Supabase password reset flow
+- `app/(tabs)/orders.tsx` migrated to Supabase orders query
+- `app/(tabs)/messages.tsx` migrated to Supabase messages/users/requests queries
+- `app/chat/[requestId]/[userId].tsx` migrated to Supabase messages + typing Realtime
+- `app/order-status/[orderId].tsx` migrated to Supabase order + escrow Realtime
 
 ## 6) Progressive migration strategy from legacy Firebase code
 

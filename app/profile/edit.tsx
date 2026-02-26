@@ -10,16 +10,13 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
-import { doc, getDoc, updateDoc } from 'firebase/firestore';
-import { updateProfile } from 'firebase/auth';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../contexts/AuthContext';
-import { db } from '../../lib/firebase';
+import { supabase } from '../../lib/supabase';
 import { ScreenHeader } from '../../components/ScreenHeader';
 import { ScreenSection } from '../../components/ScreenSection';
 import AvatarUpload from '../../components/AvatarUpload';
 import { IOSButton } from '../../components/IOSButton';
-import { generateSearchTerms } from '../../utils/search';
 import {
   spacing,
   fontSize,
@@ -70,8 +67,15 @@ export default function EditProfileScreen() {
       }
 
       try {
-        const snapshot = await getDoc(doc(db, 'users', user.uid));
-        const data = snapshot.exists() ? snapshot.data() : null;
+        const { data, error } = await supabase
+          .from('users')
+          .select('full_name,email,phone,company_name,org_number,avatar_url,user_type')
+          .eq('id', user.uid)
+          .maybeSingle();
+
+        if (error) {
+          throw error;
+        }
 
         setProfile({
           fullName: (data?.full_name as string) || user.displayName || '',
@@ -114,20 +118,31 @@ export default function EditProfileScreen() {
         ? sanitizeInput(profile.orgNumber.trim(), 50) || null
         : null;
 
-      await updateDoc(doc(db, 'users', user.uid), {
+      const { error: profileError } = await supabase.from('profiles').upsert({
+        id: user.uid,
         full_name: fullName,
         phone,
         company_name: companyName,
         org_number: orgNumber,
         avatar_url: profile.avatarUrl || null,
-        search_terms: generateSearchTerms(fullName),
         updated_at: new Date().toISOString(),
       });
 
-      await updateProfile(user, {
-        displayName: fullName,
-        photoURL: profile.avatarUrl || null,
+      if (profileError) {
+        throw profileError;
+      }
+
+      const { error: authUpdateError } = await supabase.auth.updateUser({
+        data: {
+          full_name: fullName,
+          avatar_url: profile.avatarUrl || null,
+          phone,
+        },
       });
+
+      if (authUpdateError) {
+        throw authUpdateError;
+      }
 
       Alert.alert(t('success'), t('profileUpdated'));
     } catch (error) {

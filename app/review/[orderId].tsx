@@ -14,18 +14,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTranslation } from 'react-i18next';
-import { db } from '../../lib/firebase';
-import {
-  doc,
-  getDoc,
-  addDoc,
-  collection,
-  serverTimestamp,
-  query,
-  where,
-  getDocs,
-  updateDoc,
-} from 'firebase/firestore';
+import { supabase } from '../../lib/supabase';
 import { ScreenHeader } from '../../components/ScreenHeader';
 import { ScreenSection } from '../../components/ScreenSection';
 import { theme } from '../../theme/theme';
@@ -75,42 +64,75 @@ export default function ReviewScreen() {
         throw new Error('Invalid order ID');
       }
 
-      const orderRef = doc(db, 'orders', orderId);
-      const orderSnap = await getDoc(orderRef);
+      const { data: orderRow, error: orderError } = await supabase
+        .from('orders')
+        .select('id, customer_id, carrier_id, request_id, status')
+        .eq('id', orderId)
+        .single();
 
-      if (!orderSnap.exists()) {
+      if (orderError || !orderRow) {
         throw new Error('Order not found');
       }
 
       const orderData: Order = {
-        id: orderSnap.id,
-        ...(orderSnap.data() as Omit<Order, 'id'>),
+        id: orderRow.id,
+        customer_id: orderRow.customer_id,
+        carrier_id: orderRow.carrier_id,
+        request_id: orderRow.request_id || undefined,
+        status: orderRow.status || 'pending',
+        cargo_requests: {
+          title: '',
+        },
+        customer: {
+          full_name: '',
+        },
+        carrier: {
+          full_name: '',
+        },
       };
 
       // Fetch cargo request data
       if (orderData.request_id) {
-        const requestRef = doc(db, 'cargo_requests', orderData.request_id);
-        const requestSnap = await getDoc(requestRef);
-        if (requestSnap.exists()) {
-          orderData.cargo_requests = requestSnap.data() as Order['cargo_requests'];
+        const { data: requestRow } = await supabase
+          .from('cargo_requests')
+          .select('title')
+          .eq('id', orderData.request_id)
+          .maybeSingle();
+
+        if (requestRow) {
+          orderData.cargo_requests = {
+            title: requestRow.title || '',
+          };
         }
       }
 
       // Fetch customer data
       if (orderData.customer_id) {
-        const customerRef = doc(db, 'users', orderData.customer_id);
-        const customerSnap = await getDoc(customerRef);
-        if (customerSnap.exists()) {
-          orderData.customer = customerSnap.data() as Order['customer'];
+        const { data: customerRow } = await supabase
+          .from('users')
+          .select('full_name')
+          .eq('id', orderData.customer_id)
+          .maybeSingle();
+
+        if (customerRow) {
+          orderData.customer = {
+            full_name: customerRow.full_name || '',
+          };
         }
       }
 
       // Fetch carrier data
       if (orderData.carrier_id) {
-        const carrierRef = doc(db, 'users', orderData.carrier_id);
-        const carrierSnap = await getDoc(carrierRef);
-        if (carrierSnap.exists()) {
-          orderData.carrier = carrierSnap.data() as Order['carrier'];
+        const { data: carrierRow } = await supabase
+          .from('users')
+          .select('full_name')
+          .eq('id', orderData.carrier_id)
+          .maybeSingle();
+
+        if (carrierRow) {
+          orderData.carrier = {
+            full_name: carrierRow.full_name || '',
+          };
         }
       }
 
@@ -147,34 +169,54 @@ export default function ReviewScreen() {
       const reviewedId = isCustomer ? order.carrier_id : order.customer_id;
 
       // Create the review
-      await addDoc(collection(db, 'reviews'), {
+      const { error: insertError } = await supabase.from('reviews').insert({
         order_id: orderId,
         reviewer_id: user.uid,
         reviewed_id: reviewedId,
-        rating: rating,
+        rating,
         comment: comment.trim() ? sanitizeMessage(comment.trim(), 1000) : null,
-        created_at: serverTimestamp(),
+        created_at: new Date().toISOString(),
       });
+
+      if (insertError) {
+        throw insertError;
+      }
 
       // Update user rating
       // Fetch all reviews for the reviewed user to calculate average
-      const reviewsQuery = query(collection(db, 'reviews'), where('reviewed_id', '==', reviewedId));
-      const reviewsSnap = await getDocs(reviewsQuery);
+      const { data: reviewsRows, error: reviewsError } = await supabase
+        .from('reviews')
+        .select('rating')
+        .eq('reviewed_id', reviewedId);
+
+      if (reviewsError) {
+        throw reviewsError;
+      }
 
       // Calculate average rating
-      const totalRating = reviewsSnap.docs.reduce((sum, doc) => sum + (doc.data().rating || 0), 0);
-      const avgRating = reviewsSnap.size > 0 ? totalRating / reviewsSnap.size : 0;
+      const totalRating = (reviewsRows || []).reduce(
+        (sum, row) => sum + Number(row.rating || 0),
+        0
+      );
+      const reviewsCount = reviewsRows?.length || 0;
+      const avgRating = reviewsCount > 0 ? totalRating / reviewsCount : 0;
 
       // Update user document with new rating
-      await updateDoc(doc(db, 'users', reviewedId), {
+      const { error: updateRatingError } = await supabase
+        .from('profiles')
+        .update({
         rating: Number(avgRating.toFixed(2)), // Round to 2 decimal places
-        total_reviews: reviewsSnap.size,
-        updated_at: serverTimestamp(),
-      });
+        updated_at: new Date().toISOString(),
+      })
+        .eq('id', reviewedId);
+
+      if (updateRatingError) {
+        throw updateRatingError;
+      }
 
       console.log(
         `Updated rating for user ${reviewedId}: ${avgRating.toFixed(2)} (${
-          reviewsSnap.size
+          reviewsCount
         } reviews)`
       );
 

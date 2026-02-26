@@ -16,19 +16,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTranslation } from 'react-i18next';
-import { db } from '../../lib/firebase';
-import {
-  doc,
-  getDoc,
-  updateDoc,
-  collection,
-  query,
-  where,
-  getDocs,
-  serverTimestamp,
-  onSnapshot,
-  Timestamp,
-} from 'firebase/firestore';
+import { supabase } from '../../lib/supabase';
 import { theme } from '../../theme/theme';
 import {
   colors,
@@ -74,7 +62,7 @@ interface Order {
   escrow_payments?: EscrowPayment[];
   delivery_photos?: string[];
   delivery_signature?: string;
-  delivery_time?: Timestamp | Date | { seconds: number } | null;
+  delivery_time?: Date | { seconds: number } | string | null;
 }
 
 type EscrowPayment = {
@@ -122,71 +110,43 @@ export default function OrderStatusScreen() {
       return;
     }
 
-    console.log('Setting up real-time listener for order:', orderIdString);
-
-    // Subscribe to order updates using Firebase onSnapshot
-    const orderRef = doc(db, 'orders', orderIdString);
-    const unsubscribeOrder = onSnapshot(
-      orderRef,
-      async docSnap => {
-        if (docSnap.exists()) {
-          console.log('Order updated in real-time:', docSnap.data());
-          const orderData = {
-            id: docSnap.id,
-            ...(docSnap.data() as Omit<Order, 'id'>),
-          };
-
-          // If we already have order data with related info, merge it
-          if (order) {
-            orderData.cargo_requests = order.cargo_requests;
-            orderData.customer = order.customer;
-            orderData.carrier = order.carrier;
-            orderData.escrow_payments = order.escrow_payments;
-          }
-
-          setOrder(orderData);
+    const orderChannel = supabase
+      .channel(`order:${orderIdString}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'orders',
+          filter: `id=eq.${orderIdString}`,
+        },
+        async () => {
+          await fetchRelatedData();
           setLastUpdated(new Date());
-        } else {
-          Alert.alert(t('error'), t('orderNotFound') || 'Order not found');
         }
-      },
-      error => {
-        console.error('Error in order listener:', error);
-      }
-    );
+      )
+      .subscribe();
 
-    // Subscribe to escrow payment updates for real-time payment status
-    const escrowQuery = query(
-      collection(db, 'escrow_payments'),
-      where('order_id', '==', orderIdString)
-    );
-    const unsubscribeEscrow = onSnapshot(
-      escrowQuery,
-      querySnap => {
-        console.log('Escrow payments updated in real-time');
-        const escrowPayments: EscrowPayment[] = querySnap.docs.map(docSnap => ({
-          id: docSnap.id,
-          ...(docSnap.data() as Omit<EscrowPayment, 'id'>),
-        }));
-
-        setOrder(prevOrder => {
-          if (!prevOrder) return null;
-          return {
-            ...prevOrder,
-            escrow_payments: escrowPayments,
-          };
-        });
-        setLastUpdated(new Date());
-      },
-      error => {
-        console.error('Error in escrow listener:', error);
-      }
-    );
+    const escrowChannel = supabase
+      .channel(`escrow:${orderIdString}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'escrow_payments',
+          filter: `order_id=eq.${orderIdString}`,
+        },
+        async () => {
+          await fetchRelatedData();
+          setLastUpdated(new Date());
+        }
+      )
+      .subscribe();
 
     return () => {
-      console.log('Cleaning up real-time listeners');
-      unsubscribeOrder();
-      unsubscribeEscrow();
+      orderChannel.unsubscribe();
+      escrowChannel.unsubscribe();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [orderIdString]);
@@ -198,55 +158,71 @@ export default function OrderStatusScreen() {
     }
 
     try {
-      const orderRef = doc(db, 'orders', orderIdString);
-      const orderSnap = await getDoc(orderRef);
+      const { data: orderRow, error: orderError } = await supabase
+        .from('orders')
+        .select('*')
+        .eq('id', orderIdString)
+        .maybeSingle();
 
-      if (!orderSnap.exists()) {
+      if (orderError) {
+        throw orderError;
+      }
+
+      if (!orderRow) {
         Alert.alert(t('error'), t('orderNotFound') || 'Order not found');
         return;
       }
 
       const orderData = {
-        id: orderSnap.id,
-        ...(orderSnap.data() as Omit<Order, 'id'>),
+        id: orderRow.id,
+        ...(orderRow as Omit<Order, 'id'>),
       };
 
       // Fetch cargo request
       if (orderData.request_id) {
-        const requestRef = doc(db, 'cargo_requests', orderData.request_id);
-        const requestSnap = await getDoc(requestRef);
-        if (requestSnap.exists()) {
-          orderData.cargo_requests = requestSnap.data() as Order['cargo_requests'];
+        const { data: requestRow } = await supabase
+          .from('cargo_requests')
+          .select('title, from_address, to_address, cargo_type')
+          .eq('id', orderData.request_id)
+          .maybeSingle();
+        if (requestRow) {
+          orderData.cargo_requests = requestRow as Order['cargo_requests'];
         }
       }
 
       // Fetch customer data
       if (orderData.customer_id) {
-        const customerRef = doc(db, 'users', orderData.customer_id);
-        const customerSnap = await getDoc(customerRef);
-        if (customerSnap.exists()) {
-          orderData.customer = customerSnap.data() as Order['customer'];
+        const { data: customerRow } = await supabase
+          .from('users')
+          .select('full_name, phone')
+          .eq('id', orderData.customer_id)
+          .maybeSingle();
+        if (customerRow) {
+          orderData.customer = customerRow as Order['customer'];
         }
       }
 
       // Fetch carrier data
       if (orderData.carrier_id) {
-        const carrierRef = doc(db, 'users', orderData.carrier_id);
-        const carrierSnap = await getDoc(carrierRef);
-        if (carrierSnap.exists()) {
-          orderData.carrier = carrierSnap.data() as Order['carrier'];
+        const { data: carrierRow } = await supabase
+          .from('users')
+          .select('full_name, phone')
+          .eq('id', orderData.carrier_id)
+          .maybeSingle();
+        if (carrierRow) {
+          orderData.carrier = carrierRow as Order['carrier'];
         }
       }
 
       // Fetch escrow payments
-      const escrowQuery = query(
-        collection(db, 'escrow_payments'),
-        where('order_id', '==', orderIdString)
-      );
-      const escrowSnap = await getDocs(escrowQuery);
-      orderData.escrow_payments = escrowSnap.docs.map(docSnap => ({
-        id: docSnap.id,
-        ...(docSnap.data() as Omit<EscrowPayment, 'id'>),
+      const { data: escrowRows } = await supabase
+        .from('escrow_payments')
+        .select('id,status,provider_order_id')
+        .eq('order_id', orderIdString);
+      orderData.escrow_payments = (escrowRows || []).map(row => ({
+        id: row.id,
+        status: row.status,
+        vipps_order_id: row.provider_order_id || undefined,
       }));
 
       setOrder(orderData);
@@ -400,12 +376,18 @@ export default function OrderStatusScreen() {
     setConfirming(true);
     try {
       // Update order status to delivered
-      const orderRef = doc(db, 'orders', orderIdString as string);
-      await updateDoc(orderRef, {
+      const { error } = await supabase
+        .from('orders')
+        .update({
         status: 'delivered',
-        delivered_at: serverTimestamp(),
-        updated_at: serverTimestamp(),
-      });
+        delivered_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      })
+        .eq('id', orderIdString as string);
+
+      if (error) {
+        throw error;
+      }
 
       // Release funds to carrier using Cloud Function
       // This ensures secure and validated fund release

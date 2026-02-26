@@ -13,19 +13,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTranslation } from 'react-i18next';
-import { db } from '../../lib/firebase';
+import { supabase } from '../../lib/supabase';
 import { trackPaymentInitiated, trackPaymentCompleted } from '../../utils/analytics';
-import { fetchWithRetry } from '../../utils/fetchWithTimeout';
-import {
-  doc,
-  getDoc,
-  collection,
-  serverTimestamp,
-  query,
-  where,
-  getDocs,
-  setDoc,
-} from 'firebase/firestore';
 import { ScreenHeader } from '../../components/ScreenHeader';
 import { ScreenSection } from '../../components/ScreenSection';
 import { theme } from '../../theme/theme';
@@ -63,12 +52,11 @@ interface Order {
 type EscrowPayment = {
   id: string;
   status?: string;
-  vipps_url?: string;
-  vipps_order_id?: string;
+  payment_url?: string;
+  provider_order_id?: string;
 };
 
 type EscrowPaymentRecord = {
-  id: string;
   order_id: string;
   customer_id: string;
   carrier_id: string;
@@ -77,13 +65,10 @@ type EscrowPaymentRecord = {
   carrier_amount: number;
   status: string;
   idempotency_key: string;
-  created_at: ReturnType<typeof serverTimestamp>;
+  created_at: string;
   request_id?: string;
   bid_id?: string;
 };
-
-const firebaseProjectId = process.env.EXPO_PUBLIC_FIREBASE_PROJECT_ID || '';
-const firebaseApiKey = process.env.EXPO_PUBLIC_FIREBASE_API_KEY || '';
 
 export default function PaymentScreen() {
   const { orderId } = useLocalSearchParams();
@@ -107,33 +92,70 @@ export default function PaymentScreen() {
       }
 
       // Fetch order
-      const orderRef = doc(db, 'orders', orderId);
-      const orderSnap = await getDoc(orderRef);
+      const { data: orderRow, error: orderError } = await supabase
+        .from('orders')
+        .select(
+          'id, total_amount, platform_fee, carrier_amount, status, carrier_id, customer_id, request_id, bid_id'
+        )
+        .eq('id', orderId)
+        .single();
 
-      if (!orderSnap.exists()) {
+      if (orderError || !orderRow) {
         throw new Error('Order not found');
       }
 
       const orderData: Order = {
-        id: orderSnap.id,
-        ...(orderSnap.data() as Omit<Order, 'id'>),
+        id: orderRow.id,
+        total_amount: Number(orderRow.total_amount || 0),
+        platform_fee: Number(orderRow.platform_fee || 0),
+        carrier_amount: Number(orderRow.carrier_amount || 0),
+        status: orderRow.status || 'pending',
+        carrier_id: orderRow.carrier_id,
+        customer_id: orderRow.customer_id,
+        request_id: orderRow.request_id || undefined,
+        bid_id: orderRow.bid_id || undefined,
+        cargo_requests: {
+          title: '',
+          from_address: '',
+          to_address: '',
+        },
+        carrier: {
+          full_name: '',
+          phone: '',
+        },
       };
 
       // Fetch cargo request
       if (orderData.request_id) {
-        const requestRef = doc(db, 'cargo_requests', orderData.request_id);
-        const requestSnap = await getDoc(requestRef);
-        if (requestSnap.exists()) {
-          orderData.cargo_requests = requestSnap.data() as Order['cargo_requests'];
+        const { data: requestRow } = await supabase
+          .from('cargo_requests')
+          .select('title, from_address, to_address')
+          .eq('id', orderData.request_id)
+          .maybeSingle();
+
+        if (requestRow) {
+          orderData.cargo_requests = {
+            title: requestRow.title || '',
+            from_address: requestRow.from_address || '',
+            to_address: requestRow.to_address || '',
+          };
         }
       }
 
       // Fetch carrier user data
       if (orderData.carrier_id) {
-        const carrierRef = doc(db, 'users', orderData.carrier_id);
-        const carrierSnap = await getDoc(carrierRef);
-        if (carrierSnap.exists()) {
-          orderData.carrier = carrierSnap.data() as Order['carrier'];
+        const { data: carrierRow } = await supabase
+          .from('users')
+          .select('full_name, phone, avatar_url')
+          .eq('id', orderData.carrier_id)
+          .maybeSingle();
+
+        if (carrierRow) {
+          orderData.carrier = {
+            full_name: carrierRow.full_name || '',
+            phone: carrierRow.phone || '',
+            avatar_url: carrierRow.avatar_url || undefined,
+          };
         }
       }
 
@@ -158,25 +180,29 @@ export default function PaymentScreen() {
       const idempotencyKey = `payment_${order.id}_${Date.now()}`;
 
       // 🔍 Check if payment already exists for this order
-      const existingPaymentQuery = query(
-        collection(db, 'escrow_payments'),
-        where('order_id', '==', order.id),
-        where('status', 'in', ['initiated', 'paid'])
-      );
-      const existingPaymentSnap = await getDocs(existingPaymentQuery);
+      const { data: existingPayments, error: existingPaymentsError } = await supabase
+        .from('escrow_payments')
+        .select('id, status, payment_url, provider_order_id')
+        .eq('order_id', order.id)
+        .in('status', ['initiated', 'paid'])
+        .limit(1);
 
-      if (!existingPaymentSnap.empty) {
-        const existingPayment = existingPaymentSnap.docs[0].data() as EscrowPayment;
-        const existingPaymentId = existingPaymentSnap.docs[0].id;
+      if (existingPaymentsError) {
+        throw existingPaymentsError;
+      }
+
+      if (existingPayments && existingPayments.length > 0) {
+        const existingPayment = existingPayments[0] as EscrowPayment;
+        const existingPaymentId = existingPayment.id;
 
         // If payment is already initiated with a Vipps URL, offer to continue
-        if (existingPayment.vipps_url) {
+        if (existingPayment.payment_url) {
           Alert.alert(t('paymentInProgress'), t('paymentAlreadyInitiated'), [
             {
               text: t('continue'),
               onPress: () => {
                 // In production, open the existing Vipps URL
-                // Linking.openURL(existingPayment.vipps_url);
+                // Linking.openURL(existingPayment.payment_url);
                 simulatePaymentSuccess();
               },
             },
@@ -194,29 +220,25 @@ export default function PaymentScreen() {
         console.warn('Existing payment without Vipps URL:', existingPaymentId);
       }
 
-      // Validate Firebase configuration
-      if (!firebaseProjectId || !firebaseApiKey) {
-        throw new Error(
-          'Firebase configuration is incomplete. Please check your environment variables.'
-        );
-      }
-
       // Validate all required data before making the request
       if (!user?.uid) {
         throw new Error('User not authenticated');
       }
 
       // Get phone number from user profile
-      const userRef = doc(db, 'users', user.uid);
-      const userSnap = await getDoc(userRef);
+      const { data: userRow, error: userError } = await supabase
+        .from('users')
+        .select('phone')
+        .eq('id', user.uid)
+        .single();
 
-      if (!userSnap.exists() || !userSnap.data()?.phone) {
+      if (userError || !userRow?.phone) {
         throw new Error(
           'User phone number is required for Vipps payment. Please update your profile.'
         );
       }
 
-      const customerPhone = userSnap.data()?.phone;
+      const customerPhone = userRow.phone;
 
       // Validate order data
       if (!order.carrier_id) {
@@ -224,18 +246,16 @@ export default function PaymentScreen() {
       }
 
       // Create escrow payment record with idempotency key
-      const escrowRef = doc(collection(db, 'escrow_payments'));
       const escrowData: EscrowPaymentRecord = {
-        id: escrowRef.id,
         order_id: order.id,
-        customer_id: user?.uid,
+        customer_id: user.uid,
         carrier_id: order.carrier_id,
         total_amount: order.total_amount,
         platform_fee: order.platform_fee,
         carrier_amount: order.carrier_amount,
         status: 'initiated',
         idempotency_key: idempotencyKey,
-        created_at: serverTimestamp(),
+        created_at: new Date().toISOString(),
       };
 
       // Add optional fields if they exist
@@ -246,8 +266,15 @@ export default function PaymentScreen() {
         escrowData.bid_id = order.bid_id;
       }
 
-      await setDoc(escrowRef, escrowData);
-      const escrowPayment = escrowData;
+      const { data: insertedEscrowPayment, error: escrowInsertError } = await supabase
+        .from('escrow_payments')
+        .insert(escrowData)
+        .select('id')
+        .single();
+
+      if (escrowInsertError || !insertedEscrowPayment) {
+        throw escrowInsertError || new Error('Failed to create escrow payment');
+      }
 
       // Track payment initiated
       trackPaymentInitiated({
@@ -257,47 +284,46 @@ export default function PaymentScreen() {
         payment_provider: 'vipps',
       });
 
-      // Call Vipps API through Firebase Cloud Function with idempotency key
-      const cloudFunctionUrl = `https://europe-west1-${firebaseProjectId}.cloudfunctions.net/vipps-payment`;
-      console.log('Calling Cloud Function:', cloudFunctionUrl);
+      const { data: result, error: functionError } = await supabase.functions.invoke(
+        'vipps-payment',
+        {
+          body: {
+            escrow_payment_id: insertedEscrowPayment.id,
+            amount: order.total_amount,
+            order_id: order.id,
+            customer_phone: customerPhone,
+            description: `${t('payment')} - ${order.cargo_requests.title}`,
+            customer_name: user?.displayName || user?.email || 'Customer',
+            carrier_name: order.carrier.full_name,
+          },
+          headers: {
+            'Idempotency-Key': idempotencyKey,
+          },
+        }
+      );
 
-      const response = await fetchWithRetry(cloudFunctionUrl, {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${firebaseApiKey}`,
-          'Content-Type': 'application/json',
-          'Idempotency-Key': idempotencyKey, // 🔑 Critical for preventing duplicate charges
-        },
-        body: JSON.stringify({
-          escrow_payment_id: escrowPayment.id,
-          amount: order.total_amount,
-          order_id: order.id,
-          customer_phone: customerPhone,
-          description: `${t('payment')} - ${order.cargo_requests.title}`,
-          customer_name: user?.displayName || user?.email || 'Customer',
-          carrier_name: order.carrier.full_name,
-        }),
-        timeout: 30000, // 30 seconds for payment operations
-        retries: 2, // Retry up to 2 times
-        onRetry: (attempt, error) => {
-          console.log(`Payment request retry attempt ${attempt}:`, error.message);
-        },
-      });
+      if (functionError) {
+        throw functionError;
+      }
 
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.error || 'Payment initiation failed');
+      if (result?.error) {
+        throw new Error(result.error);
       }
 
       // Redirect to Vipps
-      if (result.vipps_url) {
-        // In a real app, you would open this URL in the Vipps app or browser
+      if (result?.vipps_url || result?.payment_url) {
+        const paymentUrl = result?.vipps_url || result?.payment_url;
+
+        await supabase
+          .from('escrow_payments')
+          .update({ payment_url: paymentUrl })
+          .eq('id', insertedEscrowPayment.id);
+
         Alert.alert(t('vippsPayment'), t('vippsRedirectMessage'), [
           {
             text: t('continue'),
             onPress: () => {
-              // Here you would typically use Linking.openURL(result.vipps_url)
+              // Here you would typically use Linking.openURL(paymentUrl)
               // For now, we'll simulate the payment process
               simulatePaymentSuccess();
             },
@@ -307,6 +333,8 @@ export default function PaymentScreen() {
             style: 'cancel',
           },
         ]);
+      } else {
+        throw new Error('Payment initiation did not return payment URL');
       }
     } catch (error: unknown) {
       console.error('Vipps payment error:', error);
