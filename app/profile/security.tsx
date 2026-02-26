@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState, type ComponentProps } from 'react';
+import React, { useState, type ComponentProps } from 'react';
 import {
   View,
   Text,
@@ -8,14 +8,9 @@ import {
   Alert,
   ActivityIndicator,
   Platform,
-  TextInput,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { FirebaseRecaptchaVerifierModal } from 'expo-firebase-recaptcha';
-import { FirebaseError } from 'firebase/app';
-import { PhoneAuthProvider, PhoneMultiFactorGenerator, multiFactor } from 'firebase/auth';
-import { doc, setDoc } from 'firebase/firestore';
 import { useTranslation } from 'react-i18next';
 import {
   colors,
@@ -27,162 +22,12 @@ import {
 } from '../../lib/sharedStyles';
 import { useAuth } from '../../contexts/AuthContext';
 import { ScreenHeader } from '../../components/ScreenHeader';
-import { auth, db } from '../../lib/firebase';
-import { useCurrentUser } from '../../hooks/useCurrentUser';
-
-const RecaptchaModal = FirebaseRecaptchaVerifierModal as unknown as React.ComponentType<any>;
 
 export default function SecurityScreen() {
   const router = useRouter();
   const { t } = useTranslation();
   const { user, signOut, signOutAllDevices } = useAuth();
-  const { currentUser } = useCurrentUser(user?.uid);
   const [loading, setLoading] = useState(false);
-  const [twoFALoading, setTwoFALoading] = useState(false);
-  const [isTwoFAEnabled, setIsTwoFAEnabled] = useState(false);
-  const [phoneNumber, setPhoneNumber] = useState(user?.phoneNumber || '');
-  const [verificationId, setVerificationId] = useState<string | null>(null);
-  const [verificationCode, setVerificationCode] = useState('');
-  const recaptchaVerifier = useRef<FirebaseRecaptchaVerifierModal>(null);
-
-  const firebaseConfig = {
-    apiKey: process.env.EXPO_PUBLIC_FIREBASE_API_KEY || '',
-    authDomain: process.env.EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN || '',
-    projectId: process.env.EXPO_PUBLIC_FIREBASE_PROJECT_ID || '',
-    appId: process.env.EXPO_PUBLIC_FIREBASE_APP_ID || '',
-  };
-
-  const isRecaptchaConfigReady =
-    !!firebaseConfig.apiKey &&
-    !!firebaseConfig.authDomain &&
-    !!firebaseConfig.projectId &&
-    !!firebaseConfig.appId;
-
-  useEffect(() => {
-    if (user?.phoneNumber) {
-      setPhoneNumber(user.phoneNumber);
-    }
-
-    const profilePhone =
-      currentUser && typeof currentUser.phone === 'string' ? currentUser.phone.trim() : '';
-    if (!user?.phoneNumber && profilePhone) {
-      setPhoneNumber(profilePhone);
-    }
-
-    if (auth.currentUser) {
-      setIsTwoFAEnabled(multiFactor(auth.currentUser).enrolledFactors.length > 0);
-    }
-  }, [currentUser, user?.phoneNumber]);
-
-  const enable2FA = async () => {
-    if (Platform.OS === 'web') {
-      Alert.alert(t('error'), 'Two-factor authentication setup is supported on mobile only.');
-      return;
-    }
-
-    if (!isRecaptchaConfigReady) {
-      Alert.alert(t('error'), 'Firebase reCAPTCHA configuration is incomplete.');
-      return;
-    }
-
-    if (!auth.currentUser) {
-      Alert.alert(t('error'), t('somethingWentWrong'));
-      return;
-    }
-
-    const normalizedPhoneNumber = phoneNumber.replace(/\s+/g, '');
-    if (!normalizedPhoneNumber) {
-      Alert.alert(t('error'), 'Please enter a phone number for 2FA.');
-      return;
-    }
-
-    if (!/^\+\d{8,15}$/.test(normalizedPhoneNumber)) {
-      Alert.alert(t('error'), 'Phone number must be in international format, e.g. +4712345678.');
-      return;
-    }
-
-    if (!recaptchaVerifier.current) {
-      Alert.alert(t('error'), 'reCAPTCHA verifier is not ready yet. Please try again.');
-      return;
-    }
-
-    try {
-      setTwoFALoading(true);
-      const session = await multiFactor(auth.currentUser).getSession();
-
-      const phoneInfoOptions = {
-        phoneNumber: normalizedPhoneNumber,
-        session,
-      };
-
-      const provider = new PhoneAuthProvider(auth);
-      const nextVerificationId = await provider.verifyPhoneNumber(
-        phoneInfoOptions,
-        recaptchaVerifier.current
-      );
-
-      setVerificationId(nextVerificationId);
-      Alert.alert(t('twoFactorAuth'), 'Verification code sent. Enter it below to finish setup.');
-    } catch (error) {
-      console.error('Failed to start 2FA enrollment:', error);
-      if (error instanceof FirebaseError && error.code === 'auth/operation-not-allowed') {
-        Alert.alert(
-          t('error'),
-          'SMS-based MFA is not enabled in Firebase. Enable Phone sign-in and Multi-factor Authentication in Firebase Console.'
-        );
-      } else {
-        Alert.alert(t('error'), 'Unable to start two-factor setup. Please try again.');
-      }
-    } finally {
-      setTwoFALoading(false);
-    }
-  };
-
-  const confirm2FA = async () => {
-    if (!auth.currentUser || !verificationId) {
-      Alert.alert(t('error'), t('somethingWentWrong'));
-      return;
-    }
-
-    const normalizedPhoneNumber = phoneNumber.replace(/\s+/g, '');
-    if (!/^\+\d{8,15}$/.test(normalizedPhoneNumber)) {
-      Alert.alert(t('error'), 'Phone number must be in international format, e.g. +4712345678.');
-      return;
-    }
-
-    if (!verificationCode.trim()) {
-      Alert.alert(t('error'), 'Please enter the verification code.');
-      return;
-    }
-
-    try {
-      setTwoFALoading(true);
-      const phoneCredential = PhoneAuthProvider.credential(verificationId, verificationCode.trim());
-      const multiFactorAssertion = PhoneMultiFactorGenerator.assertion(phoneCredential);
-
-      await multiFactor(auth.currentUser).enroll(multiFactorAssertion, 'primary-phone');
-
-      await setDoc(
-        doc(db, 'users', auth.currentUser.uid),
-        {
-          phone: normalizedPhoneNumber,
-          updated_at: new Date().toISOString(),
-        },
-        { merge: true }
-      );
-
-      setIsTwoFAEnabled(true);
-      setVerificationId(null);
-      setVerificationCode('');
-      setPhoneNumber(normalizedPhoneNumber);
-      Alert.alert(t('twoFactorAuth'), 'Two-factor authentication enabled successfully.');
-    } catch (error) {
-      console.error('Failed to confirm 2FA enrollment:', error);
-      Alert.alert(t('error'), 'Invalid verification code. Please try again.');
-    } finally {
-      setTwoFALoading(false);
-    }
-  };
 
   const handleSignOut = async () => {
     Alert.alert(t('signOut'), t('confirmSignOut'), [
@@ -261,11 +106,11 @@ export default function SecurityScreen() {
       id: 'two-factor',
       icon: 'shield-checkmark-outline',
       title: t('twoFactorAuth'),
-      subtitle: isTwoFAEnabled
-        ? t('enabled') || 'Enabled'
-        : t('twoFactorSubtitle') || 'Add extra security to your account',
+      subtitle: t('twoFactorSubtitle'),
       iconColor: colors.success,
-      onPress: enable2FA,
+      onPress: () => {
+        Alert.alert(t('comingSoon'), 'Two-factor authentication coming soon');
+      },
     },
     {
       id: 'active-sessions',
@@ -300,14 +145,6 @@ export default function SecurityScreen() {
 
   return (
     <View style={styles.container}>
-      {isRecaptchaConfigReady ? (
-        <RecaptchaModal
-          ref={recaptchaVerifier}
-          firebaseConfig={firebaseConfig}
-          attemptInvisibleVerification
-        />
-      ) : null}
-
       <ScreenHeader title={t('security')} onBackPress={() => router.back()} />
 
       <ScrollView
@@ -354,62 +191,6 @@ export default function SecurityScreen() {
             ))}
           </View>
         </View>
-
-        {!isTwoFAEnabled ? (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>{t('twoFactorAuth')}</Text>
-            <View style={styles.card}>
-              <View style={styles.verificationContainer}>
-                <Text style={styles.verificationText}>Phone number for two-factor authentication</Text>
-                <TextInput
-                  value={phoneNumber}
-                  onChangeText={setPhoneNumber}
-                  keyboardType="phone-pad"
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                  placeholder="+4712345678"
-                  placeholderTextColor={colors.text.tertiary}
-                  style={styles.verificationInput}
-                />
-              </View>
-            </View>
-          </View>
-        ) : null}
-
-        {verificationId ? (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>{t('twoFactorAuth')}</Text>
-            <View style={styles.card}>
-              <View style={styles.verificationContainer}>
-                <Text style={styles.verificationText}>Enter SMS verification code</Text>
-                <TextInput
-                  value={verificationCode}
-                  onChangeText={setVerificationCode}
-                  keyboardType="number-pad"
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                  placeholder="123456"
-                  placeholderTextColor={colors.text.tertiary}
-                  style={styles.verificationInput}
-                  maxLength={6}
-                />
-                <TouchableOpacity
-                  style={[styles.confirmButton, twoFALoading && styles.confirmButtonDisabled]}
-                  onPress={confirm2FA}
-                  disabled={twoFALoading}
-                  accessibilityRole="button"
-                  accessibilityLabel="Confirm two-factor authentication"
-                >
-                  {twoFALoading ? (
-                    <ActivityIndicator size="small" color={colors.white} />
-                  ) : (
-                    <Text style={styles.confirmButtonText}>Confirm code</Text>
-                  )}
-                </TouchableOpacity>
-              </View>
-            </View>
-          </View>
-        ) : null}
 
         {/* Sign Out Options */}
         <View style={styles.section}>
@@ -543,40 +324,6 @@ const styles = StyleSheet.create({
   optionSubtitle: {
     fontSize: fontSize.sm,
     color: colors.text.secondary,
-  },
-  verificationContainer: {
-    padding: spacing.lg,
-  },
-  verificationText: {
-    fontSize: fontSize.sm,
-    color: colors.text.secondary,
-    marginBottom: spacing.sm,
-  },
-  verificationInput: {
-    borderWidth: 1,
-    borderColor: colors.border.default,
-    borderRadius: borderRadius.md,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    fontSize: fontSize.lg,
-    color: colors.text.primary,
-    marginBottom: spacing.md,
-    letterSpacing: 2,
-  },
-  confirmButton: {
-    height: 48,
-    borderRadius: borderRadius.md,
-    backgroundColor: colors.primary,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  confirmButtonDisabled: {
-    opacity: 0.7,
-  },
-  confirmButtonText: {
-    color: colors.white,
-    fontSize: fontSize.md,
-    fontWeight: fontWeight.semibold,
   },
   warningCard: {
     flexDirection: 'row',
