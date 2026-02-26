@@ -251,31 +251,44 @@ const hydrateCargoRequest = async (
   };
 
   if (requestUserId) {
-    const userDoc = await getDoc(doc(db, 'users', requestUserId));
-    if (userDoc.exists()) {
-      const userDocData = userDoc.data() as Partial<CargoRequest['users']>;
-      userData = {
-        full_name: userDocData.full_name ?? 'Unknown User',
-        user_type: userDocData.user_type ?? 'customer',
-        rating: typeof userDocData.rating === 'number' ? userDocData.rating : 0,
-        avatar_url: userDocData.avatar_url,
-      };
+    try {
+      const userDoc = await getDoc(doc(db, 'users', requestUserId));
+      if (userDoc.exists()) {
+        const userDocData = userDoc.data() as Partial<CargoRequest['users']>;
+        userData = {
+          full_name: userDocData.full_name ?? 'Unknown User',
+          user_type: userDocData.user_type ?? 'customer',
+          rating: typeof userDocData.rating === 'number' ? userDocData.rating : 0,
+          avatar_url: userDocData.avatar_url,
+        };
+      }
+    } catch (error) {
+      console.warn('Failed to hydrate request owner profile', error);
     }
   }
 
-  const bidsQuery = query(collection(db, 'bids'), where('cargo_request_id', '==', docSnapshot.id));
-  const bidsSnapshot = await getDocs(bidsQuery);
-  const bids = bidsSnapshot.docs.map(docItem => ({ id: docItem.id, ...docItem.data() }));
+  let bids: Bid[] = [];
+  try {
+    const bidsQuery = query(collection(db, 'bids'), where('cargo_request_id', '==', docSnapshot.id));
+    const bidsSnapshot = await getDocs(bidsQuery);
+    bids = bidsSnapshot.docs.map(docItem => ({ id: docItem.id, ...docItem.data() }));
+  } catch (error) {
+    console.warn('Failed to hydrate request bids', error);
+  }
 
   let isFavorite = false;
   if (userId) {
-    const favoritesQuery = query(
-      collection(db, 'user_favorites'),
-      where('cargo_request_id', '==', docSnapshot.id),
-      where('user_id', '==', userId)
-    );
-    const favoritesSnapshot = await getDocs(favoritesQuery);
-    isFavorite = !favoritesSnapshot.empty;
+    try {
+      const favoritesQuery = query(
+        collection(db, 'user_favorites'),
+        where('cargo_request_id', '==', docSnapshot.id),
+        where('user_id', '==', userId)
+      );
+      const favoritesSnapshot = await getDocs(favoritesQuery);
+      isFavorite = !favoritesSnapshot.empty;
+    } catch (error) {
+      console.warn('Failed to hydrate request favorite status', error);
+    }
   }
 
   return {
