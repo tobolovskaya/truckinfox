@@ -2,12 +2,10 @@
  * Escrow Management Utilities
  *
  * Client-side utilities for managing escrow payments and fund releases.
- * These functions interact with Firebase Cloud Functions to securely
+ * These functions interact with Supabase Edge Functions to securely
  * handle escrow operations.
  */
-
-import { getFunctions, httpsCallable } from 'firebase/functions';
-import { getApp } from 'firebase/app';
+import { supabase } from '../lib/supabase';
 
 interface ReleaseFundsResponse {
   success: boolean;
@@ -52,12 +50,6 @@ function getErrorMessage(error: unknown, fallback: string): string {
   return fallback;
 }
 
-// Get Firebase app instance
-const app = getApp();
-
-// Initialize Firebase Functions
-const functions = getFunctions(app, 'europe-west1');
-
 /**
  * Release escrow funds to carrier after delivery confirmation
  *
@@ -87,13 +79,22 @@ export async function releaseFundsToCarrier(orderId: string): Promise<{
   status: string;
 }> {
   try {
-    const releaseFunds = httpsCallable<{ orderId: string }, ReleaseFundsResponse>(
-      functions,
-      'releaseFundsToCarrier'
+    const { data, error } = await supabase.functions.invoke<ReleaseFundsResponse>(
+      'release-funds-to-carrier',
+      {
+        body: { orderId },
+      }
     );
-    const result = await releaseFunds({ orderId });
 
-    return result.data;
+    if (error) {
+      throw error;
+    }
+
+    if (!data) {
+      throw new Error('Empty response from release-funds-to-carrier function');
+    }
+
+    return data;
   } catch (error: unknown) {
     console.error('Error releasing funds:', error);
     throw new Error(getErrorMessage(error, 'Failed to release funds to carrier'));
@@ -136,13 +137,48 @@ export async function getEscrowStatus(orderId: string): Promise<{
   order_status?: string;
 }> {
   try {
-    const getStatus = httpsCallable<{ orderId: string }, EscrowStatusResponse>(
-      functions,
-      'getEscrowStatus'
-    );
-    const result = await getStatus({ orderId });
+    const { data: escrowRow, error: escrowError } = await supabase
+      .from('escrow_payments')
+      .select('id,status,total_amount,platform_fee,carrier_amount,created_at')
+      .eq('order_id', orderId)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
 
-    return result.data;
+    if (escrowError) {
+      throw escrowError;
+    }
+
+    const { data: orderRow, error: orderError } = await supabase
+      .from('orders')
+      .select('status')
+      .eq('id', orderId)
+      .maybeSingle();
+
+    if (orderError) {
+      throw orderError;
+    }
+
+    if (!escrowRow) {
+      return {
+        found: false,
+        order_status: orderRow?.status,
+      };
+    }
+
+    return {
+      found: true,
+      escrow: {
+        id: escrowRow.id,
+        status: escrowRow.status,
+        total_amount: Number(escrowRow.total_amount || 0),
+        platform_fee: Number(escrowRow.platform_fee || 0),
+        carrier_amount: Number(escrowRow.carrier_amount || 0),
+        created_at: escrowRow.created_at,
+        completed_at: null,
+      },
+      order_status: orderRow?.status,
+    } as EscrowStatusResponse;
   } catch (error: unknown) {
     console.error('Error getting escrow status:', error);
     throw new Error(getErrorMessage(error, 'Failed to get escrow status'));

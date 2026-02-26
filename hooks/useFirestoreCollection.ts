@@ -1,44 +1,77 @@
 import { useState, useEffect } from 'react';
-import { collection, query, onSnapshot, QueryConstraint } from 'firebase/firestore';
-import { firestore } from '../lib/firebase';
+import { RealtimePostgresChangesFilter } from '@supabase/supabase-js';
+import { supabase } from '../lib/supabase';
+
+type RealtimeEvent = 'INSERT' | 'UPDATE' | 'DELETE' | '*';
+
+type CollectionQueryBuilder = (query: any) => any;
+
+interface UseSupabaseCollectionOptions {
+  queryBuilder?: CollectionQueryBuilder;
+  realtime?: {
+    event?: RealtimeEvent;
+    filter?: RealtimePostgresChangesFilter<'*'>['filter'];
+  };
+}
 
 /**
  * Custom hook to listen to a Firestore collection in real-time
  */
 export const useFirestoreCollection = <T>(
   collectionName: string,
-  constraints: QueryConstraint[] = []
+  options: UseSupabaseCollectionOptions = {}
 ) => {
   const [data, setData] = useState<T[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {
-    const collectionRef = collection(firestore, collectionName);
-    const q = query(collectionRef, ...constraints);
+    const fetchCollection = async () => {
+      try {
+        setLoading(true);
 
-    const unsubscribe = onSnapshot(
-      q,
-      snapshot => {
-        const items = snapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data(),
-        })) as T[];
+        let query = supabase.from(collectionName).select('*');
 
-        setData(items);
-        setLoading(false);
+        if (options.queryBuilder) {
+          query = options.queryBuilder(query);
+        }
+
+        const { data: items, error: queryError } = await query;
+
+        if (queryError) {
+          throw queryError;
+        }
+
+        setData((items || []) as T[]);
         setError(null);
-      },
-      err => {
-        console.error(`Error listening to ${collectionName}:`, err);
+      } catch (err) {
+        console.error(`Error fetching ${collectionName}:`, err);
         setError(err as Error);
+      } finally {
         setLoading(false);
       }
-    );
+    };
 
-    return () => unsubscribe();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [collectionName, JSON.stringify(constraints)]);
+    fetchCollection();
+
+    const channel = supabase
+      .channel(`${collectionName}:collection-listener`)
+      .on(
+        'postgres_changes',
+        {
+          event: options.realtime?.event || '*',
+          schema: 'public',
+          table: collectionName,
+          filter: options.realtime?.filter,
+        },
+        fetchCollection
+      )
+      .subscribe();
+
+    return () => {
+      channel.unsubscribe();
+    };
+  }, [collectionName, options]);
 
   return { data, loading, error };
 };

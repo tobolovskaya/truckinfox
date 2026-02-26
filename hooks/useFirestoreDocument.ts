@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
-import { doc, onSnapshot } from 'firebase/firestore';
-import { firestore } from '../lib/firebase';
+import { supabase } from '../lib/supabase';
 
 /**
  * Custom hook to listen to a Firestore document in real-time
@@ -12,31 +11,58 @@ export const useFirestoreDocument = <T>(collectionName: string, documentId: stri
 
   useEffect(() => {
     if (!documentId) {
+      setData(null);
       setLoading(false);
       return;
     }
 
-    const docRef = doc(firestore, collectionName, documentId);
+    const fetchDocument = async () => {
+      try {
+        setLoading(true);
+        const { data: row, error: fetchError } = await supabase
+          .from(collectionName)
+          .select('*')
+          .eq('id', documentId)
+          .maybeSingle();
 
-    const unsubscribe = onSnapshot(
-      docRef,
-      snapshot => {
-        if (snapshot.exists()) {
-          setData({ id: snapshot.id, ...snapshot.data() } as T);
+        if (fetchError) {
+          throw fetchError;
+        }
+
+        if (row) {
+          setData(({ id: documentId, ...row } as unknown) as T);
         } else {
           setData(null);
         }
-        setLoading(false);
+
         setError(null);
-      },
-      err => {
+      } catch (err) {
         console.error(`Error listening to ${collectionName}/${documentId}:`, err);
         setError(err as Error);
+      } finally {
         setLoading(false);
       }
-    );
+    };
 
-    return () => unsubscribe();
+    fetchDocument();
+
+    const channel = supabase
+      .channel(`${collectionName}:${documentId}:document-listener`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: collectionName,
+          filter: `id=eq.${documentId}`,
+        },
+        fetchDocument
+      )
+      .subscribe();
+
+    return () => {
+      channel.unsubscribe();
+    };
   }, [collectionName, documentId]);
 
   return { data, loading, error };

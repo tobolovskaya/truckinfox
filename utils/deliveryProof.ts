@@ -1,12 +1,7 @@
-import { app, db } from '../lib/firebase';
-import { doc, updateDoc, serverTimestamp } from 'firebase/firestore';
-import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { getFunctions, httpsCallable } from 'firebase/functions';
+import { supabase } from '../lib/supabase';
 import { trackDeliveryProofSubmitted } from './analytics';
 import { fetchWithTimeout } from './fetchWithTimeout';
 import { compressImageForUpload } from './imageCompression';
-
-const functions = getFunctions(app, 'europe-west1');
 
 function getErrorMessage(error: unknown, fallback: string): string {
   if (error instanceof Error && error.message) {
@@ -18,7 +13,7 @@ function getErrorMessage(error: unknown, fallback: string): string {
 export interface DeliveryProofData {
   photos: string[]; // Array of photo URLs
   signature: string; // Signature data URL or uploaded URL
-  delivery_time: unknown; // Firestore timestamp
+  delivery_time: unknown;
 }
 
 /**
@@ -31,12 +26,10 @@ export const uploadImage = async (
   index?: number
 ): Promise<string> => {
   try {
-    const storage = getStorage();
     const filename =
       type === 'signature' ? `signature_${Date.now()}.png` : `photo_${index}_${Date.now()}.jpg`;
     const uriToUpload = type === 'photo' ? await compressImageForUpload(uri) : uri;
-
-    const storageRef = ref(storage, `delivery_proofs/${orderId}/${filename}`);
+    const filePath = `delivery-proofs/${orderId}/${filename}`;
 
     // Convert URI to blob with timeout
     const response = await fetchWithTimeout(
@@ -48,13 +41,19 @@ export const uploadImage = async (
     ); // 15 second timeout for image download
     const blob = await response.blob();
 
-    // Upload to Firebase Storage
-    await uploadBytes(storageRef, blob, {
+    const { error: uploadError } = await supabase.storage.from('cargo').upload(filePath, blob, {
       contentType: type === 'photo' ? 'image/jpeg' : 'image/png',
+      upsert: true,
     });
 
-    // Get download URL
-    const downloadURL = await getDownloadURL(storageRef);
+    if (uploadError) {
+      throw uploadError;
+    }
+
+    const {
+      data: { publicUrl: downloadURL },
+    } = supabase.storage.from('cargo').getPublicUrl(filePath);
+
     return downloadURL;
   } catch (error) {
     console.error('Error uploading image:', error);
@@ -84,16 +83,22 @@ export const uploadDeliveryProof = async (
     const uploadedSignatureURL = await uploadImage(signature, orderId, 'signature');
     console.log('✅ Signature uploaded:', uploadedSignatureURL);
 
-    // Update order document with delivery proof
-    const orderRef = doc(db, 'orders', orderId);
-    await updateDoc(orderRef, {
-      status: 'delivered',
-      delivery_photos: uploadedPhotoURLs,
-      delivery_signature: uploadedSignatureURL,
-      delivery_time: serverTimestamp(),
-      delivered_at: serverTimestamp(),
-      updated_at: serverTimestamp(),
-    });
+    const nowIso = new Date().toISOString();
+    const { error: updateError } = await supabase
+      .from('orders')
+      .update({
+        status: 'delivered',
+        delivery_photos: uploadedPhotoURLs,
+        delivery_signature_url: uploadedSignatureURL,
+        delivered_at: nowIso,
+        updated_at: nowIso,
+      })
+      .eq('id', orderId);
+
+    if (updateError) {
+      throw updateError;
+    }
+
     console.log('✅ Order updated with delivery proof');
 
     // Track delivery proof submitted
@@ -105,9 +110,18 @@ export const uploadDeliveryProof = async (
 
     // Trigger Cloud Function to release funds to carrier
     try {
-      const releaseFunds = httpsCallable(functions, 'releaseFundsToCarrier');
-      const result = await releaseFunds({ orderId });
-      console.log('✅ Funds release triggered:', result.data);
+      const { data: result, error: invokeError } = await supabase.functions.invoke(
+        'release-funds-to-carrier',
+        {
+          body: { orderId },
+        }
+      );
+
+      if (invokeError) {
+        throw invokeError;
+      }
+
+      console.log('✅ Funds release triggered:', result);
     } catch (fundsError: unknown) {
       console.error('⚠️ Error releasing funds:', fundsError);
       // Don't throw - delivery proof is still recorded
@@ -126,22 +140,24 @@ export const uploadDeliveryProof = async (
  */
 export const getDeliveryProof = async (orderId: string): Promise<DeliveryProofData | null> => {
   try {
-    const orderRef = doc(db, 'orders', orderId);
-    const orderSnap = await (await import('firebase/firestore')).getDoc(orderRef);
+    const { data: orderData, error } = await supabase
+      .from('orders')
+      .select('delivery_photos,delivery_signature_url,delivered_at')
+      .eq('id', orderId)
+      .maybeSingle();
 
-    if (!orderSnap.exists()) {
+    if (error || !orderData) {
       return null;
     }
 
-    const orderData = orderSnap.data();
-    if (!orderData.delivery_photos || !orderData.delivery_signature) {
+    if (!orderData.delivery_photos || !orderData.delivery_signature_url) {
       return null;
     }
 
     return {
       photos: orderData.delivery_photos || [],
-      signature: orderData.delivery_signature || '',
-      delivery_time: orderData.delivery_time,
+      signature: orderData.delivery_signature_url || '',
+      delivery_time: orderData.delivered_at,
     };
   } catch (error) {
     console.error('Error fetching delivery proof:', error);

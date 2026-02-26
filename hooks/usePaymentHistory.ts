@@ -1,18 +1,7 @@
 import { useCallback, useMemo, useRef } from 'react';
 import { useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
-import { FirebaseError } from 'firebase/app';
-import {
-  collection,
-  query,
-  where,
-  orderBy,
-  getDocs,
-  QueryConstraint,
-  limit,
-  startAfter,
-  DocumentSnapshot,
-} from 'firebase/firestore';
-import { db } from '../lib/firebase';
+import { PostgrestError } from '@supabase/supabase-js';
+import { supabase } from '../lib/supabase';
 import { i18n } from '../lib/i18n';
 
 export interface PaymentRecord {
@@ -33,7 +22,7 @@ export interface PaymentRecord {
 
 interface PaymentHistoryPage {
   items: PaymentRecord[];
-  lastVisible: DocumentSnapshot | null;
+  nextOffset: number;
   hasMore: boolean;
 }
 
@@ -51,30 +40,7 @@ interface UsePaymentHistoryOptions {
  */
 export const usePaymentHistory = ({ userId, statusFilter }: UsePaymentHistoryOptions) => {
   const queryClient = useQueryClient();
-  const hasLoggedIndexFallbackWarning = useRef(false);
-
-  const isIndexUnavailableError = useCallback((error: unknown) => {
-    if (!(error instanceof FirebaseError)) {
-      return false;
-    }
-
-    return (
-      error.code === 'failed-precondition' &&
-      error.message.toLowerCase().includes('requires an index')
-    );
-  }, []);
-
-  const buildConstraints = useCallback((): QueryConstraint[] => {
-    const constraints: QueryConstraint[] = [where('user_id', '==', userId)];
-
-    if (statusFilter) {
-      constraints.push(where('status', '==', statusFilter));
-    }
-
-    constraints.push(orderBy('created_at', 'desc'));
-
-    return constraints;
-  }, [userId, statusFilter]);
+  const hasLoggedQueryWarning = useRef(false);
 
   const queryKey: PaymentHistoryQueryKey = useMemo(
     () => ['paymentHistory', `user:${userId},filter:${statusFilter || 'all'}`],
@@ -82,67 +48,70 @@ export const usePaymentHistory = ({ userId, statusFilter }: UsePaymentHistoryOpt
   );
 
   const fetchPaymentHistory = useCallback(
-    async (pageParam?: DocumentSnapshot): Promise<PaymentHistoryPage> => {
+    async (pageParam = 0): Promise<PaymentHistoryPage> => {
       try {
-        const constraints = buildConstraints();
+        const pageSize = 20;
+        const from = pageParam;
+        const to = pageParam + pageSize - 1;
 
-        if (pageParam) {
-          constraints.push(startAfter(pageParam));
+        let dbQuery = supabase
+          .from('payments')
+          .select(
+            'id,user_id,order_id,amount,currency,status,payment_method,description,invoice_url,reference_id,created_at,updated_at,order:orders(cargo_requests(title))'
+          )
+          .eq('user_id', userId)
+          .order('created_at', { ascending: false })
+          .range(from, to);
+
+        if (statusFilter) {
+          dbQuery = dbQuery.eq('status', statusFilter);
         }
 
-        constraints.push(limit(20));
+        const { data, error } = await dbQuery;
 
-        const collectionRef = collection(db, 'payments');
-        const q = query(collectionRef, ...constraints);
+        if (error) {
+          throw error;
+        }
 
-        const snapshot = await getDocs(q);
-        const items = snapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data(),
-        })) as PaymentRecord[];
+        const items = (data || []).map(payment => {
+          const paymentRow = payment as any;
+          const orderNode = paymentRow.order;
+          const orderEntry = Array.isArray(orderNode) ? orderNode[0] : orderNode;
+          const cargoNode = orderEntry?.cargo_requests;
+          const cargoEntry = Array.isArray(cargoNode) ? cargoNode[0] : cargoNode;
 
-        const lastDoc = snapshot.docs[snapshot.docs.length - 1] || null;
+          return {
+          id: payment.id,
+          user_id: payment.user_id,
+          order_id: payment.order_id,
+          amount: Number(payment.amount || 0),
+          currency: payment.currency,
+          status: payment.status,
+          payment_method: payment.payment_method,
+          description: payment.description || undefined,
+          created_at: payment.created_at,
+          updated_at: payment.updated_at,
+          invoice_url: payment.invoice_url || undefined,
+          reference_id: payment.reference_id || undefined,
+          order_title: cargoEntry?.title || undefined,
+          };
+        }) as PaymentRecord[];
 
         return {
           items,
-          lastVisible: lastDoc || null,
-          hasMore: items.length === 20,
+          nextOffset: pageParam + items.length,
+          hasMore: items.length === pageSize,
         };
-      } catch (error) {
-        if (isIndexUnavailableError(error)) {
-          if (!hasLoggedIndexFallbackWarning.current) {
-            console.warn(
-              'Payment history index is still building. Falling back to local sort/filter query.'
-            );
-            hasLoggedIndexFallbackWarning.current = true;
-          }
-
-          const fallbackSnapshot = await getDocs(
-            query(collection(db, 'payments'), where('user_id', '==', userId), limit(100))
-          );
-
-          const fallbackItems = fallbackSnapshot.docs
-            .map(
-              doc =>
-                ({
-                  id: doc.id,
-                  ...doc.data(),
-                } as PaymentRecord)
-            )
-            .filter(item => !statusFilter || item.status === statusFilter)
-            .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-
-          return {
-            items: fallbackItems,
-            lastVisible: null,
-            hasMore: false,
-          };
+      } catch (error: unknown) {
+        if (!hasLoggedQueryWarning.current) {
+          console.warn('Payment history query failed', error);
+          hasLoggedQueryWarning.current = true;
         }
 
         console.error('Error fetching payment history:', error);
-        if (error instanceof FirebaseError) {
+        if (error instanceof PostgrestError) {
           throw new Error(
-            error.code === 'permission-denied'
+            error.code === '42501'
               ? i18n.t('permissionDenied')
               : i18n.t('errorLoadingPayments')
           );
@@ -150,15 +119,16 @@ export const usePaymentHistory = ({ userId, statusFilter }: UsePaymentHistoryOpt
         throw error;
       }
     },
-    [buildConstraints, isIndexUnavailableError, statusFilter, userId]
+    [statusFilter, userId]
   );
 
   const { data, error, isLoading, isFetchingNextPage, hasNextPage, fetchNextPage, refetch } =
     useInfiniteQuery<PaymentHistoryPage, Error>({
       queryKey,
-      queryFn: ({ pageParam }) => fetchPaymentHistory(pageParam as DocumentSnapshot | undefined),
-      initialPageParam: undefined,
-      getNextPageParam: lastPage => (lastPage.hasMore ? lastPage.lastVisible : undefined),
+      queryFn: ({ pageParam }) => fetchPaymentHistory(pageParam as number),
+      enabled: Boolean(userId),
+      initialPageParam: 0,
+      getNextPageParam: lastPage => (lastPage.hasMore ? lastPage.nextOffset : undefined),
       staleTime: 1000 * 60 * 5, // 5 minutes
     });
 

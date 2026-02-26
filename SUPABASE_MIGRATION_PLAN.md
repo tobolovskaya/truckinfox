@@ -91,6 +91,20 @@ Completed in this phase:
 - `app/(tabs)/messages.tsx` migrated to Supabase messages/users/requests queries
 - `app/chat/[requestId]/[userId].tsx` migrated to Supabase messages + typing Realtime
 - `app/order-status/[orderId].tsx` migrated to Supabase order + escrow Realtime
+- `app/(tabs)/create.tsx` migrated to Supabase create flow + storage uploads
+- `app/edit-request/[id].tsx` migrated to Supabase edit flow + storage uploads
+- `app/request-details/[id].tsx` migrated to Supabase request details data fetching
+- `components/AvatarUpload.tsx` migrated to Supabase storage/profile updates
+- `utils/requestValidation.ts` migrated to Supabase data validation queries
+- `utils/chatManagement.ts` migrated to Supabase chat lifecycle operations
+- `hooks/useCargoRequests.ts` migrated to Supabase pagination and filters
+- `hooks/useFavorites.ts` migrated to Supabase favorites table
+- `hooks/useCities.ts` migrated to Supabase-backed city list
+- `utils/deliveryProof.ts` migrated to Supabase storage/order updates/function invoke
+- `utils/escrowManagement.ts` migrated to Supabase escrow utilities
+- `hooks/usePaymentHistory.ts` migrated to Supabase payments pagination
+- `hooks/useFirestoreCollection.ts` replaced with Supabase query + Realtime hook
+- `hooks/useFirestoreDocument.ts` replaced with Supabase row + Realtime hook
 
 ## 6) Progressive migration strategy from legacy Firebase code
 
