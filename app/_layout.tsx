@@ -1,7 +1,7 @@
 import 'react-native-reanimated';
 import 'react-native-get-random-values';
 import React, { useEffect } from 'react';
-import { LogBox, View } from 'react-native';
+import { LogBox, View, useColorScheme } from 'react-native';
 import { Stack, useRouter } from 'expo-router';
 import Constants from 'expo-constants';
 import type * as Notifications from 'expo-notifications';
@@ -15,6 +15,7 @@ import { NotificationBannerProvider } from '../contexts/NotificationBannerContex
 import { ErrorBoundary } from '../components/ErrorBoundary';
 import { NetworkStatusBar } from '../components/NetworkStatusBar';
 import { theme } from '../theme/theme';
+import { darkTheme } from '../theme/darkTheme';
 import { initializeOfflineSync } from '../lib/offlineSync';
 import { initializeGlobalErrorTracking } from '../lib/errorTracking';
 import 'react-native-url-polyfill/auto';
@@ -36,6 +37,8 @@ LogBox.ignoreLogs([
 
 export default function RootLayout() {
   const router = useRouter();
+  const colorScheme = useColorScheme();
+  const currentTheme = colorScheme === 'dark' ? darkTheme : theme;
 
   const handleNotificationNavigation = (data: {
     type?: string;
@@ -113,7 +116,7 @@ export default function RootLayout() {
             <AuthProvider>
               <ToastProvider>
                 <NotificationBannerProvider>
-                  <PaperProvider theme={theme}>
+                  <PaperProvider theme={currentTheme as any}>
                     <View style={{ flex: 1 }}>
                       <NetworkStatusBar />
                       <Stack screenOptions={{ headerShown: false }} />

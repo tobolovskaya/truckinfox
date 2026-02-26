@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   View,
   Text,
@@ -12,7 +12,14 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { colors, spacing, fontSize, fontWeight, borderRadius, shadows } from '../lib/sharedStyles';
+import {
+  spacing,
+  fontSize,
+  fontWeight,
+  borderRadius,
+  shadows,
+  useAppThemeStyles,
+} from '../lib/sharedStyles';
 import { trackFilterApplied } from '../utils/analytics';
 import { startTrace, PerformanceTraces } from '../utils/performance';
 import { StandardBottomSheet } from './StandardBottomSheet';
@@ -66,6 +73,8 @@ export const FilterSheet: React.FC<FilterSheetProps> = ({
   initialFilters,
 }) => {
   const { t } = useTranslation();
+  const { colors } = useAppThemeStyles();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const [sortBy, setSortBy] = useState<FilterOptions['sortBy']>(initialFilters?.sortBy || 'newest');
   const [selectedTypes, setSelectedTypes] = useState<string[]>(initialFilters?.cargoTypes || []);
   const [priceRange, setPriceRange] = useState(
@@ -359,7 +368,8 @@ export const FilterSheet: React.FC<FilterSheetProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ReturnType<typeof useAppThemeStyles>['colors']) =>
+  StyleSheet.create({
   overlay: {
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
@@ -608,4 +618,4 @@ const styles = StyleSheet.create({
     fontWeight: fontWeight.bold,
     color: 'white',
   },
-});
+  });

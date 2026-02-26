@@ -1,55 +1,88 @@
-import { StyleSheet, Platform } from 'react-native';
+import { StyleSheet, Platform, Appearance, useColorScheme } from 'react-native';
 import { theme } from '../theme/theme';
+import { darkTheme } from '../theme/darkTheme';
 
-export const colors = {
-  primary: theme.colors.primary,
-  primaryLight: theme.colors.primaryContainer,
-  secondary: theme.colors.secondary,
+const buildColors = (scheme: 'light' | 'dark' | null | undefined) => {
+  const resolvedTheme = scheme === 'dark' ? darkTheme : theme;
+  const resolvedColors = resolvedTheme.colors;
 
-  background: theme.colors.background,
-  backgroundPrimary: theme.colors.background,
-  backgroundLight: '#F9FAFB', // Light gray background
-  backgroundVeryLight: '#FAFAFA', // Very light background
-  surface: theme.colors.surface,
-  surfaceVariant: theme.colors.surfaceVariant,
+  const textColors = {
+    primary: (resolvedColors as any).text?.primary ?? resolvedColors.onSurface ?? '#212121',
+    secondary: (resolvedColors as any).text?.secondary ?? resolvedColors.onSurfaceVariant ?? '#616161',
+    tertiary: (resolvedColors as any).text?.tertiary ?? '#9CA3AF',
+  };
 
-  text: {
-    primary: '#212121', // Updated to match common usage
-    secondary: '#616161', // Updated to match common usage
-    tertiary: '#9CA3AF',
-    dark: '#374151', // Medium dark text
-    disabled: '#D1D5DB',
-  },
+  const borderColors = {
+    light: (resolvedColors as any).border?.light ?? resolvedColors.outlineVariant ?? '#F3F4F6',
+    default: (resolvedColors as any).border?.default ?? resolvedColors.outline ?? '#E5E7EB',
+  };
 
-  border: {
-    light: '#F3F4F6',
-    default: '#E5E7EB',
-    dark: '#9CA3AF',
-    medium: '#D1D5DB',
-  },
+  return {
+    primary: resolvedColors.primary,
+    primaryLight: resolvedColors.primaryContainer,
+    secondary: resolvedColors.secondary,
 
-  status: {
-    success: theme.colors.tertiary,
-    successBackground: theme.colors.tertiaryContainer,
-    error: theme.colors.error,
-    errorBackground: '#FEF2F2',
-    warning: '#FFC107', // Updated to match ui.txt
-    info: '#FF8A65', // Updated to match ui.txt (secondary orange)
-  },
+    background: resolvedColors.background,
+    backgroundPrimary: resolvedColors.background,
+    backgroundLight: resolvedColors.surfaceVariant,
+    backgroundVeryLight: resolvedColors.surface,
+    surface: resolvedColors.surface,
+    surfaceVariant: resolvedColors.surfaceVariant,
 
-  // Add direct access to status colors
-  error: theme.colors.error,
-  success: theme.colors.tertiary,
-  info: '#FF8A65', // Updated to match ui.txt
+    text: {
+      primary: textColors.primary,
+      secondary: textColors.secondary,
+      tertiary: textColors.tertiary,
+      dark: '#374151',
+      disabled: '#D1D5DB',
+    },
 
-  badge: {
-    background: '#F3F4F6',
-    text: '#4B5563',
-  },
+    border: {
+      light: borderColors.light,
+      default: borderColors.default,
+      dark: '#9CA3AF',
+      medium: '#D1D5DB',
+    },
 
-  overlay: 'rgba(0, 0, 0, 0.5)',
-  white: '#FFFFFF',
-  black: '#000000',
+    status: {
+      success: resolvedColors.tertiary,
+      successBackground: resolvedColors.tertiaryContainer,
+      error: resolvedColors.error,
+      errorBackground: '#FEF2F2',
+      warning: '#FFC107',
+      info: '#FF8A65',
+    },
+
+    error: resolvedColors.error,
+    success: resolvedColors.tertiary,
+    info: '#FF8A65',
+
+    badge: {
+      background: '#F3F4F6',
+      text: '#4B5563',
+    },
+
+    overlay: 'rgba(0, 0, 0, 0.5)',
+    white: '#FFFFFF',
+    black: '#000000',
+  };
+};
+
+export const getAppColors = (scheme?: 'light' | 'dark' | null) =>
+  buildColors(scheme ?? Appearance.getColorScheme());
+
+export const colors = getAppColors();
+
+export const useAppThemeStyles = () => {
+  const colorScheme = useColorScheme();
+
+  return {
+    colors: getAppColors(colorScheme),
+    spacing,
+    borderRadius,
+    fontSize,
+    fontWeight,
+  };
 };
 
 export const spacing = {

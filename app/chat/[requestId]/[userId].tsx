@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -42,12 +42,12 @@ import { generateChatId } from '../../../utils/chatManagement';
 import { theme } from '../../../theme/theme';
 import { ScreenHeader } from '../../../components/ScreenHeader';
 import {
-  colors,
   spacing,
   fontSize,
   fontWeight,
   borderRadius,
   shadows,
+  useAppThemeStyles,
 } from '../../../lib/sharedStyles';
 
 interface Message {
@@ -78,6 +78,8 @@ export default function ChatScreen() {
   const { user } = useAuth();
   const { t } = useTranslation();
   const router = useRouter();
+  const { colors } = useAppThemeStyles();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const scrollViewRef = useRef<ScrollView>(null);
 
   const [messages, setMessages] = useState<Message[]>([]);
@@ -825,7 +827,8 @@ export default function ChatScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ReturnType<typeof useAppThemeStyles>['colors']) =>
+  StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.white,
@@ -1143,4 +1146,4 @@ const styles = StyleSheet.create({
     color: colors.text.tertiary,
     fontStyle: 'italic',
   },
-});
+  });

@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { colors, spacing, fontSize, fontWeight } from '../../lib/sharedStyles';
+import { spacing, fontSize, useAppThemeStyles } from '../../lib/sharedStyles';
 import { useAuth } from '../../contexts/AuthContext';
 import { useCargoRequests, type SortOption } from '../../hooks/useCargoRequests';
 import { useCurrentUser } from '../../hooks/useCurrentUser';
@@ -39,6 +39,8 @@ type PersistedHomeState = {
 
 export default function HomeScreen() {
   const router = useRouter();
+  const { colors } = useAppThemeStyles();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const { user } = useAuth();
   const { currentUser } = useCurrentUser(user?.uid);
   const { t } = useTranslation();
@@ -301,7 +303,8 @@ export default function HomeScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ReturnType<typeof useAppThemeStyles>['colors']) =>
+  StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,
@@ -321,4 +324,4 @@ const styles = StyleSheet.create({
     fontSize: fontSize.sm,
     color: colors.text.secondary,
   },
-});
+  });

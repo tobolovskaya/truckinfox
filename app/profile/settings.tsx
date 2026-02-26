@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   View,
   Text,
@@ -16,7 +16,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useI18n } from '../../contexts/I18nContext';
 import { db } from '../../lib/firebase';
 import { ScreenHeader } from '../../components/ScreenHeader';
-import { colors, spacing, fontSize, fontWeight } from '../../lib/sharedStyles';
+import { spacing, fontSize, fontWeight, useAppThemeStyles } from '../../lib/sharedStyles';
 
 type NotificationSettings = {
   push_notifications_enabled: boolean;
@@ -34,6 +34,8 @@ type PrivacySettings = {
 
 export default function SettingsScreen() {
   const { t } = useTranslation();
+  const { colors } = useAppThemeStyles();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const { currentLanguage, changeLanguage } = useI18n();
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
@@ -414,7 +416,8 @@ export default function SettingsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ReturnType<typeof useAppThemeStyles>['colors']) =>
+  StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,
@@ -521,4 +524,4 @@ const styles = StyleSheet.create({
     fontSize: fontSize.sm,
     color: colors.text.secondary,
   },
-});
+  });

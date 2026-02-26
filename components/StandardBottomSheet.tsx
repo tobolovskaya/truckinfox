@@ -1,8 +1,15 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Modal, View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { colors, spacing, fontSize, fontWeight, borderRadius, shadows } from '../lib/sharedStyles';
+import {
+  spacing,
+  fontSize,
+  fontWeight,
+  borderRadius,
+  shadows,
+  useAppThemeStyles,
+} from '../lib/sharedStyles';
 
 interface StandardBottomSheetProps {
   visible: boolean;
@@ -26,6 +33,8 @@ export function StandardBottomSheet({
   children,
 }: StandardBottomSheetProps) {
   const insets = useSafeAreaInsets();
+  const { colors } = useAppThemeStyles();
+  const styles = useMemo(() => createStyles(colors), [colors]);
 
   return (
     <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
@@ -67,7 +76,8 @@ export function StandardBottomSheet({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ReturnType<typeof useAppThemeStyles>['colors']) =>
+  StyleSheet.create({
   overlay: {
     flex: 1,
     justifyContent: 'flex-end',
@@ -130,4 +140,4 @@ const styles = StyleSheet.create({
   content: {
     paddingBottom: spacing.sm,
   },
-});
+  });

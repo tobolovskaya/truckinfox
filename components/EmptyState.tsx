@@ -1,9 +1,16 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { SvgProps } from 'react-native-svg';
-import { colors, fontSize, fontWeight, spacing, borderRadius } from '../lib/sharedStyles';
+import {
+  colors as staticColors,
+  fontSize,
+  fontWeight,
+  spacing,
+  borderRadius,
+  useAppThemeStyles,
+} from '../lib/sharedStyles';
 
 type IconName = React.ComponentProps<typeof Ionicons>['name'];
 
@@ -24,6 +31,8 @@ interface EmptyStateProps {
 
 export function EmptyState({ icon, title, description, illustration, actions }: EmptyStateProps) {
   const Illustration = illustration;
+  const { colors } = useAppThemeStyles();
+  const styles = useMemo(() => createStyles(colors), [colors]);
 
   return (
     <View style={styles.container}>
@@ -80,7 +89,8 @@ export function EmptyState({ icon, title, description, illustration, actions }: 
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: typeof staticColors) =>
+  StyleSheet.create({
   container: {
     flex: 1,
     alignItems: 'center',
@@ -159,4 +169,4 @@ const styles = StyleSheet.create({
     fontWeight: fontWeight.semibold,
     color: colors.primary,
   },
-});
+  });

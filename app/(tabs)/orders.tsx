@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -12,7 +12,7 @@ import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../contexts/AuthContext';
 import { db } from '../../lib/firebase';
 import { collection, query, where, getDocs, orderBy } from 'firebase/firestore';
-import { colors, spacing, fontSize, fontWeight } from '../../lib/sharedStyles';
+import { spacing, fontSize, fontWeight, useAppThemeStyles } from '../../lib/sharedStyles';
 import { ScreenHeader } from '../../components/ScreenHeader';
 import { EmptyState } from '../../components/EmptyState';
 import EmptyCargoIllustration from '../../assets/empty-cargo.svg';
@@ -87,6 +87,8 @@ const formatOrderDate = (value: Order['created_at']): string => {
 
 export default function OrdersScreen() {
   const router = useRouter();
+  const { colors } = useAppThemeStyles();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const { unreadCount } = useUnreadCount();
   const { t } = useTranslation();
   const { user } = useAuth();
@@ -317,7 +319,8 @@ export default function OrdersScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ReturnType<typeof useAppThemeStyles>['colors']) =>
+  StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,
@@ -379,4 +382,4 @@ const styles = StyleSheet.create({
     fontWeight: fontWeight.semibold,
     color: colors.text.primary,
   },
-});
+  });

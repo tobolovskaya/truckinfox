@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -20,7 +20,13 @@ import Avatar from '../../components/Avatar';
 import { SkeletonLoader } from '../../components/SkeletonLoader';
 import { EmptyState } from '../../components/EmptyState';
 import EmptyCargoIllustration from '../../assets/empty-cargo.svg';
-import { colors, spacing, fontSize, fontWeight, borderRadius } from '../../lib/sharedStyles';
+import {
+  spacing,
+  fontSize,
+  fontWeight,
+  borderRadius,
+  useAppThemeStyles,
+} from '../../lib/sharedStyles';
 import { formatDistanceToNow } from 'date-fns';
 import { ScreenHeader } from '../../components/ScreenHeader';
 import { useUnreadCount } from '../../hooks/useNotifications';
@@ -74,6 +80,8 @@ export default function MessagesScreen() {
   const { user } = useAuth();
   const { t } = useTranslation();
   const router = useRouter();
+  const { colors } = useAppThemeStyles();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const { unreadCount } = useUnreadCount();
 
   const [conversations, setConversations] = useState<Conversation[]>([]);
@@ -418,7 +426,8 @@ export default function MessagesScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ReturnType<typeof useAppThemeStyles>['colors']) =>
+  StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,
@@ -526,4 +535,4 @@ const styles = StyleSheet.create({
   emptyContainer: {
     flex: 1,
   },
-});
+  });

@@ -1,7 +1,7 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
-import { colors, spacing, fontSize, fontWeight } from '../../lib/sharedStyles';
+import { useAppThemeStyles } from '../../lib/sharedStyles';
 import { ScreenHeader } from '../../components/ScreenHeader';
 import { EmptyState } from '../../components/EmptyState';
 import EmptyCargoIllustration from '../../assets/empty-cargo.svg';
@@ -9,6 +9,8 @@ import { useTranslation } from 'react-i18next';
 
 export default function NotificationsScreen() {
   const router = useRouter();
+  const { colors } = useAppThemeStyles();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const { t } = useTranslation();
 
   return (
@@ -41,9 +43,10 @@ export default function NotificationsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ReturnType<typeof useAppThemeStyles>['colors']) =>
+  StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,
   },
-});
+  });

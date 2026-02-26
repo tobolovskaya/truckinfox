@@ -1,9 +1,16 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { colors, spacing, fontSize, fontWeight, borderRadius, shadows } from '../lib/sharedStyles';
+import {
+  spacing,
+  fontSize,
+  fontWeight,
+  borderRadius,
+  shadows,
+  useAppThemeStyles,
+} from '../lib/sharedStyles';
 import { TOUCH_TARGET } from '../constants/touchTargets';
 import * as Haptics from 'expo-haptics';
 import { BrandLogo } from './BrandLogo';
@@ -64,7 +71,7 @@ export function ScreenHeader({
   onBackPress,
   rightAction,
   secondaryRightAction,
-  backgroundColor = colors.white,
+  backgroundColor,
   showBorder = true,
   customCenter,
   showBrandMark = false,
@@ -72,6 +79,8 @@ export function ScreenHeader({
 }: ScreenHeaderProps) {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { colors } = useAppThemeStyles();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const shouldShowBrandMark = showBrandMark && title.trim().length <= brandMarkMaxTitleLength;
 
   const handleBackPress = () => {
@@ -97,7 +106,7 @@ export function ScreenHeader({
     <View
       style={[
         styles.container,
-        { backgroundColor, paddingTop: insets.top },
+        { backgroundColor: backgroundColor ?? colors.white, paddingTop: insets.top },
         showBorder && styles.containerWithBorder,
       ]}
     >
@@ -168,7 +177,8 @@ export function ScreenHeader({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ReturnType<typeof useAppThemeStyles>['colors']) =>
+  StyleSheet.create({
   container: {
     backgroundColor: colors.white,
   },
@@ -258,4 +268,4 @@ const styles = StyleSheet.create({
   placeholder: {
     width: TOUCH_TARGET.MIN,
   },
-});
+  });

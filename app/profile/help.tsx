@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Linking, Alert } 
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
 import { ScreenHeader } from '../../components/ScreenHeader';
-import { colors, spacing, fontSize, fontWeight } from '../../lib/sharedStyles';
+import { spacing, fontSize, fontWeight, useAppThemeStyles } from '../../lib/sharedStyles';
 
 interface FAQItem {
   id: string;
@@ -13,6 +13,8 @@ interface FAQItem {
 
 export default function HelpSupportScreen() {
   const { t } = useTranslation();
+  const { colors } = useAppThemeStyles();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const [expandedFAQ, setExpandedFAQ] = useState<string | null>(null);
 
   const faqItems: FAQItem[] = useMemo(
@@ -205,7 +207,8 @@ export default function HelpSupportScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ReturnType<typeof useAppThemeStyles>['colors']) =>
+  StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,
@@ -339,4 +342,4 @@ const styles = StyleSheet.create({
     color: colors.text.secondary,
     lineHeight: 18,
   },
-});
+  });
