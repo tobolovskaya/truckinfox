@@ -1,15 +1,21 @@
-# OAuth Social Login Setup Guide
+# OAuth Social Login Setup Guide (Deprecated)
 
-This guide explains how to configure Google and Apple Sign In for TruckinFox.
+> ⚠️ **Deprecated**: Social OAuth login (Google/Apple) has been removed from the active app authentication flow.
+>
+> - Current supported authentication: **email/password** only.
+> - This document is kept for historical reference only.
+> - Do not use this guide for current production setup.
 
-## ✅ Current Implementation Status
+This document describes the old Google/Apple Sign In setup that is no longer active in the app.
 
-### Implemented:
+## 📦 Historical Implementation Notes
 
-- ✅ **Apple Sign In**: Fully functional for iOS devices
-- ✅ **Google Sign In**: Placeholder ready (needs OAuth configuration)
+### Former state (before deprecation):
 
-### Features:
+- **Apple Sign In** was available for iOS devices
+- **Google Sign In** had partial/placeholder support
+
+### Historical features:
 
 - OAuth integration with Firebase Authentication
 - Automatic user profile creation in Firestore

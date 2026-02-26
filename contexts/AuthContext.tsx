@@ -8,7 +8,7 @@ import {
   onAuthStateChanged,
   updateProfile,
 } from 'firebase/auth';
-import { doc, setDoc, getDoc } from 'firebase/firestore';
+import { doc, setDoc } from 'firebase/firestore';
 import { auth, db } from '../lib/firebase';
 import { generateSearchTerms } from '../utils/search';
 
@@ -234,20 +234,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         error: error instanceof Error ? error.message : 'An unexpected error occurred',
       };
     }
-  };
-
-  const signInWithGoogle = async (): Promise<AuthResult<User>> => {
-    return {
-      success: false,
-      error: 'Google Sign In has been removed. Please use email/password authentication.',
-    };
-  };
-
-  const signInWithApple = async (): Promise<AuthResult<User>> => {
-    return {
-      success: false,
-      error: 'Apple Sign In has been removed. Please use email/password authentication.',
-    };
   };
 
   return (

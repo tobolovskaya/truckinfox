@@ -1,4 +1,10 @@
-# Apple Sign In Setup Guide
+# Apple Sign In Setup Guide (Deprecated)
+
+> ⚠️ **Deprecated**: Apple Sign In is no longer part of the active authentication flow.
+>
+> - Current supported authentication: **email/password** only.
+> - This document is archived for historical troubleshooting context.
+> - Do not follow these steps for current deployment.
 
 ## Issue: `auth/operation-not-allowed`
 

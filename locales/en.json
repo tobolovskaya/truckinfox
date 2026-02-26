@@ -500,7 +500,6 @@
   "loginError": "Login Error",
   "somethingWentWrong": "Something went wrong",
   "comingSoon": "Coming Soon",
-  "appleSignInIosOnly": "Apple Sign In is only available on iOS devices",
   "authenticationFailed": "Authentication failed. Please try again.",
   "favoriteLoginRequired": "Please log in to use favorites",
   "favoriteUpdateFailed": "Could not update favorite. Please try again.",
