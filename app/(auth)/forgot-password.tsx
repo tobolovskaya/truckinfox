@@ -34,6 +34,24 @@ export default function ForgotPasswordScreen() {
     return () => clearInterval(intervalId);
   }, [cooldownSeconds]);
 
+  const parseRetryAfterSeconds = (message?: string): number | undefined => {
+    if (!message) {
+      return undefined;
+    }
+
+    const match = message.match(/(\d+)\s*(second|seconds|sec|s)\b/i);
+    if (!match) {
+      return undefined;
+    }
+
+    const value = Number(match[1]);
+    if (!Number.isFinite(value) || value <= 0) {
+      return undefined;
+    }
+
+    return value;
+  };
+
   const isValidEmail = (value: string) => /.+@.+\..+/.test(value.trim());
 
   const handleSendReset = async () => {
@@ -69,14 +87,19 @@ export default function ForgotPasswordScreen() {
         console.error('Password reset error:', error);
       }
 
+      const retryAfterSeconds =
+        isResetRateLimited && error instanceof AuthApiError
+          ? parseRetryAfterSeconds(error.message)
+          : undefined;
+
       if (isResetRateLimited) {
-        setCooldownSeconds(60);
+        setCooldownSeconds(Math.max(15, retryAfterSeconds ?? 60));
       }
 
       Alert.alert(
         t('error'),
         isResetRateLimited
-          ? 'For mange forespørsler akkurat nå. Vent litt før du prøver å sende ny e-post.'
+          ? `For mange forespørsler akkurat nå. Vent litt før du prøver å sende ny e-post.${typeof retryAfterSeconds === 'number' ? ` (Ca. ${Math.max(15, retryAfterSeconds)}s)` : ''}`
           : t('emailError')
       );
     } finally {
