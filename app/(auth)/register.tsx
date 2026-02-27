@@ -74,6 +74,22 @@ export default function RegisterScreen() {
       });
 
       if (!result.success) {
+        if (result.errorCode === 'signup_rate_limited') {
+          Alert.alert(
+            t('error'),
+            result.error ||
+              'For mange registreringsforsøk akkurat nå. Vent litt og prøv igjen, eller logg inn hvis kontoen allerede finnes.',
+            [
+              {
+                text: 'Logg inn',
+                onPress: () => router.push('/(auth)/login'),
+              },
+              { text: 'OK', style: 'cancel' },
+            ]
+          );
+          return;
+        }
+
         Alert.alert(t('error'), result.error || t('somethingWentWrong'));
         return;
       }

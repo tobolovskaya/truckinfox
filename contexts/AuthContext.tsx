@@ -92,14 +92,35 @@ const mapSupabaseUser = (user: SupabaseUser): AppUser => ({
 
 const getAuthErrorMessage = (error: unknown): { message: string; code?: string } => {
   if (error instanceof AuthApiError) {
+    const normalizedMessage = error.message.toLowerCase();
+
+    if (normalizedMessage.includes('email rate limit exceeded')) {
+      return {
+        message:
+          'For mange registreringsforsøk akkurat nå. Vent litt og prøv igjen, eller logg inn hvis kontoen allerede finnes.',
+        code: 'signup_rate_limited',
+      };
+    }
+
     switch (error.code) {
       case 'invalid_credentials':
-      case 'email_not_confirmed':
         return { message: 'Невірний email або пароль.', code: error.code };
+      case 'email_not_confirmed':
+        return {
+          message: 'E-posten er ikke bekreftet ennå. Sjekk innboksen din og bekreft kontoen før innlogging.',
+          code: error.code,
+        };
       case 'user_not_found':
         return { message: 'Користувача не знайдено. Спочатку зареєструйтесь.', code: error.code };
       case 'invalid_email':
         return { message: 'Невірний формат email.', code: error.code };
+      case 'over_email_send_rate_limit':
+      case 'over_sms_send_rate_limit':
+        return {
+          message:
+            'For mange registreringsforsøk akkurat nå. Vent litt og prøv igjen, eller logg inn hvis kontoen allerede finnes.',
+          code: 'signup_rate_limited',
+        };
       case 'over_request_rate_limit':
       case 'too_many_requests':
         return { message: 'Забагато спроб. Спробуйте пізніше.', code: error.code };
@@ -202,12 +223,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         data: mapSupabaseUser(data.user),
       };
     } catch (error) {
-      if (error instanceof AuthApiError && ['invalid_credentials', 'email_not_confirmed'].includes(error.code || '')) {
-        console.warn('Sign in rejected:', error.message);
-      } else {
+      const errorInfo = getAuthErrorMessage(error);
+
+      if (!['invalid_credentials', 'email_not_confirmed'].includes(errorInfo.code || '')) {
         console.error('Sign in error:', error);
       }
-      const errorInfo = getAuthErrorMessage(error);
+
       return {
         success: false,
         error: errorInfo.message,
@@ -286,9 +307,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } catch (error) {
       const errorInfo = getAuthErrorMessage(error);
 
-      if (errorInfo.code === 'profiles_table_missing') {
-        console.warn('Sign up blocked:', errorInfo.message);
-      } else {
+      if (!['profiles_table_missing', 'signup_rate_limited'].includes(errorInfo.code || '')) {
         console.error('Sign up error:', error);
       }
 

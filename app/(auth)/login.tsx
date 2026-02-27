@@ -52,9 +52,20 @@ export default function LoginScreen() {
               onPress: () => router.push('/(auth)/register'),
             },
           ]);
+        } else if (result.errorCode === 'email_not_confirmed') {
+          Alert.alert(
+            t('loginError'),
+            result.error || 'E-posten er ikke bekreftet ennå. Sjekk innboksen din og bekreft kontoen.',
+            [
+              { text: t('cancel'), style: 'cancel' },
+              {
+                text: t('forgotPassword'),
+                onPress: () => router.push('/(auth)/forgot-password'),
+              },
+            ]
+          );
         } else if (
           result.errorCode === 'invalid_credentials' ||
-          result.errorCode === 'email_not_confirmed' ||
           result.errorCode === 'auth/invalid-credential' ||
           result.errorCode === 'auth/wrong-password'
         ) {
