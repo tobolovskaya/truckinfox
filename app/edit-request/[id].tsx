@@ -522,7 +522,7 @@ export default function EditRequestScreen() {
         toAddress
       );
 
-      const updateData: Record<string, unknown> = {
+      let updateData: Record<string, unknown> = {
         title,
         description,
         cargo_type: formData.cargo_type,
@@ -556,34 +556,47 @@ export default function EditRequestScreen() {
         updateData.images = [];
       }
 
-      let { error: updateError } = await supabase
-        .from('cargo_requests')
-        .update(updateData)
-        .eq('id', id as string)
-        .eq('user_id', user?.uid || '');
+      let updateError: unknown = null;
 
-      const isMissingGeohashColumnError =
-        updateError &&
-        typeof updateError === 'object' &&
-        'code' in updateError &&
-        (updateError as { code?: string }).code === 'PGRST204' &&
-        'message' in updateError &&
-        typeof (updateError as { message?: string }).message === 'string' &&
-        ((updateError as { message: string }).message.includes('from_geohash') ||
-          (updateError as { message: string }).message.includes('to_geohash'));
-
-      if (isMissingGeohashColumnError) {
-        console.warn(
-          'Geohash columns are missing in cargo_requests. Retrying update without geohash fields.'
-        );
-        const { from_geohash: _fromGeohash, to_geohash: _toGeohash, ...fallbackUpdateData } =
-          updateData;
-        const retry = await supabase
+      for (let attempt = 0; attempt < 8; attempt += 1) {
+        const result = await supabase
           .from('cargo_requests')
-          .update(fallbackUpdateData)
+          .update(updateData)
           .eq('id', id as string)
           .eq('user_id', user?.uid || '');
-        updateError = retry.error;
+
+        updateError = result.error;
+
+        if (!updateError) {
+          break;
+        }
+
+        const isSchemaColumnError =
+          updateError &&
+          typeof updateError === 'object' &&
+          'code' in updateError &&
+          (updateError as { code?: string }).code === 'PGRST204' &&
+          'message' in updateError &&
+          typeof (updateError as { message?: string }).message === 'string';
+
+        if (!isSchemaColumnError) {
+          break;
+        }
+
+        const message = (updateError as { message: string }).message;
+        const missingColumnMatch = message.match(/'([^']+)' column/);
+        const missingColumn = missingColumnMatch?.[1];
+
+        if (!missingColumn || !(missingColumn in updateData)) {
+          break;
+        }
+
+        console.warn(
+          `Column '${missingColumn}' is missing in cargo_requests. Retrying update without this field.`
+        );
+        updateData = Object.fromEntries(
+          Object.entries(updateData).filter(([key]) => key !== missingColumn)
+        );
       }
 
       if (updateError) {

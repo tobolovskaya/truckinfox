@@ -600,7 +600,7 @@ export default function CreateRequestScreen() {
         toAddress
       );
 
-      const insertPayload = {
+      let insertPayload: Record<string, unknown> = {
         user_id: user?.uid,
         title,
         description,
@@ -625,35 +625,49 @@ export default function CreateRequestScreen() {
         created_at: new Date().toISOString(),
       };
 
-      let { data: insertedRequest, error: insertError } = await supabase
-        .from('cargo_requests')
-        .insert(insertPayload)
-        .select('id')
-        .single();
+      let insertedRequest: { id: string } | null = null;
+      let insertError: unknown = null;
 
-      const isMissingGeohashColumnError =
-        insertError &&
-        typeof insertError === 'object' &&
-        'code' in insertError &&
-        (insertError as { code?: string }).code === 'PGRST204' &&
-        'message' in insertError &&
-        typeof (insertError as { message?: string }).message === 'string' &&
-        ((insertError as { message: string }).message.includes('from_geohash') ||
-          (insertError as { message: string }).message.includes('to_geohash'));
-
-      if (isMissingGeohashColumnError) {
-        console.warn(
-          'Geohash columns are missing in cargo_requests. Retrying insert without geohash fields.'
-        );
-        const { from_geohash: _fromGeohash, to_geohash: _toGeohash, ...fallbackPayload } =
-          insertPayload;
-        const retry = await supabase
+      for (let attempt = 0; attempt < 8; attempt += 1) {
+        const result = await supabase
           .from('cargo_requests')
-          .insert(fallbackPayload)
+          .insert(insertPayload)
           .select('id')
           .single();
-        insertedRequest = retry.data;
-        insertError = retry.error;
+
+        insertedRequest = result.data;
+        insertError = result.error;
+
+        if (!insertError && insertedRequest) {
+          break;
+        }
+
+        const isSchemaColumnError =
+          insertError &&
+          typeof insertError === 'object' &&
+          'code' in insertError &&
+          (insertError as { code?: string }).code === 'PGRST204' &&
+          'message' in insertError &&
+          typeof (insertError as { message?: string }).message === 'string';
+
+        if (!isSchemaColumnError) {
+          break;
+        }
+
+        const message = (insertError as { message: string }).message;
+        const missingColumnMatch = message.match(/'([^']+)' column/);
+        const missingColumn = missingColumnMatch?.[1];
+
+        if (!missingColumn || !(missingColumn in insertPayload)) {
+          break;
+        }
+
+        console.warn(
+          `Column '${missingColumn}' is missing in cargo_requests. Retrying insert without this field.`
+        );
+        insertPayload = Object.fromEntries(
+          Object.entries(insertPayload).filter(([key]) => key !== missingColumn)
+        );
       }
 
       if (insertError || !insertedRequest) {
