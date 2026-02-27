@@ -556,11 +556,35 @@ export default function EditRequestScreen() {
         updateData.images = [];
       }
 
-      const { error: updateError } = await supabase
+      let { error: updateError } = await supabase
         .from('cargo_requests')
         .update(updateData)
         .eq('id', id as string)
         .eq('user_id', user?.uid || '');
+
+      const isMissingGeohashColumnError =
+        updateError &&
+        typeof updateError === 'object' &&
+        'code' in updateError &&
+        (updateError as { code?: string }).code === 'PGRST204' &&
+        'message' in updateError &&
+        typeof (updateError as { message?: string }).message === 'string' &&
+        ((updateError as { message: string }).message.includes('from_geohash') ||
+          (updateError as { message: string }).message.includes('to_geohash'));
+
+      if (isMissingGeohashColumnError) {
+        console.warn(
+          'Geohash columns are missing in cargo_requests. Retrying update without geohash fields.'
+        );
+        const { from_geohash: _fromGeohash, to_geohash: _toGeohash, ...fallbackUpdateData } =
+          updateData;
+        const retry = await supabase
+          .from('cargo_requests')
+          .update(fallbackUpdateData)
+          .eq('id', id as string)
+          .eq('user_id', user?.uid || '');
+        updateError = retry.error;
+      }
 
       if (updateError) {
         throw updateError;

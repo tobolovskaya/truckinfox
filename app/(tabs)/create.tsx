@@ -600,9 +600,7 @@ export default function CreateRequestScreen() {
         toAddress
       );
 
-      const { data: insertedRequest, error: insertError } = await supabase
-        .from('cargo_requests')
-        .insert({
+      const insertPayload = {
         user_id: user?.uid,
         title,
         description,
@@ -625,9 +623,38 @@ export default function CreateRequestScreen() {
         price: formData.price_type === 'fixed' ? sanitizeNumber(formData.price, 0, 1000000) : 0,
         status: 'active',
         created_at: new Date().toISOString(),
-      })
+      };
+
+      let { data: insertedRequest, error: insertError } = await supabase
+        .from('cargo_requests')
+        .insert(insertPayload)
         .select('id')
         .single();
+
+      const isMissingGeohashColumnError =
+        insertError &&
+        typeof insertError === 'object' &&
+        'code' in insertError &&
+        (insertError as { code?: string }).code === 'PGRST204' &&
+        'message' in insertError &&
+        typeof (insertError as { message?: string }).message === 'string' &&
+        ((insertError as { message: string }).message.includes('from_geohash') ||
+          (insertError as { message: string }).message.includes('to_geohash'));
+
+      if (isMissingGeohashColumnError) {
+        console.warn(
+          'Geohash columns are missing in cargo_requests. Retrying insert without geohash fields.'
+        );
+        const { from_geohash: _fromGeohash, to_geohash: _toGeohash, ...fallbackPayload } =
+          insertPayload;
+        const retry = await supabase
+          .from('cargo_requests')
+          .insert(fallbackPayload)
+          .select('id')
+          .single();
+        insertedRequest = retry.data;
+        insertError = retry.error;
+      }
 
       if (insertError || !insertedRequest) {
         console.error('Supabase insert error:', insertError);
