@@ -29,7 +29,6 @@ import {
   trackBidAccepted,
   trackCargoRequestDeleted,
 } from '../../utils/analytics';
-import { generateChatId } from '../../utils/chatManagement';
 import { colors, spacing, fontSize, borderRadius } from '../../lib/sharedStyles';
 import MapView, { Marker, Polyline } from 'react-native-maps';
 import { sanitizeMessage } from '../../utils/sanitization';
@@ -413,11 +412,9 @@ export default function RequestDetailsScreen() {
             currentUserId: user?.uid,
           });
 
-          const chatId = generateChatId(id as string, request.user_id, bid.carrier_id);
           const sorted = [request.user_id, bid.carrier_id].sort();
           const { error: chatUpsertError } = await supabase.from('chats').upsert(
             {
-              id: chatId,
               request_id: id,
               user_a_id: sorted[0],
               user_b_id: sorted[1],
@@ -425,7 +422,7 @@ export default function RequestDetailsScreen() {
               last_message_at: null,
               updated_at: new Date().toISOString(),
             },
-            { onConflict: 'id' }
+            { onConflict: 'user_a_id,user_b_id,request_id' }
           );
 
           if (chatUpsertError) {

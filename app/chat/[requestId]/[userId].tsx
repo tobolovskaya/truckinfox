@@ -67,10 +67,26 @@ interface ChatUser {
   rating: number;
 }
 
+const UUID_REGEX =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+const extractUuid = (value?: string): string | undefined => {
+  if (!value) {
+    return undefined;
+  }
+
+  if (UUID_REGEX.test(value)) {
+    return value;
+  }
+
+  const candidate = value.split('_')[0];
+  return UUID_REGEX.test(candidate) ? candidate : undefined;
+};
+
 export default function ChatScreen() {
   const params = useLocalSearchParams();
-  const requestId = typeof params.requestId === 'string' ? params.requestId : undefined;
-  const userId = typeof params.userId === 'string' ? params.userId : undefined;
+  const requestId = extractUuid(typeof params.requestId === 'string' ? params.requestId : undefined);
+  const userId = extractUuid(typeof params.userId === 'string' ? params.userId : undefined);
   const { user } = useAuth();
   const { t } = useTranslation();
   const router = useRouter();
@@ -83,11 +99,58 @@ export default function ChatScreen() {
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [chatUser, setChatUser] = useState<ChatUser | null>(null);
+  const [chatId, setChatId] = useState<string | null>(null);
   const [otherUserTyping, setOtherUserTyping] = useState(false);
   const messageAnimations = useRef<{ [key: string]: Animated.Value }>({});
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const typingTraceRef = useRef<ReturnType<typeof startTrace> | null>(null);
   const lastTypingStartRef = useRef<number>(0);
+
+  const getOrCreateDbChatId = useCallback(async (): Promise<string> => {
+    if (!requestId || !userId || !user?.uid) {
+      throw new Error('Missing required chat IDs');
+    }
+
+    const sortedUsers = [user.uid, userId].sort();
+
+    const { data: existingChat, error: selectError } = await supabase
+      .from('chats')
+      .select('id')
+      .eq('request_id', requestId)
+      .eq('user_a_id', sortedUsers[0])
+      .eq('user_b_id', sortedUsers[1])
+      .maybeSingle();
+
+    if (selectError) {
+      throw selectError;
+    }
+
+    if (existingChat?.id) {
+      return existingChat.id;
+    }
+
+    const nowIso = new Date().toISOString();
+    const { data: createdChat, error: insertError } = await supabase
+      .from('chats')
+      .insert({
+        request_id: requestId,
+        user_a_id: sortedUsers[0],
+        user_b_id: sortedUsers[1],
+        last_message: null,
+        last_message_at: null,
+        unread_a: 0,
+        unread_b: 0,
+        updated_at: nowIso,
+      })
+      .select('id')
+      .single();
+
+    if (insertError || !createdChat) {
+      throw insertError || new Error('Failed to create chat');
+    }
+
+    return createdChat.id;
+  }, [requestId, user?.uid, userId]);
 
   useEffect(() => {
     if (!requestId || !userId || !user?.uid) {
@@ -99,7 +162,9 @@ export default function ChatScreen() {
     const loadData = async () => {
       try {
         await fetchChatData();
-        const unsubscribe = await fetchMessages();
+        const resolvedChatId = await getOrCreateDbChatId();
+        setChatId(resolvedChatId);
+        const unsubscribe = await fetchMessages(resolvedChatId);
         return unsubscribe;
       } catch (error) {
         console.error('Error loading chat data:', error);
@@ -121,7 +186,7 @@ export default function ChatScreen() {
       messageAnimations.current = {};
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [requestId, userId]);
+  }, [requestId, userId, getOrCreateDbChatId]);
 
   // Typing indicator listener
   useEffect(() => {
@@ -241,7 +306,7 @@ export default function ChatScreen() {
     }
   };
 
-  const fetchMessages = async () => {
+  const fetchMessages = async (resolvedChatId: string) => {
     try {
       if (!user?.uid || !userId || !requestId) {
         console.log('Missing required IDs for fetching messages');
@@ -249,13 +314,11 @@ export default function ChatScreen() {
         return;
       }
 
-      const chatId = generateChatId(requestId, user.uid, userId);
-
       const loadMessages = async () => {
         const { data, error } = await supabase
           .from('messages')
           .select('id, content, sender_id, receiver_id, created_at, delivered_at, read_at')
-          .eq('chat_id', chatId)
+          .eq('chat_id', resolvedChatId)
           .order('created_at', { ascending: true });
 
         if (error) {
@@ -283,14 +346,14 @@ export default function ChatScreen() {
       await loadMessages();
 
       const channel = supabase
-        .channel(`messages:${chatId}`)
+        .channel(`messages:${resolvedChatId}`)
         .on(
           'postgres_changes',
           {
             event: '*',
             schema: 'public',
             table: 'messages',
-            filter: `chat_id=eq.${chatId}`,
+            filter: `chat_id=eq.${resolvedChatId}`,
           },
           async () => {
             await loadMessages();
@@ -325,11 +388,13 @@ export default function ChatScreen() {
 
     setSending(true);
     try {
-      // Create deterministic chat ID (sorted user IDs)
-      const chatId = generateChatId(requestId, user.uid, userId);
+      const resolvedChatId = chatId || (await getOrCreateDbChatId());
+      if (!chatId) {
+        setChatId(resolvedChatId);
+      }
 
       const { error } = await supabase.from('messages').insert({
-        chat_id: chatId,
+        chat_id: resolvedChatId,
         request_id: requestId,
         content: sanitizedMessage,
         sender_id: user.uid,
@@ -345,7 +410,7 @@ export default function ChatScreen() {
 
       // Track message sent
       trackMessageSent({
-        chat_id: chatId,
+        chat_id: resolvedChatId,
         message_length: sanitizedMessage.length,
         has_attachment: false,
         request_id: requestId,
@@ -363,10 +428,9 @@ export default function ChatScreen() {
 
   // Mark messages as read
   const markMessagesAsRead = useCallback(async () => {
-    if (!user?.uid || !userId || !requestId) return;
+    if (!user?.uid || !userId || !requestId || !chatId) return;
 
     try {
-      const chatId = generateChatId(requestId, user.uid, userId);
       const { error } = await supabase
         .from('messages')
         .update({
@@ -382,7 +446,7 @@ export default function ChatScreen() {
     } catch (error) {
       console.error('Error marking messages as read:', error);
     }
-  }, [requestId, user?.uid, userId]);
+  }, [chatId, requestId, user?.uid, userId]);
 
   // Mark messages as read when screen is focused
   useEffect(() => {
