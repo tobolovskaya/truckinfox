@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { AuthApiError } from '@supabase/supabase-js';
 import {
   View,
   Text,
@@ -12,6 +13,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useAuth } from '../../contexts/AuthContext';
+import { supabase } from '../../lib/supabase';
 import { useTranslation } from 'react-i18next';
 import { trackUserLogin } from '../../utils/analytics';
 import { colors, spacing, fontSize, fontWeight, borderRadius } from '../../lib/sharedStyles';
@@ -27,6 +29,56 @@ export default function LoginScreen() {
   const { signIn } = useAuth();
   const router = useRouter();
   const { t } = useTranslation();
+
+  const parseRetryAfterSeconds = (message?: string): number | undefined => {
+    if (!message) {
+      return undefined;
+    }
+    const match = message.match(/(\d+)\s*(second|seconds|sec|s)\b/i);
+    if (!match) {
+      return undefined;
+    }
+    const value = Number(match[1]);
+    return Number.isFinite(value) && value > 0 ? value : undefined;
+  };
+
+  const resendConfirmationEmail = async (targetEmail: string) => {
+    try {
+      const { error } = await supabase.auth.resend({
+        type: 'signup',
+        email: targetEmail,
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      Alert.alert(
+        t('success'),
+        'Ny bekreftelsesmail er sendt. Sjekk innboksen (og spam-mappen).'
+      );
+    } catch (error) {
+      const isRateLimited =
+        error instanceof AuthApiError &&
+        (['over_email_send_rate_limit', 'over_request_rate_limit', 'too_many_requests'].includes(
+          error.code || ''
+        ) || error.message.toLowerCase().includes('rate limit'));
+
+      if (isRateLimited && error instanceof AuthApiError) {
+        const retryAfterSeconds = parseRetryAfterSeconds(error.message);
+        Alert.alert(
+          t('error'),
+          `For mange forespørsler akkurat nå. Vent litt før du prøver å sende ny bekreftelsesmail.${typeof retryAfterSeconds === 'number' ? ` (Ca. ${Math.max(15, retryAfterSeconds)}s)` : ''}`
+        );
+        return;
+      }
+
+      Alert.alert(
+        t('error'),
+        error instanceof Error ? error.message : t('somethingWentWrong')
+      );
+    }
+  };
 
   const handleLogin = async () => {
     if (!email || !password) {
@@ -58,6 +110,10 @@ export default function LoginScreen() {
             result.error || 'E-posten er ikke bekreftet ennå. Sjekk innboksen din og bekreft kontoen.',
             [
               { text: t('cancel'), style: 'cancel' },
+              {
+                text: 'Send på nytt',
+                onPress: () => resendConfirmationEmail(email.trim().toLowerCase()),
+              },
               {
                 text: t('forgotPassword'),
                 onPress: () => router.push('/(auth)/forgot-password'),
