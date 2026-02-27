@@ -6,6 +6,22 @@ const LOCAL_SUPABASE_URL = 'http://127.0.0.1:54321';
 const rawSupabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL?.trim();
 const rawSupabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY?.trim();
 
+const normalizeSupabaseUrl = (value?: string): string | undefined => {
+  if (!value) {
+    return undefined;
+  }
+
+  if (value.startsWith('http://') || value.startsWith('https://')) {
+    return value;
+  }
+
+  if (value.includes('localhost') || value.includes('127.0.0.1')) {
+    return `http://${value}`;
+  }
+
+  return `https://${value}`;
+};
+
 const isValidHttpUrl = (value?: string): boolean => {
   if (!value) {
     return false;
@@ -19,10 +35,13 @@ const isValidHttpUrl = (value?: string): boolean => {
   }
 };
 
-const supabaseUrl = isValidHttpUrl(rawSupabaseUrl) ? rawSupabaseUrl : LOCAL_SUPABASE_URL;
+const normalizedSupabaseUrl = normalizeSupabaseUrl(rawSupabaseUrl);
+const supabaseUrl = isValidHttpUrl(normalizedSupabaseUrl)
+  ? normalizedSupabaseUrl || LOCAL_SUPABASE_URL
+  : LOCAL_SUPABASE_URL;
 const supabaseAnonKey = rawSupabaseAnonKey || 'invalid';
 
-export const isSupabaseConfigured = Boolean(rawSupabaseAnonKey && isValidHttpUrl(rawSupabaseUrl));
+export const isSupabaseConfigured = Boolean(rawSupabaseAnonKey && isValidHttpUrl(normalizedSupabaseUrl));
 
 if (!isSupabaseConfigured) {
   console.warn(
