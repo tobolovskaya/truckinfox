@@ -284,6 +284,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         };
       }
 
+      if (!data.session) {
+        return {
+          success: false,
+          error:
+            'Konto opprettet. Sjekk e-posten din og bekreft kontoen før innlogging.',
+          errorCode: 'email_confirmation_required',
+        };
+      }
+
       const { error: profileError } = await supabase.from('profiles').upsert({
         id: data.user.id,
         full_name: fullName,
@@ -295,6 +304,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       });
 
       if (profileError) {
+        if (profileError.code === '42501') {
+          return {
+            success: false,
+            error:
+              'Kontoen ble opprettet, men profilen kunne ikke lagres på grunn av tilgangsregler. Logg inn på nytt etter e-postbekreftelse.',
+            errorCode: 'profiles_rls_blocked',
+          };
+        }
+
         if (
           profileError.code === 'PGRST205' &&
           typeof profileError.message === 'string' &&
@@ -309,15 +327,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
 
         throw profileError;
-      }
-
-      if (!data.session) {
-        return {
-          success: false,
-          error:
-            'Konto opprettet. Sjekk e-posten din og bekreft kontoen før innlogging.',
-          errorCode: 'email_confirmation_required',
-        };
       }
 
       return {
