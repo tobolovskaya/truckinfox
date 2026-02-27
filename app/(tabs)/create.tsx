@@ -504,13 +504,18 @@ export default function CreateRequestScreen() {
   const uploadImages = async (requestId: string): Promise<string[]> => {
     const uploadedUrls: string[] = [];
     setUploadProgress({});
+    const ownerId = user?.uid;
+
+    if (!ownerId) {
+      throw new Error('User must be authenticated to upload images');
+    }
 
     for (let i = 0; i < images.length; i++) {
       try {
         const uri = images[i];
         const compressedUri = await compressImage(uri);
         const ext = uri.split('.').pop() || 'jpg';
-        const filePath = `${requestId}/${Date.now()}_${i}.${ext}`;
+        const filePath = `${ownerId}/${requestId}/${Date.now()}_${i}.${ext}`;
         const imageKey = `image_${i + 1}`;
 
         try {
@@ -524,7 +529,7 @@ export default function CreateRequestScreen() {
           const blob = await response.blob();
 
           const { error: uploadError } = await supabase.storage
-            .from('request-images')
+            .from('cargo')
             .upload(filePath, blob, {
             contentType: 'image/jpeg',
               upsert: false,
@@ -536,7 +541,7 @@ export default function CreateRequestScreen() {
 
           const {
             data: { publicUrl },
-          } = supabase.storage.from('request-images').getPublicUrl(filePath);
+          } = supabase.storage.from('cargo').getPublicUrl(filePath);
 
           uploadedUrls.push(publicUrl);
           setUploadProgress(prev => ({ ...prev, [imageKey]: 100 }));

@@ -433,6 +433,11 @@ export default function EditRequestScreen() {
 
   const uploadImages = async (requestId: string): Promise<string[]> => {
     const uploadedUrls: string[] = [];
+    const ownerId = user?.uid;
+
+    if (!ownerId) {
+      throw new Error('User must be authenticated to upload images');
+    }
 
     for (let i = 0; i < images.length; i++) {
       const uri = images[i];
@@ -446,7 +451,7 @@ export default function EditRequestScreen() {
       try {
         const compressedUri = await compressImage(uri);
         const ext = uri.split('.').pop() || 'jpg';
-        const filePath = `${requestId}/${Date.now()}_${i}.${ext}`;
+        const filePath = `${ownerId}/${requestId}/${Date.now()}_${i}.${ext}`;
 
         try {
           const response = await fetchWithTimeout(
@@ -459,7 +464,7 @@ export default function EditRequestScreen() {
           const blob = await response.blob();
 
           const { error: uploadError } = await supabase.storage
-            .from('request-images')
+            .from('cargo')
             .upload(filePath, blob, {
             contentType: 'image/jpeg',
               upsert: false,
@@ -471,7 +476,7 @@ export default function EditRequestScreen() {
 
           const {
             data: { publicUrl },
-          } = supabase.storage.from('request-images').getPublicUrl(filePath);
+          } = supabase.storage.from('cargo').getPublicUrl(filePath);
 
           const downloadURL = publicUrl;
           uploadedUrls.push(downloadURL);
