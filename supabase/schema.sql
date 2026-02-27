@@ -45,6 +45,25 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+-- ---------------------------------------------------------------------------
+-- УТИЛІТИ: перевірка прав адміністратора
+-- ---------------------------------------------------------------------------
+-- Повертає TRUE, якщо поточний автентифікований користувач є адміністратором
+-- (profiles.is_admin = TRUE).  Функція запускається як SECURITY DEFINER, тому
+-- запит до profiles завжди виконується від імені власника функції (postgres),
+-- а не від імені поточного користувача. Це запобігає ескалації привілеїв.
+CREATE OR REPLACE FUNCTION public.is_admin()
+RETURNS BOOLEAN
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+AS $$
+  SELECT COALESCE(
+    (SELECT p.is_admin FROM public.profiles p WHERE p.id = auth.uid()),
+    FALSE
+  );
+$$;
+
 -- =============================================================================
 -- ТАБЛИЦЯ: profiles
 -- =============================================================================
@@ -79,6 +98,10 @@ CREATE TABLE IF NOT EXISTS public.profiles (
   -- Токени для push-сповіщень (Expo / FCM)
   push_token      TEXT,
 
+  -- Адміністратор: TRUE лише для внутрішніх службових акаунтів.
+  -- Змінюється виключно через service_role (backend/Edge Function).
+  is_admin        BOOLEAN NOT NULL DEFAULT FALSE,
+
   created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
@@ -91,6 +114,8 @@ CREATE TRIGGER trg_profiles_updated_at
 -- Індекси для частих запитів
 CREATE INDEX IF NOT EXISTS idx_profiles_user_type    ON public.profiles(user_type);
 CREATE INDEX IF NOT EXISTS idx_profiles_country_code ON public.profiles(country_code);
+CREATE INDEX IF NOT EXISTS idx_profiles_is_admin     ON public.profiles(is_admin) WHERE is_admin = TRUE;
+CREATE INDEX IF NOT EXISTS idx_profiles_country_created ON public.profiles(country_code, created_at DESC);
 
 -- =============================================================================
 -- ТАБЛИЦЯ: trucks
@@ -136,6 +161,8 @@ CREATE TRIGGER trg_trucks_updated_at
 CREATE INDEX IF NOT EXISTS idx_trucks_carrier_id   ON public.trucks(carrier_id);
 CREATE INDEX IF NOT EXISTS idx_trucks_status        ON public.trucks(status);
 CREATE INDEX IF NOT EXISTS idx_trucks_country_code  ON public.trucks(country_code);
+CREATE INDEX IF NOT EXISTS idx_trucks_created_at    ON public.trucks(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_trucks_carrier_created ON public.trucks(carrier_id, created_at DESC);
 
 -- =============================================================================
 -- ТАБЛИЦЯ: cargo_requests
@@ -353,6 +380,9 @@ CREATE INDEX IF NOT EXISTS idx_chats_user_b_id    ON public.chats(user_b_id);
 CREATE INDEX IF NOT EXISTS idx_chats_request_id   ON public.chats(request_id)
   WHERE request_id IS NOT NULL;
 CREATE INDEX IF NOT EXISTS idx_chats_last_message_at ON public.chats(last_message_at DESC NULLS LAST);
+CREATE INDEX IF NOT EXISTS idx_chats_created_at      ON public.chats(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_chats_user_a_created  ON public.chats(user_a_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_chats_user_b_created  ON public.chats(user_b_id, created_at DESC);
 
 -- =============================================================================
 -- ТАБЛИЦЯ: messages
@@ -401,6 +431,10 @@ CREATE INDEX IF NOT EXISTS idx_messages_sender_id   ON public.messages(sender_id
 -- Запит на непрочитані повідомлення (read_at IS NULL)
 CREATE INDEX IF NOT EXISTS idx_messages_unread      ON public.messages(chat_id, read_at)
   WHERE read_at IS NULL AND deleted_at IS NULL;
+-- Пагінація від новішого до старішого в межах чату
+CREATE INDEX IF NOT EXISTS idx_messages_chat_created_desc ON public.messages(chat_id, created_at DESC);
+-- Для адмін-дашборду та аналітики
+CREATE INDEX IF NOT EXISTS idx_messages_created_at  ON public.messages(created_at DESC);
 
 -- =============================================================================
 -- СУМІСНІСТЬ CHAT-ПОТОКУ (поточний клієнт Firebase-style)
@@ -702,7 +736,7 @@ CREATE POLICY "Users can update their own profile"
   USING (auth.uid() = id);
 
 -- ---------------------------------------------------------------------------
--- trucks: всі можуть читати; лише власник змінює
+-- trucks: всі можуть читати; лише власник змінює; адмін — повний доступ
 -- ---------------------------------------------------------------------------
 CREATE POLICY "Trucks are viewable by everyone"
   ON public.trucks FOR SELECT USING (true);
@@ -718,6 +752,12 @@ CREATE POLICY "Carriers can update their trucks"
 CREATE POLICY "Carriers can delete their trucks"
   ON public.trucks FOR DELETE
   USING (auth.uid() = carrier_id);
+
+-- Адміністратор може виконувати будь-які операції (модерація, GDPR)
+CREATE POLICY "Admins have full access to trucks"
+  ON public.trucks FOR ALL
+  USING (public.is_admin())
+  WITH CHECK (public.is_admin());
 
 -- ---------------------------------------------------------------------------
 -- cargo_requests: всі читають відкриті; лише замовник змінює свої
@@ -781,7 +821,7 @@ CREATE POLICY "Customers can view tracking for their active requests"
   );
 
 -- ---------------------------------------------------------------------------
--- chats: лише учасники чату мають доступ
+-- chats: лише учасники чату мають доступ; адмін — повний доступ
 -- ---------------------------------------------------------------------------
 CREATE POLICY "Chat participants can view their chats"
   ON public.chats FOR SELECT
@@ -795,8 +835,14 @@ CREATE POLICY "Chat participants can update their chats"
   ON public.chats FOR UPDATE
   USING (auth.uid() = user_a_id OR auth.uid() = user_b_id);
 
+-- Адміністратор: повний доступ (розгляд скарг, GDPR-розслідування)
+CREATE POLICY "Admins have full access to chats"
+  ON public.chats FOR ALL
+  USING (public.is_admin())
+  WITH CHECK (public.is_admin());
+
 -- ---------------------------------------------------------------------------
--- messages: лише учасники відповідного чату мають доступ
+-- messages: лише учасники відповідного чату мають доступ; адмін — повний
 -- ---------------------------------------------------------------------------
 CREATE POLICY "Chat participants can view messages"
   ON public.messages FOR SELECT
@@ -833,6 +879,12 @@ CREATE POLICY "Receiver can mark messages as read"
         AND auth.uid() <> sender_id
     )
   );
+
+-- Адміністратор: повний доступ (видалення незаконного контенту, GDPR)
+CREATE POLICY "Admins have full access to messages"
+  ON public.messages FOR ALL
+  USING (public.is_admin())
+  WITH CHECK (public.is_admin());
 
 -- ---------------------------------------------------------------------------
 -- orders / payments / escrow
@@ -1341,3 +1393,196 @@ CREATE INDEX IF NOT EXISTS idx_escrow_metadata
 CREATE INDEX IF NOT EXISTS idx_notifications_unread_push
   ON public.notifications(user_id, created_at DESC)
   WHERE read = FALSE;
+
+-- =============================================================================
+-- ТРИГЕРИ: видалення медіа-файлів зі Storage при видаленні рядків
+-- =============================================================================
+-- При жорсткому видаленні рядка trucks або messages відповідні об'єкти
+-- автоматично видаляються з кошиків Supabase Storage.
+-- Обидві функції запускаються як SECURITY DEFINER, щоб мати право
+-- виконувати DELETE FROM storage.objects навіть з обмеженого контексту.
+--
+-- Права на видалення (GDPR — право на забуття):
+--   trucks  → bucket 'trucks', шлях: {carrier_id}/{truck_id}/{filename}
+--   messages → bucket 'chat',  шлях: {chat_id}/{message_id}/{filename}
+-- =============================================================================
+
+-- Функція очищення Storage для вантажівок
+CREATE OR REPLACE FUNCTION public.delete_truck_storage_media()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+BEGIN
+  DELETE FROM storage.objects
+  WHERE bucket_id = 'trucks'
+    AND name LIKE (OLD.carrier_id::text || '/' || OLD.id::text || '/%');
+  RETURN OLD;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS trg_delete_truck_media ON public.trucks;
+CREATE TRIGGER trg_delete_truck_media
+  AFTER DELETE ON public.trucks
+  FOR EACH ROW EXECUTE FUNCTION public.delete_truck_storage_media();
+
+-- Функція очищення Storage для повідомлень
+CREATE OR REPLACE FUNCTION public.delete_message_storage_media()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+BEGIN
+  IF OLD.media_url IS NOT NULL THEN
+    DELETE FROM storage.objects
+    WHERE bucket_id = 'chat'
+      AND name LIKE (OLD.chat_id::text || '/' || OLD.id::text || '/%');
+  END IF;
+  RETURN OLD;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS trg_delete_message_media ON public.messages;
+CREATE TRIGGER trg_delete_message_media
+  AFTER DELETE ON public.messages
+  FOR EACH ROW EXECUTE FUNCTION public.delete_message_storage_media();
+
+-- =============================================================================
+-- ТАБЛИЦЯ: activity_log (журнал подій застосунку)
+-- =============================================================================
+-- Фіксує події рівня застосунку: 'truck.created', 'order.status_changed' тощо.
+-- Відрізняється від audit_log (безпека/GDPR): тут нема знімків old/new_data.
+--
+-- Записувати можуть лише Edge Functions та backend-сервіси (service_role).
+-- Звичайні клієнти (anon / authenticated) не мають доступу через RLS.
+--
+-- GDPR: user_id → SET NULL при видаленні профілю (анонімізація).
+-- Тривалість зберігання: рекомендовано 2 роки; очищення через scheduled job.
+--
+-- Приклад виклику:
+--   SELECT public.log_activity(
+--     auth.uid(),
+--     'truck.created',
+--     'trucks',
+--     '550e8400-e29b-41d4-a716-446655440000'::uuid,
+--     '{"plate_number": "AB12345"}'::jsonb
+--   );
+-- =============================================================================
+CREATE TABLE IF NOT EXISTS public.activity_log (
+  id           UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+
+  -- Актор (NULL після видалення акаунту — GDPR-анонімізація)
+  user_id      UUID        REFERENCES public.profiles(id) ON DELETE SET NULL,
+
+  -- Ім'я події у форматі 'сутність.дія', наприклад 'order.status_changed'
+  action       TEXT        NOT NULL,
+
+  -- Яка таблиця / доменна сутність пов'язана з подією
+  entity_type  TEXT,
+  entity_id    UUID,
+
+  -- Довільний структурований payload (без чутливих персональних даних)
+  metadata     JSONB       NOT NULL DEFAULT '{}'::jsonb,
+
+  created_at   TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+ALTER TABLE public.activity_log ENABLE ROW LEVEL SECURITY;
+-- Навмисно немає permissive policy для authenticated/anon.
+-- service_role обходить RLS автоматично.
+
+CREATE INDEX IF NOT EXISTS idx_activity_log_user_created
+  ON public.activity_log(user_id, created_at DESC)
+  WHERE user_id IS NOT NULL;
+
+CREATE INDEX IF NOT EXISTS idx_activity_log_entity
+  ON public.activity_log(entity_type, entity_id)
+  WHERE entity_type IS NOT NULL;
+
+CREATE INDEX IF NOT EXISTS idx_activity_log_created_at
+  ON public.activity_log(created_at DESC);
+
+-- Хелпер: записати одну подію з будь-якого SQL-контексту.
+-- Параметри:
+--   p_user_id     — актор (NULL для системних подій)
+--   p_action      — ім'я події ('truck.created', 'message.deleted' тощо)
+--   p_entity_type — назва таблиці ('trucks', 'messages' тощо), необов'язково
+--   p_entity_id   — первинний ключ зміненого рядка, необов'язково
+--   p_metadata    — довільний JSON-payload
+-- Повертає UUID нового запису.
+CREATE OR REPLACE FUNCTION public.log_activity(
+  p_user_id     UUID,
+  p_action      TEXT,
+  p_entity_type TEXT    DEFAULT NULL,
+  p_entity_id   UUID    DEFAULT NULL,
+  p_metadata    JSONB   DEFAULT '{}'::jsonb
+)
+RETURNS UUID
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+DECLARE
+  v_id UUID;
+BEGIN
+  INSERT INTO public.activity_log (user_id, action, entity_type, entity_id, metadata)
+  VALUES (p_user_id, p_action, p_entity_type, p_entity_id, p_metadata)
+  RETURNING id INTO v_id;
+  RETURN v_id;
+END;
+$$;
+
+-- =============================================================================
+-- STORAGE: АДМІН-ПОЛІТИКИ ДЛЯ КОШИКІВ
+-- =============================================================================
+-- Адміністратори платформи повинні мати повний доступ до всіх кошиків для:
+--   - модерації незаконного контенту
+--   - виконання GDPR-запитів на видалення
+--   - відновлення з резервних копій
+--
+-- Рекомендація: для максимальної безпеки зберігати файли у приватних кошиках
+-- та надавати підписані URL (signed URLs) з коротким TTL замість публічного доступу.
+-- =============================================================================
+
+CREATE POLICY "Admins have full access to trucks bucket"
+  ON storage.objects FOR ALL TO authenticated
+  USING (
+    bucket_id = 'trucks'
+    AND public.is_admin()
+  )
+  WITH CHECK (
+    bucket_id = 'trucks'
+    AND public.is_admin()
+  );
+
+CREATE POLICY "Admins have full access to chat bucket"
+  ON storage.objects FOR ALL TO authenticated
+  USING (
+    bucket_id = 'chat'
+    AND public.is_admin()
+  )
+  WITH CHECK (
+    bucket_id = 'chat'
+    AND public.is_admin()
+  );
+
+CREATE POLICY "Admins have full access to avatars bucket"
+  ON storage.objects FOR ALL TO authenticated
+  USING (
+    bucket_id = 'avatars'
+    AND public.is_admin()
+  )
+  WITH CHECK (
+    bucket_id = 'avatars'
+    AND public.is_admin()
+  );
+
+CREATE POLICY "Admins have full access to cargo bucket"
+  ON storage.objects FOR ALL TO authenticated
+  USING (
+    bucket_id = 'cargo'
+    AND public.is_admin()
+  )
+  WITH CHECK (
+    bucket_id = 'cargo'
+    AND public.is_admin()
+  );
