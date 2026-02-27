@@ -21,6 +21,8 @@ export interface CargoRequest {
   status: string;
   created_at: string;
   user_id: string;
+  customer_id?: string;
+  weight_kg?: number;
   distance?: number;
   users: {
     full_name: string;
@@ -124,7 +126,10 @@ const applyClientSideFilters = (
   let filtered = [...requests];
 
   if (activeTab === 'my') {
-    filtered = filtered.filter(request => request.user_id === userId && request.status === 'active');
+    filtered = filtered.filter(request => {
+      const ownerId = request.user_id || request.customer_id;
+      return ownerId === userId && ['active', 'open'].includes(request.status);
+    });
   } else {
     if (filters.cargo_type) {
       filtered = filtered.filter(request => request.cargo_type === filters.cargo_type);
@@ -153,10 +158,18 @@ const applyClientSideFilters = (
 
   if (normalizedSearchQuery) {
     filtered = filtered.filter(request => {
-      const terms = Array.isArray((request as { search_terms?: unknown }).search_terms)
-        ? ((request as { search_terms?: string[] }).search_terms ?? [])
-        : [];
-      return terms.includes(normalizedSearchQuery);
+      const haystack = [
+        request.title,
+        request.description,
+        request.cargo_type,
+        request.from_address,
+        request.to_address,
+      ]
+        .filter((value): value is string => typeof value === 'string')
+        .join(' ')
+        .toLowerCase();
+
+      return haystack.includes(normalizedSearchQuery.toLowerCase());
     });
   }
 
@@ -235,7 +248,23 @@ const hydrateCargoRequest = async (
   return {
     ...(requestData as unknown as CargoRequest),
     id: requestId,
+    weight:
+      typeof requestData.weight === 'number'
+        ? requestData.weight
+        : typeof requestData.weight_kg === 'number'
+          ? requestData.weight_kg
+          : typeof requestData.weight_kg === 'string'
+            ? Number(requestData.weight_kg)
+            : 0,
     user_id: requestUserId || '',
+    customer_id:
+      typeof requestData.customer_id === 'string' ? requestData.customer_id : undefined,
+    weight_kg:
+      typeof requestData.weight_kg === 'number'
+        ? requestData.weight_kg
+        : typeof requestData.weight_kg === 'string'
+          ? Number(requestData.weight_kg)
+          : undefined,
     users: userData,
     bids,
     is_favorite: isFavorite,
@@ -256,12 +285,8 @@ const fetchCargoRequestsPage = async (
 
   let requestQuery = supabase.from('cargo_requests').select('*').range(offset, offset + PAGE_SIZE - 1);
 
-  if (normalizedSearchQuery) {
-    requestQuery = requestQuery.contains('search_terms', [normalizedSearchQuery]);
-  }
-
   if (options.activeTab === 'my' && options.userId) {
-    requestQuery = requestQuery.eq('user_id', options.userId).eq('status', 'active');
+    requestQuery = requestQuery.eq('customer_id', options.userId).in('status', ['active', 'open']);
   } else {
     if (options.filters.cargo_type) {
       requestQuery = requestQuery.eq('cargo_type', options.filters.cargo_type);
