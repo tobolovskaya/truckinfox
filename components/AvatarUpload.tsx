@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -28,7 +28,12 @@ export default function AvatarUpload({ avatarUrl, onUpload, size = 80 }: AvatarU
   const { user } = useAuth();
   const { t } = useTranslation();
   const [uploading, setUploading] = useState(false);
+  const [imageLoadError, setImageLoadError] = useState(false);
   const avatarBuckets = ['avatars', 'cargo'] as const;
+
+  useEffect(() => {
+    setImageLoadError(false);
+  }, [avatarUrl]);
 
   const compressImage = async (uri: string) => compressImageForUpload(uri);
 
@@ -109,10 +114,12 @@ export default function AvatarUpload({ avatarUrl, onUpload, size = 80 }: AvatarU
         data: { publicUrl: downloadURL },
       } = supabase.storage.from(selectedBucket).getPublicUrl(fileName);
 
+      const cacheBustedUrl = `${downloadURL}?t=${Date.now()}`;
+
       const { error: profileError } = await supabase
         .from('profiles')
         .update({
-          avatar_url: downloadURL,
+          avatar_url: cacheBustedUrl,
           updated_at: new Date().toISOString(),
         })
         .eq('id', user.uid);
@@ -123,7 +130,7 @@ export default function AvatarUpload({ avatarUrl, onUpload, size = 80 }: AvatarU
 
       const { error: authUpdateError } = await supabase.auth.updateUser({
         data: {
-          avatar_url: downloadURL,
+          avatar_url: cacheBustedUrl,
         },
       });
 
@@ -131,7 +138,8 @@ export default function AvatarUpload({ avatarUrl, onUpload, size = 80 }: AvatarU
         throw authUpdateError;
       }
 
-      onUpload(downloadURL);
+      setImageLoadError(false);
+      onUpload(cacheBustedUrl);
       Alert.alert(t('success'), t('avatarUpdatedSuccessfully'));
     } catch (error) {
       console.error('Error uploading avatar:', error);
@@ -216,10 +224,17 @@ export default function AvatarUpload({ avatarUrl, onUpload, size = 80 }: AvatarU
         {avatarUrl ? (
           <Image
             source={{ uri: avatarUrl }}
+            onError={() => setImageLoadError(true)}
             style={[styles.avatar, { width: size, height: size }]}
           />
         ) : (
           <View style={[styles.placeholder, { width: size, height: size }]}>
+            <Ionicons name="person" size={size * 0.5} color={theme.iconColors.gray.primary} />
+          </View>
+        )}
+
+        {avatarUrl && imageLoadError && (
+          <View style={[styles.placeholder, { width: size, height: size, position: 'absolute', top: 0, left: 0 }]}> 
             <Ionicons name="person" size={size * 0.5} color={theme.iconColors.gray.primary} />
           </View>
         )}

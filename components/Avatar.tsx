@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -17,9 +17,18 @@ export default function Avatar({
   backgroundColor = '#FFD9CC',
   iconColor = '#FF7043',
 }: AvatarProps) {
-  return photoURL ? (
+  const [hasImageError, setHasImageError] = useState(false);
+
+  useEffect(() => {
+    setHasImageError(false);
+  }, [photoURL]);
+
+  const shouldShowImage = Boolean(photoURL) && !hasImageError;
+
+  return shouldShowImage ? (
     <Image
-      source={{ uri: photoURL }}
+      source={{ uri: photoURL as string }}
+      onError={() => setHasImageError(true)}
       style={{
         width: size,
         height: size,
