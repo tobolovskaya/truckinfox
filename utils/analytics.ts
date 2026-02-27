@@ -7,6 +7,10 @@ type AnalyticsParams = Record<string, unknown>;
  */
 export const logEvent = (eventName: string, params?: AnalyticsParams) => {
   try {
+    if (params === undefined) {
+      console.log(`📊 Analytics: ${eventName}`);
+      return;
+    }
     console.log(`📊 Analytics: ${eventName}`, params);
   } catch (error) {
     console.error('Error logging analytics event:', error);
