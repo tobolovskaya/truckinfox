@@ -87,11 +87,23 @@ export default function RegisterScreen() {
       });
 
       if (!result.success) {
-        if (
-          result.errorCode === 'email_confirmation_required' ||
-          result.errorCode === 'email_not_confirmed' ||
-          result.errorCode === 'user_already_exists'
-        ) {
+        if (result.errorCode === 'email_confirmation_required') {
+          Alert.alert(
+            t('success'),
+            result.error ||
+              'Konto opprettet. Sjekk e-posten din og bekreft kontoen før innlogging.',
+            [
+              {
+                text: 'Til innlogging',
+                onPress: () => router.push('/(auth)/login'),
+              },
+              { text: 'OK', style: 'cancel' },
+            ]
+          );
+          return;
+        }
+
+        if (result.errorCode === 'email_not_confirmed' || result.errorCode === 'user_already_exists') {
           Alert.alert(
             t('error'),
             result.error ||

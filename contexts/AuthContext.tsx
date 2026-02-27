@@ -284,15 +284,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         };
       }
 
-      if (!data.session) {
-        return {
-          success: false,
-          error:
-            'Konto opprettet. Sjekk e-posten din og bekreft kontoen før innlogging.',
-          errorCode: 'email_confirmation_required',
-        };
-      }
-
       const { error: profileError } = await supabase.from('profiles').upsert({
         id: data.user.id,
         full_name: fullName,
@@ -320,6 +311,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         throw profileError;
       }
 
+      if (!data.session) {
+        return {
+          success: false,
+          error:
+            'Konto opprettet. Sjekk e-posten din og bekreft kontoen før innlogging.',
+          errorCode: 'email_confirmation_required',
+        };
+      }
+
       return {
         success: true,
         data: mapSupabaseUser(data.user),
@@ -327,7 +327,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } catch (error) {
       const errorInfo = getAuthErrorMessage(error);
 
-      if (!['profiles_table_missing', 'signup_rate_limited'].includes(errorInfo.code || '')) {
+      if (!['profiles_table_missing', 'signup_rate_limited', 'email_confirmation_required', 'user_already_exists'].includes(errorInfo.code || '')) {
         console.error('Sign up error:', error);
       }
 
