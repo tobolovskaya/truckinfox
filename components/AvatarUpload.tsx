@@ -29,11 +29,58 @@ export default function AvatarUpload({ avatarUrl, onUpload, size = 80 }: AvatarU
   const { t } = useTranslation();
   const [uploading, setUploading] = useState(false);
   const [imageLoadError, setImageLoadError] = useState(false);
+  const [displayAvatarUrl, setDisplayAvatarUrl] = useState<string | undefined>(avatarUrl);
+  const [signedFallbackAttempted, setSignedFallbackAttempted] = useState(false);
   const avatarBuckets = ['avatars', 'cargo'] as const;
 
   useEffect(() => {
     setImageLoadError(false);
+    setSignedFallbackAttempted(false);
+    setDisplayAvatarUrl(avatarUrl);
   }, [avatarUrl]);
+
+  const extractStoragePath = (url?: string): string | null => {
+    if (!url) {
+      return null;
+    }
+
+    const cleanUrl = url.split('?')[0];
+    const patterns = [
+      '/object/public/avatars/',
+      '/object/public/cargo/',
+      '/object/sign/avatars/',
+      '/object/sign/cargo/',
+      '/object/authenticated/avatars/',
+      '/object/authenticated/cargo/',
+    ];
+
+    for (const pattern of patterns) {
+      if (cleanUrl.includes(pattern)) {
+        const extracted = cleanUrl.split(pattern)[1];
+        if (extracted) {
+          return extracted;
+        }
+      }
+    }
+
+    return null;
+  };
+
+  const resolveSignedAvatarUrl = async (url?: string): Promise<string | null> => {
+    const storagePath = extractStoragePath(url);
+    if (!storagePath) {
+      return null;
+    }
+
+    for (const bucket of avatarBuckets) {
+      const { data, error } = await supabase.storage.from(bucket).createSignedUrl(storagePath, 60 * 60);
+      if (!error && data?.signedUrl) {
+        return `${data.signedUrl}${data.signedUrl.includes('?') ? '&' : '?'}t=${Date.now()}`;
+      }
+    }
+
+    return null;
+  };
 
   const compressImage = async (uri: string) => compressImageForUpload(uri);
 
@@ -139,6 +186,7 @@ export default function AvatarUpload({ avatarUrl, onUpload, size = 80 }: AvatarU
       }
 
       setImageLoadError(false);
+      setDisplayAvatarUrl(cacheBustedUrl);
       onUpload(cacheBustedUrl);
       Alert.alert(t('success'), t('avatarUpdatedSuccessfully'));
     } catch (error) {
@@ -221,10 +269,21 @@ export default function AvatarUpload({ avatarUrl, onUpload, size = 80 }: AvatarU
         onPress={pickImage}
         disabled={uploading}
       >
-        {avatarUrl ? (
+        {displayAvatarUrl ? (
           <Image
-            source={{ uri: avatarUrl }}
-            onError={() => setImageLoadError(true)}
+            source={{ uri: displayAvatarUrl }}
+            onError={async () => {
+              if (!signedFallbackAttempted) {
+                setSignedFallbackAttempted(true);
+                const signedUrl = await resolveSignedAvatarUrl(displayAvatarUrl || avatarUrl);
+                if (signedUrl) {
+                  setImageLoadError(false);
+                  setDisplayAvatarUrl(signedUrl);
+                  return;
+                }
+              }
+              setImageLoadError(true);
+            }}
             style={[styles.avatar, { width: size, height: size }]}
           />
         ) : (
@@ -233,7 +292,7 @@ export default function AvatarUpload({ avatarUrl, onUpload, size = 80 }: AvatarU
           </View>
         )}
 
-        {avatarUrl && imageLoadError && (
+        {displayAvatarUrl && imageLoadError && (
           <View style={[styles.placeholder, { width: size, height: size, position: 'absolute', top: 0, left: 0 }]}> 
             <Ionicons name="person" size={size * 0.5} color={theme.iconColors.gray.primary} />
           </View>
@@ -250,7 +309,7 @@ export default function AvatarUpload({ avatarUrl, onUpload, size = 80 }: AvatarU
         </View>
       </TouchableOpacity>
 
-      {avatarUrl && (
+      {displayAvatarUrl && (
         <TouchableOpacity style={styles.removeButton} onPress={removeAvatar} disabled={uploading}>
           <Ionicons name="trash-outline" size={16} color={theme.iconColors.error} />
           <Text style={styles.removeText}>{t('remove')}</Text>
