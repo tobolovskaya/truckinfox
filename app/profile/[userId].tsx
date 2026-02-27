@@ -27,6 +27,8 @@ interface UserProfile {
   avatar_url?: string;
 }
 
+const isBusinessUserType = (userType?: string) => userType === 'carrier' || userType === 'business';
+
 interface Review {
   id: string;
   rating: number;
@@ -230,7 +232,7 @@ export default function UserProfileScreen() {
             ) : (
               <View style={styles.avatarPlaceholder}>
                 <Ionicons
-                  name={profile.user_type === 'business' ? 'business' : 'person'}
+                  name={isBusinessUserType(profile.user_type) ? 'business' : 'person'}
                   size={40}
                   color={theme.iconColors.primary}
                 />
@@ -244,7 +246,7 @@ export default function UserProfileScreen() {
           <Text style={styles.userName}>{profile.full_name}</Text>
           {profile.company_name && <Text style={styles.companyName}>{profile.company_name}</Text>}
           <Text style={styles.userType}>
-            {profile.user_type === 'business' ? t('business') : t('private')}
+            {isBusinessUserType(profile.user_type) ? t('business') : t('private')}
           </Text>
 
           <View style={styles.ratingContainer}>
@@ -270,7 +272,7 @@ export default function UserProfileScreen() {
                     <View style={styles.reviewerInfo}>
                       <View style={styles.reviewerAvatar}>
                         <Ionicons
-                          name={review.reviewer.user_type === 'business' ? 'business' : 'person'}
+                          name={isBusinessUserType(review.reviewer.user_type) ? 'business' : 'person'}
                           size={20}
                           color={theme.iconColors.primary}
                         />
