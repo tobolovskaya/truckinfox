@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { AuthApiError } from '@supabase/supabase-js';
 import {
   View,
   Text,
@@ -44,8 +45,23 @@ export default function ForgotPasswordScreen() {
       Alert.alert(t('success'), t('resetEmailSent'));
       router.back();
     } catch (error: unknown) {
-      console.error('Password reset error:', error);
-      Alert.alert(t('error'), t('emailError'));
+      const isResetRateLimited =
+        (error instanceof AuthApiError &&
+          ['over_email_send_rate_limit', 'over_request_rate_limit', 'too_many_requests'].includes(
+            error.code || ''
+          )) ||
+        (error instanceof AuthApiError && error.message.toLowerCase().includes('email rate limit exceeded'));
+
+      if (!isResetRateLimited) {
+        console.error('Password reset error:', error);
+      }
+
+      Alert.alert(
+        t('error'),
+        isResetRateLimited
+          ? 'For mange forespørsler akkurat nå. Vent litt før du prøver å sende ny e-post.'
+          : t('emailError')
+      );
     } finally {
       setLoading(false);
     }
