@@ -10,12 +10,12 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
+import * as FileSystem from 'expo-file-system';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { useTranslation } from 'react-i18next';
 import { theme } from '../theme/theme';
 import { colors, spacing, fontSize, fontWeight, borderRadius } from '../lib/sharedStyles';
-import { fetchWithTimeout } from '../utils/fetchWithTimeout';
 import { compressImageForUpload } from '../utils/imageCompression';
 
 interface AvatarUploadProps {
@@ -82,6 +82,34 @@ export default function AvatarUpload({ avatarUrl, onUpload, size = 80 }: AvatarU
     return null;
   };
 
+  const base64ToUint8Array = (base64: string): Uint8Array => {
+    const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
+    const normalized = base64.replace(/=+$/, '');
+
+    let buffer = 0;
+    let bitsCollected = 0;
+    const output: number[] = [];
+
+    for (let index = 0; index < normalized.length; index += 1) {
+      const char = normalized[index];
+      const value = alphabet.indexOf(char);
+
+      if (value < 0) {
+        continue;
+      }
+
+      buffer = (buffer << 6) | value;
+      bitsCollected += 6;
+
+      if (bitsCollected >= 8) {
+        bitsCollected -= 8;
+        output.push((buffer >> bitsCollected) & 0xff);
+      }
+    }
+
+    return new Uint8Array(output);
+  };
+
   const compressImage = async (uri: string) => compressImageForUpload(uri);
 
   const pickImage = async () => {
@@ -120,21 +148,21 @@ export default function AvatarUpload({ avatarUrl, onUpload, size = 80 }: AvatarU
       // Create file name
       const fileName = `${user.uid}/avatar.jpg`;
 
-      // Convert URI to blob for upload with timeout
-      const response = await fetchWithTimeout(
-        uri,
-        {
-          method: 'GET',
-        },
-        15000
-      ); // 15 second timeout for image download
-      const blob = await response.blob();
+      // Read local file bytes directly to avoid 0-byte uploads on mobile URI fetch.
+      const base64 = await FileSystem.readAsStringAsync(uri, {
+        encoding: 'base64',
+      });
+      const fileBytes = base64ToUint8Array(base64);
+
+      if (!fileBytes || fileBytes.byteLength === 0) {
+        throw new Error('Avatar file is empty. Please select another image.');
+      }
 
       let selectedBucket: (typeof avatarBuckets)[number] | null = null;
       let lastUploadError: unknown = null;
 
       for (const bucket of avatarBuckets) {
-        const { error: uploadError } = await supabase.storage.from(bucket).upload(fileName, blob, {
+        const { error: uploadError } = await supabase.storage.from(bucket).upload(fileName, fileBytes, {
           contentType: 'image/jpeg',
           upsert: true,
         });
