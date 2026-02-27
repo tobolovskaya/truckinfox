@@ -87,6 +87,26 @@ export default function RegisterScreen() {
       });
 
       if (!result.success) {
+        if (
+          result.errorCode === 'email_confirmation_required' ||
+          result.errorCode === 'email_not_confirmed' ||
+          result.errorCode === 'user_already_exists'
+        ) {
+          Alert.alert(
+            t('error'),
+            result.error ||
+              'Denne e-posten er allerede registrert eller venter på bekreftelse. Logg inn etter at e-posten er bekreftet.',
+            [
+              {
+                text: 'Logg inn',
+                onPress: () => router.push('/(auth)/login'),
+              },
+              { text: 'OK', style: 'cancel' },
+            ]
+          );
+          return;
+        }
+
         if (result.errorCode === 'signup_rate_limited') {
           setCooldownSeconds(60);
           Alert.alert(

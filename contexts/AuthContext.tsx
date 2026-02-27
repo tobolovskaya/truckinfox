@@ -94,6 +94,17 @@ const getAuthErrorMessage = (error: unknown): { message: string; code?: string }
   if (error instanceof AuthApiError) {
     const normalizedMessage = error.message.toLowerCase();
 
+    if (
+      normalizedMessage.includes('user already registered') ||
+      normalizedMessage.includes('already registered') ||
+      normalizedMessage.includes('already exists')
+    ) {
+      return {
+        message: 'Denne e-posten er allerede registrert. Logg inn eller bekreft e-posten hvis kontoen er ny.',
+        code: 'user_already_exists',
+      };
+    }
+
     if (normalizedMessage.includes('email rate limit exceeded')) {
       return {
         message:
@@ -270,6 +281,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return {
           success: false,
           error: 'Не вдалося створити акаунт. Спробуйте ще раз.',
+        };
+      }
+
+      if (!data.session) {
+        return {
+          success: false,
+          error:
+            'Konto opprettet. Sjekk e-posten din og bekreft kontoen før innlogging.',
+          errorCode: 'email_confirmation_required',
         };
       }
 
