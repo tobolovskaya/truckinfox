@@ -120,7 +120,11 @@ export default function RegisterScreen() {
         }
 
         if (result.errorCode === 'signup_rate_limited') {
-          setCooldownSeconds(60);
+          const retrySeconds =
+            typeof result.retryAfterSeconds === 'number' && result.retryAfterSeconds > 0
+              ? result.retryAfterSeconds
+              : 60;
+          setCooldownSeconds(Math.max(15, retrySeconds));
           Alert.alert(
             t('error'),
             result.error ||

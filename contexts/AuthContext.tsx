@@ -18,6 +18,7 @@ export interface AuthResult<T = void> {
   data?: T;
   error?: string;
   errorCode?: string;
+  retryAfterSeconds?: number;
 }
 
 type PostgrestLikeError = {
@@ -90,7 +91,23 @@ const mapSupabaseUser = (user: SupabaseUser): AppUser => ({
     (typeof user.user_metadata?.avatar_url === 'string' && user.user_metadata.avatar_url) || null,
 });
 
-const getAuthErrorMessage = (error: unknown): { message: string; code?: string } => {
+const parseRetryAfterSeconds = (message: string): number | undefined => {
+  const match = message.match(/(\d+)\s*(second|seconds|sec|s)\b/i);
+  if (!match) {
+    return undefined;
+  }
+
+  const value = Number(match[1]);
+  if (!Number.isFinite(value) || value <= 0) {
+    return undefined;
+  }
+
+  return value;
+};
+
+const getAuthErrorMessage = (
+  error: unknown
+): { message: string; code?: string; retryAfterSeconds?: number } => {
   if (error instanceof AuthApiError) {
     const normalizedMessage = error.message.toLowerCase();
 
@@ -110,6 +127,7 @@ const getAuthErrorMessage = (error: unknown): { message: string; code?: string }
         message:
           'For mange registreringsforsøk akkurat nå. Vent litt og prøv igjen, eller logg inn hvis kontoen allerede finnes.',
         code: 'signup_rate_limited',
+        retryAfterSeconds: parseRetryAfterSeconds(error.message),
       };
     }
 
@@ -131,10 +149,15 @@ const getAuthErrorMessage = (error: unknown): { message: string; code?: string }
           message:
             'For mange registreringsforsøk akkurat nå. Vent litt og prøv igjen, eller logg inn hvis kontoen allerede finnes.',
           code: 'signup_rate_limited',
+          retryAfterSeconds: parseRetryAfterSeconds(error.message),
         };
       case 'over_request_rate_limit':
       case 'too_many_requests':
-        return { message: 'Забагато спроб. Спробуйте пізніше.', code: error.code };
+        return {
+          message: 'Забагато спроб. Спробуйте пізніше.',
+          code: error.code,
+          retryAfterSeconds: parseRetryAfterSeconds(error.message),
+        };
       default:
         return { message: error.message, code: error.code };
     }
@@ -244,6 +267,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         success: false,
         error: errorInfo.message,
         errorCode: errorInfo.code,
+        retryAfterSeconds: errorInfo.retryAfterSeconds,
       };
     }
   };
@@ -344,6 +368,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         success: false,
         error: errorInfo.message,
         errorCode: errorInfo.code,
+        retryAfterSeconds: errorInfo.retryAfterSeconds,
       };
     }
   };
