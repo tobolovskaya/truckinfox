@@ -45,7 +45,7 @@ export async function checkDuplicateRequest(
     const { data, error } = await supabase
       .from('cargo_requests')
       .select('from_address,to_address')
-      .eq('user_id', userId)
+      .eq('customer_id', userId)
       .gt('created_at', oneHourAgo);
 
     if (error) {
@@ -222,7 +222,7 @@ export async function checkRequestRateLimit(
     const { data, error } = await supabase
       .from('cargo_requests')
       .select('id')
-      .eq('user_id', userId)
+      .eq('customer_id', userId)
       .gt('created_at', windowStart);
 
     if (error) {

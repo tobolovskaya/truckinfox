@@ -56,6 +56,8 @@ interface CargoRequest {
   price_type: string;
   status: string;
   user_id: string;
+  customer_id?: string;
+  weight_kg?: number;
   images?: string[];
   users?: {
     full_name: string;
@@ -126,6 +128,22 @@ export default function RequestDetailsScreen() {
       }
 
       const data = { id: requestRow.id, ...requestRow } as CargoRequest;
+      const ownerId =
+        typeof requestRow.customer_id === 'string'
+          ? requestRow.customer_id
+          : typeof requestRow.user_id === 'string'
+            ? requestRow.user_id
+            : '';
+      data.user_id = ownerId;
+      data.customer_id = ownerId;
+      data.weight =
+        typeof requestRow.weight === 'number'
+          ? requestRow.weight
+          : typeof requestRow.weight_kg === 'number'
+            ? requestRow.weight_kg
+            : typeof requestRow.weight_kg === 'string'
+              ? Number(requestRow.weight_kg)
+              : 0;
 
       // Fetch customer info
       if (data.user_id) {
@@ -318,7 +336,7 @@ export default function RequestDetailsScreen() {
         throw new Error('Forespørsel ikke funnet');
       }
 
-      if (currentRequest.status !== 'active') {
+      if (!['active', 'open'].includes(currentRequest.status)) {
         throw new Error('Forespørselen er ikke lenger aktiv');
       }
 
@@ -341,12 +359,12 @@ export default function RequestDetailsScreen() {
       const { error: requestUpdateError } = await supabase
         .from('cargo_requests')
         .update({
-          status: 'assigned',
+          status: 'accepted',
           accepted_bid_id: bid.id,
           updated_at: nowIso,
         })
         .eq('id', id as string)
-        .eq('status', 'active');
+        .in('status', ['active', 'open']);
 
       if (requestUpdateError) {
         throw requestUpdateError;
@@ -643,7 +661,7 @@ export default function RequestDetailsScreen() {
   };
 
   const isCustomer = request?.user_id === user?.uid;
-  const canSubmitBid = !isCustomer && request?.status === 'active';
+  const canSubmitBid = !isCustomer && ['active', 'open'].includes(request?.status || '');
   const hasBidFromUser = bids.some(bid => bid.carrier_id === user?.uid);
 
   const renderItem = ({ item }: { item: string; index: number }) => {
