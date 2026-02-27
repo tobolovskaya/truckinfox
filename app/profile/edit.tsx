@@ -68,8 +68,8 @@ export default function EditProfileScreen() {
 
       try {
         const { data, error } = await supabase
-          .from('users')
-          .select('full_name,email,phone,company_name,org_number,avatar_url,user_type')
+          .from('profiles')
+          .select('full_name,phone,company_name,org_number,avatar_url,user_type')
           .eq('id', user.uid)
           .maybeSingle();
 
@@ -79,7 +79,7 @@ export default function EditProfileScreen() {
 
         setProfile({
           fullName: (data?.full_name as string) || user.displayName || '',
-          email: (data?.email as string) || user.email || '',
+          email: user.email || '',
           phone: (data?.phone as string) || user.phoneNumber || '',
           companyName: (data?.company_name as string) || '',
           orgNumber: (data?.org_number as string) || '',
