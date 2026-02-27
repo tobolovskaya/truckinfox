@@ -118,8 +118,7 @@ export default function AvatarUpload({ avatarUrl, onUpload, size = 80 }: AvatarU
     setUploading(true);
     try {
       // Create file name
-      const fileExt = uri.split('.').pop() || 'jpg';
-      const fileName = `${user.uid}/avatar.${fileExt}`;
+      const fileName = `${user.uid}/avatar.jpg`;
 
       // Convert URI to blob for upload with timeout
       const response = await fetchWithTimeout(
@@ -136,7 +135,7 @@ export default function AvatarUpload({ avatarUrl, onUpload, size = 80 }: AvatarU
 
       for (const bucket of avatarBuckets) {
         const { error: uploadError } = await supabase.storage.from(bucket).upload(fileName, blob, {
-          contentType: `image/${fileExt}`,
+          contentType: 'image/jpeg',
           upsert: true,
         });
 
