@@ -28,6 +28,7 @@ export default function AvatarUpload({ avatarUrl, onUpload, size = 80 }: AvatarU
   const { user } = useAuth();
   const { t } = useTranslation();
   const [uploading, setUploading] = useState(false);
+  const avatarBuckets = ['avatars', 'cargo'] as const;
 
   const compressImage = async (uri: string) => compressImageForUpload(uri);
 
@@ -42,7 +43,7 @@ export default function AvatarUpload({ avatarUrl, onUpload, size = 80 }: AvatarU
 
       // Pick image
       const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        mediaTypes: ['images'],
         allowsEditing: true,
         aspect: [1, 1],
         quality: 0.8,
@@ -78,18 +79,35 @@ export default function AvatarUpload({ avatarUrl, onUpload, size = 80 }: AvatarU
       ); // 15 second timeout for image download
       const blob = await response.blob();
 
-      const { error: uploadError } = await supabase.storage.from('avatars').upload(fileName, blob, {
-        contentType: `image/${fileExt}`,
-        upsert: true,
-      });
+      let selectedBucket: (typeof avatarBuckets)[number] | null = null;
+      let lastUploadError: unknown = null;
 
-      if (uploadError) {
-        throw uploadError;
+      for (const bucket of avatarBuckets) {
+        const { error: uploadError } = await supabase.storage.from(bucket).upload(fileName, blob, {
+          contentType: `image/${fileExt}`,
+          upsert: true,
+        });
+
+        if (!uploadError) {
+          selectedBucket = bucket;
+          break;
+        }
+
+        lastUploadError = uploadError;
+        const uploadMessage =
+          typeof uploadError.message === 'string' ? uploadError.message.toLowerCase() : '';
+        if (!uploadMessage.includes('bucket not found')) {
+          throw uploadError;
+        }
+      }
+
+      if (!selectedBucket) {
+        throw lastUploadError || new Error('No available storage bucket for avatar upload');
       }
 
       const {
         data: { publicUrl: downloadURL },
-      } = supabase.storage.from('avatars').getPublicUrl(fileName);
+      } = supabase.storage.from(selectedBucket).getPublicUrl(fileName);
 
       const { error: profileError } = await supabase
         .from('profiles')
@@ -138,11 +156,15 @@ export default function AvatarUpload({ avatarUrl, onUpload, size = 80 }: AvatarU
 
             const storagePath = avatarUrl.includes('/object/public/avatars/')
               ? avatarUrl.split('/object/public/avatars/')[1]?.split('?')[0]
-              : `${user.uid}/avatar.jpg`;
+              : avatarUrl.includes('/object/public/cargo/')
+                ? avatarUrl.split('/object/public/cargo/')[1]?.split('?')[0]
+                : `${user.uid}/avatar.jpg`;
 
             try {
               if (storagePath) {
-                await supabase.storage.from('avatars').remove([storagePath]);
+                await Promise.all(
+                  avatarBuckets.map(bucket => supabase.storage.from(bucket).remove([storagePath]))
+                );
               }
             } catch (error) {
               console.warn('Avatar delete warning:', error);
