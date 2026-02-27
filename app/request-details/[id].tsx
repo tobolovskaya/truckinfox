@@ -171,7 +171,7 @@ export default function RequestDetailsScreen() {
     try {
       const { data: bidsRows, error: bidsError } = await supabase
         .from('bids')
-        .select('id, price, message, status, created_at, carrier_id')
+        .select('id, price, note, status, created_at, carrier_id')
         .eq('request_id', id as string)
         .order('created_at', { ascending: false });
 
@@ -195,7 +195,7 @@ export default function RequestDetailsScreen() {
       const bidsData = (bidsRows || []).map(row => ({
         id: row.id,
         price: Number(row.price || 0),
-        message: row.message || '',
+        message: row.note || '',
         status: row.status || 'pending',
         created_at: row.created_at,
         carrier_id: row.carrier_id,
@@ -250,7 +250,7 @@ export default function RequestDetailsScreen() {
         request_id: id,
         carrier_id: user.uid,
         price: amount,
-        message: sanitizedMessage,
+        note: sanitizedMessage,
         status: 'pending',
         created_at: new Date().toISOString(),
       });
@@ -346,7 +346,6 @@ export default function RequestDetailsScreen() {
         .from('bids')
         .update({
           status: 'accepted',
-          accepted_at: nowIso,
           updated_at: nowIso,
         })
         .eq('id', bid.id)
@@ -387,8 +386,6 @@ export default function RequestDetailsScreen() {
           .from('bids')
           .update({
             status: 'rejected',
-            rejected_at: nowIso,
-            rejected_reason: 'Et annet bud ble godtatt',
             updated_at: nowIso,
           })
           .in('id', otherBidIds);
@@ -519,18 +516,6 @@ export default function RequestDetailsScreen() {
 
       if (orderInsertError || !orderRow) {
         throw orderInsertError || new Error('Failed to create order');
-      }
-
-      const { error: bidOrderUpdateError } = await supabase
-        .from('bids')
-        .update({
-          order_id: orderRow.id,
-          updated_at: nowIso,
-        })
-        .eq('id', bid.id);
-
-      if (bidOrderUpdateError) {
-        throw bidOrderUpdateError;
       }
 
       router.push(`/payment/${orderRow.id}` as never);
