@@ -23,12 +23,10 @@ import * as ImagePicker from 'expo-image-picker';
 import AddressInput from '../../components/AddressInput';
 import { ScreenHeader } from '../../components/ScreenHeader';
 import { calculateDistance } from '../../utils/googlePlaces';
-import { geohashForLocation } from 'geofire-common';
 import { fetchWithTimeout } from '../../utils/fetchWithTimeout';
 import { compressImageForUpload } from '../../utils/imageCompression';
 import { LazyImage } from '../../components/LazyImage';
 import { colors, spacing, fontSize, borderRadius } from '../../lib/sharedStyles';
-import { generateCargoSearchTerms } from '../../utils/search';
 
 const CARGO_TYPES = [
   { id: 'automotive', label: 'Bil/Motor' },
@@ -76,7 +74,9 @@ interface CargoRequest {
   price: number;
   price_type: string;
   status: string;
-  user_id: string;
+  user_id?: string;
+  customer_id?: string;
+  weight_kg?: number;
   images?: string[];
   bids: unknown[];
 }
@@ -311,8 +311,9 @@ export default function EditRequestScreen() {
       }
 
       const data = { id: requestData.id, ...requestData } as CargoRequest;
+      const ownerId = data.customer_id || data.user_id;
 
-      if (data.user_id !== user?.uid) {
+      if (ownerId !== user?.uid) {
         toast.error(t('editOwnRequestOnly'));
         router.back();
         return;
@@ -350,7 +351,7 @@ export default function EditRequestScreen() {
         title: data.title,
         description: data.description,
         cargo_type: data.cargo_type,
-        weight: data.weight.toString(),
+        weight: (data.weight_kg ?? data.weight ?? '').toString(),
         length,
         width,
         height,
@@ -495,17 +496,6 @@ export default function EditRequestScreen() {
     triggerHapticFeedback.medium();
     setSaving(true);
     try {
-      let from_geohash = null;
-      let to_geohash = null;
-
-      if (formData.from_lat && formData.from_lng) {
-        from_geohash = geohashForLocation([formData.from_lat, formData.from_lng]);
-      }
-
-      if (formData.to_lat && formData.to_lng) {
-        to_geohash = geohashForLocation([formData.to_lat, formData.to_lng]);
-      }
-
       let dimensions = null;
       if (formData.length && formData.width && formData.height) {
         dimensions = `${formData.length} x ${formData.width} x ${formData.height}`;
@@ -515,31 +505,21 @@ export default function EditRequestScreen() {
       const description = sanitizeInput(formData.description.trim(), 2000);
       const fromAddress = sanitizeInput(formData.from_address.trim(), 300);
       const toAddress = sanitizeInput(formData.to_address.trim(), 300);
-      const searchTerms = generateCargoSearchTerms(
-        title,
-        formData.cargo_type,
-        fromAddress,
-        toAddress
-      );
-
       let updateData: Record<string, unknown> = {
         title,
         description,
         cargo_type: formData.cargo_type,
-        weight: sanitizeNumber(formData.weight, 0, 100000),
+        weight_kg: sanitizeNumber(formData.weight, 0, 100000),
         dimensions: dimensions ? sanitizeInput(dimensions, 100) : null,
         from_address: fromAddress,
         to_address: toAddress,
-        search_terms: searchTerms,
         from_lat: formData.from_lat,
         from_lng: formData.from_lng,
         to_lat: formData.to_lat,
         to_lng: formData.to_lng,
-        from_geohash,
-        to_geohash,
         distance_km: formData.distance_km,
-        pickup_date: formData.pickup_date.toISOString(),
-        delivery_date: formData.delivery_date.toISOString(),
+        pickup_date: formData.pickup_date.toISOString().split('T')[0],
+        delivery_date: formData.delivery_date.toISOString().split('T')[0],
         price_type: formData.price_type,
         price: formData.price_type === 'fixed' ? sanitizeNumber(formData.price, 0, 1000000) : 0,
         updated_at: new Date().toISOString(),
@@ -557,13 +537,14 @@ export default function EditRequestScreen() {
       }
 
       let updateError: unknown = null;
+      const removableColumns = new Set(['distance_km']);
 
       for (let attempt = 0; attempt < 8; attempt += 1) {
         const result = await supabase
           .from('cargo_requests')
           .update(updateData)
           .eq('id', id as string)
-          .eq('user_id', user?.uid || '');
+          .eq('customer_id', user?.uid || '');
 
         updateError = result.error;
 
@@ -587,7 +568,7 @@ export default function EditRequestScreen() {
         const missingColumnMatch = message.match(/'([^']+)' column/);
         const missingColumn = missingColumnMatch?.[1];
 
-        if (!missingColumn || !(missingColumn in updateData)) {
+        if (!missingColumn || !(missingColumn in updateData) || !removableColumns.has(missingColumn)) {
           break;
         }
 
@@ -614,7 +595,15 @@ export default function EditRequestScreen() {
       }, 500);
     } catch (error: unknown) {
       console.error('Error updating request:', error);
-      const message = error instanceof Error ? error.message : t('error');
+      const message =
+        error &&
+        typeof error === 'object' &&
+        'code' in error &&
+        (error as { code?: string }).code === '42501'
+          ? 'Du har ikke tilgang til å redigere forespørselen nå (RLS policy). Logg inn på nytt og sjekk Supabase policy for cargo_requests.'
+          : error instanceof Error
+            ? error.message
+            : t('error');
       toast.error(message);
       triggerHapticFeedback.error();
     } finally {

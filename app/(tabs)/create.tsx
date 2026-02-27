@@ -29,11 +29,9 @@ import { useDebouncedCallback } from 'use-debounce';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { AddressAutocomplete } from '../../components/AddressAutocomplete';
 import { calculateDistance } from '../../utils/googlePlaces';
-import { geohashForLocation } from 'geofire-common';
 import { fetchWithTimeout } from '../../utils/fetchWithTimeout';
 import { compressImageForUpload } from '../../utils/imageCompression';
 import { LazyImage } from '../../components/LazyImage';
-import { generateCargoSearchTerms } from '../../utils/search';
 import { ScreenHeader } from '../../components/ScreenHeader';
 import { validateBeforeCreation } from '../../utils/requestValidation';
 
@@ -573,17 +571,6 @@ export default function CreateRequestScreen() {
     triggerHapticFeedback.medium();
     setLoading(true);
     try {
-      let from_geohash = null;
-      let to_geohash = null;
-
-      if (formData.from_lat && formData.from_lng) {
-        from_geohash = geohashForLocation([formData.from_lat, formData.from_lng]);
-      }
-
-      if (formData.to_lat && formData.to_lng) {
-        to_geohash = geohashForLocation([formData.to_lat, formData.to_lng]);
-      }
-
       let dimensions = null;
       if (formData.length && formData.width && formData.height) {
         dimensions = `${formData.length} x ${formData.width} x ${formData.height}`;
@@ -593,40 +580,29 @@ export default function CreateRequestScreen() {
       const description = sanitizeInput(formData.description.trim(), 2000);
       const fromAddress = sanitizeInput(formData.from_address.trim(), 300);
       const toAddress = sanitizeInput(formData.to_address.trim(), 300);
-      const searchTerms = generateCargoSearchTerms(
-        title,
-        formData.cargo_type,
-        fromAddress,
-        toAddress
-      );
-
       let insertPayload: Record<string, unknown> = {
-        user_id: user?.uid,
+        customer_id: user?.uid,
         title,
         description,
         cargo_type: formData.cargo_type,
-        weight: sanitizeNumber(formData.weight, 0, 100000),
+        weight_kg: sanitizeNumber(formData.weight, 0, 100000),
         dimensions: dimensions ? sanitizeInput(dimensions, 100) : null,
         from_address: fromAddress,
         to_address: toAddress,
-        search_terms: searchTerms,
         from_lat: formData.from_lat,
         from_lng: formData.from_lng,
         to_lat: formData.to_lat,
         to_lng: formData.to_lng,
-        from_geohash,
-        to_geohash,
         distance_km: formData.distance_km,
-        pickup_date: formData.pickup_date.toISOString(),
-        delivery_date: formData.delivery_date.toISOString(),
+        pickup_date: formData.pickup_date.toISOString().split('T')[0],
+        delivery_date: formData.delivery_date.toISOString().split('T')[0],
         price_type: formData.price_type,
         price: formData.price_type === 'fixed' ? sanitizeNumber(formData.price, 0, 1000000) : 0,
-        status: 'active',
-        created_at: new Date().toISOString(),
       };
 
       let insertedRequest: { id: string } | null = null;
       let insertError: unknown = null;
+      const removableColumns = new Set(['distance_km']);
 
       for (let attempt = 0; attempt < 8; attempt += 1) {
         const result = await supabase
@@ -658,7 +634,11 @@ export default function CreateRequestScreen() {
         const missingColumnMatch = message.match(/'([^']+)' column/);
         const missingColumn = missingColumnMatch?.[1];
 
-        if (!missingColumn || !(missingColumn in insertPayload)) {
+        if (
+          !missingColumn ||
+          !(missingColumn in insertPayload) ||
+          !removableColumns.has(missingColumn)
+        ) {
           break;
         }
 
@@ -725,7 +705,15 @@ export default function CreateRequestScreen() {
       // Log hele error-objektet for dypere feilsøking
       console.error('Create request failed:', error);
       let errorMessage = t('error');
-      if (error instanceof Error) {
+      if (
+        error &&
+        typeof error === 'object' &&
+        'code' in error &&
+        (error as { code?: string }).code === '42501'
+      ) {
+        errorMessage =
+          'Du har ikke tilgang til å opprette forespørsel nå (RLS policy). Logg inn på nytt og sjekk Supabase policy for cargo_requests.';
+      } else if (error instanceof Error) {
         errorMessage = error.message;
         if (error.stack) {
           errorMessage += '\n' + error.stack.split('\n')[0];
