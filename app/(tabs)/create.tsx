@@ -630,6 +630,7 @@ export default function CreateRequestScreen() {
         .single();
 
       if (insertError || !insertedRequest) {
+        console.error('Supabase insert error:', insertError);
         throw insertError || new Error('Failed to create request');
       }
 
@@ -657,6 +658,7 @@ export default function CreateRequestScreen() {
             .eq('id', request.id);
 
           if (imagesUpdateError) {
+            console.error('Supabase images update error:', imagesUpdateError);
             throw imagesUpdateError;
           }
         }
@@ -679,7 +681,19 @@ export default function CreateRequestScreen() {
         }
       }, 500);
     } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : t('error');
+      // Log hele error-objektet for dypere feilsøking
+      console.error('Create request failed:', error);
+      let errorMessage = t('error');
+      if (error instanceof Error) {
+        errorMessage = error.message;
+        if (error.stack) {
+          errorMessage += '\n' + error.stack.split('\n')[0];
+        }
+      } else if (typeof error === 'string') {
+        errorMessage = error;
+      } else if (error && typeof error === 'object') {
+        errorMessage = JSON.stringify(error);
+      }
       toast.error(errorMessage);
     } finally {
       setLoading(false);
