@@ -1,8 +1,6 @@
 import 'react-native-url-polyfill/auto';
 import { createClient } from '@supabase/supabase-js';
 
-const LOCAL_SUPABASE_URL = 'http://127.0.0.1:54321';
-
 const rawSupabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL?.trim();
 const rawSupabaseAnonKey =
   process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY?.trim() || process.env.EXPO_PUBLIC_SUPABASE_KEY?.trim();
@@ -37,20 +35,24 @@ const isValidHttpUrl = (value?: string): boolean => {
 };
 
 const normalizedSupabaseUrl = normalizeSupabaseUrl(rawSupabaseUrl);
-const supabaseUrl = isValidHttpUrl(normalizedSupabaseUrl)
-  ? normalizedSupabaseUrl || LOCAL_SUPABASE_URL
-  : LOCAL_SUPABASE_URL;
-const supabaseAnonKey = rawSupabaseAnonKey || 'invalid';
+const isCloudHost = (value?: string): boolean => {
+  if (!isValidHttpUrl(value)) {
+    return false;
+  }
 
-export const isSupabaseConfigured = Boolean(rawSupabaseAnonKey && isValidHttpUrl(normalizedSupabaseUrl));
+  const host = new URL(value as string).hostname.toLowerCase();
+  return host !== 'localhost' && host !== '127.0.0.1';
+};
+
+export const isSupabaseConfigured = Boolean(rawSupabaseAnonKey && isCloudHost(normalizedSupabaseUrl));
 
 if (!isSupabaseConfigured) {
-  console.warn(
-    'Supabase env is missing or invalid. Set EXPO_PUBLIC_SUPABASE_URL (http/https) and EXPO_PUBLIC_SUPABASE_ANON_KEY (or EXPO_PUBLIC_SUPABASE_KEY). Falling back to local URL.'
+  throw new Error(
+    'Supabase cloud config is missing or invalid. Set EXPO_PUBLIC_SUPABASE_URL to your cloud project URL and EXPO_PUBLIC_SUPABASE_ANON_KEY (or EXPO_PUBLIC_SUPABASE_KEY).'
   );
 }
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+export const supabase = createClient(normalizedSupabaseUrl as string, rawSupabaseAnonKey as string, {
   auth: {
     persistSession: true,
     autoRefreshToken: true,
