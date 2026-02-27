@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -37,8 +37,21 @@ export default function RegisterScreen() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [cooldownSeconds, setCooldownSeconds] = useState(0);
 
   const isBusiness = accountType === 'business';
+
+  useEffect(() => {
+    if (cooldownSeconds <= 0) {
+      return;
+    }
+
+    const intervalId = setInterval(() => {
+      setCooldownSeconds((previous) => Math.max(previous - 1, 0));
+    }, 1000);
+
+    return () => clearInterval(intervalId);
+  }, [cooldownSeconds]);
 
   const handleRegister = async () => {
     if (!fullName || !email || !phone || !password || !confirmPassword) {
@@ -75,6 +88,7 @@ export default function RegisterScreen() {
 
       if (!result.success) {
         if (result.errorCode === 'signup_rate_limited') {
+          setCooldownSeconds(60);
           Alert.alert(
             t('error'),
             result.error ||
@@ -292,17 +306,19 @@ export default function RegisterScreen() {
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={[styles.primaryButton, loading && styles.primaryButtonDisabled]}
+            style={[styles.primaryButton, (loading || cooldownSeconds > 0) && styles.primaryButtonDisabled]}
             onPress={handleRegister}
-            disabled={loading}
+            disabled={loading || cooldownSeconds > 0}
             accessibilityRole="button"
             accessibilityLabel={t('createAccount')}
-            accessibilityState={{ disabled: loading }}
+            accessibilityState={{ disabled: loading || cooldownSeconds > 0 }}
           >
             {loading ? (
               <ActivityIndicator color={colors.white} />
             ) : (
-              <Text style={styles.primaryButtonText}>{t('createAccount')}</Text>
+              <Text style={styles.primaryButtonText}>
+                {cooldownSeconds > 0 ? `Prøv igjen om ${cooldownSeconds}s` : t('createAccount')}
+              </Text>
             )}
           </TouchableOpacity>
 

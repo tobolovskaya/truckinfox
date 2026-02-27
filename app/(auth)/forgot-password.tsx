@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { AuthApiError } from '@supabase/supabase-js';
 import {
   View,
@@ -20,6 +20,19 @@ export default function ForgotPasswordScreen() {
   const { t } = useTranslation();
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
+  const [cooldownSeconds, setCooldownSeconds] = useState(0);
+
+  useEffect(() => {
+    if (cooldownSeconds <= 0) {
+      return;
+    }
+
+    const intervalId = setInterval(() => {
+      setCooldownSeconds((previous) => Math.max(previous - 1, 0));
+    }, 1000);
+
+    return () => clearInterval(intervalId);
+  }, [cooldownSeconds]);
 
   const isValidEmail = (value: string) => /.+@.+\..+/.test(value.trim());
 
@@ -54,6 +67,10 @@ export default function ForgotPasswordScreen() {
 
       if (!isResetRateLimited) {
         console.error('Password reset error:', error);
+      }
+
+      if (isResetRateLimited) {
+        setCooldownSeconds(60);
       }
 
       Alert.alert(
@@ -92,16 +109,18 @@ export default function ForgotPasswordScreen() {
           </View>
 
           <TouchableOpacity
-            style={[styles.primaryButton, loading && styles.primaryButtonDisabled]}
+            style={[styles.primaryButton, (loading || cooldownSeconds > 0) && styles.primaryButtonDisabled]}
             onPress={handleSendReset}
-            disabled={loading}
+            disabled={loading || cooldownSeconds > 0}
             accessibilityRole="button"
             accessibilityLabel={t('sendResetLink')}
           >
             {loading ? (
               <ActivityIndicator color={colors.white} />
             ) : (
-              <Text style={styles.primaryButtonText}>{t('sendResetLink')}</Text>
+              <Text style={styles.primaryButtonText}>
+                {cooldownSeconds > 0 ? `Prøv igjen om ${cooldownSeconds}s` : t('sendResetLink')}
+              </Text>
             )}
           </TouchableOpacity>
 
