@@ -20,6 +20,11 @@ export interface AuthResult<T = void> {
   errorCode?: string;
 }
 
+type PostgrestLikeError = {
+  code?: string;
+  message?: string;
+};
+
 interface AuthContextType {
   user: AppUser | null;
   loading: boolean;
@@ -103,6 +108,29 @@ const getAuthErrorMessage = (error: unknown): { message: string; code?: string }
     }
   }
 
+  if (typeof error === 'object' && error !== null) {
+    const postgrestError = error as PostgrestLikeError;
+
+    if (
+      postgrestError.code === 'PGRST205' &&
+      typeof postgrestError.message === 'string' &&
+      postgrestError.message.includes("public.profiles")
+    ) {
+      return {
+        message:
+          'Database is not initialized for this Supabase project (missing public.profiles). Apply migrations and try again.',
+        code: 'profiles_table_missing',
+      };
+    }
+
+    if (typeof postgrestError.message === 'string') {
+      return {
+        message: postgrestError.message,
+        code: postgrestError.code,
+      };
+    }
+  }
+
   return { message: error instanceof Error ? error.message : 'An unexpected error occurred' };
 };
 
@@ -174,7 +202,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         data: mapSupabaseUser(data.user),
       };
     } catch (error) {
-      console.error('Sign in error:', error);
+      if (error instanceof AuthApiError && ['invalid_credentials', 'email_not_confirmed'].includes(error.code || '')) {
+        console.warn('Sign in rejected:', error.message);
+      } else {
+        console.error('Sign in error:', error);
+      }
       const errorInfo = getAuthErrorMessage(error);
       return {
         success: false,
@@ -231,6 +263,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       });
 
       if (profileError) {
+        if (
+          profileError.code === 'PGRST205' &&
+          typeof profileError.message === 'string' &&
+          profileError.message.includes("public.profiles")
+        ) {
+          return {
+            success: false,
+            error:
+              'Database is not initialized for this Supabase project (missing public.profiles). Apply migrations and try again.',
+            errorCode: 'profiles_table_missing',
+          };
+        }
+
         throw profileError;
       }
 
@@ -239,8 +284,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         data: mapSupabaseUser(data.user),
       };
     } catch (error) {
-      console.error('Sign up error:', error);
       const errorInfo = getAuthErrorMessage(error);
+
+      if (errorInfo.code === 'profiles_table_missing') {
+        console.warn('Sign up blocked:', errorInfo.message);
+      } else {
+        console.error('Sign up error:', error);
+      }
+
       return {
         success: false,
         error: errorInfo.message,

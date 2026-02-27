@@ -38,7 +38,13 @@ export default function LoginScreen() {
     try {
       const result = await signIn(email, password);
       if (!result.success) {
-        if (result.errorCode === 'auth/user-not-found') {
+        if (result.errorCode === 'profiles_table_missing') {
+          Alert.alert(
+            t('error'),
+            result.error ||
+              'Database is not initialized for this Supabase project. Apply migrations and try again.'
+          );
+        } else if (result.errorCode === 'user_not_found' || result.errorCode === 'auth/user-not-found') {
           Alert.alert(t('userNotFound'), t('wouldYouLikeToRegister'), [
             { text: t('cancel'), style: 'cancel' },
             {
@@ -47,10 +53,16 @@ export default function LoginScreen() {
             },
           ]);
         } else if (
+          result.errorCode === 'invalid_credentials' ||
+          result.errorCode === 'email_not_confirmed' ||
           result.errorCode === 'auth/invalid-credential' ||
           result.errorCode === 'auth/wrong-password'
         ) {
           Alert.alert(t('loginError'), t('invalidCredentials'), [
+            {
+              text: t('signUp'),
+              onPress: () => router.push('/(auth)/register'),
+            },
             { text: t('cancel'), style: 'cancel' },
             {
               text: t('forgotPassword'),
