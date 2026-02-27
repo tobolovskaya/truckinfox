@@ -4,10 +4,7 @@ type DocumentData = Record<string, unknown>;
 type Firestore = unknown;
 
 /**
- * Search utilities for generating searchable terms
- *
- * These utilities help create search_terms arrays for Firestore documents
- * to enable efficient case-insensitive text search without external services.
+ * Search utilities for generating searchable terms.
  */
 
 /**
@@ -118,7 +115,7 @@ export function generateCargoSearchTerms(
 }
 
 /**
- * Normalize search query for Firestore array-contains search
+ * Normalize search query for text search
  *
  * @param query - Raw search query from user input
  * @returns Normalized lowercase search term
@@ -134,7 +131,7 @@ export function normalizeSearchQuery(query: string): string {
 /**
  * Search profiles by name using Supabase
  *
- * This provides server-side search using the search_terms array field.
+ * This provides server-side search using `ilike` filters.
  * Works well for datasets with 1000+ items where client-side filtering
  * would be slow.
  *
@@ -190,8 +187,6 @@ export async function searchUsers(
 /**
  * Search cargo requests by title and location
  *
- * This provides server-side search using the search_terms array field.
- *
  * @param db - Firestore database instance
  * @param searchQuery - User's search query
  * @param limit - Maximum number of results (default: 20)
@@ -201,7 +196,6 @@ export async function searchUsers(
  * const requests = await searchCargoRequests(undefined, "furniture oslo", 10);
  * // Returns up to 10 cargo requests matching "furniture oslo"
  *
- * @note Requires cargo_requests collection to have search_terms array field
  */
 export async function searchCargoRequests(
   db: Firestore,
@@ -220,7 +214,7 @@ export async function searchCargoRequests(
     const { data, error } = await supabase
       .from('cargo_requests')
       .select('*')
-      .in('status', ['open', 'bidding'])
+      .in('status', ['open', 'active', 'bidding'])
       .or(
         `title.ilike.%${normalizedQuery}%,description.ilike.%${normalizedQuery}%,from_address.ilike.%${normalizedQuery}%,to_address.ilike.%${normalizedQuery}%,cargo_type.ilike.%${normalizedQuery}%`
       )

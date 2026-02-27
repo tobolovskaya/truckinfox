@@ -85,7 +85,7 @@ export async function findNearbyCargoRequests(
     const { data, error } = await supabase
       .from('cargo_requests')
       .select('*')
-      .in('status', ['open', 'bidding'])
+      .in('status', ['open', 'active', 'bidding'])
       .gte(latField, centerLat - latDelta)
       .lte(latField, centerLat + latDelta)
       .gte(lngField, centerLng - lngDelta)
@@ -117,7 +117,19 @@ export async function findNearbyCargoRequests(
         return {
           id: row.id,
           ...row,
-          weight: typeof row.weight_kg === 'number' ? row.weight_kg : Number(row.weight_kg),
+          weight: (() => {
+            const normalizedWeight =
+              typeof row.weight_kg === 'number'
+                ? row.weight_kg
+                : typeof row.weight_kg === 'string'
+                  ? Number(row.weight_kg)
+                  : typeof row.weight === 'number'
+                    ? row.weight
+                    : typeof row.weight === 'string'
+                      ? Number(row.weight)
+                      : undefined;
+            return Number.isFinite(normalizedWeight) ? normalizedWeight : undefined;
+          })(),
           distance_to_search_center: distanceInKm,
         } as CargoRequestResult;
       })

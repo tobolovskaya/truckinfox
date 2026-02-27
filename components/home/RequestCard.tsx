@@ -74,7 +74,9 @@ export const RequestCard: React.FC<RequestCardProps> = ({
       ? formatCurrency(request.price)
       : t('priceOnAgreement');
   const weightText =
-    typeof request.weight === 'number' ? formatWeight(request.weight) : t('weightUnknown');
+    typeof request.weight === 'number' && Number.isFinite(request.weight)
+      ? formatWeight(request.weight)
+      : t('weightUnknown');
   const dateText = request.pickup_date ? formatDate(request.pickup_date) : t('dateNotSet');
   const cargoType = request.cargo_type || 'other';
   const cargoTypeLabel = React.useMemo(() => t(cargoType), [cargoType, t]);

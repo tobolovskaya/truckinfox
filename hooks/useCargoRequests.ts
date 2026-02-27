@@ -127,7 +127,7 @@ const applyClientSideFilters = (
 
   if (activeTab === 'my') {
     filtered = filtered.filter(request => {
-      const ownerId = request.user_id || request.customer_id;
+      const ownerId = request.customer_id || request.user_id;
       return ownerId === userId && ['active', 'open'].includes(request.status);
     });
   } else {
@@ -186,10 +186,10 @@ const hydrateCargoRequest = async (
   }
 
   const requestUserId =
-    typeof requestData.user_id === 'string'
-      ? requestData.user_id
-      : typeof requestData.customer_id === 'string'
-        ? requestData.customer_id
+    typeof requestData.customer_id === 'string'
+      ? requestData.customer_id
+      : typeof requestData.user_id === 'string'
+        ? requestData.user_id
         : undefined;
 
   let userData: CargoRequest['users'] = {
@@ -248,14 +248,19 @@ const hydrateCargoRequest = async (
   return {
     ...(requestData as unknown as CargoRequest),
     id: requestId,
-    weight:
-      typeof requestData.weight === 'number'
-        ? requestData.weight
-        : typeof requestData.weight_kg === 'number'
+    weight: (() => {
+      const normalizedWeight =
+        typeof requestData.weight_kg === 'number'
           ? requestData.weight_kg
           : typeof requestData.weight_kg === 'string'
             ? Number(requestData.weight_kg)
-            : 0,
+            : typeof requestData.weight === 'number'
+              ? requestData.weight
+              : typeof requestData.weight === 'string'
+                ? Number(requestData.weight)
+                : 0;
+      return Number.isFinite(normalizedWeight) ? normalizedWeight : 0;
+    })(),
     user_id: requestUserId || '',
     customer_id:
       typeof requestData.customer_id === 'string' ? requestData.customer_id : undefined,
