@@ -254,12 +254,6 @@ export default function HomeScreen() {
                   variant: 'primary',
                   onPress: () => router.push('/(tabs)/create'),
                 },
-                {
-                  label: t('browseMarketplace') || 'Browse marketplace',
-                  icon: 'search-outline',
-                  variant: 'secondary',
-                  onPress: () => setActiveTab('all'),
-                },
               ]}
             />
           ) : null

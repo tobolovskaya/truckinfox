@@ -345,12 +345,6 @@ export default function MessagesScreen() {
           variant: 'primary',
           onPress: () => router.push('/(tabs)/create'),
         },
-        {
-          label: t('browseMarketplace') || 'Browse marketplace',
-          icon: 'search-outline',
-          variant: 'secondary',
-          onPress: () => router.push('/(tabs)/home'),
-        },
       ]}
     />
   );

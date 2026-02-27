@@ -227,12 +227,6 @@ export default function OrdersScreen() {
               variant: 'primary',
               onPress: () => router.push('/(tabs)/create'),
             },
-            {
-              label: t('browseMarketplace') || t('allRequests') || 'Browse marketplace',
-              icon: 'search-outline',
-              variant: 'secondary',
-              onPress: () => router.push('/(tabs)/home'),
-            },
           ]}
         />
       ) : (
