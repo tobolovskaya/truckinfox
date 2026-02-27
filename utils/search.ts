@@ -132,7 +132,7 @@ export function normalizeSearchQuery(query: string): string {
 }
 
 /**
- * Search users by name using Firestore search_terms
+ * Search profiles by name using Supabase
  *
  * This provides server-side search using the search_terms array field.
  * Works well for datasets with 1000+ items where client-side filtering
@@ -147,8 +147,7 @@ export function normalizeSearchQuery(query: string): string {
  * const users = await searchUsers(undefined, "john", 10);
  * // Returns up to 10 users with "john" in their name
  *
- * @note Requires users collection to have search_terms array field
- * @note Uses Firestore array-contains query (requires composite index)
+ * @note Uses Supabase profiles table
  */
 export async function searchUsers(
   db: Firestore,
@@ -165,9 +164,9 @@ export async function searchUsers(
 
   try {
     const { data, error } = await supabase
-      .from('users')
+      .from('profiles')
       .select('*')
-      .or(`full_name.ilike.%${normalizedQuery}%,email.ilike.%${normalizedQuery}%`)
+      .or(`full_name.ilike.%${normalizedQuery}%`)
       .order('created_at', { ascending: false })
       .limit(limit);
 

@@ -188,7 +188,7 @@ const hydrateCargoRequest = async (
   if (requestUserId) {
     try {
       const { data: userRow } = await supabase
-        .from('users')
+        .from('profiles')
         .select('full_name, user_type, rating, avatar_url')
         .eq('id', requestUserId)
         .maybeSingle();
