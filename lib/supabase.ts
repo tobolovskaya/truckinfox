@@ -4,7 +4,8 @@ import { createClient } from '@supabase/supabase-js';
 const LOCAL_SUPABASE_URL = 'http://127.0.0.1:54321';
 
 const rawSupabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL?.trim();
-const rawSupabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY?.trim();
+const rawSupabaseAnonKey =
+  process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY?.trim() || process.env.EXPO_PUBLIC_SUPABASE_KEY?.trim();
 
 const normalizeSupabaseUrl = (value?: string): string | undefined => {
   if (!value) {
@@ -45,7 +46,7 @@ export const isSupabaseConfigured = Boolean(rawSupabaseAnonKey && isValidHttpUrl
 
 if (!isSupabaseConfigured) {
   console.warn(
-    'Supabase env is missing or invalid. Set EXPO_PUBLIC_SUPABASE_URL (http/https) and EXPO_PUBLIC_SUPABASE_ANON_KEY. Falling back to local URL.'
+    'Supabase env is missing or invalid. Set EXPO_PUBLIC_SUPABASE_URL (http/https) and EXPO_PUBLIC_SUPABASE_ANON_KEY (or EXPO_PUBLIC_SUPABASE_KEY). Falling back to local URL.'
   );
 }
 

@@ -27,6 +27,13 @@
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
+-- Сумісність: у деяких середовищах uuid_generate_v4() недоступна у search_path.
+-- Даємо локальний shim на базі pgcrypto, щоб DEFAULT uuid_generate_v4() працював стабільно.
+CREATE OR REPLACE FUNCTION public.uuid_generate_v4()
+RETURNS uuid AS $$
+  SELECT gen_random_uuid();
+$$ LANGUAGE sql;
+
 -- ---------------------------------------------------------------------------
 -- УТИЛІТИ: автоматичне оновлення поля updated_at
 -- ---------------------------------------------------------------------------
