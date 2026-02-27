@@ -161,6 +161,8 @@
   "noMyRequests": "No requests yet",
   "checkBackLater": "Check back later for new requests",
   "createFirstRequest": "Create your first request to get started",
+  "noRequestsYet": "No requests yet",
+  "browseMarketplace": "Browse marketplace",
   "bids": "bids",
   "totalBids": "Total Bids",
   "in_progress": "In Progress",

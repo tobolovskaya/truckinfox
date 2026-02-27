@@ -109,7 +109,7 @@ export default function ReviewScreen() {
       // Fetch customer data
       if (orderData.customer_id) {
         const { data: customerRow } = await supabase
-          .from('users')
+          .from('profiles')
           .select('full_name')
           .eq('id', orderData.customer_id)
           .maybeSingle();
@@ -124,7 +124,7 @@ export default function ReviewScreen() {
       // Fetch carrier data
       if (orderData.carrier_id) {
         const { data: carrierRow } = await supabase
-          .from('users')
+          .from('profiles')
           .select('full_name')
           .eq('id', orderData.carrier_id)
           .maybeSingle();

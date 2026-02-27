@@ -145,7 +145,7 @@ export default function PaymentScreen() {
       // Fetch carrier user data
       if (orderData.carrier_id) {
         const { data: carrierRow } = await supabase
-          .from('users')
+          .from('profiles')
           .select('full_name, phone, avatar_url')
           .eq('id', orderData.carrier_id)
           .maybeSingle();
@@ -227,7 +227,7 @@ export default function PaymentScreen() {
 
       // Get phone number from user profile
       const { data: userRow, error: userError } = await supabase
-        .from('users')
+        .from('profiles')
         .select('phone')
         .eq('id', user.uid)
         .single();

@@ -130,7 +130,7 @@ export default function RequestDetailsScreen() {
       // Fetch customer info
       if (data.user_id) {
         const { data: userRow } = await supabase
-          .from('users')
+          .from('profiles')
           .select('full_name, user_type, rating, phone, avatar_url')
           .eq('id', data.user_id)
           .maybeSingle();
@@ -167,7 +167,7 @@ export default function RequestDetailsScreen() {
 
       const { data: carriersData } = carrierIds.length
         ? await supabase
-            .from('users')
+            .from('profiles')
             .select('id, full_name, user_type, rating, phone, avatar_url')
             .in('id', carrierIds)
         : { data: [] as Array<{ id: string; full_name: string | null; user_type: string | null; rating: number | null; phone: string | null; avatar_url: string | null }> };

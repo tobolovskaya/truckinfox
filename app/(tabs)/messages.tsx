@@ -153,7 +153,7 @@ export default function MessagesScreen() {
       const userChunks = chunkArray(userIds, 50);
       for (const chunk of userChunks) {
         const { data: usersRows, error: usersError } = await supabase
-          .from('users')
+          .from('profiles')
           .select('id, full_name, user_type, avatar_url')
           .in('id', chunk);
 

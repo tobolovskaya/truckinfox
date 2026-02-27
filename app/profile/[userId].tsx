@@ -69,7 +69,7 @@ export default function UserProfileScreen() {
       }
 
       const { data, error } = await supabase
-        .from('users')
+        .from('profiles')
         .select('id, full_name, user_type, company_name, rating, created_at, avatar_url')
         .eq('id', userId)
         .single();
@@ -120,7 +120,7 @@ export default function UserProfileScreen() {
 
       const [{ data: reviewersData }, { data: ordersData }] = await Promise.all([
         reviewerIds.length
-          ? supabase.from('users').select('id, full_name, user_type').in('id', reviewerIds)
+          ? supabase.from('profiles').select('id, full_name, user_type').in('id', reviewerIds)
           : Promise.resolve({ data: [] as Array<{ id: string; full_name: string | null; user_type: string | null }> }),
         orderIds.length
           ? supabase.from('orders').select('id, request_id').in('id', orderIds)

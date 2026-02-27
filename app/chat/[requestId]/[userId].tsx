@@ -209,7 +209,7 @@ export default function ChatScreen() {
       }
 
       const { data: userData, error } = await supabase
-        .from('users')
+        .from('profiles')
         .select('id, full_name, user_type, rating')
         .eq('id', userId)
         .single();
@@ -221,8 +221,8 @@ export default function ChatScreen() {
       if (userData) {
         setChatUser({
           id: userData.id,
-          full_name: userData.full_name || userData.display_name || 'Unknown User',
-          user_type: userData.user_type || userData.role || 'customer',
+          full_name: userData.full_name || 'Unknown User',
+          user_type: userData.user_type || 'customer',
           rating: userData.rating || 0,
         });
 
@@ -231,7 +231,7 @@ export default function ChatScreen() {
           const chatId = generateChatId(requestId, user.uid, userId);
           trackChatOpened({
             request_id: requestId,
-            other_user_type: userData.user_type || userData.role || 'customer',
+            other_user_type: userData.user_type || 'customer',
             chat_id: chatId,
           });
         }

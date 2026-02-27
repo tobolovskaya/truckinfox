@@ -153,6 +153,8 @@
   "noMyRequests": "Ingen forespørsler ennå",
   "checkBackLater": "Sjekk tilbake senere for nye forespørsler",
   "createFirstRequest": "Opprett din første forespørsel for å komme i gang",
+  "noRequestsYet": "Ingen forespørsler ennå",
+  "browseMarketplace": "Utforsk markedsplassen",
   "bids": "bud",
   "totalBids": "Totale bud",
   "in_progress": "Pågår",
