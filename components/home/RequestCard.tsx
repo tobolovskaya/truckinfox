@@ -82,6 +82,46 @@ export const RequestCard: React.FC<RequestCardProps> = ({
   const cargoTypeLabel = React.useMemo(() => t(cargoType), [cargoType, t]);
   const cargoColors = getCargoTypeColors(cargoType);
   const cargoIcon = getCargoTypeIcon(cargoType);
+  const normalizedStatus = (request.status || 'pending').toLowerCase();
+
+  const statusMeta = React.useMemo(() => {
+    switch (normalizedStatus) {
+      case 'in_transit':
+        return {
+          label: t('in_transit') || 'In transit',
+          textColor: colors.status.warning,
+          backgroundColor: colors.badge.background,
+        };
+      case 'delivered':
+      case 'completed':
+        return {
+          label: t('delivered') || 'Delivered',
+          textColor: colors.status.success,
+          backgroundColor: colors.status.successBackground,
+        };
+      case 'cancelled':
+      case 'canceled':
+        return {
+          label: t('cancelled') || 'Cancelled',
+          textColor: colors.status.error,
+          backgroundColor: colors.status.errorBackground,
+        };
+      case 'open':
+      case 'active':
+        return {
+          label: t('active') || 'Active',
+          textColor: colors.status.info,
+          backgroundColor: colors.badge.background,
+        };
+      case 'pending':
+      default:
+        return {
+          label: t('pending') || 'Pending',
+          textColor: colors.text.secondary,
+          backgroundColor: colors.badge.background,
+        };
+    }
+  }, [normalizedStatus, t]);
 
   return (
     <TouchableOpacity
@@ -112,6 +152,11 @@ export const RequestCard: React.FC<RequestCardProps> = ({
       <View style={styles.badgeRow}>
         <View style={[styles.badge, { backgroundColor: cargoColors.background }]}>
           <Text style={[styles.badgeText, { color: cargoColors.text }]}>{cargoTypeLabel}</Text>
+        </View>
+        <View style={[styles.statusBadge, { backgroundColor: statusMeta.backgroundColor }]}> 
+          <Text style={[styles.statusBadgeText, { color: statusMeta.textColor }]}>
+            {statusMeta.label}
+          </Text>
         </View>
         <Text style={styles.metaText}>{weightText}</Text>
       </View>
@@ -222,6 +267,15 @@ const styles = StyleSheet.create({
   badgeText: {
     fontSize: fontSize.xs,
     color: colors.primary,
+    fontWeight: fontWeight.semibold,
+  },
+  statusBadge: {
+    borderRadius: borderRadius.md,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xxs,
+  },
+  statusBadgeText: {
+    fontSize: fontSize.xs,
     fontWeight: fontWeight.semibold,
   },
   routeBlock: {

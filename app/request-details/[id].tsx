@@ -115,6 +115,47 @@ export default function RequestDetailsScreen() {
 
   const flatListRef = useRef(null);
 
+  const normalizedRequestStatus = (request?.status || 'pending').toLowerCase();
+
+  const requestStatusMeta = React.useMemo(() => {
+    switch (normalizedRequestStatus) {
+      case 'in_transit':
+        return {
+          label: t('in_transit') || 'In transit',
+          textColor: colors.status.warning,
+          backgroundColor: colors.badge.background,
+        };
+      case 'delivered':
+      case 'completed':
+        return {
+          label: t('delivered') || 'Delivered',
+          textColor: colors.status.success,
+          backgroundColor: colors.status.successBackground,
+        };
+      case 'cancelled':
+      case 'canceled':
+        return {
+          label: t('cancelled') || 'Cancelled',
+          textColor: colors.status.error,
+          backgroundColor: colors.status.errorBackground,
+        };
+      case 'open':
+      case 'active':
+        return {
+          label: t('active') || 'Active',
+          textColor: colors.status.info,
+          backgroundColor: colors.badge.background,
+        };
+      case 'pending':
+      default:
+        return {
+          label: t('pending') || 'Pending',
+          textColor: colors.text.secondary,
+          backgroundColor: colors.badge.background,
+        };
+    }
+  }, [normalizedRequestStatus, t]);
+
   useEffect(() => {
     fetchRequest();
     fetchBids();
@@ -686,6 +727,11 @@ export default function RequestDetailsScreen() {
         return (
           <View style={styles.section}>
             <Text style={styles.title}>{request?.title}</Text>
+            <View style={[styles.requestStatusBadge, { backgroundColor: requestStatusMeta.backgroundColor }]}>
+              <Text style={[styles.requestStatusBadgeText, { color: requestStatusMeta.textColor }]}>
+                {requestStatusMeta.label}
+              </Text>
+            </View>
             <Text style={styles.description}>{request?.description}</Text>
 
             <View style={styles.infoGrid}>
@@ -1222,6 +1268,17 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: colors.text.primary,
     marginBottom: spacing.sm,
+  },
+  requestStatusBadge: {
+    alignSelf: 'flex-start',
+    borderRadius: borderRadius.md,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+    marginBottom: spacing.sm,
+  },
+  requestStatusBadgeText: {
+    fontSize: fontSize.sm,
+    fontWeight: '600',
   },
   description: {
     fontSize: fontSize.md,
