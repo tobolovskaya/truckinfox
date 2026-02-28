@@ -14,6 +14,10 @@ export interface CargoRequest {
   dimensions?: string;
   from_address: string;
   to_address: string;
+  from_lat?: number | null;
+  from_lng?: number | null;
+  to_lat?: number | null;
+  to_lng?: number | null;
   pickup_date: string;
   delivery_date?: string;
   price: number;
