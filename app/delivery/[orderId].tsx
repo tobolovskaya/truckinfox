@@ -13,6 +13,17 @@ type Coordinates = {
   longitude: number;
 };
 
+const toFiniteNumber = (value: unknown): number | null => {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return value;
+  }
+  if (typeof value === 'string') {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : null;
+  }
+  return null;
+};
+
 type DeliveryRow = {
   current_latitude: number | null;
   current_longitude: number | null;
@@ -55,6 +66,38 @@ export default function DeliveryTrackingScreen() {
       return;
     }
 
+    let isMounted = true;
+
+    const loadLatestTrackingByRequest = async (requestId: string) => {
+      const { data } = await supabase
+        .from('tracking')
+        .select('latitude,longitude,recorded_at')
+        .eq('request_id', requestId)
+        .order('recorded_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      const latitude = toFiniteNumber(data?.latitude);
+      const longitude = toFiniteNumber(data?.longitude);
+
+      if (!isMounted || latitude === null || longitude === null) {
+        return;
+      }
+
+      setDriverLocation({ latitude, longitude });
+    };
+
+    const loadRequestId = async (): Promise<string | null> => {
+      const { data } = await supabase
+        .from('orders')
+        .select('request_id')
+        .eq('id', orderIdString)
+        .maybeSingle();
+
+      const requestId = typeof data?.request_id === 'string' ? data.request_id : null;
+      return requestId;
+    };
+
     const loadDelivery = async () => {
       const { data } = await supabase
         .from('deliveries')
@@ -94,7 +137,42 @@ export default function DeliveryTrackingScreen() {
       setLoading(false);
     };
 
-    loadDelivery();
+    let trackingChannel: ReturnType<typeof supabase.channel> | null = null;
+
+    const initialize = async () => {
+      const requestId = await loadRequestId();
+      await loadDelivery();
+
+      if (requestId) {
+        await loadLatestTrackingByRequest(requestId);
+
+        trackingChannel = supabase
+          .channel(`tracking:${requestId}`)
+          .on(
+            'postgres_changes',
+            {
+              event: 'INSERT',
+              schema: 'public',
+              table: 'tracking',
+              filter: `request_id=eq.${requestId}`,
+            },
+            payload => {
+              const row = payload.new as Record<string, unknown>;
+              const latitude = toFiniteNumber(row.latitude);
+              const longitude = toFiniteNumber(row.longitude);
+
+              if (latitude === null || longitude === null) {
+                return;
+              }
+
+              setDriverLocation({ latitude, longitude });
+            }
+          )
+          .subscribe();
+      }
+    };
+
+    initialize();
 
     const channel = supabase
       .channel(`delivery:${orderIdString}`)
@@ -113,7 +191,9 @@ export default function DeliveryTrackingScreen() {
       .subscribe();
 
     return () => {
+      isMounted = false;
       channel.unsubscribe();
+      trackingChannel?.unsubscribe();
     };
   }, [orderIdString]);
 
