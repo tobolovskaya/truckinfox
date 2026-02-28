@@ -610,14 +610,24 @@ export default function RequestDetailsScreen() {
   };
 
   const handleDelete = () => {
+    if (deleting) {
+      return;
+    }
+
+    const bidCount = bids.length;
+    const requestTitle = request?.title || (t('cargoRequest') || 'Request');
+    const message =
+      bidCount > 0
+        ? `${t('confirmDeleteMessage') || 'Are you sure you want to delete this request? This action cannot be undone.'}\n\n"${requestTitle}"\n${bidCount} ${bidCount === 1 ? 'bid' : 'bids'} ${t('willBeDeleted') || 'will also be deleted'}.`
+        : `${t('confirmDeleteMessage') || 'Are you sure you want to delete this request? This action cannot be undone.'}\n\n"${requestTitle}"`;
+
     Alert.alert(
       t('confirmDelete') || 'Delete Request',
-      t('confirmDeleteMessage') ||
-        'Are you sure you want to delete this request? This action cannot be undone.',
+      message,
       [
-        { text: t('cancel'), style: 'cancel' },
+        { text: t('cancel') || 'Cancel', style: 'cancel' },
         {
-          text: t('delete'),
+          text: t('delete') || 'Delete',
           style: 'destructive',
           onPress: confirmDelete,
         },
