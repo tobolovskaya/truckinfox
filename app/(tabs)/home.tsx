@@ -22,6 +22,7 @@ import { HomeSearchBar } from '../../components/home/HomeSearchBar';
 import { HomeFilterSheet } from '../../components/home/HomeFilterSheet';
 import { HomeActiveFilters } from '../../components/home/HomeActiveFilters';
 import { EmptyState } from '../../components/EmptyState';
+import { Onboarding } from '../../components/Onboarding';
 import EmptyCargoIllustration from '../../assets/empty-cargo.svg';
 import { useTranslation } from 'react-i18next';
 import { useUnreadCount } from '../../hooks/useNotifications';
@@ -29,6 +30,7 @@ import { useDebounce } from '../../hooks/useDebounce';
 
 const HOME_FILTERS_STORAGE_KEY = 'home_filters';
 const LEGACY_HOME_FILTERS_STORAGE_KEY = '@home_marketplace_filters';
+const HOME_ONBOARDING_SEEN_KEY_PREFIX = 'home_onboarding_seen';
 
 type PersistedHomeState = {
   activeTab: 'all' | 'my';
@@ -51,6 +53,7 @@ export default function HomeScreen() {
   const [isFilterSheetVisible, setIsFilterSheetVisible] = useState(false);
   const [selectedCargoType, setSelectedCargoType] = useState('');
   const [isSearching, setIsSearching] = useState(false);
+  const [showOnboarding, setShowOnboarding] = useState(false);
   const [hasPersistedState, setHasPersistedState] = useState<boolean | null>(null);
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
   const { width } = useWindowDimensions();
@@ -176,6 +179,38 @@ export default function HomeScreen() {
   }, [activeTab, searchQuery, sortBy, selectedCargoType]);
 
   useEffect(() => {
+    let isMounted = true;
+
+    const checkOnboarding = async () => {
+      if (!user?.uid) {
+        if (isMounted) {
+          setShowOnboarding(false);
+        }
+        return;
+      }
+
+      try {
+        const onboardingKey = `${HOME_ONBOARDING_SEEN_KEY_PREFIX}:${user.uid}`;
+        const seen = await AsyncStorage.getItem(onboardingKey);
+        if (isMounted) {
+          setShowOnboarding(seen !== '1');
+        }
+      } catch (error) {
+        console.warn('Failed to load onboarding state', error);
+        if (isMounted) {
+          setShowOnboarding(true);
+        }
+      }
+    };
+
+    checkOnboarding();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [user?.uid]);
+
+  useEffect(() => {
     const hasQuery = searchQuery.trim().length > 0;
 
     if (!hasQuery) {
@@ -203,8 +238,24 @@ export default function HomeScreen() {
     setSelectedCargoType('');
   };
 
+  const handleOnboardingComplete = async () => {
+    setShowOnboarding(false);
+
+    if (!user?.uid) {
+      return;
+    }
+
+    try {
+      const onboardingKey = `${HOME_ONBOARDING_SEEN_KEY_PREFIX}:${user.uid}`;
+      await AsyncStorage.setItem(onboardingKey, '1');
+    } catch (error) {
+      console.warn('Failed to persist onboarding state', error);
+    }
+  };
+
   const displayName = currentUser?.full_name || user?.displayName || t('user') || '';
   const avatarUrl = currentUser?.avatar_url || user?.photoURL || undefined;
+  const onboardingUserType = currentUser?.user_type === 'carrier' ? 'carrier' : 'customer';
 
   return (
     <View style={styles.container}>
@@ -314,6 +365,12 @@ export default function HomeScreen() {
         onCargoTypeChange={setSelectedCargoType}
         onReset={handleResetFilters}
         cargoTypes={cargoTypes}
+      />
+
+      <Onboarding
+        visible={showOnboarding}
+        onComplete={handleOnboardingComplete}
+        userType={onboardingUserType}
       />
     </View>
   );
