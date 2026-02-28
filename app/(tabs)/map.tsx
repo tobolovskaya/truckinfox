@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef } from 'react';
 import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import MapView, { Marker } from 'react-native-maps';
@@ -6,6 +6,7 @@ import { colors, spacing, fontSize, fontWeight } from '../../lib/sharedStyles';
 import { ScreenHeader } from '../../components/ScreenHeader';
 import { useCargoRequests } from '../../hooks/useCargoRequests';
 import { useAuth } from '../../contexts/AuthContext';
+import MapSuperCluster from '../../lib/MapSuperCluster';
 
 const DEFAULT_REGION = {
   latitude: 59.9139,
@@ -13,6 +14,7 @@ const DEFAULT_REGION = {
   latitudeDelta: 5,
   longitudeDelta: 5,
 };
+const CLUSTER_THRESHOLD = 24;
 
 const toFiniteNumber = (value: unknown): number | null => {
   if (typeof value === 'number' && Number.isFinite(value)) {
@@ -81,6 +83,35 @@ export default function MapScreen() {
       }
     : DEFAULT_REGION;
 
+  const useClustering = markerItems.length >= CLUSTER_THRESHOLD;
+
+  const clusterData = useMemo(
+    () => markerItems.map(item => ({ ...item, location: item.coordinate })),
+    [markerItems]
+  );
+
+  const renderMarker = useCallback(
+    (item: {
+      id: string;
+      title: string;
+      fromAddress: string;
+      toAddress: string;
+      coordinate: { latitude: number; longitude: number };
+    }) => (
+      <Marker
+        key={item.id}
+        identifier={item.id}
+        coordinate={item.coordinate}
+        title={item.title}
+        description={`${item.fromAddress} → ${item.toAddress}`}
+        pinColor={colors.primary}
+        onPress={() => router.push(`/request-details/${item.id}`)}
+        onCalloutPress={() => router.push(`/request-details/${item.id}`)}
+      />
+    ),
+    [router]
+  );
+
   const fitKey = useMemo(
     () =>
       markerItems
@@ -90,6 +121,10 @@ export default function MapScreen() {
   );
 
   useEffect(() => {
+    if (useClustering) {
+      return;
+    }
+
     if (markerItems.length < 2) {
       lastFitKeyRef.current = '';
       if (fitDebounceRef.current) {
@@ -125,7 +160,7 @@ export default function MapScreen() {
         fitDebounceRef.current = null;
       }
     };
-  }, [fitKey, markerItems]);
+  }, [fitKey, markerItems, useClustering]);
 
   return (
     <View style={styles.container}>
@@ -140,19 +175,18 @@ export default function MapScreen() {
           <Text style={styles.emptyTitle}>No requests with coordinates</Text>
           <Text style={styles.emptyText}>Open requests will appear here when location data is available.</Text>
         </View>
+      ) : useClustering ? (
+        <MapSuperCluster
+          style={styles.map}
+          initialRegion={initialRegion}
+          data={clusterData}
+          renderMarker={renderMarker}
+          radius={40}
+          clusteringEnabled
+        />
       ) : (
         <MapView ref={mapRef} style={styles.map} initialRegion={initialRegion}>
-          {markerItems.map(item => (
-            <Marker
-              key={item.id}
-              coordinate={item.coordinate}
-              title={item.title}
-              description={`${item.fromAddress} → ${item.toAddress}`}
-              pinColor={colors.primary}
-              onPress={() => router.push(`/request-details/${item.id}`)}
-              onCalloutPress={() => router.push(`/request-details/${item.id}`)}
-            />
-          ))}
+          {markerItems.map(item => renderMarker(item))}
         </MapView>
       )}
     </View>
