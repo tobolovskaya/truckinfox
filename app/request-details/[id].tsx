@@ -4,7 +4,9 @@ import {
   Alert,
   Dimensions,
   Image,
+  Linking,
   Modal,
+  Platform,
   StatusBar,
   StyleSheet,
   Text,
@@ -636,6 +638,39 @@ export default function RequestDetailsScreen() {
     );
   };
 
+  const handleOpenInNavigator = async () => {
+    const fromLat = toFiniteNumber(request?.from_lat);
+    const fromLng = toFiniteNumber(request?.from_lng);
+    const toLat = toFiniteNumber(request?.to_lat);
+    const toLng = toFiniteNumber(request?.to_lng);
+
+    const origin =
+      fromLat !== null && fromLng !== null
+        ? `${fromLat},${fromLng}`
+        : request?.from_address || '';
+    const destination =
+      toLat !== null && toLng !== null
+        ? `${toLat},${toLng}`
+        : request?.to_address || '';
+
+    if (!destination) {
+      toast.error(t('couldNotOpenLink') || 'Could not open link');
+      return;
+    }
+
+    const appleMapsUrl = `http://maps.apple.com/?saddr=${encodeURIComponent(origin)}&daddr=${encodeURIComponent(destination)}&dirflg=d`;
+    const googleMapsUrl = `https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(origin)}&destination=${encodeURIComponent(destination)}&travelmode=driving`;
+    const preferredUrl = Platform.OS === 'ios' ? appleMapsUrl : googleMapsUrl;
+
+    try {
+      const canOpenPreferred = await Linking.canOpenURL(preferredUrl);
+      await Linking.openURL(canOpenPreferred ? preferredUrl : googleMapsUrl);
+    } catch (error) {
+      console.error('Failed to open navigator:', error);
+      toast.error(t('couldNotOpenLink') || 'Could not open link');
+    }
+  };
+
   const confirmDelete = async () => {
     setDeleting(true);
     triggerHapticFeedback.medium();
@@ -875,6 +910,18 @@ export default function RequestDetailsScreen() {
                   </Text>
                 </View>
               )}
+
+              <TouchableOpacity
+                style={styles.navigationButton}
+                onPress={handleOpenInNavigator}
+                accessibilityRole="button"
+                accessibilityLabel={t('openInNavigator') || 'Open in navigator'}
+              >
+                <Ionicons name="navigate" size={18} color={colors.white} />
+                <Text style={styles.navigationButtonText}>
+                  {t('openInNavigator') || 'Open in navigator'}
+                </Text>
+              </TouchableOpacity>
             </View>
           );
         } else {
@@ -915,6 +962,18 @@ export default function RequestDetailsScreen() {
                   </Text>
                 </View>
               )}
+
+              <TouchableOpacity
+                style={styles.navigationButton}
+                onPress={handleOpenInNavigator}
+                accessibilityRole="button"
+                accessibilityLabel={t('openInNavigator') || 'Open in navigator'}
+              >
+                <Ionicons name="navigate" size={18} color={colors.white} />
+                <Text style={styles.navigationButtonText}>
+                  {t('openInNavigator') || 'Open in navigator'}
+                </Text>
+              </TouchableOpacity>
             </View>
           );
         }
@@ -1377,6 +1436,22 @@ const styles = StyleSheet.create({
   distanceText: {
     fontSize: fontSize.sm,
     color: colors.text.secondary,
+  },
+  navigationButton: {
+    marginTop: spacing.md,
+    minHeight: TOUCH_TARGET.MIN,
+    borderRadius: borderRadius.md,
+    backgroundColor: colors.primary,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.sm,
+    paddingHorizontal: spacing.lg,
+  },
+  navigationButtonText: {
+    fontSize: fontSize.md,
+    fontWeight: '600',
+    color: colors.white,
   },
   customerCard: {
     flexDirection: 'row',

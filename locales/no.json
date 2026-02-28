@@ -647,5 +647,6 @@
   "driver": "Sjåfør",
   "followDriverLive": "Følg sjåførens posisjon i sanntid.",
   "openLiveMap": "Åpne live-kart",
+  "openInNavigator": "Åpne i navigasjon",
   "signatureUnavailable": "Signatur utilgjengelig"
 }
