@@ -6,10 +6,16 @@ import { useTranslation } from 'react-i18next';
 interface HomeTabBarProps {
   activeTab: 'all' | 'my';
   onTabChange: (_tab: 'all' | 'my') => void;
+  myRequestsCount?: number;
 }
 
-export const HomeTabBar: React.FC<HomeTabBarProps> = ({ activeTab, onTabChange }) => {
+export const HomeTabBar: React.FC<HomeTabBarProps> = ({
+  activeTab,
+  onTabChange,
+  myRequestsCount = 0,
+}) => {
   const { t } = useTranslation();
+  const hasMyRequestsBadge = myRequestsCount > 0;
 
   return (
     <View style={styles.tabRow}>
@@ -29,9 +35,18 @@ export const HomeTabBar: React.FC<HomeTabBarProps> = ({ activeTab, onTabChange }
         accessibilityRole="button"
         accessibilityLabel={t('myRequests')}
       >
-        <Text style={[styles.tabButtonText, activeTab === 'my' && styles.tabButtonTextActive]}>
-          {t('myRequests')}
-        </Text>
+        <View style={styles.tabLabelRow}>
+          <Text style={[styles.tabButtonText, activeTab === 'my' && styles.tabButtonTextActive]}>
+            {t('myRequests')}
+          </Text>
+          {hasMyRequestsBadge ? (
+            <View style={[styles.badge, activeTab === 'my' && styles.badgeActive]}>
+              <Text style={[styles.badgeText, activeTab === 'my' && styles.badgeTextActive]}>
+                {myRequestsCount > 99 ? '99+' : myRequestsCount}
+              </Text>
+            </View>
+          ) : null}
+        </View>
       </TouchableOpacity>
     </View>
   );
@@ -54,6 +69,11 @@ const styles = StyleSheet.create({
     borderBottomColor: colors.border.light,
     backgroundColor: colors.background,
   },
+  tabLabelRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+  },
   tabButtonActive: {
     borderBottomColor: colors.primary,
     backgroundColor: colors.white,
@@ -66,5 +86,25 @@ const styles = StyleSheet.create({
   tabButtonTextActive: {
     color: colors.primary,
     fontWeight: fontWeight.semibold,
+  },
+  badge: {
+    minWidth: 20,
+    height: 20,
+    paddingHorizontal: spacing.xs,
+    borderRadius: 10,
+    backgroundColor: colors.primaryLight,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  badgeActive: {
+    backgroundColor: colors.primary,
+  },
+  badgeText: {
+    fontSize: fontSize.xs,
+    fontWeight: fontWeight.semibold,
+    color: colors.primary,
+  },
+  badgeTextActive: {
+    color: colors.white,
   },
 });

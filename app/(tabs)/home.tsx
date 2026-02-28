@@ -27,6 +27,7 @@ import EmptyCargoIllustration from '../../assets/empty-cargo.svg';
 import { useTranslation } from 'react-i18next';
 import { useUnreadCount } from '../../hooks/useNotifications';
 import { useDebounce } from '../../hooks/useDebounce';
+import { supabase } from '../../lib/supabase';
 
 const HOME_FILTERS_STORAGE_KEY = 'home_filters';
 const LEGACY_HOME_FILTERS_STORAGE_KEY = '@home_marketplace_filters';
@@ -54,6 +55,7 @@ export default function HomeScreen() {
   const [selectedCargoType, setSelectedCargoType] = useState('');
   const [isSearching, setIsSearching] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
+  const [myActiveRequestsCount, setMyActiveRequestsCount] = useState(0);
   const [hasPersistedState, setHasPersistedState] = useState<boolean | null>(null);
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
   const { width } = useWindowDimensions();
@@ -229,6 +231,55 @@ export default function HomeScreen() {
     }
   }, [loading]);
 
+  useEffect(() => {
+    if (!user?.uid) {
+      setMyActiveRequestsCount(0);
+      return;
+    }
+
+    let isMounted = true;
+
+    const fetchMyActiveRequestsCount = async () => {
+      const { count, error } = await supabase
+        .from('cargo_requests')
+        .select('id', { head: true, count: 'exact' })
+        .eq('customer_id', user.uid)
+        .in('status', ['active', 'open']);
+
+      if (error) {
+        console.warn('Failed to fetch active request count', error);
+        return;
+      }
+
+      if (isMounted) {
+        setMyActiveRequestsCount(count ?? 0);
+      }
+    };
+
+    fetchMyActiveRequestsCount();
+
+    const channel = supabase
+      .channel(`home:my-active-count:${user.uid}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'cargo_requests',
+          filter: `customer_id=eq.${user.uid}`,
+        },
+        () => {
+          fetchMyActiveRequestsCount();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      isMounted = false;
+      channel.unsubscribe();
+    };
+  }, [user?.uid]);
+
   const handleOpenRequest = (requestId: string) => {
     router.push(`/request-details/${requestId}`);
   };
@@ -265,7 +316,11 @@ export default function HomeScreen() {
       {/* Sticky Controls: Tabs + Search + Filters */}
       <View style={[styles.stickyControls, { paddingHorizontal: horizontalPadding }]}>
         {/* Tabs */}
-        <HomeTabBar activeTab={activeTab} onTabChange={setActiveTab} />
+        <HomeTabBar
+          activeTab={activeTab}
+          onTabChange={setActiveTab}
+          myRequestsCount={myActiveRequestsCount}
+        />
 
         {/* Search Bar + Filter Button */}
         <HomeSearchBar
