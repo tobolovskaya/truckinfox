@@ -6,6 +6,7 @@ interface CurrentUser {
   avatar_url?: string;
   user_type?: string;
   phone?: string;
+  country_code?: string;
 }
 
 export function useCurrentUser(userId?: string) {

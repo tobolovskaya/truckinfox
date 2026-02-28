@@ -57,6 +57,7 @@ interface UseCargoRequestsOptions {
   sortBy: SortOption;
   searchQuery?: string;
   userId?: string;
+  countryCode?: string;
 }
 
 interface CargoRequestsPage {
@@ -71,6 +72,7 @@ type CargoRequestsQueryKey = [
   FilterState,
   SortOption,
   string,
+  string | undefined,
   string | undefined
 ];
 
@@ -293,6 +295,9 @@ const fetchCargoRequestsPage = async (
   if (options.activeTab === 'my' && options.userId) {
     requestQuery = requestQuery.eq('customer_id', options.userId).in('status', ['active', 'open']);
   } else {
+    if (options.countryCode) {
+      requestQuery = requestQuery.eq('country_code', options.countryCode);
+    }
     if (options.filters.cargo_type) {
       requestQuery = requestQuery.eq('cargo_type', options.filters.cargo_type);
     }
@@ -350,12 +355,14 @@ export function useCargoRequests({
   sortBy,
   searchQuery = '',
   userId,
+  countryCode,
 }: UseCargoRequestsOptions) {
   const queryClient = useQueryClient();
+  const normalizedCountryCode = countryCode?.toUpperCase() || undefined;
 
   const queryKey = useMemo<CargoRequestsQueryKey>(
-    () => ['cargoRequests', activeTab, filters, sortBy, searchQuery, userId],
-    [activeTab, filters, sortBy, searchQuery, userId]
+    () => ['cargoRequests', activeTab, filters, sortBy, searchQuery, userId, normalizedCountryCode],
+    [activeTab, filters, sortBy, searchQuery, userId, normalizedCountryCode]
   );
 
   const {
@@ -376,7 +383,17 @@ export function useCargoRequests({
   >({
     queryKey,
     queryFn: ({ pageParam }) =>
-      fetchCargoRequestsPage({ activeTab, filters, sortBy, searchQuery, userId }, pageParam),
+      fetchCargoRequestsPage(
+        {
+          activeTab,
+          filters,
+          sortBy,
+          searchQuery,
+          userId,
+          countryCode: normalizedCountryCode,
+        },
+        pageParam
+      ),
     initialPageParam: 0,
     getNextPageParam: lastPage => (lastPage.hasMore && lastPage.nextOffset !== null ? lastPage.nextOffset : undefined),
     staleTime: 5 * 60 * 1000,
@@ -436,6 +453,37 @@ export function useCargoRequests({
 
     Alert.alert(i18n.t('error'), errorMessage);
   }, [error]);
+
+  useEffect(() => {
+    const realtimeFilter =
+      activeTab === 'all'
+        ? normalizedCountryCode
+          ? `country_code=eq.${normalizedCountryCode}`
+          : undefined
+        : activeTab === 'my' && userId
+          ? `customer_id=eq.${userId}`
+          : undefined;
+
+    const channel = supabase
+      .channel(`cargo_requests:home:${activeTab}:${normalizedCountryCode || 'all'}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'cargo_requests',
+          filter: realtimeFilter,
+        },
+        () => {
+          queryClient.invalidateQueries({ queryKey });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      channel.unsubscribe();
+    };
+  }, [activeTab, normalizedCountryCode, queryClient, queryKey, userId]);
 
   return {
     requests,

@@ -84,6 +84,7 @@ export default function HomeScreen() {
       sortBy,
       searchQuery: debouncedSearchQuery,
       userId: user?.uid,
+      countryCode: currentUser?.country_code,
     });
 
   const horizontalPadding = width < 360 ? spacing.md : spacing.lg;
