@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, ActivityIndicator, Image } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { ScreenHeader } from '../../components/ScreenHeader';
+import { SkeletonLoader } from '../../components/SkeletonLoader';
 import { supabase } from '../../lib/supabase';
 import { theme } from '../../theme/theme';
 import {
@@ -201,10 +202,18 @@ export default function UserProfileScreen() {
   if (loading) {
     return (
       <SafeAreaView style={styles.container} edges={['bottom']}>
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={theme.iconColors.primary} />
-          <Text style={styles.loadingText}>{t('loading')}</Text>
-        </View>
+        <ScreenHeader title="User Profile" onBackPress={() => router.back()} />
+        <ScrollView style={styles.scrollView} contentContainerStyle={styles.profileSkeletonContent}>
+          <View style={styles.profileSkeletonBlock}>
+            <SkeletonLoader variant="text" count={1} />
+          </View>
+          <View style={styles.profileSkeletonBlock}>
+            <SkeletonLoader variant="stats" count={1} />
+          </View>
+          <View style={styles.profileSkeletonBlock}>
+            <SkeletonLoader variant="list" count={3} />
+          </View>
+        </ScrollView>
       </SafeAreaView>
     );
   }
@@ -318,6 +327,16 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  profileSkeletonContent: {
+    padding: spacing.xl,
+    gap: spacing.lg,
+  },
+  profileSkeletonBlock: {
+    backgroundColor: colors.white,
+    borderRadius: borderRadius.lg,
+    padding: spacing.lg,
+    ...shadows.sm,
   },
   loadingText: {
     fontSize: fontSize.md,

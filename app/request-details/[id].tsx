@@ -25,6 +25,7 @@ import { triggerHapticFeedback } from '../../utils/haptics';
 import { SuccessAnimation } from '../../components/SuccessAnimation';
 import { LazyImage } from '../../components/LazyImage';
 import Avatar from '../../components/Avatar';
+import { SkeletonLoader } from '../../components/SkeletonLoader';
 import { ScreenHeader } from '../../components/ScreenHeader';
 import {
   trackBidSubmitted,
@@ -1158,9 +1159,20 @@ export default function RequestDetailsScreen() {
 
   if (loading) {
     return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color={colors.primary} />
-        <Text style={styles.loadingText}>Laster forespørsel...</Text>
+      <View style={styles.container}>
+        <StatusBar barStyle="dark-content" />
+        <ScreenHeader title={t('requestDetails')} onBackPress={() => router.back()} />
+        <View style={styles.loadingContainer}>
+          <View style={styles.loadingSkeletonSection}>
+            <SkeletonLoader variant="text" count={1} />
+          </View>
+          <View style={styles.loadingSkeletonSection}>
+            <SkeletonLoader variant="card" count={1} compact={true} />
+          </View>
+          <View style={styles.loadingSkeletonSection}>
+            <SkeletonLoader variant="list" count={2} />
+          </View>
+        </View>
       </View>
     );
   }
@@ -1288,9 +1300,12 @@ const styles = StyleSheet.create({
   },
   loadingContainer: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    padding: spacing.lg,
     backgroundColor: colors.backgroundLight,
+    gap: spacing.md,
+  },
+  loadingSkeletonSection: {
+    width: '100%',
   },
   loadingText: {
     marginTop: spacing.md,
