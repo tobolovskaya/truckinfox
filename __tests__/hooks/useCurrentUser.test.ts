@@ -66,6 +66,7 @@ describe('useCurrentUser', () => {
   });
 
   it('should handle profile fetch errors gracefully', async () => {
+    const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => undefined);
     (getDocument as jest.Mock).mockRejectedValue(new Error('Firestore error'));
 
     const { result } = renderHook(() => useCurrentUser('user123'));
@@ -74,5 +75,7 @@ describe('useCurrentUser', () => {
       expect(result.current.currentUser).toBeNull();
       expect(result.current.loading).toBe(false);
     });
+
+    consoleErrorSpy.mockRestore();
   });
 });

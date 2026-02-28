@@ -11,8 +11,15 @@ jest.mock('../../utils/fetchWithTimeout', () => ({
 }));
 
 describe('Google Places Utils', () => {
+  let consoleErrorSpy: jest.SpyInstance;
+
   beforeEach(() => {
     jest.clearAllMocks();
+    consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => undefined);
+  });
+
+  afterEach(() => {
+    consoleErrorSpy.mockRestore();
   });
 
   describe('searchNorwegianPlaces', () => {

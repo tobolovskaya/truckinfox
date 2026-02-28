@@ -3,6 +3,7 @@ import * as Location from 'expo-location';
 import { Alert, Linking, Platform } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { findNearbyCargoRequests } from '../utils/geoSearch';
+import { supabase } from '../lib/supabase';
 
 type NearbyRequest = Awaited<ReturnType<typeof findNearbyCargoRequests>>[number];
 
@@ -45,7 +46,11 @@ export interface UserLocation {
  *
  * return <RequestsList requests={requests} userLocation={userLocation} />;
  */
-export function useNearbyRequests(radiusKm: number = 50, searchType: 'from' | 'to' = 'from') {
+export function useNearbyRequests(
+  radiusKm: number = 50,
+  searchType: 'from' | 'to' = 'from',
+  countryCode?: string
+) {
   const { t } = useTranslation();
   const [requests, setRequests] = useState<NearbyRequest[]>([]);
   const [loading, setLoading] = useState(true);
@@ -53,6 +58,7 @@ export function useNearbyRequests(radiusKm: number = 50, searchType: 'from' | 't
   const [permissionDenied, setPermissionDenied] = useState(false);
   const [permissionStatus, setPermissionStatus] = useState<LocationPermissionStatus | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const normalizedCountryCode = countryCode?.toUpperCase();
 
   /**
    * Request location permission with user-friendly explanation
@@ -216,7 +222,8 @@ export function useNearbyRequests(radiusKm: number = 50, searchType: 'from' | 't
         location.latitude,
         location.longitude,
         radiusKm,
-        searchType
+        searchType,
+        normalizedCountryCode
       );
 
       console.log(`✅ Found ${nearby.length} nearby cargo requests`);
@@ -299,7 +306,37 @@ export function useNearbyRequests(radiusKm: number = 50, searchType: 'from' | 't
   useEffect(() => {
     initialize();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [radiusKm, searchType]);
+  }, [radiusKm, searchType, normalizedCountryCode]);
+
+  useEffect(() => {
+    if (!userLocation) {
+      return;
+    }
+
+    const realtimeFilter = normalizedCountryCode
+      ? `country_code=eq.${normalizedCountryCode}`
+      : undefined;
+
+    const channel = supabase
+      .channel(`nearby:cargo:${searchType}:${normalizedCountryCode || 'all'}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'cargo_requests',
+          filter: realtimeFilter,
+        },
+        async () => {
+          await fetchNearbyRequests(userLocation);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      channel.unsubscribe();
+    };
+  }, [searchType, normalizedCountryCode, userLocation]);
 
   return {
     /**

@@ -1,4 +1,5 @@
 import { renderHook, waitFor } from '@testing-library/react-native';
+import { act } from 'react-test-renderer';
 import { useNotifications } from '../../hooks/useNotifications';
 import { useAuth } from '../../contexts/AuthContext';
 import {
@@ -85,7 +86,9 @@ describe('useNotifications', () => {
       expect(result.current.loading).toBe(false);
     });
 
-    await result.current.markAsRead('notif1');
+    await act(async () => {
+      await result.current.markAsRead('notif1');
+    });
     expect(markNotificationAsRead).toHaveBeenCalledWith('notif1');
   });
 
@@ -96,12 +99,15 @@ describe('useNotifications', () => {
       expect(result.current.loading).toBe(false);
     });
 
-    await result.current.markAllAsRead();
+    await act(async () => {
+      await result.current.markAllAsRead();
+    });
     expect(markAllNotificationsAsRead).toHaveBeenCalled();
   });
 
   it('should handle action errors gracefully', async () => {
     const expectedError = new Error('mark failed');
+    const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => undefined);
     (markNotificationAsRead as jest.Mock).mockRejectedValueOnce(expectedError);
 
     const { result } = renderHook(() => useNotifications());
@@ -110,11 +116,15 @@ describe('useNotifications', () => {
       expect(result.current.loading).toBe(false);
     });
 
-    await result.current.markAsRead('notif1');
+    await act(async () => {
+      await result.current.markAsRead('notif1');
+    });
 
     await waitFor(() => {
       expect(result.current.error).toEqual(expectedError);
     });
+
+    consoleErrorSpy.mockRestore();
   });
 
   it('should reset state when user is not authenticated', async () => {
@@ -153,7 +163,9 @@ describe('useNotifications', () => {
       expect(result.current.loading).toBe(false);
     });
 
-    result.current.refresh();
+    act(() => {
+      result.current.refresh();
+    });
 
     await waitFor(() => {
       expect(subscribeToNotifications).toHaveBeenCalledTimes(2);

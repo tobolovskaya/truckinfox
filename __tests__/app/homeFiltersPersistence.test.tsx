@@ -72,6 +72,11 @@ jest.mock('../../assets/empty-cargo.svg', () => () => null);
 describe('Home filters persistence migration', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    jest.spyOn(console, 'info').mockImplementation(() => undefined);
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
   });
 
   it('migrates legacy key to home_filters once on load', async () => {

@@ -65,7 +65,8 @@ export async function findNearbyCargoRequests(
   centerLat: number,
   centerLng: number,
   radiusInKm: number,
-  searchType: 'from' | 'to' = 'from'
+  searchType: 'from' | 'to' = 'from',
+  countryCode?: string
 ): Promise<CargoRequestResult[]> {
   try {
     const center: GeoPointTuple = [centerLat, centerLng];
@@ -82,7 +83,7 @@ export async function findNearbyCargoRequests(
     const latField = searchType === 'from' ? 'from_lat' : 'to_lat';
     const lngField = searchType === 'from' ? 'from_lng' : 'to_lng';
 
-    const { data, error } = await supabase
+    let query = supabase
       .from('cargo_requests')
       .select('*')
       .in('status', ['open', 'active', 'bidding'])
@@ -91,6 +92,12 @@ export async function findNearbyCargoRequests(
       .gte(lngField, centerLng - lngDelta)
       .lte(lngField, centerLng + lngDelta)
       .limit(500);
+
+    if (countryCode) {
+      query = query.eq('country_code', countryCode.toUpperCase());
+    }
+
+    const { data, error } = await query;
 
     if (error) {
       throw error;
@@ -179,14 +186,21 @@ export async function findCargoAlongRoute(
   fromLng: number,
   toLat: number,
   toLng: number,
-  radiusInKm: number = 25
+  radiusInKm: number = 25,
+  countryCode?: string
 ): Promise<CargoRequestResult[]> {
   try {
     // Search near route start
-    const nearStartPromise = findNearbyCargoRequests(fromLat, fromLng, radiusInKm, 'from');
+    const nearStartPromise = findNearbyCargoRequests(
+      fromLat,
+      fromLng,
+      radiusInKm,
+      'from',
+      countryCode
+    );
 
     // Search near route end
-    const nearEndPromise = findNearbyCargoRequests(toLat, toLng, radiusInKm, 'to');
+    const nearEndPromise = findNearbyCargoRequests(toLat, toLng, radiusInKm, 'to', countryCode);
 
     const [nearStart, nearEnd] = await Promise.all([nearStartPromise, nearEndPromise]);
 
@@ -250,6 +264,7 @@ export async function searchCargoRequests(options: {
   centerLng: number;
   radiusInKm: number;
   searchType?: 'from' | 'to';
+  countryCode?: string;
   cargoTypes?: string[];
   maxWeight?: number;
   minPrice?: number;
@@ -261,7 +276,8 @@ export async function searchCargoRequests(options: {
       options.centerLat,
       options.centerLng,
       options.radiusInKm,
-      options.searchType || 'from'
+      options.searchType || 'from',
+      options.countryCode
     );
 
     // Apply additional filters

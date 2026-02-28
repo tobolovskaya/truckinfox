@@ -1,16 +1,27 @@
 import { renderHook, waitFor } from '@testing-library/react-native';
 import { useCargoRequests } from '../../hooks/useCargoRequests';
 import { useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
+import { supabase } from '../../lib/supabase';
 
 jest.mock('@tanstack/react-query', () => ({
   useInfiniteQuery: jest.fn(),
   useQueryClient: jest.fn(),
 }));
 
+jest.mock('../../lib/supabase', () => ({
+  supabase: {
+    channel: jest.fn(),
+  },
+}));
+
 describe('useCargoRequests', () => {
   const mockSetQueryData = jest.fn();
+  const mockInvalidateQueries = jest.fn();
   const mockRefetch = jest.fn();
   const mockFetchNextPage = jest.fn();
+  const mockUnsubscribe = jest.fn();
+  const mockSubscribe = jest.fn();
+  const mockOn = jest.fn();
 
   const defaultQueryResult = {
     data: {
@@ -44,8 +55,16 @@ describe('useCargoRequests', () => {
     jest.clearAllMocks();
     (useQueryClient as jest.Mock).mockReturnValue({
       setQueryData: mockSetQueryData,
+      invalidateQueries: mockInvalidateQueries,
     });
     (useInfiniteQuery as jest.Mock).mockReturnValue(defaultQueryResult);
+
+    mockOn.mockImplementation((_event, _payload, callback) => {
+      mockOn.lastCallback = callback;
+      return { subscribe: mockSubscribe };
+    });
+    mockSubscribe.mockReturnValue({ unsubscribe: mockUnsubscribe });
+    (supabase.channel as jest.Mock).mockReturnValue({ on: mockOn, unsubscribe: mockUnsubscribe });
   });
 
   it('should return flattened requests from paginated data', async () => {
@@ -162,6 +181,7 @@ describe('useCargoRequests', () => {
         'newest',
         '',
         undefined,
+        undefined,
       ],
       expect.any(Function)
     );
@@ -216,5 +236,73 @@ describe('useCargoRequests', () => {
     );
 
     expect(useInfiniteQuery).toHaveBeenCalled();
+  });
+
+  it('should subscribe with country filter for all tab', () => {
+    renderHook(() =>
+      useCargoRequests({
+        activeTab: 'all',
+        filters: { city: '', cargo_type: '', price_min: '', price_max: '', price_type: '' },
+        sortBy: 'newest',
+        countryCode: 'no',
+      })
+    );
+
+    expect(mockOn).toHaveBeenCalledWith(
+      'postgres_changes',
+      expect.objectContaining({
+        table: 'cargo_requests',
+        filter: 'country_code=eq.NO',
+      }),
+      expect.any(Function)
+    );
+  });
+
+  it('should subscribe with customer filter for my tab', () => {
+    renderHook(() =>
+      useCargoRequests({
+        activeTab: 'my',
+        filters: { city: '', cargo_type: '', price_min: '', price_max: '', price_type: '' },
+        sortBy: 'newest',
+        userId: 'user-123',
+      })
+    );
+
+    expect(mockOn).toHaveBeenCalledWith(
+      'postgres_changes',
+      expect.objectContaining({
+        table: 'cargo_requests',
+        filter: 'customer_id=eq.user-123',
+      }),
+      expect.any(Function)
+    );
+  });
+
+  it('should invalidate query on realtime event', () => {
+    renderHook(() =>
+      useCargoRequests({
+        activeTab: 'all',
+        filters: { city: '', cargo_type: '', price_min: '', price_max: '', price_type: '' },
+        sortBy: 'newest',
+        countryCode: 'NO',
+      })
+    );
+
+    const callback = mockOn.lastCallback as (() => void) | undefined;
+    expect(typeof callback).toBe('function');
+
+    callback?.();
+
+    expect(mockInvalidateQueries).toHaveBeenCalledWith({
+      queryKey: [
+        'cargoRequests',
+        'all',
+        { city: '', cargo_type: '', price_min: '', price_max: '', price_type: '' },
+        'newest',
+        '',
+        undefined,
+        'NO',
+      ],
+    });
   });
 });
