@@ -297,6 +297,8 @@
   "messageCarrier": "Message Carrier",
   "messageCustomer": "Message Customer",
   "pending": "Pending",
+  "statusQuickNew": "New",
+  "statusQuickYours": "Yours",
   "waiting": "Waiting",
   "accepted": "Accepted",
   "rejected": "Rejected",

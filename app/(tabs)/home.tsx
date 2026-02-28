@@ -403,6 +403,7 @@ export default function HomeScreen() {
             <RequestCard
               request={item}
               onPress={() => handleOpenRequest(item.id)}
+              currentUserId={user?.uid}
               showFavorite={false}
               compact
               cardStyle={{ width: cardWidth, marginBottom: gridGap }}

@@ -38,8 +38,11 @@ export interface CargoRequest {
   price_type?: string;
   status?: string;
   created_at?: string;
+  user_id?: string;
+  customer_id?: string;
   distance?: number;
   images?: string[];
+  bids?: Array<{ status?: string }>;
   users?: {
     full_name?: string;
   };
@@ -53,6 +56,7 @@ interface RequestCardProps {
   showFavorite?: boolean;
   compact?: boolean;
   cardStyle?: StyleProp<ViewStyle>;
+  currentUserId?: string;
 }
 
 export const RequestCard: React.FC<RequestCardProps> = ({
@@ -62,6 +66,7 @@ export const RequestCard: React.FC<RequestCardProps> = ({
   showFavorite = true,
   compact = false,
   cardStyle,
+  currentUserId,
 }) => {
   const { t } = useTranslation();
   const title = request.title || request.cargo_type || t('cargoRequest');
@@ -83,6 +88,58 @@ export const RequestCard: React.FC<RequestCardProps> = ({
   const cargoColors = getCargoTypeColors(cargoType);
   const cargoIcon = getCargoTypeIcon(cargoType);
   const normalizedStatus = (request.status || 'pending').toLowerCase();
+  const requestOwnerId = request.customer_id || request.user_id;
+  const isOwnRequest = Boolean(currentUserId && requestOwnerId && currentUserId === requestOwnerId);
+  const hasAcceptedBid =
+    Boolean(request.bids?.some(bid => (bid.status || '').toLowerCase() === 'accepted')) ||
+    ['in_transit', 'delivered', 'completed'].includes(normalizedStatus);
+  const isWaitingRequest = !hasAcceptedBid && ['pending', 'open', 'active'].includes(normalizedStatus);
+  const isNewRequest = React.useMemo(() => {
+    if (!request.created_at) {
+      return false;
+    }
+    const createdAtMs = Date.parse(request.created_at);
+    if (Number.isNaN(createdAtMs)) {
+      return false;
+    }
+    return Date.now() - createdAtMs <= 24 * 60 * 60 * 1000;
+  }, [request.created_at]);
+
+  const quickBadges = React.useMemo(() => {
+    const badges: Array<{ label: string; textColor: string; backgroundColor: string }> = [];
+
+    if (isOwnRequest) {
+      badges.push({
+        label: t('statusQuickYours') || 'Yours',
+        textColor: colors.primary,
+        backgroundColor: colors.primaryLight,
+      });
+    }
+
+    if (hasAcceptedBid) {
+      badges.push({
+        label: t('accepted') || 'Accepted',
+        textColor: colors.status.success,
+        backgroundColor: colors.status.successBackground,
+      });
+    } else if (isWaitingRequest) {
+      badges.push({
+        label: t('pending') || 'Pending',
+        textColor: colors.text.secondary,
+        backgroundColor: colors.badge.background,
+      });
+    }
+
+    if (isNewRequest) {
+      badges.push({
+        label: t('statusQuickNew') || 'New',
+        textColor: colors.status.info,
+        backgroundColor: colors.badge.background,
+      });
+    }
+
+    return badges.slice(0, 3);
+  }, [hasAcceptedBid, isNewRequest, isOwnRequest, isWaitingRequest, t]);
 
   const statusMeta = React.useMemo(() => {
     switch (normalizedStatus) {
@@ -160,6 +217,19 @@ export const RequestCard: React.FC<RequestCardProps> = ({
         </View>
         <Text style={styles.metaText}>{weightText}</Text>
       </View>
+
+      {quickBadges.length > 0 ? (
+        <View style={styles.quickBadgeRow}>
+          {quickBadges.map((badge, index) => (
+            <View
+              key={`${badge.label}-${index}`}
+              style={[styles.quickBadge, { backgroundColor: badge.backgroundColor }]}
+            >
+              <Text style={[styles.quickBadgeText, { color: badge.textColor }]}>{badge.label}</Text>
+            </View>
+          ))}
+        </View>
+      ) : null}
 
       <View style={styles.routeBlock}>
         <View style={styles.routeSection}>
@@ -275,6 +345,21 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.xxs,
   },
   statusBadgeText: {
+    fontSize: fontSize.xs,
+    fontWeight: fontWeight.semibold,
+  },
+  quickBadgeRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.xs,
+    marginTop: spacing.xs,
+  },
+  quickBadge: {
+    borderRadius: borderRadius.sm,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xxxs,
+  },
+  quickBadgeText: {
     fontSize: fontSize.xs,
     fontWeight: fontWeight.semibold,
   },

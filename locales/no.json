@@ -286,6 +286,8 @@
   "messageCarrier": "Meld transportør",
   "messageCustomer": "Meld kunde",
   "pending": "Venter",
+  "statusQuickNew": "Ny",
+  "statusQuickYours": "Din",
   "waiting": "Venter",
   "you": "Deg",
   "accepted": "Godtatt",
