@@ -68,14 +68,19 @@ export default function DeliveryTrackingScreen() {
 
     let isMounted = true;
 
-    const loadLatestTrackingByRequest = async (requestId: string) => {
-      const { data } = await supabase
+    const loadLatestTrackingByRequest = async (requestId: string, countryCode?: string | null) => {
+      let query = supabase
         .from('tracking')
         .select('latitude,longitude,recorded_at')
         .eq('request_id', requestId)
         .order('recorded_at', { ascending: false })
-        .limit(1)
-        .maybeSingle();
+        .limit(1);
+
+      if (countryCode) {
+        query = query.eq('country_code', countryCode);
+      }
+
+      const { data } = await query.maybeSingle();
 
       const latitude = toFiniteNumber(data?.latitude);
       const longitude = toFiniteNumber(data?.longitude);
@@ -87,7 +92,7 @@ export default function DeliveryTrackingScreen() {
       setDriverLocation({ latitude, longitude });
     };
 
-    const loadRequestId = async (): Promise<string | null> => {
+    const loadRequestContext = async (): Promise<{ requestId: string | null; countryCode: string | null }> => {
       const { data } = await supabase
         .from('orders')
         .select('request_id')
@@ -95,7 +100,20 @@ export default function DeliveryTrackingScreen() {
         .maybeSingle();
 
       const requestId = typeof data?.request_id === 'string' ? data.request_id : null;
-      return requestId;
+
+      if (!requestId) {
+        return { requestId: null, countryCode: null };
+      }
+
+      const { data: requestRow } = await supabase
+        .from('cargo_requests')
+        .select('country_code')
+        .eq('id', requestId)
+        .maybeSingle();
+
+      const countryCode = typeof requestRow?.country_code === 'string' ? requestRow.country_code : null;
+
+      return { requestId, countryCode };
     };
 
     const loadDelivery = async () => {
@@ -140,11 +158,11 @@ export default function DeliveryTrackingScreen() {
     let trackingChannel: ReturnType<typeof supabase.channel> | null = null;
 
     const initialize = async () => {
-      const requestId = await loadRequestId();
+      const { requestId, countryCode } = await loadRequestContext();
       await loadDelivery();
 
       if (requestId) {
-        await loadLatestTrackingByRequest(requestId);
+        await loadLatestTrackingByRequest(requestId, countryCode);
 
         trackingChannel = supabase
           .channel(`tracking:${requestId}`)
@@ -158,6 +176,12 @@ export default function DeliveryTrackingScreen() {
             },
             payload => {
               const row = payload.new as Record<string, unknown>;
+              const eventCountryCode = typeof row.country_code === 'string' ? row.country_code : null;
+
+              if (countryCode && eventCountryCode && eventCountryCode !== countryCode) {
+                return;
+              }
+
               const latitude = toFiniteNumber(row.latitude);
               const longitude = toFiniteNumber(row.longitude);
 

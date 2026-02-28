@@ -305,6 +305,7 @@ CREATE TABLE IF NOT EXISTS public.tracking (
 
   -- Прив'язка до активного замовлення (NULL якщо вантажівка їде без замовлення)
   request_id      UUID REFERENCES public.cargo_requests(id) ON DELETE SET NULL,
+  country_code    CHAR(2) NOT NULL DEFAULT 'NO',
 
   -- Координати
   latitude        NUMERIC(10, 7) NOT NULL,
@@ -325,6 +326,9 @@ CREATE TABLE IF NOT EXISTS public.tracking (
 -- Індекс для швидкого отримання останньої позиції вантажівки
 CREATE INDEX IF NOT EXISTS idx_tracking_truck_recorded ON public.tracking(truck_id, recorded_at DESC);
 CREATE INDEX IF NOT EXISTS idx_tracking_request_id    ON public.tracking(request_id)
+  WHERE request_id IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_tracking_country_recorded ON public.tracking(country_code, recorded_at DESC);
+CREATE INDEX IF NOT EXISTS idx_tracking_country_request_recorded ON public.tracking(country_code, request_id, recorded_at DESC)
   WHERE request_id IS NOT NULL;
 -- Просторовий пошук за координатами (наближені вантажівки)
 CREATE INDEX IF NOT EXISTS idx_tracking_coordinates   ON public.tracking(latitude, longitude);
@@ -1112,6 +1116,7 @@ SELECT
   id,
   truck_id,
   request_id,
+  country_code,
   latitude,
   longitude,
   altitude_m,
