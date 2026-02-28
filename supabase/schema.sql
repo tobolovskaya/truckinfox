@@ -736,10 +736,11 @@ CREATE POLICY "Users can update their own profile"
   USING (auth.uid() = id);
 
 -- ---------------------------------------------------------------------------
--- trucks: всі можуть читати; лише власник змінює; адмін — повний доступ
+-- trucks: лише власник читає/змінює; адмін — повний доступ
 -- ---------------------------------------------------------------------------
-CREATE POLICY "Trucks are viewable by everyone"
-  ON public.trucks FOR SELECT USING (true);
+CREATE POLICY "Carriers can view their trucks"
+  ON public.trucks FOR SELECT
+  USING (auth.uid() = carrier_id);
 
 CREATE POLICY "Carriers can insert their trucks"
   ON public.trucks FOR INSERT
