@@ -29,6 +29,8 @@ export default function MapScreen() {
   const router = useRouter();
   const { user } = useAuth();
   const mapRef = useRef<MapView | null>(null);
+  const fitDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastFitKeyRef = useRef<string>('');
 
   const filters = useMemo(
     () => ({
@@ -79,12 +81,33 @@ export default function MapScreen() {
       }
     : DEFAULT_REGION;
 
+  const fitKey = useMemo(
+    () =>
+      markerItems
+        .map(item => `${item.id}:${item.coordinate.latitude.toFixed(4)}:${item.coordinate.longitude.toFixed(4)}`)
+        .join('|'),
+    [markerItems]
+  );
+
   useEffect(() => {
     if (markerItems.length < 2) {
+      lastFitKeyRef.current = '';
+      if (fitDebounceRef.current) {
+        clearTimeout(fitDebounceRef.current);
+        fitDebounceRef.current = null;
+      }
       return;
     }
 
-    const timeoutId = setTimeout(() => {
+    if (lastFitKeyRef.current === fitKey) {
+      return;
+    }
+
+    if (fitDebounceRef.current) {
+      clearTimeout(fitDebounceRef.current);
+    }
+
+    fitDebounceRef.current = setTimeout(() => {
       mapRef.current?.fitToCoordinates(
         markerItems.map(item => item.coordinate),
         {
@@ -92,10 +115,17 @@ export default function MapScreen() {
           animated: true,
         }
       );
-    }, 250);
+      lastFitKeyRef.current = fitKey;
+      fitDebounceRef.current = null;
+    }, 400);
 
-    return () => clearTimeout(timeoutId);
-  }, [markerItems]);
+    return () => {
+      if (fitDebounceRef.current) {
+        clearTimeout(fitDebounceRef.current);
+        fitDebounceRef.current = null;
+      }
+    };
+  }, [fitKey, markerItems]);
 
   return (
     <View style={styles.container}>
