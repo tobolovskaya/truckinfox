@@ -24,6 +24,8 @@ interface AvatarUploadProps {
   size?: number;
 }
 
+const STORAGE_SIGNED_URL_EXPIRY_SECONDS = 60 * 60 * 24 * 365;
+
 export default function AvatarUpload({ avatarUrl, onUpload, size = 80 }: AvatarUploadProps) {
   const { user } = useAuth();
   const { t } = useTranslation();
@@ -61,6 +63,10 @@ export default function AvatarUpload({ avatarUrl, onUpload, size = 80 }: AvatarU
           return extracted;
         }
       }
+    }
+
+    if (!cleanUrl.startsWith('http')) {
+      return cleanUrl;
     }
 
     return null;
@@ -184,11 +190,16 @@ export default function AvatarUpload({ avatarUrl, onUpload, size = 80 }: AvatarU
         throw lastUploadError || new Error('No available storage bucket for avatar upload');
       }
 
-      const {
-        data: { publicUrl: downloadURL },
-      } = supabase.storage.from(selectedBucket).getPublicUrl(fileName);
+      const { data: signedData, error: signedUrlError } = await supabase
+        .storage
+        .from(selectedBucket)
+        .createSignedUrl(fileName, STORAGE_SIGNED_URL_EXPIRY_SECONDS);
 
-      const cacheBustedUrl = `${downloadURL}?t=${Date.now()}`;
+      if (signedUrlError || !signedData?.signedUrl) {
+        throw signedUrlError || new Error('Failed to create signed URL for avatar');
+      }
+
+      const cacheBustedUrl = `${signedData.signedUrl}${signedData.signedUrl.includes('?') ? '&' : '?'}t=${Date.now()}`;
 
       const { error: profileError } = await supabase
         .from('profiles')
@@ -237,11 +248,7 @@ export default function AvatarUpload({ avatarUrl, onUpload, size = 80 }: AvatarU
           try {
             setUploading(true);
 
-            const storagePath = avatarUrl.includes('/object/public/avatars/')
-              ? avatarUrl.split('/object/public/avatars/')[1]?.split('?')[0]
-              : avatarUrl.includes('/object/public/cargo/')
-                ? avatarUrl.split('/object/public/cargo/')[1]?.split('?')[0]
-                : `${user.uid}/avatar.jpg`;
+            const storagePath = extractStoragePath(avatarUrl) || `${user.uid}/avatar.jpg`;
 
             try {
               if (storagePath) {

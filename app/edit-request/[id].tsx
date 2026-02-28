@@ -51,6 +51,7 @@ const CARGO_LIMITS = {
 } as const;
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
+const STORAGE_SIGNED_URL_EXPIRY_SECONDS = 60 * 60 * 24 * 365;
 
 interface CargoRequest {
   id: string;
@@ -466,20 +467,24 @@ export default function EditRequestScreen() {
           const { error: uploadError } = await supabase.storage
             .from('cargo')
             .upload(filePath, blob, {
-            contentType: 'image/jpeg',
+              contentType: 'image/jpeg',
               upsert: false,
-          });
+            });
 
           if (uploadError) {
             throw uploadError;
           }
 
-          const {
-            data: { publicUrl },
-          } = supabase.storage.from('cargo').getPublicUrl(filePath);
+          const { data: signedData, error: signedUrlError } = await supabase
+            .storage
+            .from('cargo')
+            .createSignedUrl(filePath, STORAGE_SIGNED_URL_EXPIRY_SECONDS);
 
-          const downloadURL = publicUrl;
-          uploadedUrls.push(downloadURL);
+          if (signedUrlError || !signedData?.signedUrl) {
+            throw signedUrlError || new Error('Failed to create signed URL for uploaded image');
+          }
+
+          uploadedUrls.push(signedData.signedUrl);
         } catch (error) {
           console.error(`Error uploading image ${i}:`, error);
           continue;

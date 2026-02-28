@@ -3,6 +3,8 @@ import { trackDeliveryProofSubmitted } from './analytics';
 import { fetchWithTimeout } from './fetchWithTimeout';
 import { compressImageForUpload } from './imageCompression';
 
+const STORAGE_SIGNED_URL_EXPIRY_SECONDS = 60 * 60 * 24 * 365;
+
 function getErrorMessage(error: unknown, fallback: string): string {
   if (error instanceof Error && error.message) {
     return error.message;
@@ -50,9 +52,16 @@ export const uploadImage = async (
       throw uploadError;
     }
 
-    const {
-      data: { publicUrl: downloadURL },
-    } = supabase.storage.from('cargo').getPublicUrl(filePath);
+    const { data: signedData, error: signedUrlError } = await supabase
+      .storage
+      .from('cargo')
+      .createSignedUrl(filePath, STORAGE_SIGNED_URL_EXPIRY_SECONDS);
+
+    if (signedUrlError || !signedData?.signedUrl) {
+      throw signedUrlError || new Error('Failed to create signed URL for uploaded image');
+    }
+
+    const downloadURL = signedData.signedUrl;
 
     return downloadURL;
   } catch (error) {
