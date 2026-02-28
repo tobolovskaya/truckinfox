@@ -14,7 +14,8 @@ const DEFAULT_REGION = {
   latitudeDelta: 5,
   longitudeDelta: 5,
 };
-const CLUSTER_THRESHOLD = 24;
+const CLUSTER_THRESHOLD = 16;
+const CLUSTER_RADIUS = 56;
 
 const toFiniteNumber = (value: unknown): number | null => {
   if (typeof value === 'number' && Number.isFinite(value)) {
@@ -181,7 +182,7 @@ export default function MapScreen() {
           initialRegion={initialRegion}
           data={clusterData}
           renderMarker={renderMarker}
-          radius={40}
+          radius={CLUSTER_RADIUS}
           clusteringEnabled
         />
       ) : (
