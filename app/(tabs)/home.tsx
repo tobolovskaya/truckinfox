@@ -50,6 +50,7 @@ export default function HomeScreen() {
   const [sortBy, setSortBy] = useState<SortOption>('newest');
   const [isFilterSheetVisible, setIsFilterSheetVisible] = useState(false);
   const [selectedCargoType, setSelectedCargoType] = useState('');
+  const [isSearching, setIsSearching] = useState(false);
   const [hasPersistedState, setHasPersistedState] = useState<boolean | null>(null);
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
   const { width } = useWindowDimensions();
@@ -174,6 +175,25 @@ export default function HomeScreen() {
     saveState();
   }, [activeTab, searchQuery, sortBy, selectedCargoType]);
 
+  useEffect(() => {
+    const hasQuery = searchQuery.trim().length > 0;
+
+    if (!hasQuery) {
+      setIsSearching(false);
+      return;
+    }
+
+    if (searchQuery !== debouncedSearchQuery) {
+      setIsSearching(true);
+    }
+  }, [debouncedSearchQuery, searchQuery]);
+
+  useEffect(() => {
+    if (!loading) {
+      setIsSearching(false);
+    }
+  }, [loading]);
+
   const handleOpenRequest = (requestId: string) => {
     router.push(`/request-details/${requestId}`);
   };
@@ -200,6 +220,7 @@ export default function HomeScreen() {
         <HomeSearchBar
           searchQuery={searchQuery}
           onSearchChange={setSearchQuery}
+          isSearching={isSearching}
           hasActiveFilters={sortBy !== 'newest' || !!selectedCargoType}
           onFilterPress={() => setIsFilterSheetVisible(true)}
         />

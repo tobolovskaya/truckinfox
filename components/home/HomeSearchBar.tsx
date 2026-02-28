@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, spacing, fontSize } from '../../lib/sharedStyles';
 import { useTranslation } from 'react-i18next';
@@ -7,6 +7,7 @@ import { useTranslation } from 'react-i18next';
 interface HomeSearchBarProps {
   searchQuery: string;
   onSearchChange: (_query: string) => void;
+  isSearching?: boolean;
   hasActiveFilters: boolean;
   onFilterPress: () => void;
 }
@@ -14,6 +15,7 @@ interface HomeSearchBarProps {
 export const HomeSearchBar: React.FC<HomeSearchBarProps> = ({
   searchQuery,
   onSearchChange,
+  isSearching = false,
   hasActiveFilters,
   onFilterPress,
 }) => {
@@ -31,6 +33,7 @@ export const HomeSearchBar: React.FC<HomeSearchBarProps> = ({
           placeholderTextColor={colors.text.tertiary}
           returnKeyType="search"
         />
+        {isSearching ? <ActivityIndicator size="small" color={colors.primary} /> : null}
       </View>
       <TouchableOpacity
         style={[styles.filterButton, hasActiveFilters && styles.filterButtonActive]}
