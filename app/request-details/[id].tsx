@@ -784,7 +784,7 @@ export default function RequestDetailsScreen() {
 
           return (
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Rute</Text>
+              <Text style={[styles.sectionTitle, styles.sectionTitleStrong]}>Rute</Text>
               <View style={styles.mapContainer}>
                 <MapView
                   style={styles.map}
@@ -870,7 +870,7 @@ export default function RequestDetailsScreen() {
           // Fallback to text view if no coordinates
           return (
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Rute</Text>
+              <Text style={[styles.sectionTitle, styles.sectionTitleStrong]}>Rute</Text>
 
               <View style={styles.routeRow}>
                 <Ionicons name="location" size={24} color={colors.success} />
@@ -912,7 +912,7 @@ export default function RequestDetailsScreen() {
         if (!request?.users) return null;
         return (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Kunde</Text>
+            <Text style={[styles.sectionTitle, styles.sectionTitleStrong]}>Kunde</Text>
 
             <View style={styles.customerCard}>
               <Avatar photoURL={request.users.avatar_url} size={48} />
@@ -1291,6 +1291,11 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: colors.text.primary,
     marginBottom: spacing.md,
+  },
+  sectionTitleStrong: {
+    color: colors.text.dark,
+    fontWeight: '700',
+    letterSpacing: 0.2,
   },
   infoGrid: {
     flexDirection: 'row',
