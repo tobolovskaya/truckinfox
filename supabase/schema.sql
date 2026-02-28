@@ -1893,3 +1893,14 @@ CREATE POLICY "Admins have full access to cargo bucket"
     bucket_id = 'cargo'
     AND public.is_admin()
   );
+
+CREATE POLICY "Users can access their media"
+  ON storage.objects FOR SELECT TO authenticated
+  USING (
+    bucket_id IN ('avatars', 'cargo', 'trucks')
+    AND (
+      public.is_admin()
+      OR owner = auth.uid()
+      OR (storage.foldername(name))[1] = auth.uid()::text
+    )
+  );

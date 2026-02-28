@@ -253,6 +253,57 @@ model Message {
 
 ---
 
+## DevOps & масштабування
+
+### 1) Partitioning / sharding strategy
+
+Для TruckInfoX практичний підхід такий:
+
+- Починати з **partitioning** (а не одразу sharding) для time-series та логів.
+- Розглядати partitioning для таблиць `tracking`, `messages`, `activity_log`, `audit_log`, коли:
+  - обсяг перевищує ~10M+ рядків на таблицю, або
+  - запити по часу/архіву системно сповільнюються.
+- Типовий варіант: `RANGE PARTITION BY created_at/recorded_at` (місячні партиції).
+- **Sharding** додавати тільки якщо один Postgres-вузол уже не тримає навантаження по CPU/IO/latency навіть після індексів, partitioning і read-replica.
+- Для sharding використовувати чіткий shard key (наприклад, `country_code` або хеш від `request_id`) і не розбивати транзакційно щільно пов'язані дані без крайньої потреби.
+
+### 2) EXPLAIN ANALYZE для ключових запитів
+
+Готовий набір перевірок знаходиться у [supabase/snippets/explain_analyze_key_queries.sql](snippets/explain_analyze_key_queries.sql).
+
+Рекомендований процес:
+
+1. Запускати на staging з даними, близькими до production.
+2. Для кожного запиту виконувати 3 прогони (cold + warm cache).
+3. Фіксувати:
+   - `Execution Time`
+   - тип скану (`Index Scan` vs `Seq Scan`)
+   - `Buffers` (shared hit/read)
+4. Якщо запит переходить у `Seq Scan` на великих таблицях — перевірити селективність фільтрів та складені індекси.
+
+### 3) Storage policy: only owner or admin
+
+Для bucket-ів користувацького медіа (`avatars`, `cargo`, `trucks`) використовується policy-патерн owner/admin:
+
+```sql
+CREATE POLICY "Users can access their media"
+ON storage.objects
+FOR SELECT
+TO authenticated
+USING (
+  bucket_id IN ('avatars', 'cargo', 'trucks')
+  AND (
+    public.is_admin()
+    OR owner = auth.uid()
+    OR (storage.foldername(name))[1] = auth.uid()::text
+  )
+);
+```
+
+Це поєднує перевірку `owner` з fallback на user-folder path для legacy об'єктів.
+
+---
+
 ## Firebase → Supabase mapping (TruckinFox)
 
 | Firebase collection | Supabase table/view |
