@@ -475,11 +475,21 @@ export default function CreateRequestScreen() {
         const remainingSlots = 5 - images.length;
         const imagesToAdd = newImages.slice(0, remainingSlots);
 
+        const compressedImagesToAdd = await Promise.all(
+          imagesToAdd.map(async uri => {
+            try {
+              return await compressImage(uri);
+            } catch {
+              return uri;
+            }
+          })
+        );
+
         if (newImages.length > remainingSlots) {
           toast.info('Du kan bare laste opp maksimalt 5 bilder');
         }
 
-        setImages([...images, ...imagesToAdd]);
+        setImages([...images, ...compressedImagesToAdd]);
 
         try {
           triggerHapticFeedback.light();
