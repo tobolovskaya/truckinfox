@@ -335,7 +335,7 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.xxs,
   },
   badgeText: {
-    fontSize: fontSize.xs,
+    fontSize: fontSize.sm,
     color: colors.primary,
     fontWeight: fontWeight.semibold,
   },
@@ -345,7 +345,7 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.xxs,
   },
   statusBadgeText: {
-    fontSize: fontSize.xs,
+    fontSize: fontSize.sm,
     fontWeight: fontWeight.semibold,
   },
   quickBadgeRow: {
@@ -360,7 +360,7 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.xxxs,
   },
   quickBadgeText: {
-    fontSize: fontSize.xs,
+    fontSize: fontSize.sm,
     fontWeight: fontWeight.semibold,
   },
   routeBlock: {
@@ -392,7 +392,7 @@ const styles = StyleSheet.create({
     marginTop: spacing.md,
   },
   metaText: {
-    fontSize: fontSize.xs,
-    color: colors.text.tertiary,
+    fontSize: fontSize.sm,
+    color: colors.text.secondary,
   },
 });

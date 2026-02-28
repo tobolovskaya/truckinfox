@@ -2,6 +2,7 @@ import React from 'react';
 import { View, TouchableOpacity, Text, StyleSheet } from 'react-native';
 import { colors, spacing, fontSize, fontWeight } from '../../lib/sharedStyles';
 import { useTranslation } from 'react-i18next';
+import { TOUCH_TARGET } from '../../constants/touchTargets';
 
 interface HomeTabBarProps {
   activeTab: 'all' | 'my';
@@ -60,6 +61,7 @@ const styles = StyleSheet.create({
   },
   tabButton: {
     flex: 1,
+    minHeight: TOUCH_TARGET.MIN,
     paddingVertical: spacing.sm,
     paddingHorizontal: spacing.md,
     borderRadius: 8,
@@ -88,10 +90,10 @@ const styles = StyleSheet.create({
     fontWeight: fontWeight.semibold,
   },
   badge: {
-    minWidth: 20,
-    height: 20,
+    minWidth: 22,
+    height: 22,
     paddingHorizontal: spacing.xs,
-    borderRadius: 10,
+    borderRadius: 11,
     backgroundColor: colors.primaryLight,
     alignItems: 'center',
     justifyContent: 'center',
@@ -100,7 +102,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primary,
   },
   badgeText: {
-    fontSize: fontSize.xs,
+    fontSize: fontSize.sm,
     fontWeight: fontWeight.semibold,
     color: colors.primary,
   },

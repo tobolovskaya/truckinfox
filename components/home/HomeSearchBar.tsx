@@ -3,6 +3,7 @@ import { View, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator } from
 import { Ionicons } from '@expo/vector-icons';
 import { colors, spacing, fontSize } from '../../lib/sharedStyles';
 import { useTranslation } from 'react-i18next';
+import { TOUCH_TARGET } from '../../constants/touchTargets';
 
 interface HomeSearchBarProps {
   searchQuery: string;
@@ -24,13 +25,13 @@ export const HomeSearchBar: React.FC<HomeSearchBarProps> = ({
   return (
     <View style={styles.searchRow}>
       <View style={styles.searchInputWrap}>
-        <Ionicons name="search-outline" size={18} color={colors.text.tertiary} />
+        <Ionicons name="search-outline" size={18} color={colors.text.secondary} />
         <TextInput
           style={styles.searchInput}
           value={searchQuery}
           onChangeText={onSearchChange}
           placeholder={t('searchPlaceholder')}
-          placeholderTextColor={colors.text.tertiary}
+          placeholderTextColor={colors.text.secondary}
           returnKeyType="search"
         />
         {isSearching ? <ActivityIndicator size="small" color={colors.primary} /> : null}
@@ -62,13 +63,14 @@ const styles = StyleSheet.create({
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
+    minHeight: TOUCH_TARGET.MIN,
     gap: spacing.sm,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.md,
     backgroundColor: colors.background,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: colors.border.light,
+    borderColor: colors.border.default,
   },
   searchInput: {
     flex: 1,
@@ -77,12 +79,14 @@ const styles = StyleSheet.create({
     padding: 0,
   },
   filterButton: {
+    minWidth: TOUCH_TARGET.MIN,
+    minHeight: TOUCH_TARGET.MIN,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.md,
     backgroundColor: colors.background,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: colors.border.light,
+    borderColor: colors.border.default,
     justifyContent: 'center',
     alignItems: 'center',
   },

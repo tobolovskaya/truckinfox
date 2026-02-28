@@ -32,6 +32,7 @@ import {
 import { colors, spacing, fontSize, borderRadius } from '../../lib/sharedStyles';
 import MapView, { Marker, Polyline } from 'react-native-maps';
 import { sanitizeMessage } from '../../utils/sanitization';
+import { TOUCH_TARGET } from '../../constants/touchTargets';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -1350,7 +1351,7 @@ const styles = StyleSheet.create({
   },
   routeDate: {
     fontSize: fontSize.sm,
-    color: colors.text.tertiary,
+    color: colors.text.secondary,
   },
   routeDivider: {
     flexDirection: 'row',
@@ -1526,9 +1527,12 @@ const styles = StyleSheet.create({
   },
   acceptButton: {
     backgroundColor: colors.primary,
+    minHeight: TOUCH_TARGET.MIN,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
     borderRadius: borderRadius.md,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   acceptButtonDisabled: {
     opacity: 0.6,
