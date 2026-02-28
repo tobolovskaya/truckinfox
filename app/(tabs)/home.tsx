@@ -2,7 +2,6 @@ import React, { useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
-  RefreshControl,
   StyleSheet,
   Text,
   useWindowDimensions,
@@ -22,6 +21,7 @@ import { HomeSearchBar } from '../../components/home/HomeSearchBar';
 import { HomeFilterSheet } from '../../components/home/HomeFilterSheet';
 import { HomeActiveFilters } from '../../components/home/HomeActiveFilters';
 import { EmptyState } from '../../components/EmptyState';
+import { IOSRefreshControl } from '../../components/IOSRefreshControl';
 import { Onboarding } from '../../components/Onboarding';
 import EmptyCargoIllustration from '../../assets/empty-cargo.svg';
 import { useTranslation } from 'react-i18next';
@@ -296,7 +296,9 @@ export default function HomeScreen() {
           rowGap: gridGap,
         }}
         showsVerticalScrollIndicator={false}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} />}
+        refreshControl={
+          <IOSRefreshControl refreshing={refreshing} onRefresh={refresh} tintColor={colors.primary} />
+        }
         onEndReached={() => {
           if (hasMore && !loadingMore) {
             fetchMoreRequests();
