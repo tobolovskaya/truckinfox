@@ -267,6 +267,9 @@ model Message {
 - **Sharding** додавати тільки якщо один Postgres-вузол уже не тримає навантаження по CPU/IO/latency навіть після індексів, partitioning і read-replica.
 - Для sharding використовувати чіткий shard key (наприклад, `country_code` або хеш від `request_id`) і не розбивати транзакційно щільно пов'язані дані без крайньої потреби.
 
+Готовий staging-playbook для місячного partitioning `tracking` + `messages`:
+[supabase/snippets/partitioning_tracking_messages_monthly.sql](snippets/partitioning_tracking_messages_monthly.sql)
+
 ### 2) EXPLAIN ANALYZE для ключових запитів
 
 Готовий набір перевірок знаходиться у [supabase/snippets/explain_analyze_key_queries.sql](snippets/explain_analyze_key_queries.sql).
