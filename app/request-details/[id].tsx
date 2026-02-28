@@ -586,6 +586,12 @@ export default function RequestDetailsScreen() {
     triggerHapticFeedback.light();
   };
 
+  const handleOpenCustomerProfile = () => {
+    if (!request?.user_id) return;
+    router.push(`/profile/${request.user_id}` as never);
+    triggerHapticFeedback.light();
+  };
+
   const openImageGallery = (index: number) => {
     setSelectedImageIndex(index);
     setShowImageGallery(true);
@@ -997,11 +1003,22 @@ export default function RequestDetailsScreen() {
                   </Text>
                 </View>
               </View>
+              <View style={styles.customerActions}>
+                <TouchableOpacity
+                  style={styles.profileButton}
+                  onPress={handleOpenCustomerProfile}
+                  accessibilityRole="button"
+                  accessibilityLabel={t('viewProfile') || 'View Profile'}
+                >
+                  <Ionicons name="person-circle-outline" size={20} color={colors.primary} />
+                  <Text style={styles.profileButtonText}>{t('viewProfile') || 'View Profile'}</Text>
+                </TouchableOpacity>
               {!isCustomer && (
                 <TouchableOpacity style={styles.chatButton} onPress={navigateToChat}>
                   <Ionicons name="chatbubble-outline" size={20} color={colors.white} />
                 </TouchableOpacity>
               )}
+              </View>
             </View>
           </View>
         );
@@ -1458,6 +1475,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: spacing.md,
   },
+  customerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
   customerInfo: {
     flex: 1,
   },
@@ -1478,11 +1500,28 @@ const styles = StyleSheet.create({
   },
   chatButton: {
     backgroundColor: colors.primary,
-    width: 40,
-    height: 40,
+    width: TOUCH_TARGET.MIN,
+    height: TOUCH_TARGET.MIN,
     borderRadius: borderRadius.full,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  profileButton: {
+    minHeight: TOUCH_TARGET.MIN,
+    borderRadius: borderRadius.md,
+    backgroundColor: colors.backgroundPrimary,
+    paddingHorizontal: spacing.sm,
+    justifyContent: 'center',
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: spacing.xs,
+    borderWidth: 1,
+    borderColor: colors.border.light,
+  },
+  profileButtonText: {
+    fontSize: fontSize.sm,
+    fontWeight: '600',
+    color: colors.primary,
   },
   bidForm: {
     gap: spacing.md,
