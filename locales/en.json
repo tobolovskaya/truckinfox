@@ -91,6 +91,8 @@
   "filterAndSort": "Filter & Sort",
   "highestPrice": "Highest price",
   "isTyping": "is typing...",
+  "onlineNow": "online",
+  "offlineNow": "offline",
   "lowestPrice": "Lowest price",
   "nearest": "Nearest",
   "newestFirst": "Newest first",

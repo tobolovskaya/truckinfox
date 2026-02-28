@@ -101,6 +101,7 @@ export default function ChatScreen() {
   const [chatUser, setChatUser] = useState<ChatUser | null>(null);
   const [chatId, setChatId] = useState<string | null>(null);
   const [otherUserTyping, setOtherUserTyping] = useState(false);
+  const [otherUserOnline, setOtherUserOnline] = useState(false);
   const messageAnimations = useRef<{ [key: string]: Animated.Value }>({});
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const typingTraceRef = useRef<ReturnType<typeof startTrace> | null>(null);
@@ -265,6 +266,42 @@ export default function ChatScreen() {
       }
     };
   }, [requestId, userId, user?.uid, otherUserTyping]);
+
+  useEffect(() => {
+    if (!requestId || !userId || !user?.uid) {
+      return;
+    }
+
+    const presenceChannel = supabase.channel(`chat-presence:${requestId}`, {
+      config: {
+        presence: {
+          key: user.uid,
+        },
+      },
+    });
+
+    presenceChannel.on('presence', { event: 'sync' }, () => {
+      const state = presenceChannel.presenceState() as Record<string, unknown[]>;
+      const otherUserState = state[userId];
+      setOtherUserOnline(Array.isArray(otherUserState) && otherUserState.length > 0);
+    });
+
+    presenceChannel.subscribe(async status => {
+      if (status === 'SUBSCRIBED') {
+        await presenceChannel.track({
+          user_id: user.uid,
+          request_id: requestId,
+          online_at: new Date().toISOString(),
+        });
+      }
+    });
+
+    return () => {
+      void presenceChannel.untrack();
+      presenceChannel.unsubscribe();
+      setOtherUserOnline(false);
+    };
+  }, [requestId, userId, user?.uid]);
 
   const fetchChatData = async () => {
     try {
@@ -771,7 +808,9 @@ export default function ChatScreen() {
             <View style={styles.headerText}>
               <Text style={styles.userName}>{chatUser?.full_name || t('unknownUser')}</Text>
               <Text style={styles.userRole}>
-                {chatUser ? getUserRoleText(chatUser.user_type, chatUser.rating) : ''}
+                {chatUser
+                  ? `${getUserRoleText(chatUser.user_type, chatUser.rating)} • ${otherUserOnline ? t('onlineNow') : t('offlineNow')}`
+                  : ''}
               </Text>
             </View>
           </View>
