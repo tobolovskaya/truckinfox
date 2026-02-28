@@ -309,6 +309,7 @@ CREATE TABLE IF NOT EXISTS public.tracking (
   -- Координати
   latitude        NUMERIC(10, 7) NOT NULL,
   longitude       NUMERIC(10, 7) NOT NULL,
+  location        GEOGRAPHY(POINT, 4326),
   altitude_m      NUMERIC(8, 2),
   accuracy_m      NUMERIC(8, 2),
 
@@ -327,6 +328,7 @@ CREATE INDEX IF NOT EXISTS idx_tracking_request_id    ON public.tracking(request
   WHERE request_id IS NOT NULL;
 -- Просторовий пошук за координатами (наближені вантажівки)
 CREATE INDEX IF NOT EXISTS idx_tracking_coordinates   ON public.tracking(latitude, longitude);
+CREATE INDEX IF NOT EXISTS idx_tracking_location_gist ON public.tracking USING GIST(location);
 
 -- =============================================================================
 -- ТАБЛИЦЯ: chats
@@ -1148,6 +1150,10 @@ CREATE TABLE IF NOT EXISTS public.chat_participants (
 
 CREATE INDEX IF NOT EXISTS idx_chat_participants_user_id
   ON public.chat_participants(user_id);
+CREATE INDEX IF NOT EXISTS idx_chat_participants_chat_id
+  ON public.chat_participants(chat_id);
+CREATE INDEX IF NOT EXISTS idx_chat_participants_chat_joined
+  ON public.chat_participants(chat_id, joined_at DESC);
 
 ALTER TABLE public.chat_participants ENABLE ROW LEVEL SECURITY;
 
