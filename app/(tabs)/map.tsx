@@ -149,6 +149,7 @@ export default function MapScreen() {
               title={item.title}
               description={`${item.fromAddress} → ${item.toAddress}`}
               pinColor={colors.primary}
+              onPress={() => router.push(`/request-details/${item.id}`)}
               onCalloutPress={() => router.push(`/request-details/${item.id}`)}
             />
           ))}

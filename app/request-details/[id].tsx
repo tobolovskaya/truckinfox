@@ -44,10 +44,10 @@ interface CargoRequest {
   dimensions?: string;
   from_address: string;
   to_address: string;
-  from_lat?: number;
-  from_lng?: number;
-  to_lat?: number;
-  to_lng?: number;
+  from_lat?: number | string | null;
+  from_lng?: number | string | null;
+  to_lat?: number | string | null;
+  to_lng?: number | string | null;
   distance_km?: number;
   pickup_date: string;
   delivery_date: string;
@@ -82,6 +82,17 @@ interface Bid {
     avatar_url?: string;
   };
 }
+
+const toFiniteNumber = (value: unknown): number | null => {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return value;
+  }
+  if (typeof value === 'string') {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : null;
+  }
+  return null;
+};
 
 export default function RequestDetailsScreen() {
   const { id } = useLocalSearchParams();
@@ -712,18 +723,18 @@ export default function RequestDetailsScreen() {
         );
 
       case 'route':
+        const fromLat = toFiniteNumber(request?.from_lat);
+        const fromLng = toFiniteNumber(request?.from_lng);
+        const toLat = toFiniteNumber(request?.to_lat);
+        const toLng = toFiniteNumber(request?.to_lng);
+
         // Show map if coordinates are available, otherwise show text addresses
-        if (
-          request?.from_lat != null &&
-          request?.from_lng != null &&
-          request?.to_lat != null &&
-          request?.to_lng != null
-        ) {
+        if (fromLat !== null && fromLng !== null && toLat !== null && toLng !== null) {
           // Calculate center point and initial region
-          const centerLat = (request.from_lat + request.to_lat) / 2;
-          const centerLng = (request.from_lng + request.to_lng) / 2;
-          const latDelta = Math.max(Math.abs(request.from_lat - request.to_lat) * 1.5, 0.05);
-          const lngDelta = Math.max(Math.abs(request.from_lng - request.to_lng) * 1.5, 0.05);
+          const centerLat = (fromLat + toLat) / 2;
+          const centerLng = (fromLng + toLng) / 2;
+          const latDelta = Math.max(Math.abs(fromLat - toLat) * 1.5, 0.05);
+          const lngDelta = Math.max(Math.abs(fromLng - toLng) * 1.5, 0.05);
 
           return (
             <View style={styles.section}>
@@ -739,23 +750,23 @@ export default function RequestDetailsScreen() {
                   }}
                 >
                   <Marker
-                    coordinate={{ latitude: request.from_lat, longitude: request.from_lng }}
+                    coordinate={{ latitude: fromLat, longitude: fromLng }}
                     title={t('pickup')}
-                    description={request.from_address}
+                    description={request?.from_address || ''}
                     pinColor="#4CAF50"
                   />
 
                   <Marker
-                    coordinate={{ latitude: request.to_lat, longitude: request.to_lng }}
-                    title={t('delivery') || 'Delivery'}
-                    description={request.to_address}
+                    coordinate={{ latitude: toLat, longitude: toLng }}
+                    title={t('to')}
+                    description={request?.to_address || ''}
                     pinColor="#FF7043"
                   />
 
                   <Polyline
                     coordinates={[
-                      { latitude: request.from_lat, longitude: request.from_lng },
-                      { latitude: request.to_lat, longitude: request.to_lng },
+                      { latitude: fromLat, longitude: fromLng },
+                      { latitude: toLat, longitude: toLng },
                     ]}
                     strokeColor="#FF7043"
                     strokeWidth={3}
@@ -781,8 +792,8 @@ export default function RequestDetailsScreen() {
                   <Ionicons name="location" size={18} color={colors.success} />
                   <View style={styles.routeInfoCol}>
                     <Text style={styles.routeLabel}>Fra</Text>
-                    <Text style={styles.routeAddress}>{request.from_address}</Text>
-                    <Text style={styles.routeDate}>{formatDate(request.pickup_date || '')}</Text>
+                    <Text style={styles.routeAddress}>{request?.from_address || ''}</Text>
+                    <Text style={styles.routeDate}>{formatDate(request?.pickup_date || '')}</Text>
                   </View>
                 </View>
 
@@ -792,8 +803,8 @@ export default function RequestDetailsScreen() {
                   <Ionicons name="location" size={18} color={colors.error} />
                   <View style={styles.routeInfoCol}>
                     <Text style={styles.routeLabel}>Til</Text>
-                    <Text style={styles.routeAddress}>{request.to_address}</Text>
-                    <Text style={styles.routeDate}>{formatDate(request.delivery_date || '')}</Text>
+                    <Text style={styles.routeAddress}>{request?.to_address || ''}</Text>
+                    <Text style={styles.routeDate}>{formatDate(request?.delivery_date || '')}</Text>
                   </View>
                 </View>
               </View>

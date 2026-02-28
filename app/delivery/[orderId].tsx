@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams } from 'expo-router';
@@ -37,24 +37,11 @@ const DEFAULT_REGION = {
   longitudeDelta: 0.12,
 };
 
-const isValidCoordinate = (value: unknown): value is Coordinates => {
-  if (!value || typeof value !== 'object') {
-    return false;
-  }
-
-  const coordinate = value as Partial<Coordinates>;
-  return (
-    typeof coordinate.latitude === 'number' &&
-    Number.isFinite(coordinate.latitude) &&
-    typeof coordinate.longitude === 'number' &&
-    Number.isFinite(coordinate.longitude)
-  );
-};
-
 export default function DeliveryTrackingScreen() {
   const { t } = useTranslation();
   const { orderId } = useLocalSearchParams<{ orderId?: string | string[] }>();
   const orderIdString = Array.isArray(orderId) ? orderId[0] : orderId;
+  const mapRef = useRef<MapView | null>(null);
 
   const [loading, setLoading] = useState(true);
   const [driverLocation, setDriverLocation] = useState<Coordinates | null>(null);
@@ -147,7 +134,25 @@ export default function DeliveryTrackingScreen() {
       }
 
       if (Array.isArray(row.route)) {
-        setRoute(row.route.filter(isValidCoordinate));
+        const normalizedRoute = row.route
+          .map(point => {
+            if (!point || typeof point !== 'object') {
+              return null;
+            }
+
+            const raw = point as { latitude?: unknown; longitude?: unknown };
+            const latitude = toFiniteNumber(raw.latitude);
+            const longitude = toFiniteNumber(raw.longitude);
+
+            if (latitude === null || longitude === null) {
+              return null;
+            }
+
+            return { latitude, longitude };
+          })
+          .filter((point): point is Coordinates => point !== null);
+
+        setRoute(normalizedRoute);
       } else {
         setRoute([]);
       }
@@ -236,6 +241,29 @@ export default function DeliveryTrackingScreen() {
     };
   }, [driverLocation, route]);
 
+  const fitCoordinates = useMemo(() => {
+    const routePoints = route.filter(point => Number.isFinite(point.latitude) && Number.isFinite(point.longitude));
+    if (driverLocation) {
+      return [...routePoints, driverLocation];
+    }
+    return routePoints;
+  }, [driverLocation, route]);
+
+  useEffect(() => {
+    if (loading || fitCoordinates.length < 2) {
+      return;
+    }
+
+    const timeoutId = setTimeout(() => {
+      mapRef.current?.fitToCoordinates(fitCoordinates, {
+        edgePadding: { top: 64, right: 64, bottom: 64, left: 64 },
+        animated: true,
+      });
+    }, 200);
+
+    return () => clearTimeout(timeoutId);
+  }, [fitCoordinates, loading]);
+
   return (
     <SafeAreaView style={styles.container}>
       <ScreenHeader title={t('deliveryTracking')} showBackButton />
@@ -246,7 +274,7 @@ export default function DeliveryTrackingScreen() {
           <Text style={styles.infoText}>{t('loadingDeliveryLocation')}</Text>
         </View>
       ) : (
-        <MapView style={styles.map} initialRegion={initialRegion}>
+        <MapView ref={mapRef} style={styles.map} initialRegion={initialRegion}>
           {driverLocation && <Marker coordinate={driverLocation} title={t('driver')} />}
           {route.length > 1 && (
             <Polyline coordinates={route} strokeColor={colors.primary} strokeWidth={4} />
