@@ -127,6 +127,57 @@ export default function PaymentScreen() {
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState(false);
 
+  const extractVippsErrorMessage = async (error: unknown): Promise<string> => {
+    if (error instanceof Error && error.name !== 'FunctionsHttpError') {
+      return error.message;
+    }
+
+    const maybeFunctionError = error as {
+      name?: string;
+      message?: string;
+      context?: {
+        status?: number;
+        statusText?: string;
+        json?: () => Promise<unknown>;
+        text?: () => Promise<string>;
+      };
+    };
+
+    const responseContext = maybeFunctionError?.context;
+    if (!responseContext) {
+      return maybeFunctionError?.message || t('error');
+    }
+
+    let serverMessage = '';
+    try {
+      if (typeof responseContext.json === 'function') {
+        const body = await responseContext.json();
+        if (body && typeof body === 'object') {
+          const messageValue = (body as Record<string, unknown>).message;
+          const errorValue = (body as Record<string, unknown>).error;
+          if (typeof messageValue === 'string') {
+            serverMessage = messageValue;
+          } else if (typeof errorValue === 'string') {
+            serverMessage = errorValue;
+          }
+        }
+      }
+    } catch {
+      try {
+        if (typeof responseContext.text === 'function') {
+          serverMessage = await responseContext.text();
+        }
+      } catch {
+        serverMessage = '';
+      }
+    }
+
+    const statusCode = responseContext.status ? `HTTP ${responseContext.status}` : 'HTTP error';
+    const statusText = responseContext.statusText || 'Edge Function failed';
+    const suffix = serverMessage ? `: ${serverMessage}` : '';
+    return `${statusCode} ${statusText}${suffix}`.trim();
+  };
+
   useEffect(() => {
     fetchOrder();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -410,8 +461,30 @@ export default function PaymentScreen() {
       }
     } catch (error: unknown) {
       console.error('Vipps payment error:', error);
-      const message = error instanceof Error ? error.message : t('error');
-      Alert.alert(t('error'), message);
+      const message = await extractVippsErrorMessage(error);
+
+      const isFunctionsHttpError =
+        typeof error === 'object' &&
+        error !== null &&
+        'name' in error &&
+        (error as { name?: string }).name === 'FunctionsHttpError';
+
+      if (__DEV__ && isFunctionsHttpError) {
+        Alert.alert(t('error'), message, [
+          {
+            text: t('continue'),
+            onPress: () => {
+              simulatePaymentSuccess();
+            },
+          },
+          {
+            text: t('cancel'),
+            style: 'cancel',
+          },
+        ]);
+      } else {
+        Alert.alert(t('error'), message || t('error'));
+      }
     } finally {
       setProcessing(false);
     }
