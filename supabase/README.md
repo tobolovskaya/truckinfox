@@ -54,6 +54,91 @@ GPS-позиції вантажівок (широта, довгота, швид�
 ### escrow_payments
 Escrow-життєвий цикл для Vipps/іншого провайдера з `idempotency_key`, `provider_order_id`, `payment_url` і статусами (`initiated`, `paid`, `released`, ...).
 
+---
+
+## Vipps Edge Function deploy (vipps-payment)
+
+For å unngå `HTTP 404 Requested function was not found` fra mobilappen må Edge Function `vipps-payment` være deployet i Supabase-prosjektet.
+
+Function source:
+
+- `supabase/functions/vipps-payment/index.ts`
+
+### 1) Logg inn og link prosjekt
+
+```bash
+supabase login
+supabase link --project-ref <YOUR_PROJECT_REF>
+```
+
+### 2) Sett secrets for funksjonen
+
+Mock mode er aktiv som standard i funksjonen (`VIPPS_MOCK_MODE=true`) og er nyttig i dev.
+
+```bash
+supabase secrets set VIPPS_MOCK_MODE=true
+```
+
+For ekte Vipps i prod:
+
+```bash
+supabase secrets set VIPPS_MOCK_MODE=false
+supabase secrets set VIPPS_CLIENT_ID=<...>
+supabase secrets set VIPPS_CLIENT_SECRET=<...>
+supabase secrets set VIPPS_SUBSCRIPTION_KEY=<...>
+supabase secrets set VIPPS_MERCHANT_SERIAL_NUMBER=<...>
+supabase secrets set VIPPS_SYSTEM_NAME=truckinfox
+supabase secrets set VIPPS_SYSTEM_VERSION=1.0.0
+supabase secrets set VIPPS_PLUGIN_NAME=truckinfox-mobile
+supabase secrets set VIPPS_PLUGIN_VERSION=1.0.0
+```
+
+### 3) Deploy funksjonen
+
+```bash
+supabase functions deploy vipps-payment
+```
+
+### 4) Verifiser at funksjonen finnes
+
+```bash
+supabase functions list
+```
+
+Du skal se `vipps-payment` i listen.
+
+### 5) App-konfig (valgfritt)
+
+Mobilappen bruker som default funksjonsnavn `vipps-payment`. Hvis dere bruker annet navn, sett:
+
+```env
+EXPO_PUBLIC_VIPPS_FUNCTION_NAME=vipps-payment
+```
+
+### 6) Lokal test via CLI (hurtigsjekk)
+
+```bash
+supabase functions serve vipps-payment --env-file .env
+```
+
+Eksempel request (mock):
+
+```bash
+curl -i http://127.0.0.1:54321/functions/v1/vipps-payment \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <ANON_OR_SERVICE_ROLE_JWT>" \
+  -H "Idempotency-Key: local-test-1" \
+  -d '{
+    "escrow_payment_id":"00000000-0000-0000-0000-000000000001",
+    "order_id":"00000000-0000-0000-0000-000000000002",
+    "amount":1100,
+    "customer_phone":"+4799999999",
+    "description":"Payment - Test"
+  }'
+```
+
+Forventet i mock mode: HTTP 200 med `vipps_url` / `payment_url`.
+
 ### notifications
 Користувацькі нотифікації (`new_bid`, `bid_accepted`, `payment_success`, `order_status_change`) з `read/read_at` і додатковим `data JSONB`.
 
