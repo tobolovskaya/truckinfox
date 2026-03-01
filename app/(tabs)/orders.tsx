@@ -68,8 +68,8 @@ const toSafeDate = (value: Order['created_at']): Date => {
   return new Date(0);
 };
 
-const formatOrderDate = (value: Order['created_at']): string => {
-  return toSafeDate(value).toLocaleDateString('no-NO');
+const formatOrderDate = (value: Order['created_at'], locale: string): string => {
+  return toSafeDate(value).toLocaleDateString(locale);
 };
 
 export default function OrdersScreen() {
@@ -77,12 +77,24 @@ export default function OrdersScreen() {
   const { colors } = useAppThemeStyles();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const { unreadCount } = useUnreadCount();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { user } = useAuth();
 
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+
+  const locale = i18n.language.startsWith('no') ? 'nb-NO' : 'en-US';
+
+  const formatNokAmount = useCallback(
+    (value: number) =>
+      new Intl.NumberFormat(locale, {
+        style: 'currency',
+        currency: 'NOK',
+        maximumFractionDigits: 0,
+      }).format(Number(value || 0)),
+    [locale]
+  );
 
   const fetchOrders = useCallback(async () => {
     if (!user?.uid) {
@@ -177,7 +189,7 @@ export default function OrdersScreen() {
       <View style={styles.orderDetails}>
         <View style={styles.detailRow}>
           <Text style={styles.label}>{t('amount')}:</Text>
-          <Text style={styles.value}>{item.total_amount} NOK</Text>
+          <Text style={styles.value}>{formatNokAmount(item.total_amount)}</Text>
         </View>
         <View style={styles.detailRow}>
           <Text style={styles.label}>{t('status')}:</Text>
@@ -185,7 +197,7 @@ export default function OrdersScreen() {
         </View>
         <View style={styles.detailRow}>
           <Text style={styles.label}>{t('date')}:</Text>
-          <Text style={styles.value}>{formatOrderDate(item.created_at)}</Text>
+          <Text style={styles.value}>{formatOrderDate(item.created_at, locale)}</Text>
         </View>
       </View>
     </TouchableOpacity>
