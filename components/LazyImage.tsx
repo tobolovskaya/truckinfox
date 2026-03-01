@@ -306,7 +306,7 @@ const styles = StyleSheet.create({
   },
   shimmer: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: colors.primary,
+    backgroundColor: colors.border.light,
   },
   spinner: {
     position: 'absolute',

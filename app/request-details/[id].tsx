@@ -9,6 +9,7 @@ import {
   Platform,
   StatusBar,
   StyleSheet,
+  ScrollView,
   Text,
   TextInput,
   TouchableOpacity,
@@ -758,9 +759,29 @@ export default function RequestDetailsScreen() {
 
       case 'images':
         if (!request?.images || request.images.length === 0) return null;
+
+        if (request.images.length === 1) {
+          return (
+            <View style={styles.imagesSection}>
+              <TouchableOpacity
+                onPress={() => openImageGallery(0)}
+                style={[styles.imageContainer, styles.singleImageContainer]}
+                accessibilityRole="button"
+                accessibilityLabel="Open image"
+              >
+                <LazyImage uri={request.images[0]} style={styles.image} />
+              </TouchableOpacity>
+            </View>
+          );
+        }
+
         return (
           <View style={styles.imagesSection}>
-            <View style={styles.imagesScroll}>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.imagesScroll}
+            >
               {request.images.map((imageUrl, idx) => (
                 <TouchableOpacity
                   key={idx}
@@ -772,7 +793,7 @@ export default function RequestDetailsScreen() {
                   <LazyImage uri={imageUrl} style={styles.image} />
                 </TouchableOpacity>
               ))}
-            </View>
+            </ScrollView>
           </View>
         );
 
@@ -1355,6 +1376,10 @@ const styles = StyleSheet.create({
     height: 120,
     borderRadius: borderRadius.md,
     overflow: 'hidden',
+  },
+  singleImageContainer: {
+    width: '100%',
+    height: 230,
   },
   image: {
     width: '100%',

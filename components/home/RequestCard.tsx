@@ -130,7 +130,7 @@ export const RequestCard: React.FC<RequestCardProps> = ({
       });
     }
 
-    if (isNewRequest) {
+    if (isNewRequest && !isOwnRequest) {
       badges.push({
         label: t('statusQuickNew') || 'New',
         textColor: colors.status.info,
