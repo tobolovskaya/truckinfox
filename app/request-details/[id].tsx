@@ -766,6 +766,7 @@ export default function RequestDetailsScreen() {
               <TouchableOpacity
                 onPress={() => openImageGallery(0)}
                 style={[styles.imageContainer, styles.singleImageContainer]}
+                testID="request-image-single"
                 accessibilityRole="button"
                 accessibilityLabel="Open image"
               >
@@ -781,6 +782,7 @@ export default function RequestDetailsScreen() {
               horizontal
               showsHorizontalScrollIndicator={false}
               contentContainerStyle={styles.imagesScroll}
+              testID="request-images-scroll"
             >
               {request.images.map((imageUrl, idx) => (
                 <TouchableOpacity
