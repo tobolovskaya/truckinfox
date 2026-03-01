@@ -507,7 +507,7 @@ export default function RequestDetailsScreen() {
       setShowSuccessAnimation(true);
       setTimeout(() => {
         setShowSuccessAnimation(false);
-        Alert.alert(t('success'), t('bidAcceptedSuccess'), [
+        Alert.alert(t('bidAccepted'), t('bidAcceptedNextStep'), [
           {
             text: t('writeMessageNow') || 'Skriv melding nå',
             onPress: () => {

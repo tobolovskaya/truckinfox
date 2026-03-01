@@ -295,6 +295,7 @@
   "proceedToPayment": "Proceed to Payment",
   "bidAccepted": "Bid Accepted",
   "bidAcceptedSuccess": "Bid accepted successfully! You can now proceed to payment.",
+  "bidAcceptedNextStep": "The bid is accepted. You can write a message to the carrier now, or continue to payment.",
   "bidNotFound": "Bid not found",
   "bidNoLongerAvailable": "This bid is no longer available",
   "requestNotFound": "Request not found",

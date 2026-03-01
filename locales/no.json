@@ -284,6 +284,7 @@
   "proceedToPayment": "Gå til betaling",
   "bidAccepted": "Bud godtatt",
   "bidAcceptedSuccess": "Bud godtatt! Du kan nå gå til betaling.",
+  "bidAcceptedNextStep": "Budet er godkjent. Du kan skrive melding til transportøren nå, eller gå videre til betaling.",
   "bidNotFound": "Bud ikke funnet",
   "bidNoLongerAvailable": "Dette budet er ikke lenger tilgjengelig",
   "requestNotFound": "Forespørsel ikke funnet",
