@@ -125,6 +125,18 @@ select public.prune_storage_zero_byte_audit_runs(); -- default 180 days
 select public.prune_storage_zero_byte_audit_runs(365); -- custom window
 ```
 
+Health-check (контроль, що scheduler працює):
+
+```sql
+select * from public.storage_zero_byte_audit_health_v;
+```
+
+Ключові поля:
+
+- `last_snapshot_at` — час останнього snapshot.
+- `hours_since_last_snapshot` — скільки годин минуло.
+- `is_stale` — `true`, якщо останній snapshot старіший за 30 годин.
+
 Опційно (якщо увімкнено `pg_cron`) можна планувати щоденний запуск:
 
 ```sql
