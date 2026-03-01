@@ -440,6 +440,7 @@
   "editRequest": "Edit Request",
   "cannotEditAcceptedRequest": "Cannot edit request with accepted bids",
   "payment": "Payment",
+  "goToPayment": "Go to payment",
   "orderSummary": "Order Summary",
   "paymentBreakdown": "Payment Breakdown",
   "carrierPayment": "Carrier Payment",

@@ -415,6 +415,7 @@
   "editRequest": "Rediger forespørsel",
   "cannotEditAcceptedRequest": "Kan ikke redigere forespørsel med godtatte bud",
   "payment": "Betaling",
+  "goToPayment": "Gå til betaling",
   "orderSummary": "Ordresammendrag",
   "paymentBreakdown": "Betalingsfordeling",
   "carrierPayment": "Transportørbetaling",

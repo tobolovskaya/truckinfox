@@ -555,6 +555,12 @@ export default function OrderStatusScreen() {
   const canTrackDelivery = order?.status === 'in_transit';
   const canConfirmDelivery = isCustomer && order?.status === 'in_transit';
   const canSubmitProof = isCarrier && order?.status === 'in_transit';
+  const paymentStatus = normalizeStatus(order?.payment_status);
+  const canOpenPayment =
+    isCustomer &&
+    paymentStatus !== 'completed' &&
+    paymentStatus !== 'paid' &&
+    paymentStatus !== 'released';
 
   if (loading) {
     return (
@@ -654,9 +660,6 @@ export default function OrderStatusScreen() {
               <Text style={styles.participantRole}>{t('customer')}</Text>
             </View>
             <Text style={styles.participantName}>{order.customer.full_name}</Text>
-            {order.customer.phone && (
-              <Text style={styles.participantPhone}>{order.customer.phone}</Text>
-            )}
           </View>
 
           <View style={styles.participantCard}>
@@ -665,9 +668,6 @@ export default function OrderStatusScreen() {
               <Text style={styles.participantRole}>{t('carrier')}</Text>
             </View>
             <Text style={styles.participantName}>{order.carrier.full_name}</Text>
-            {order.carrier.phone && (
-              <Text style={styles.participantPhone}>{order.carrier.phone}</Text>
-            )}
           </View>
         </View>
 
@@ -697,6 +697,16 @@ export default function OrderStatusScreen() {
               <Ionicons name="shield-checkmark" size={20} color={theme.iconColors.success} />
               <Text style={styles.escrowText}>{t('fundsInEscrow')}</Text>
             </View>
+          )}
+
+          {canOpenPayment && (
+            <TouchableOpacity
+              style={[styles.trackButton, { marginTop: spacing.lg }]}
+              onPress={() => router.push(`/payment/${order.id}` as never)}
+            >
+              <Ionicons name="card-outline" size={20} color={theme.iconColors.white} />
+              <Text style={styles.trackButtonText}>{t('goToPayment')}</Text>
+            </TouchableOpacity>
           )}
         </View>
 
