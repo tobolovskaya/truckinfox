@@ -509,7 +509,7 @@ export default function RequestDetailsScreen() {
         setShowSuccessAnimation(false);
         Alert.alert(t('success'), t('bidAcceptedSuccess'), [
           {
-            text: t('messages') || 'Meldinger',
+            text: t('writeMessageNow') || 'Skriv melding nå',
             onPress: () => {
               navigateToChatWithUser(bid.carrier_id);
             },
