@@ -339,6 +339,7 @@ export default function RequestDetailsScreen() {
       setTimeout(() => {
         setShowSuccessAnimation(false);
         toast.success(t('bidSubmitted') || 'Bid submitted successfully');
+        router.replace('/(tabs)/orders' as never);
       }, 800);
     } catch (error) {
       console.error('Error submitting bid:', error);
@@ -509,12 +510,6 @@ export default function RequestDetailsScreen() {
         setShowSuccessAnimation(false);
         Alert.alert(t('bidAccepted'), t('bidAcceptedNextStep'), [
           {
-            text: t('writeMessageNow') || 'Skriv melding nå',
-            onPress: () => {
-              navigateToChatWithUser(bid.carrier_id);
-            },
-          },
-          {
             text: t('proceedToPayment'),
             onPress: () => {
               navigateToPayment(bid);
@@ -591,17 +586,6 @@ export default function RequestDetailsScreen() {
       const errorMessage = error instanceof Error ? error.message : t('errorLoadingPayments');
       toast.error(errorMessage);
     }
-  };
-
-  const navigateToChatWithUser = (otherUserId: string) => {
-    if (!id || !otherUserId) return;
-    router.push(`/chat/${id}/${otherUserId}`);
-    triggerHapticFeedback.light();
-  };
-
-  const navigateToChat = () => {
-    if (!request?.user_id) return;
-    navigateToChatWithUser(request.user_id);
   };
 
   const handleOpenCustomerProfile = () => {
@@ -1040,22 +1024,24 @@ export default function RequestDetailsScreen() {
         if (!request?.users) return null;
         return (
           <View style={styles.section}>
-            <Text style={[styles.sectionTitle, styles.sectionTitleStrong]}>Kunde</Text>
+            <Text style={[styles.sectionTitle, styles.sectionTitleStrong]}>
+              {t('customer') || 'Kunde'}
+            </Text>
 
             <View style={styles.customerCard}>
-              <Avatar photoURL={request.users.avatar_url} size={48} />
-              <View style={styles.customerInfo}>
-                <Text style={styles.customerName}>{request.users.full_name}</Text>
-                <View style={styles.ratingRow}>
-                  <Ionicons name="star" size={16} color="#FFA726" />
-                  <Text style={styles.ratingText}>
-                    {typeof request.users.rating === 'number'
-                      ? request.users.rating.toFixed(1)
-                      : '0.0'}
-                  </Text>
+              <View style={styles.customerMainRow}>
+                <Avatar photoURL={request.users.avatar_url} size={48} />
+                <View style={styles.customerInfo}>
+                  <Text style={styles.customerName}>{request.users.full_name}</Text>
+                  <View style={styles.ratingRow}>
+                    <Ionicons name="star" size={16} color="#FFA726" />
+                    <Text style={styles.ratingText}>
+                      {typeof request.users.rating === 'number'
+                        ? request.users.rating.toFixed(1)
+                        : '0.0'}
+                    </Text>
+                  </View>
                 </View>
-              </View>
-              <View style={styles.customerActions}>
                 <TouchableOpacity
                   style={styles.profileButton}
                   onPress={handleOpenCustomerProfile}
@@ -1065,11 +1051,6 @@ export default function RequestDetailsScreen() {
                   <Ionicons name="person-circle-outline" size={20} color={colors.primary} />
                   <Text style={styles.profileButtonText}>{t('viewProfile') || 'View Profile'}</Text>
                 </TouchableOpacity>
-                {!isCustomer && (
-                  <TouchableOpacity style={styles.chatButton} onPress={navigateToChat}>
-                    <Ionicons name="chatbubble-outline" size={20} color={colors.white} />
-                  </TouchableOpacity>
-                )}
               </View>
             </View>
           </View>
@@ -1528,14 +1509,14 @@ const styles = StyleSheet.create({
     color: colors.white,
   },
   customerCard: {
+    backgroundColor: colors.backgroundLight,
+    borderRadius: borderRadius.md,
+    padding: spacing.sm,
+  },
+  customerMainRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.md,
-  },
-  customerActions: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
   },
   customerInfo: {
     flex: 1,
@@ -1567,7 +1548,7 @@ const styles = StyleSheet.create({
     minHeight: TOUCH_TARGET.MIN,
     borderRadius: borderRadius.md,
     backgroundColor: colors.backgroundPrimary,
-    paddingHorizontal: spacing.sm,
+    paddingHorizontal: spacing.xs,
     justifyContent: 'center',
     alignItems: 'center',
     flexDirection: 'row',
