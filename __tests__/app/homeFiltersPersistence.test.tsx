@@ -3,6 +3,15 @@ import { render, waitFor } from '@testing-library/react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import HomeScreen from '../../app/(tabs)/home';
 
+jest.mock('react-native/Libraries/Lists/VirtualizedList', () => {
+  const React = require('react');
+  const { View } = require('react-native');
+  return React.forwardRef((props: any, ref: any) => {
+    const { children, ...rest } = props;
+    return React.createElement(View, { ...rest, ref }, children);
+  });
+});
+
 jest.mock('@expo/vector-icons', () => ({
   Ionicons: () => null,
 }));

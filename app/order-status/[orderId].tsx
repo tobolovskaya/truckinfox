@@ -116,7 +116,7 @@ export default function OrderStatusScreen() {
   const getOrderStatusLabel = (status: string) => {
     const normalized = normalizeStatus(status);
     const map: Record<string, string> = {
-      active: 'orderActive',
+      active: 'active',
       in_transit: 'in_transit',
       delivered: 'delivered',
       completed: 'completed',
@@ -705,7 +705,7 @@ export default function OrderStatusScreen() {
               onPress={() => router.push(`/payment/${order.id}` as never)}
             >
               <Ionicons name="card-outline" size={20} color={theme.iconColors.white} />
-              <Text style={styles.trackButtonText}>{t('goToPayment')}</Text>
+              <Text style={styles.trackButtonText}>{t('payment')}</Text>
             </TouchableOpacity>
           )}
         </View>
