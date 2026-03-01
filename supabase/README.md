@@ -80,6 +80,28 @@ Escrow-життєвий цикл для Vipps/іншого провайдера 
 | `chat` | `chat/{chat_id}/{message_id}/{filename}` | Медіа у повідомленнях |
 | `avatars` | `avatars/{user_id}/{filename}` | Аватари користувачів |
 
+### Корисні SQL snippets
+
+- `snippets/explain_analyze_key_queries.sql` — базові `EXPLAIN ANALYZE` перевірки для гарячих запитів.
+- `snippets/partitioning_tracking_messages_monthly.sql` — покроковий план місячного partitioning для великих таблиць.
+- `snippets/storage_zero_byte_audit_cleanup.sql` — аудит і cleanup 0-byte файлів у `storage.objects` з безпечним preview перед delete.
+
+### Storage 0-byte audit helpers (migration)
+
+Після застосування migration `20260301102000_add_storage_zero_byte_audit_helpers.sql` доступні helper-и:
+
+- `public.storage_zero_byte_objects_v` — view з 0-byte об'єктами у бакетах `cargo/avatars/chat/trucks`.
+- `public.storage_zero_byte_summary()` — швидка агрегована статистика по бакетах.
+- `public.storage_zero_byte_request_image_refs()` — посилання у `cargo_requests.images`, що вказують на 0-byte `cargo` об'єкти.
+
+Приклади:
+
+```sql
+select * from public.storage_zero_byte_summary();
+select * from public.storage_zero_byte_objects_v order by created_at desc limit 100;
+select * from public.storage_zero_byte_request_image_refs() limit 100;
+```
+
 ---
 
 ## Рекомендації для Realtime та Node.js Backend
