@@ -400,7 +400,9 @@ export default function RequestDetailsScreen() {
         throw new Error('Forespørsel ikke funnet');
       }
 
-      if (!['active', 'open'].includes(currentRequest.status)) {
+      const currentStatus = String(currentRequest.status || '').toLowerCase();
+
+      if (!['active', 'open', 'pending'].includes(currentStatus)) {
         throw new Error('Forespørselen er ikke lenger aktiv');
       }
 
@@ -427,7 +429,7 @@ export default function RequestDetailsScreen() {
           updated_at: nowIso,
         })
         .eq('id', id as string)
-        .in('status', ['active', 'open']);
+        .in('status', ['active', 'open', 'pending']);
 
       if (requestUpdateError) {
         throw requestUpdateError;
@@ -571,7 +573,6 @@ export default function RequestDetailsScreen() {
           payment_status: 'pending',
           status: 'active',
           created_at: nowIso,
-          payment_initiated_at: nowIso,
         })
         .select('id')
         .single();
