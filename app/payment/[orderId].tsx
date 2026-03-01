@@ -137,6 +137,28 @@ export default function PaymentScreen() {
       maximumFractionDigits: 0,
     }).format(Number(value || 0));
 
+  const updateOrderPaymentStatus = async (status: string) => {
+    if (!order?.id) {
+      return;
+    }
+
+    const { error } = await supabase
+      .from('orders')
+      .update({ payment_status: status, updated_at: new Date().toISOString() })
+      .eq('id', order.id);
+
+    if (error) {
+      console.warn(`Failed to update order payment_status to ${status}:`, error);
+    }
+  };
+
+  const updateEscrowStatus = async (escrowId: string, status: string) => {
+    const { error } = await supabase.from('escrow_payments').update({ status }).eq('id', escrowId);
+    if (error) {
+      console.warn(`Failed to update escrow status to ${status}:`, error);
+    }
+  };
+
   const extractVippsErrorMessage = async (error: unknown): Promise<string> => {
     if (error instanceof Error && error.name !== 'FunctionsHttpError') {
       return error.message;
@@ -420,6 +442,7 @@ export default function PaymentScreen() {
       }
 
       createdEscrowPaymentId = insertedEscrowPayment.id;
+      await updateOrderPaymentStatus('initiated');
 
       // Track payment initiated
       trackPaymentInitiated({
@@ -458,10 +481,12 @@ export default function PaymentScreen() {
       // Redirect to Vipps
       if (result?.vipps_url || result?.payment_url) {
         const paymentUrl = result?.vipps_url || result?.payment_url;
+        const providerOrderId =
+          typeof result?.provider_order_id === 'string' ? result.provider_order_id : null;
 
         await supabase
           .from('escrow_payments')
-          .update({ payment_url: paymentUrl })
+          .update({ payment_url: paymentUrl, provider_order_id: providerOrderId || undefined })
           .eq('id', insertedEscrowPayment.id);
 
         Alert.alert(t('vippsPayment'), t('vippsRedirectMessage'), [
@@ -495,14 +520,8 @@ export default function PaymentScreen() {
         message.includes('HTTP 404') || message.toLowerCase().includes('requested function was not found');
 
       if (createdEscrowPaymentId && isFunctionsHttpError) {
-        const { error: failedStatusUpdateError } = await supabase
-          .from('escrow_payments')
-          .update({ status: 'failed' })
-          .eq('id', createdEscrowPaymentId);
-
-        if (failedStatusUpdateError) {
-          console.warn('Failed to update escrow payment status to failed:', failedStatusUpdateError);
-        }
+        await updateEscrowStatus(createdEscrowPaymentId, 'failed');
+        await updateOrderPaymentStatus('failed');
       }
 
       if (isFunctionNotFound) {
@@ -549,8 +568,22 @@ export default function PaymentScreen() {
 
   const simulatePaymentSuccess = () => {
     // This simulates a successful payment return from Vipps
-    setTimeout(() => {
+    setTimeout(async () => {
       if (order) {
+        const { data: latestEscrow } = await supabase
+          .from('escrow_payments')
+          .select('id')
+          .eq('order_id', order.id)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        if (latestEscrow?.id) {
+          await updateEscrowStatus(latestEscrow.id, 'paid');
+        }
+
+        await updateOrderPaymentStatus('paid');
+
         // Track payment completed
         trackPaymentCompleted({
           order_id: order.id,

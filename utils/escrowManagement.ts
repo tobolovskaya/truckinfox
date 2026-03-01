@@ -192,9 +192,10 @@ export async function getEscrowStatus(orderId: string): Promise<{
 export const ESCROW_STATUS_NAMES: { [key: string]: string } = {
   initiated: 'Payment Initiated',
   paid: 'Payment Received',
-  in_progress: 'Delivery In Progress',
-  completed: 'Funds Released',
+  released: 'Funds Released',
   refunded: 'Payment Refunded',
+  failed: 'Payment Failed',
+  expired: 'Payment Expired',
 };
 
 /**
@@ -204,9 +205,10 @@ export const ESCROW_STATUS_NAMES: { [key: string]: string } = {
 export const ESCROW_STATUS_COLORS: { [key: string]: string } = {
   initiated: '#FFC107', // Warning yellow
   paid: '#2196F3', // Primary blue
-  in_progress: '#FF8A65', // Secondary orange
-  completed: '#4CAF50', // Success green
+  released: '#4CAF50', // Success green
   refunded: '#F44336', // Error red
+  failed: '#F44336', // Error red
+  expired: '#9E9E9E', // Neutral gray
 };
 
 /**
@@ -232,8 +234,9 @@ export const PAYOUT_STATUS_NAMES: { [key: string]: string } = {
  * @returns Boolean indicating if funds can be released
  */
 export function canReleaseFunds(orderStatus: string, escrowStatus: string): boolean {
-  const validEscrowStatuses = ['paid', 'in_progress'];
-  return orderStatus === 'delivered' && validEscrowStatuses.includes(escrowStatus);
+  const normalizedOrderStatus = String(orderStatus || '').trim().toLowerCase();
+  const normalizedEscrowStatus = String(escrowStatus || '').trim().toLowerCase();
+  return normalizedOrderStatus === 'delivered' && normalizedEscrowStatus === 'paid';
 }
 
 /**
