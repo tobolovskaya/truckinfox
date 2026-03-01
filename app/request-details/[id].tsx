@@ -101,7 +101,7 @@ const toFiniteNumber = (value: unknown): number | null => {
 export default function RequestDetailsScreen() {
   const { id } = useLocalSearchParams();
   const { user } = useAuth();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const toast = useToast();
   const router = useRouter();
 
@@ -117,6 +117,15 @@ export default function RequestDetailsScreen() {
   const [deleting, setDeleting] = useState(false);
 
   const flatListRef = useRef(null);
+  const language = i18n?.language || 'en';
+  const locale = language.startsWith('no') ? 'nb-NO' : 'en-US';
+
+  const formatNokAmount = (value: number) =>
+    new Intl.NumberFormat(locale, {
+      style: 'currency',
+      currency: 'NOK',
+      maximumFractionDigits: 0,
+    }).format(Number(value || 0));
 
   const normalizedRequestStatus = (request?.status || 'pending').toLowerCase();
 
@@ -290,14 +299,14 @@ export default function RequestDetailsScreen() {
 
   const submitBid = async () => {
     if (!bidAmount.trim()) {
-      toast.error('Vennligst angi et budbeløp');
+      toast.error(t('invalidBidAmount') || 'Please enter a valid bid amount');
       triggerHapticFeedback.error();
       return;
     }
 
     const amount = parseFloat(bidAmount);
     if (isNaN(amount) || amount <= 0) {
-      toast.error('Ugyldig budbeløp');
+      toast.error(t('invalidBidAmount') || 'Please enter a valid bid amount');
       triggerHapticFeedback.error();
       return;
     }
@@ -352,12 +361,15 @@ export default function RequestDetailsScreen() {
 
   const acceptBid = async (bid: Bid) => {
     Alert.alert(
-      'Godta bud',
-      `Er du sikker på at du vil godta budet på ${bid.price} NOK fra ${bid.users?.full_name}?`,
+      t('acceptBid'),
+      t('acceptBidConfirmation', {
+        amount: formatNokAmount(bid.price),
+        carrier: bid.users?.full_name || '',
+      }),
       [
         { text: t('cancel'), style: 'cancel' },
         {
-          text: 'Godta og betal',
+          text: t('acceptAndPay'),
           onPress: () => processBidAcceptance(bid),
         },
       ]
@@ -763,7 +775,7 @@ export default function RequestDetailsScreen() {
     if (!dateString) return '';
     const date = new Date(dateString);
     if (Number.isNaN(date.getTime())) return '';
-    return date.toLocaleDateString('no-NO', { day: '2-digit', month: 'short', year: 'numeric' });
+    return date.toLocaleDateString(locale, { day: '2-digit', month: 'short', year: 'numeric' });
   };
 
   const formatTimestamp = (timestamp: unknown) => {
@@ -773,11 +785,11 @@ export default function RequestDetailsScreen() {
         ? (timestamp as { toDate: () => Date }).toDate()
         : new Date(timestamp as string);
     if (Number.isNaN(date.getTime())) return '';
-    return date.toLocaleDateString('no-NO', { day: '2-digit', month: 'short' });
+    return date.toLocaleDateString(locale, { day: '2-digit', month: 'short' });
   };
 
   const isCustomer = request?.user_id === user?.uid;
-  const canSubmitBid = !isCustomer && ['active', 'open'].includes(request?.status || '');
+  const canSubmitBid = !isCustomer && ['active', 'open'].includes(normalizedRequestStatus);
   const hasBidFromUser = bids.some(bid => bid.carrier_id === user?.uid);
 
   const renderItem = ({ item }: { item: string; index: number }) => {
@@ -846,31 +858,31 @@ export default function RequestDetailsScreen() {
             <View style={styles.infoGrid}>
               <View style={styles.infoItem}>
                 <Ionicons name="cube-outline" size={20} color={colors.primary} />
-                <Text style={styles.infoLabel}>Type</Text>
+                <Text style={styles.infoLabel}>{t('cargoType') || 'Type'}</Text>
                 <Text style={styles.infoValue}>{t(request?.cargo_type || '')}</Text>
               </View>
 
               <View style={styles.infoItem}>
                 <Ionicons name="scale-outline" size={20} color={colors.primary} />
-                <Text style={styles.infoLabel}>Vekt</Text>
+                <Text style={styles.infoLabel}>{t('weight') || 'Weight'}</Text>
                 <Text style={styles.infoValue}>{request?.weight} kg</Text>
               </View>
 
               {request?.dimensions && (
                 <View style={styles.infoItem}>
                   <Ionicons name="resize-outline" size={20} color={colors.primary} />
-                  <Text style={styles.infoLabel}>Dimensjoner</Text>
+                  <Text style={styles.infoLabel}>{t('dimensions') || 'Dimensions'}</Text>
                   <Text style={styles.infoValue}>{request.dimensions}</Text>
                 </View>
               )}
 
               <View style={styles.infoItem}>
                 <Ionicons name="cash-outline" size={20} color={colors.primary} />
-                <Text style={styles.infoLabel}>Pris</Text>
+                <Text style={styles.infoLabel}>{t('price') || 'Price'}</Text>
                 <Text style={styles.infoValue}>
                   {request?.price_type === 'negotiable'
-                    ? 'Kan forhandles'
-                    : `${request?.price} NOK`}
+                    ? t('negotiable')
+                    : formatNokAmount(request?.price || 0)}
                 </Text>
               </View>
             </View>
@@ -1076,11 +1088,11 @@ export default function RequestDetailsScreen() {
         if (!canSubmitBid || hasBidFromUser) return null;
         return (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Send bud</Text>
+            <Text style={styles.sectionTitle}>{t('submitBid')}</Text>
 
             <View style={styles.bidForm}>
               <View style={styles.inputGroup}>
-                <Text style={styles.inputLabel}>Budbeløp (NOK)</Text>
+                <Text style={styles.inputLabel}>{t('bidAmount')} (NOK)</Text>
                 <TextInput
                   style={styles.input}
                   value={bidAmount}
@@ -1096,14 +1108,14 @@ export default function RequestDetailsScreen() {
                 onPress={submitBid}
                 disabled={submittingBid}
                 accessibilityRole="button"
-                accessibilityLabel={submittingBid ? 'Submitting bid' : 'Send bud'}
+                accessibilityLabel={submittingBid ? t('processing') : t('submitBid')}
               >
                 {submittingBid ? (
                   <ActivityIndicator color={colors.white} />
                 ) : (
                   <>
                     <Ionicons name="send" size={20} color={colors.white} />
-                    <Text style={styles.submitButtonText}>Send bud</Text>
+                    <Text style={styles.submitButtonText}>{t('submitBid')}</Text>
                   </>
                 )}
               </TouchableOpacity>
@@ -1133,7 +1145,7 @@ export default function RequestDetailsScreen() {
                     </View>
                   </View>
                   <View style={styles.bidPriceContainer}>
-                    <Text style={styles.bidPrice}>{bid.price} NOK</Text>
+                    <Text style={styles.bidPrice}>{formatNokAmount(bid.price)}</Text>
                     <Text style={styles.bidDate}>{formatTimestamp(bid.created_at)}</Text>
                   </View>
                 </View>
@@ -1156,10 +1168,10 @@ export default function RequestDetailsScreen() {
                       ]}
                     >
                       {bid.status === 'accepted'
-                        ? 'Godtatt'
+                        ? t('accepted')
                         : bid.status === 'rejected'
-                          ? 'Avvist'
-                          : 'Venter'}
+                          ? t('rejected')
+                          : t('waiting')}
                     </Text>
                   </View>
 
@@ -1172,12 +1184,12 @@ export default function RequestDetailsScreen() {
                       onPress={() => acceptBid(bid)}
                       disabled={acceptingBid === bid.id}
                       accessibilityRole="button"
-                      accessibilityLabel={acceptingBid === bid.id ? 'Accepting bid' : 'Godta bud'}
+                      accessibilityLabel={acceptingBid === bid.id ? t('processing') : t('acceptBid')}
                     >
                       {acceptingBid === bid.id ? (
                         <ActivityIndicator size="small" color={colors.white} />
                       ) : (
-                        <Text style={styles.acceptButtonText}>Godta</Text>
+                        <Text style={styles.acceptButtonText}>{t('acceptBid')}</Text>
                       )}
                     </TouchableOpacity>
                   )}
@@ -1216,14 +1228,14 @@ export default function RequestDetailsScreen() {
     return (
       <View style={styles.errorContainer}>
         <Ionicons name="alert-circle-outline" size={64} color={colors.text.tertiary} />
-        <Text style={styles.errorText}>Forespørsel ikke funnet</Text>
+        <Text style={styles.errorText}>{t('requestNotFound')}</Text>
         <TouchableOpacity
           style={styles.errorButton}
           onPress={() => router.back()}
           accessibilityRole="button"
-          accessibilityLabel="Gå tilbake"
+          accessibilityLabel={t('goBack')}
         >
-          <Text style={styles.errorButtonText}>Gå tilbake</Text>
+          <Text style={styles.errorButtonText}>{t('goBack')}</Text>
         </TouchableOpacity>
       </View>
     );
@@ -1243,7 +1255,7 @@ export default function RequestDetailsScreen() {
             ? {
                 icon: 'create-outline',
                 onPress: handleEdit,
-                label: 'Edit request',
+                label: t('editRequest'),
               }
             : undefined
         }
@@ -1252,7 +1264,7 @@ export default function RequestDetailsScreen() {
             ? {
                 icon: 'trash-outline',
                 onPress: handleDelete,
-                label: deleting ? 'Deleting request' : 'Delete request',
+                label: t('deleteRequest'),
               }
             : undefined
         }

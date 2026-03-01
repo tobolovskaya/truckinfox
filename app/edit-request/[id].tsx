@@ -27,6 +27,7 @@ import { calculateDistance } from '../../utils/googlePlaces';
 import { compressImageForUpload } from '../../utils/imageCompression';
 import { LazyImage } from '../../components/LazyImage';
 import { colors, spacing, fontSize, borderRadius } from '../../lib/sharedStyles';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const CARGO_TYPES = [
   { id: 'automotive', label: 'Bil/Motor' },
@@ -113,9 +114,13 @@ interface CargoRequest {
 export default function EditRequestScreen() {
   const { id } = useLocalSearchParams();
   const { user } = useAuth();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const toast = useToast();
   const router = useRouter();
+  const insets = useSafeAreaInsets();
+  const language = i18n?.language || 'en';
+  const locale = language.startsWith('no') ? 'nb-NO' : 'en-US';
+  const formBottomInset = Math.max(insets.bottom, spacing.sm) + spacing.xl;
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -754,7 +759,7 @@ export default function EditRequestScreen() {
       />
 
       <KeyboardAwareFlatList
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[styles.scrollContent, { paddingBottom: formBottomInset }]}
         keyboardShouldPersistTaps="handled"
         enableOnAndroid
         extraScrollHeight={100}
@@ -833,7 +838,7 @@ export default function EditRequestScreen() {
                 >
                   <TextInput
                     style={styles.dateTextInput}
-                    value={formData.pickup_date.toLocaleDateString('no-NO')}
+                    value={formData.pickup_date.toLocaleDateString(locale)}
                     editable={false}
                     placeholder="dd.mm.åååå"
                   />
@@ -851,7 +856,7 @@ export default function EditRequestScreen() {
                 >
                   <TextInput
                     style={styles.dateTextInput}
-                    value={formData.delivery_date.toLocaleDateString('no-NO')}
+                    value={formData.delivery_date.toLocaleDateString(locale)}
                     editable={false}
                     placeholder="dd.mm.åååå"
                   />
@@ -1023,9 +1028,6 @@ export default function EditRequestScreen() {
                 )}
               </TouchableOpacity>
             </View>
-
-            {/* Bottom spacing */}
-            <View style={{ height: 80 }} />
           </View>
         )}
       />

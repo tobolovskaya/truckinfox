@@ -127,7 +127,8 @@ export default function PaymentScreen() {
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState(false);
   const vippsFunctionName = (process.env.EXPO_PUBLIC_VIPPS_FUNCTION_NAME || 'vipps-payment').trim();
-  const locale = i18n.language.startsWith('no') ? 'nb-NO' : 'en-US';
+  const language = i18n?.language || 'en';
+  const locale = language.startsWith('no') ? 'nb-NO' : 'en-US';
 
   const formatNokAmount = (value: number) =>
     new Intl.NumberFormat(locale, {
