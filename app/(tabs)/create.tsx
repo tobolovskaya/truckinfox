@@ -27,6 +27,7 @@ import { triggerHapticFeedback } from '../../utils/haptics';
 import { SuccessAnimation } from '../../components/SuccessAnimation';
 import { StandardBottomSheet } from '../../components/StandardBottomSheet';
 import { useDebouncedCallback } from 'use-debounce';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { AddressAutocomplete } from '../../components/AddressAutocomplete';
 import { calculateDistance } from '../../utils/googlePlaces';
@@ -98,6 +99,9 @@ export default function CreateRequestScreen() {
   const router = useRouter();
   const { width } = useWindowDimensions();
   const isSmallScreen = width < 360;
+  const insets = useSafeAreaInsets();
+  const TAB_BAR_ESTIMATED_HEIGHT = 72;
+  const formBottomInset = TAB_BAR_ESTIMATED_HEIGHT + Math.max(insets.bottom, spacing.sm) + spacing.xl;
   const { unreadCount } = useNotifications();
   const [formData, setFormData] = useState({
     title: '',
@@ -853,7 +857,11 @@ export default function CreateRequestScreen() {
       />
 
       <KeyboardAwareFlatList
-        contentContainerStyle={[styles.scrollContent, isSmallScreen && styles.scrollContentCompact]}
+        contentContainerStyle={[
+          styles.scrollContent,
+          isSmallScreen && styles.scrollContentCompact,
+          { paddingBottom: formBottomInset },
+        ]}
         keyboardShouldPersistTaps="handled"
         enableOnAndroid
         extraScrollHeight={100}
@@ -1316,9 +1324,6 @@ export default function CreateRequestScreen() {
                 )}
               </TouchableOpacity>
             </View>
-
-            {/* Bottom spacing for tab bar */}
-            <View style={{ height: 80 }} />
           </View>
         )}
       />
