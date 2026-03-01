@@ -12,6 +12,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { colors, spacing, fontSize } from '../lib/sharedStyles';
 import { startTrace, PerformanceTraces } from '../utils/performance';
+import { supabase } from '../lib/supabase';
 
 interface LazyImageProps {
   uri: string;
@@ -70,10 +71,77 @@ export const LazyImage: React.FC<LazyImageProps> = ({
 }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
+  const [resolvedUri, setResolvedUri] = useState(uri);
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const shimmerAnim = useRef(new Animated.Value(0)).current;
   const traceRef = useRef<ReturnType<typeof startTrace>>(null);
   const traceStoppedRef = useRef(false);
+  const signedUrlRetryAttemptedRef = useRef(false);
+
+  const extractStorageLocation = (value: string): { bucket: string; path: string } | null => {
+    const signedOrPublicMarkers = ['/object/sign/', '/object/public/'];
+
+    for (const marker of signedOrPublicMarkers) {
+      const markerIndex = value.indexOf(marker);
+      if (markerIndex < 0) {
+        continue;
+      }
+
+      const afterMarker = value.slice(markerIndex + marker.length);
+      const withoutQuery = afterMarker.split('?')[0];
+      const segments = withoutQuery.split('/').filter(Boolean);
+
+      if (segments.length < 2) {
+        return null;
+      }
+
+      const [bucket, ...pathSegments] = segments;
+      const path = decodeURIComponent(pathSegments.join('/'));
+
+      if (!bucket || !path) {
+        return null;
+      }
+
+      return { bucket, path };
+    }
+
+    const normalized = value.trim().replace(/^\/+/, '');
+    if (!normalized) {
+      return null;
+    }
+
+    const segments = normalized.split('/').filter(Boolean);
+    if (segments.length > 1 && ['cargo', 'avatars'].includes(segments[0])) {
+      return {
+        bucket: segments[0],
+        path: segments.slice(1).join('/'),
+      };
+    }
+
+    if (!value.startsWith('http') && normalized.includes('/')) {
+      return { bucket: 'cargo', path: normalized };
+    }
+
+    return null;
+  };
+
+  const tryRefreshSignedUrl = async (): Promise<string | null> => {
+    const storageLocation = extractStorageLocation(resolvedUri || uri);
+    if (!storageLocation) {
+      return null;
+    }
+
+    const { data, error: signedUrlError } = await supabase
+      .storage
+      .from(storageLocation.bucket)
+      .createSignedUrl(storageLocation.path, 60 * 60);
+
+    if (signedUrlError || !data?.signedUrl) {
+      return null;
+    }
+
+    return data.signedUrl;
+  };
 
   // Helper function to safely stop trace only once
   const stopTrace = () => {
@@ -88,14 +156,21 @@ export const LazyImage: React.FC<LazyImageProps> = ({
     }
   };
 
-  // Start performance trace when component mounts
+  // Stop trace on unmount if still running
   useEffect(() => {
-    traceRef.current = startTrace(PerformanceTraces.IMAGE_LOAD_TIME);
     return () => {
-      // Stop trace on unmount if still running
       stopTrace();
     };
   }, []);
+
+  useEffect(() => {
+    setResolvedUri(uri);
+    setLoading(true);
+    setError(false);
+    signedUrlRetryAttemptedRef.current = false;
+    traceStoppedRef.current = false;
+    traceRef.current = startTrace(PerformanceTraces.IMAGE_LOAD_TIME);
+  }, [uri]);
 
   // Fade-in animation when image loads
   useEffect(() => {
@@ -165,7 +240,7 @@ export const LazyImage: React.FC<LazyImageProps> = ({
         </View>
       ) : (
         <Animated.Image
-          source={{ uri }}
+          source={{ uri: resolvedUri }}
           style={[style, { opacity: fadeAnim }]}
           onLoadStart={() => {
             setLoading(true);
@@ -176,10 +251,31 @@ export const LazyImage: React.FC<LazyImageProps> = ({
             stopTrace();
           }}
           onError={() => {
-            console.log('LazyImage: Failed to load image:', uri);
-            setLoading(false);
-            setError(true);
-            stopTrace();
+            const handleError = async () => {
+              if (!signedUrlRetryAttemptedRef.current) {
+                signedUrlRetryAttemptedRef.current = true;
+                const refreshedUrl = await tryRefreshSignedUrl();
+
+                if (refreshedUrl && refreshedUrl !== resolvedUri) {
+                  setResolvedUri(refreshedUrl);
+                  setError(false);
+                  setLoading(true);
+                  return;
+                }
+              }
+
+              console.log('LazyImage: Failed to load image:', resolvedUri || uri);
+              setLoading(false);
+              setError(true);
+              stopTrace();
+            };
+
+            handleError().catch(() => {
+              console.log('LazyImage: Failed to load image:', resolvedUri || uri);
+              setLoading(false);
+              setError(true);
+              stopTrace();
+            });
           }}
           resizeMode={resizeMode}
         />
