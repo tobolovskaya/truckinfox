@@ -35,7 +35,6 @@ import {
 } from '../../utils/analytics';
 import { colors, spacing, fontSize, borderRadius } from '../../lib/sharedStyles';
 import MapView, { Marker, Polyline } from 'react-native-maps';
-import { sanitizeMessage } from '../../utils/sanitization';
 import { TOUCH_TARGET } from '../../constants/touchTargets';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
@@ -110,7 +109,6 @@ export default function RequestDetailsScreen() {
   const [bids, setBids] = useState<Bid[]>([]);
   const [loading, setLoading] = useState(true);
   const [bidAmount, setBidAmount] = useState('');
-  const [bidMessage, setBidMessage] = useState('');
   const [submittingBid, setSubmittingBid] = useState(false);
   const [acceptingBid, setAcceptingBid] = useState<string | null>(null);
   const [showSuccessAnimation, setShowSuccessAnimation] = useState(false);
@@ -312,14 +310,11 @@ export default function RequestDetailsScreen() {
         throw new Error('User not authenticated');
       }
 
-      // 🔐 Sanitize bid message before sending
-      const sanitizedMessage = bidMessage.trim() ? sanitizeMessage(bidMessage.trim(), 1000) : '';
-
       const { error: insertBidError } = await supabase.from('bids').insert({
         request_id: id,
         carrier_id: user.uid,
         price: amount,
-        note: sanitizedMessage,
+        note: null,
         status: 'pending',
         created_at: new Date().toISOString(),
       });
@@ -336,7 +331,6 @@ export default function RequestDetailsScreen() {
       });
 
       setBidAmount('');
-      setBidMessage('');
       fetchBids();
 
       // Show success animation
@@ -515,6 +509,12 @@ export default function RequestDetailsScreen() {
         setShowSuccessAnimation(false);
         Alert.alert(t('success'), t('bidAcceptedSuccess'), [
           {
+            text: t('messages') || 'Meldinger',
+            onPress: () => {
+              navigateToChatWithUser(bid.carrier_id);
+            },
+          },
+          {
             text: t('proceedToPayment'),
             onPress: () => {
               navigateToPayment(bid);
@@ -593,12 +593,15 @@ export default function RequestDetailsScreen() {
     }
   };
 
-  const navigateToChat = () => {
-    if (!request?.user_id) return;
-
-    const otherUserId = request.user_id === user?.uid ? request.user_id : request.user_id;
+  const navigateToChatWithUser = (otherUserId: string) => {
+    if (!id || !otherUserId) return;
     router.push(`/chat/${id}/${otherUserId}`);
     triggerHapticFeedback.light();
+  };
+
+  const navigateToChat = () => {
+    if (!request?.user_id) return;
+    navigateToChatWithUser(request.user_id);
   };
 
   const handleOpenCustomerProfile = () => {
@@ -1087,19 +1090,6 @@ export default function RequestDetailsScreen() {
                   onChangeText={setBidAmount}
                   placeholder="0"
                   keyboardType="numeric"
-                  placeholderTextColor={colors.text.tertiary}
-                />
-              </View>
-
-              <View style={styles.inputGroup}>
-                <Text style={styles.inputLabel}>Melding (valgfritt)</Text>
-                <TextInput
-                  style={[styles.input, styles.textArea]}
-                  value={bidMessage}
-                  onChangeText={setBidMessage}
-                  placeholder="Fortell hvorfor du er den rette for denne jobben..."
-                  multiline
-                  numberOfLines={3}
                   placeholderTextColor={colors.text.tertiary}
                 />
               </View>
