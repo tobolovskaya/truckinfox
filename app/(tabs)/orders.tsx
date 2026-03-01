@@ -127,12 +127,19 @@ export default function OrdersScreen() {
   };
 
   const getStatusLabel = (status: string) => {
+    const normalizedStatus = String(status || '')
+      .trim()
+      .toLowerCase();
     const map: { [key: string]: string } = {
-      active: 'onGoing',
+      active: 'active',
       delivered: 'completed',
+      completed: 'completed',
       cancelled: 'cancelled',
+      canceled: 'cancelled',
+      in_progress: 'in_progress',
+      in_transit: 'in_transit',
     };
-    return t(map[status] || status);
+    return t(map[normalizedStatus] || normalizedStatus);
   };
 
   const getPaymentStatusColor = (status: string) => {

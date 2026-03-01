@@ -4,6 +4,13 @@ const corsHeaders = {
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 };
 
+declare const Deno: {
+  serve: (handler: (request: Request) => Response | Promise<Response>) => void;
+  env: {
+    get: (key: string) => string | undefined;
+  };
+};
+
 type VippsPaymentRequest = {
   escrow_payment_id?: string;
   amount?: number;
@@ -23,7 +30,7 @@ const json = (status: number, body: Record<string, unknown>) =>
     },
   });
 
-Deno.serve(async request => {
+Deno.serve(async (request: Request) => {
   if (request.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
   }

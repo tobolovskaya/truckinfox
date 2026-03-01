@@ -328,6 +328,7 @@
   "typeMessage": "Type a message...",
   "startConversation": "Start a conversation",
   "orders": "Orders",
+  "ordersTab": "Orders",
   "asCustomer": "As Customer",
   "asCarrier": "As Carrier",
   "noCustomerOrders": "No orders as customer",

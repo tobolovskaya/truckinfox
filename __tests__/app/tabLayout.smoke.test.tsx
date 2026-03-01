@@ -43,7 +43,7 @@ jest.mock('react-i18next', () => ({
         home: 'Hjem',
         messages: 'Meldinger',
         create: 'Opprett',
-        orders: 'Bestillinger',
+        ordersTab: 'Ordrer',
         profile: 'Profil',
       };
       return dictionary[key] ?? key;
@@ -75,7 +75,7 @@ describe('TabLayout smoke', () => {
     expect(screenByName('home')?.options?.title).toBe('Hjem');
     expect(screenByName('messages')?.options?.title).toBe('Meldinger');
     expect(screenByName('create')?.options?.title).toBe('Opprett');
-    expect(screenByName('orders')?.options?.title).toBe('Bestillinger');
+    expect(screenByName('orders')?.options?.title).toBe('Ordrer');
     expect(screenByName('profile')?.options?.title).toBe('Profil');
 
     expect(screenByName('index')?.options?.href).toBeNull();

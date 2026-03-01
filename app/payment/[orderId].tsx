@@ -587,7 +587,7 @@ export default function PaymentScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
-      <ScreenHeader title="Payment" showBackButton />
+      <ScreenHeader title={t('payment')} showBackButton />
 
       <ScrollView style={styles.scrollView}>
         {/* 1. Vipps Payment Button - MOVED TO TOP */}
