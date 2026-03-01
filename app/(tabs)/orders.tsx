@@ -38,6 +38,8 @@ interface Order {
     | null;
   cargo_title?: string;
   cargo_type?: string;
+  cargo_from_address?: string;
+  cargo_to_address?: string;
 }
 
 const toSafeDate = (value: Order['created_at']): Date => {
@@ -115,7 +117,62 @@ export default function OrdersScreen() {
         throw error;
       }
 
-      setOrders((data || []) as Order[]);
+      const ordersData = ((data || []) as Order[]).map(item => ({
+        ...item,
+        cargo_title: item.cargo_title || '',
+      }));
+
+      const requestIds = Array.from(
+        new Set(
+          ordersData
+            .map(item => item.request_id)
+            .filter((value): value is string => Boolean(value))
+        )
+      );
+
+      if (requestIds.length > 0) {
+        const { data: requestsData, error: requestsError } = await supabase
+          .from('cargo_requests')
+          .select('id, title, from_address, to_address')
+          .in('id', requestIds);
+
+        if (!requestsError && requestsData) {
+          const requestMap = new Map(
+            requestsData.map(requestItem => [
+              requestItem.id,
+              {
+                title: requestItem.title || '',
+                from_address: requestItem.from_address || '',
+                to_address: requestItem.to_address || '',
+              },
+            ])
+          );
+
+          for (const orderItem of ordersData) {
+            if (!orderItem.request_id) {
+              continue;
+            }
+            const request = requestMap.get(orderItem.request_id);
+            if (!request) {
+              continue;
+            }
+            orderItem.cargo_title = orderItem.cargo_title || request.title;
+            orderItem.cargo_from_address = request.from_address;
+            orderItem.cargo_to_address = request.to_address;
+          }
+        }
+      }
+
+      const visibleOrders = ordersData.filter(orderItem => {
+        const isOrphan = !orderItem.request_id;
+        const paymentStatus = String(orderItem.payment_status || '')
+          .trim()
+          .toLowerCase();
+        const isUnpaid = ['pending', 'initiated', 'failed'].includes(paymentStatus);
+        return !(isOrphan && isUnpaid);
+      });
+
+      setOrders(visibleOrders);
     } catch (error) {
       console.error('Error fetching orders:', error);
     } finally {
@@ -185,6 +242,13 @@ export default function OrdersScreen() {
           <Text style={styles.statusBadgeText}>{t(item.payment_status)}</Text>
         </View>
       </View>
+
+      {!item.cargo_title && (item.cargo_from_address || item.cargo_to_address) && (
+        <Text style={styles.orderSubtitle} numberOfLines={1}>
+          {item.cargo_from_address || t('addressNotAvailable')} →{' '}
+          {item.cargo_to_address || t('addressNotAvailable')}
+        </Text>
+      )}
 
       <View style={styles.orderDetails}>
         <View style={styles.detailRow}>
@@ -286,6 +350,11 @@ const createStyles = (colors: ReturnType<typeof useAppThemeStyles>['colors']) =>
       fontWeight: fontWeight.semibold,
       color: colors.text.primary,
       flex: 1,
+    },
+    orderSubtitle: {
+      fontSize: fontSize.sm,
+      color: colors.text.secondary,
+      marginBottom: spacing.xs,
     },
     statusBadge: {
       borderRadius: 6,

@@ -722,11 +722,37 @@ export default function RequestDetailsScreen() {
     triggerHapticFeedback.medium();
 
     try {
+      const requestId = id as string;
+
+      // Best-effort: remove unpaid orders tied to this request
+      // (covers cases where bid was accepted but payment never completed)
+      const { data: unpaidOrders, error: unpaidOrdersError } = await supabase
+        .from('orders')
+        .select('id')
+        .eq('request_id', requestId)
+        .in('payment_status', ['pending', 'initiated', 'failed']);
+
+      if (unpaidOrdersError) {
+        console.warn('Could not fetch unpaid related orders:', unpaidOrdersError);
+      } else {
+        const unpaidOrderIds = (unpaidOrders || []).map(row => row.id);
+        if (unpaidOrderIds.length > 0) {
+          const { error: deleteOrdersError } = await supabase
+            .from('orders')
+            .delete()
+            .in('id', unpaidOrderIds);
+
+          if (deleteOrdersError) {
+            console.warn('Could not delete unpaid related orders:', deleteOrdersError);
+          }
+        }
+      }
+
       // Delete all bids for this request
       const { data: requestBids, error: requestBidsError } = await supabase
         .from('bids')
         .select('id')
-        .eq('request_id', id as string);
+        .eq('request_id', requestId);
 
       if (requestBidsError) {
         throw requestBidsError;
@@ -744,7 +770,7 @@ export default function RequestDetailsScreen() {
       const { error: deleteRequestError } = await supabase
         .from('cargo_requests')
         .delete()
-        .eq('id', id as string);
+        .eq('id', requestId);
 
       if (deleteRequestError) {
         throw deleteRequestError;
@@ -752,7 +778,7 @@ export default function RequestDetailsScreen() {
 
       // 📊 Track request deletion
       trackCargoRequestDeleted({
-        request_id: id as string,
+        request_id: requestId,
         cargo_type: request?.cargo_type,
         had_bids: bidIds.length > 0,
         bid_count: bidIds.length,
