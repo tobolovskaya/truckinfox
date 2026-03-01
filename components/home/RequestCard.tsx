@@ -1,6 +1,5 @@
 import React from 'react';
 import {
-  Image,
   StyleProp,
   StyleSheet,
   Text,
@@ -24,6 +23,7 @@ import {
 } from '../../constants/cardStyles';
 import { formatCurrency, formatDate, formatWeight } from '../../utils/formatting';
 import { useTranslation } from 'react-i18next';
+import { LazyImage } from '../LazyImage';
 
 export interface CargoRequest {
   id: string;
@@ -193,7 +193,17 @@ export const RequestCard: React.FC<RequestCardProps> = ({
       accessible={true}
     >
       {request.images?.[0] ? (
-        <Image source={{ uri: request.images[0] }} style={styles.image} resizeMode="cover" />
+        <LazyImage
+          uri={request.images[0]}
+          style={styles.image}
+          resizeMode="cover"
+          showErrorText={false}
+          fallback={
+            <View style={[styles.imagePlaceholder, { backgroundColor: cargoColors.background }]}>
+              <Ionicons name={cargoIcon} size={40} color={cargoColors.text} />
+            </View>
+          }
+        />
       ) : (
         <View style={[styles.imagePlaceholder, { backgroundColor: cargoColors.background }]}>
           <Ionicons name={cargoIcon} size={40} color={cargoColors.text} />
@@ -215,7 +225,9 @@ export const RequestCard: React.FC<RequestCardProps> = ({
             {statusMeta.label}
           </Text>
         </View>
-        <Text style={styles.metaText}>{weightText}</Text>
+        <Text style={styles.metaText} numberOfLines={1}>
+          {weightText}
+        </Text>
       </View>
 
       {quickBadges.length > 0 ? (
@@ -324,7 +336,8 @@ const styles = StyleSheet.create({
   },
   badgeRow: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
+    flexWrap: 'wrap',
     gap: spacing.sm,
     marginTop: spacing.sm,
   },
@@ -394,5 +407,6 @@ const styles = StyleSheet.create({
   metaText: {
     fontSize: fontSize.sm,
     color: colors.text.secondary,
+    flexShrink: 1,
   },
 });
