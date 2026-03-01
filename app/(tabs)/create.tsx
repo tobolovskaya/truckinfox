@@ -12,6 +12,7 @@ import {
 import { KeyboardAwareFlatList } from 'react-native-keyboard-aware-scroll-view';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
+import * as FileSystem from 'expo-file-system/legacy';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTranslation } from 'react-i18next';
@@ -29,7 +30,6 @@ import { useDebouncedCallback } from 'use-debounce';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { AddressAutocomplete } from '../../components/AddressAutocomplete';
 import { calculateDistance } from '../../utils/googlePlaces';
-import { fetchWithTimeout } from '../../utils/fetchWithTimeout';
 import { compressImageForUpload } from '../../utils/imageCompression';
 import { LazyImage } from '../../components/LazyImage';
 import { ScreenHeader } from '../../components/ScreenHeader';
@@ -62,6 +62,34 @@ const DRAFT_EXPIRY_HOURS = 24;
 const AUTOSAVE_DEBOUNCE_MS = 2000;
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 const STORAGE_SIGNED_URL_EXPIRY_SECONDS = 60 * 60 * 24 * 365;
+
+const base64ToUint8Array = (base64: string): Uint8Array => {
+  const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
+  const normalized = base64.replace(/=+$/, '');
+
+  let buffer = 0;
+  let bitsCollected = 0;
+  const output: number[] = [];
+
+  for (let index = 0; index < normalized.length; index += 1) {
+    const char = normalized[index];
+    const value = alphabet.indexOf(char);
+
+    if (value < 0) {
+      continue;
+    }
+
+    buffer = (buffer << 6) | value;
+    bitsCollected += 6;
+
+    if (bitsCollected >= 8) {
+      bitsCollected -= 8;
+      output.push((buffer >> bitsCollected) & 0xff);
+    }
+  }
+
+  return new Uint8Array(output);
+};
 
 export default function CreateRequestScreen() {
   const { user } = useAuth();
@@ -530,18 +558,18 @@ export default function CreateRequestScreen() {
         const imageKey = `image_${i + 1}`;
 
         try {
-          const response = await fetchWithTimeout(
-            compressedUri,
-            {
-              method: 'GET',
-            },
-            15000
-          );
-          const blob = await response.blob();
+          const base64 = await FileSystem.readAsStringAsync(compressedUri, {
+            encoding: 'base64',
+          });
+          const fileBytes = base64ToUint8Array(base64);
+
+          if (!fileBytes || fileBytes.byteLength === 0) {
+            throw new Error('Image file is empty after compression');
+          }
 
           const { error: uploadError } = await supabase.storage
             .from('cargo')
-            .upload(filePath, blob, {
+            .upload(filePath, fileBytes, {
               contentType: 'image/jpeg',
               upsert: false,
             });

@@ -77,6 +77,7 @@ export const LazyImage: React.FC<LazyImageProps> = ({
   const traceRef = useRef<ReturnType<typeof startTrace>>(null);
   const traceStoppedRef = useRef(false);
   const signedUrlRetryAttemptedRef = useRef(false);
+  const loggedFailureUrlsRef = useRef<Set<string>>(new Set());
 
   const extractStorageLocation = (value: string): { bucket: string; path: string } | null => {
     const signedOrPublicMarkers = ['/object/sign/', '/object/public/'];
@@ -264,14 +265,22 @@ export const LazyImage: React.FC<LazyImageProps> = ({
                 }
               }
 
-              console.log('LazyImage: Failed to load image:', resolvedUri || uri);
+              const failedUri = resolvedUri || uri;
+              if (__DEV__ && !loggedFailureUrlsRef.current.has(failedUri)) {
+                loggedFailureUrlsRef.current.add(failedUri);
+                console.debug('LazyImage: Failed to load image:', failedUri);
+              }
               setLoading(false);
               setError(true);
               stopTrace();
             };
 
             handleError().catch(() => {
-              console.log('LazyImage: Failed to load image:', resolvedUri || uri);
+              const failedUri = resolvedUri || uri;
+              if (__DEV__ && !loggedFailureUrlsRef.current.has(failedUri)) {
+                loggedFailureUrlsRef.current.add(failedUri);
+                console.debug('LazyImage: Failed to load image:', failedUri);
+              }
               setLoading(false);
               setError(true);
               stopTrace();

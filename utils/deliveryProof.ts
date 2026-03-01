@@ -1,9 +1,37 @@
 import { supabase } from '../lib/supabase';
 import { trackDeliveryProofSubmitted } from './analytics';
-import { fetchWithTimeout } from './fetchWithTimeout';
 import { compressImageForUpload } from './imageCompression';
+import * as FileSystem from 'expo-file-system/legacy';
 
 const STORAGE_SIGNED_URL_EXPIRY_SECONDS = 60 * 60 * 24 * 365;
+
+const base64ToUint8Array = (base64: string): Uint8Array => {
+  const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
+  const normalized = base64.replace(/=+$/, '');
+
+  let buffer = 0;
+  let bitsCollected = 0;
+  const output: number[] = [];
+
+  for (let index = 0; index < normalized.length; index += 1) {
+    const char = normalized[index];
+    const value = alphabet.indexOf(char);
+
+    if (value < 0) {
+      continue;
+    }
+
+    buffer = (buffer << 6) | value;
+    bitsCollected += 6;
+
+    if (bitsCollected >= 8) {
+      bitsCollected -= 8;
+      output.push((buffer >> bitsCollected) & 0xff);
+    }
+  }
+
+  return new Uint8Array(output);
+};
 
 function getErrorMessage(error: unknown, fallback: string): string {
   if (error instanceof Error && error.message) {
@@ -33,17 +61,16 @@ export const uploadImage = async (
     const uriToUpload = type === 'photo' ? await compressImageForUpload(uri) : uri;
     const filePath = `delivery-proofs/${orderId}/${filename}`;
 
-    // Convert URI to blob with timeout
-    const response = await fetchWithTimeout(
-      uriToUpload,
-      {
-        method: 'GET',
-      },
-      15000
-    ); // 15 second timeout for image download
-    const blob = await response.blob();
+    const base64 = await FileSystem.readAsStringAsync(uriToUpload, {
+      encoding: 'base64',
+    });
+    const fileBytes = base64ToUint8Array(base64);
 
-    const { error: uploadError } = await supabase.storage.from('cargo').upload(filePath, blob, {
+    if (!fileBytes || fileBytes.byteLength === 0) {
+      throw new Error('Delivery proof file is empty');
+    }
+
+    const { error: uploadError } = await supabase.storage.from('cargo').upload(filePath, fileBytes, {
       contentType: type === 'photo' ? 'image/jpeg' : 'image/png',
       upsert: true,
     });
