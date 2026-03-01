@@ -616,6 +616,45 @@ export default function OrderStatusScreen() {
           </View>
         </View>
 
+        {/* Payment Info */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>{t('paymentInformation')}</Text>
+
+          <View style={styles.paymentRow}>
+            <Text style={styles.paymentLabel}>{t('totalAmount')}:</Text>
+            <Text style={styles.paymentAmount}>{formatNokAmount(order.total_amount)}</Text>
+          </View>
+
+          <View style={styles.paymentRow}>
+            <Text style={styles.paymentLabel}>{t('paymentStatus')}:</Text>
+            <Text
+              style={[
+                styles.paymentStatus,
+                { color: getPaymentStatusColor(order.payment_status) },
+              ]}
+            >
+              {t(normalizeStatus(order.payment_status) || 'pending')}
+            </Text>
+          </View>
+
+          {order.escrow_payments && order.escrow_payments.length > 0 && (
+            <View style={styles.escrowInfo}>
+              <Ionicons name="shield-checkmark" size={20} color={theme.iconColors.success} />
+              <Text style={styles.escrowText}>{t('fundsInEscrow')}</Text>
+            </View>
+          )}
+
+          {canOpenPayment && (
+            <TouchableOpacity
+              style={[styles.trackButton, { marginTop: spacing.lg }]}
+              onPress={() => router.push(`/payment/${order.id}` as never)}
+            >
+              <Ionicons name="card-outline" size={20} color={theme.iconColors.white} />
+              <Text style={styles.trackButtonText}>{t('payment')}</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+
         {/* Order Details */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>{t('orderDetails')}</Text>
@@ -669,45 +708,6 @@ export default function OrderStatusScreen() {
             </View>
             <Text style={styles.participantName}>{order.carrier.full_name}</Text>
           </View>
-        </View>
-
-        {/* Payment Info */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>{t('paymentInformation')}</Text>
-
-          <View style={styles.paymentRow}>
-            <Text style={styles.paymentLabel}>{t('totalAmount')}:</Text>
-            <Text style={styles.paymentAmount}>{formatNokAmount(order.total_amount)}</Text>
-          </View>
-
-          <View style={styles.paymentRow}>
-            <Text style={styles.paymentLabel}>{t('paymentStatus')}:</Text>
-            <Text
-              style={[
-                styles.paymentStatus,
-                { color: getPaymentStatusColor(order.payment_status) },
-              ]}
-            >
-              {t(normalizeStatus(order.payment_status) || 'pending')}
-            </Text>
-          </View>
-
-          {order.escrow_payments && order.escrow_payments.length > 0 && (
-            <View style={styles.escrowInfo}>
-              <Ionicons name="shield-checkmark" size={20} color={theme.iconColors.success} />
-              <Text style={styles.escrowText}>{t('fundsInEscrow')}</Text>
-            </View>
-          )}
-
-          {canOpenPayment && (
-            <TouchableOpacity
-              style={[styles.trackButton, { marginTop: spacing.lg }]}
-              onPress={() => router.push(`/payment/${order.id}` as never)}
-            >
-              <Ionicons name="card-outline" size={20} color={theme.iconColors.white} />
-              <Text style={styles.trackButtonText}>{t('payment')}</Text>
-            </TouchableOpacity>
-          )}
         </View>
 
         {/* Delivery Tracking */}
