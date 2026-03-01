@@ -16,6 +16,7 @@ import { useI18n } from '../../contexts/I18nContext';
 import { supabase } from '../../lib/supabase';
 import { ScreenHeader } from '../../components/ScreenHeader';
 import { spacing, fontSize, fontWeight, useAppThemeStyles } from '../../lib/sharedStyles';
+import { triggerHapticFeedback } from '../../utils/haptics';
 
 type NotificationSettings = {
   push_notifications_enabled: boolean;
@@ -101,6 +102,7 @@ export default function SettingsScreen() {
 
   const handleLanguageChange = async (language: 'no' | 'en') => {
     try {
+      triggerHapticFeedback.light();
       await changeLanguage(language);
     } catch (error) {
       console.error('Failed to change language:', error);
@@ -154,12 +156,14 @@ export default function SettingsScreen() {
   };
 
   const handleNotificationToggle = (key: keyof NotificationSettings) => {
+    triggerHapticFeedback.light();
     const updated = { ...notificationSettings, [key]: !notificationSettings[key] };
     setNotificationSettings(updated);
     updateSettings(updated);
   };
 
   const handlePrivacyToggle = (key: keyof PrivacySettings) => {
+    triggerHapticFeedback.light();
     const updated = { ...privacySettings, [key]: !privacySettings[key] };
     setPrivacySettings(updated);
     updateSettings(undefined, updated);

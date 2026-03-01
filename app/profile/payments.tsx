@@ -15,6 +15,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { ScreenHeader } from '../../components/ScreenHeader';
 import { EmptyState } from '../../components/EmptyState';
 import { usePaymentHistory, PaymentRecord } from '../../hooks/usePaymentHistory';
+import { triggerHapticFeedback } from '../../utils/haptics';
 
 export default function PaymentsScreen() {
   const { t, i18n } = useTranslation();
@@ -144,7 +145,10 @@ export default function PaymentsScreen() {
     <TouchableOpacity
       key={status}
       style={[styles.filterButton, selectedStatus === status && styles.filterButtonActive]}
-      onPress={() => setSelectedStatus(selectedStatus === status ? undefined : status)}
+      onPress={() => {
+        triggerHapticFeedback.light();
+        setSelectedStatus(selectedStatus === status ? undefined : status);
+      }}
     >
       <Text
         style={[
@@ -161,6 +165,13 @@ export default function PaymentsScreen() {
     return (
       <View style={styles.container}>
         <ScreenHeader title={t('paymentHistory')} showBackButton={true} />
+        <View style={styles.filterSection}>
+          <View style={styles.filterButtons}>
+            {[0, 1, 2, 3].map(index => (
+              <View key={index} style={styles.filterChipPlaceholder} />
+            ))}
+          </View>
+        </View>
         <View style={styles.centerContainer}>
           <ActivityIndicator size="large" color={colors.primary} />
         </View>
@@ -310,6 +321,15 @@ const createStyles = (colors: ReturnType<typeof useAppThemeStyles>['colors']) =>
       backgroundColor: colors.white,
       borderWidth: 1,
       borderColor: colors.border.default,
+    },
+    filterChipPlaceholder: {
+      width: 96,
+      height: 36,
+      borderRadius: spacing.lg,
+      backgroundColor: colors.white,
+      borderWidth: 1,
+      borderColor: colors.border.default,
+      opacity: 0.7,
     },
     filterButtonActive: {
       backgroundColor: colors.primary,
