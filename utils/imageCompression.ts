@@ -7,7 +7,9 @@ const DEFAULT_TARGET_SIZE_BYTES = 1_500_000;
 const DEFAULT_INITIAL_QUALITY = 0.72;
 const DEFAULT_MIN_QUALITY = 0.45;
 
-const getImageDimensions = async (uri: string): Promise<{ width: number; height: number } | null> => {
+const getImageDimensions = async (
+  uri: string
+): Promise<{ width: number; height: number } | null> => {
   try {
     return await new Promise((resolve, reject) => {
       Image.getSize(

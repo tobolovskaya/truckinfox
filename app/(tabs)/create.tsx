@@ -578,8 +578,7 @@ export default function CreateRequestScreen() {
             throw uploadError;
           }
 
-          const { data: signedData, error: signedUrlError } = await supabase
-            .storage
+          const { data: signedData, error: signedUrlError } = await supabase.storage
             .from('cargo')
             .createSignedUrl(filePath, STORAGE_SIGNED_URL_EXPIRY_SECONDS);
 
@@ -723,8 +722,8 @@ export default function CreateRequestScreen() {
           const { error: imagesUpdateError } = await supabase
             .from('cargo_requests')
             .update({
-            images: imageUrls,
-          })
+              images: imageUrls,
+            })
             .eq('id', request.id);
 
           if (imagesUpdateError) {

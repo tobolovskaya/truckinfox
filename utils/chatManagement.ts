@@ -148,7 +148,9 @@ export async function getChat(chatId: string): Promise<Chat | null> {
   try {
     const { data, error } = await supabase
       .from('chats')
-      .select('id, request_id, user_a_id, user_b_id, last_message, last_message_at, unread_a, unread_b, created_at, updated_at')
+      .select(
+        'id, request_id, user_a_id, user_b_id, last_message, last_message_at, unread_a, unread_b, created_at, updated_at'
+      )
       .eq('id', chatId)
       .maybeSingle();
 
@@ -184,7 +186,11 @@ export async function chatExists(
 ): Promise<boolean> {
   try {
     const chatId = generateChatId(requestId, customerId, carrierId);
-    const { data, error } = await supabase.from('chats').select('id').eq('id', chatId).maybeSingle();
+    const { data, error } = await supabase
+      .from('chats')
+      .select('id')
+      .eq('id', chatId)
+      .maybeSingle();
     return !error && Boolean(data?.id);
   } catch (error) {
     console.error('Error checking if chat exists:', error);

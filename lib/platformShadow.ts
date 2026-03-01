@@ -16,8 +16,8 @@ export function getPlatformShadow(params: ShadowParams) {
       shadowColor === '#000' || shadowColor === 'black'
         ? `rgba(0, 0, 0, ${shadowOpacity})`
         : shadowColor.includes('rgb')
-        ? shadowColor
-        : shadowColor;
+          ? shadowColor
+          : shadowColor;
 
     return {
       boxShadow: `${shadowOffset.width}px ${shadowOffset.height}px ${shadowRadius}px ${rgbaColor}`,

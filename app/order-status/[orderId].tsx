@@ -379,10 +379,10 @@ export default function OrderStatusScreen() {
       const { error } = await supabase
         .from('orders')
         .update({
-        status: 'delivered',
-        delivered_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      })
+          status: 'delivered',
+          delivered_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        })
         .eq('id', orderIdString as string);
 
       if (error) {

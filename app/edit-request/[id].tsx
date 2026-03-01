@@ -513,8 +513,7 @@ export default function EditRequestScreen() {
             throw uploadError;
           }
 
-          const { data: signedData, error: signedUrlError } = await supabase
-            .storage
+          const { data: signedData, error: signedUrlError } = await supabase.storage
             .from('cargo')
             .createSignedUrl(filePath, STORAGE_SIGNED_URL_EXPIRY_SECONDS);
 
@@ -616,7 +615,11 @@ export default function EditRequestScreen() {
         const missingColumnMatch = message.match(/'([^']+)' column/);
         const missingColumn = missingColumnMatch?.[1];
 
-        if (!missingColumn || !(missingColumn in updateData) || !removableColumns.has(missingColumn)) {
+        if (
+          !missingColumn ||
+          !(missingColumn in updateData) ||
+          !removableColumns.has(missingColumn)
+        ) {
           break;
         }
 

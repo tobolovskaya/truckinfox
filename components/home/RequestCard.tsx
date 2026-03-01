@@ -1,12 +1,5 @@
 import React from 'react';
-import {
-  StyleProp,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-  ViewStyle,
-} from 'react-native';
+import { StyleProp, StyleSheet, Text, TouchableOpacity, View, ViewStyle } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import {
   colors,
@@ -76,8 +69,8 @@ export const RequestCard: React.FC<RequestCardProps> = ({
     request.price_type === 'negotiable'
       ? t('negotiable')
       : typeof request.price === 'number' && request.price > 0
-      ? formatCurrency(request.price)
-      : t('priceOnAgreement');
+        ? formatCurrency(request.price)
+        : t('priceOnAgreement');
   const weightText =
     typeof request.weight === 'number' && Number.isFinite(request.weight)
       ? formatWeight(request.weight)
@@ -93,7 +86,8 @@ export const RequestCard: React.FC<RequestCardProps> = ({
   const hasAcceptedBid =
     Boolean(request.bids?.some(bid => (bid.status || '').toLowerCase() === 'accepted')) ||
     ['in_transit', 'delivered', 'completed'].includes(normalizedStatus);
-  const isWaitingRequest = !hasAcceptedBid && ['pending', 'open', 'active'].includes(normalizedStatus);
+  const isWaitingRequest =
+    !hasAcceptedBid && ['pending', 'open', 'active'].includes(normalizedStatus);
   const isNewRequest = React.useMemo(() => {
     if (!request.created_at) {
       return false;
@@ -220,7 +214,7 @@ export const RequestCard: React.FC<RequestCardProps> = ({
         <View style={[styles.badge, { backgroundColor: cargoColors.background }]}>
           <Text style={[styles.badgeText, { color: cargoColors.text }]}>{cargoTypeLabel}</Text>
         </View>
-        <View style={[styles.statusBadge, { backgroundColor: statusMeta.backgroundColor }]}> 
+        <View style={[styles.statusBadge, { backgroundColor: statusMeta.backgroundColor }]}>
           <Text style={[styles.statusBadgeText, { color: statusMeta.textColor }]}>
             {statusMeta.label}
           </Text>

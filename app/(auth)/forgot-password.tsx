@@ -28,7 +28,7 @@ export default function ForgotPasswordScreen() {
     }
 
     const intervalId = setInterval(() => {
-      setCooldownSeconds((previous) => Math.max(previous - 1, 0));
+      setCooldownSeconds(previous => Math.max(previous - 1, 0));
     }, 1000);
 
     return () => clearInterval(intervalId);
@@ -81,7 +81,8 @@ export default function ForgotPasswordScreen() {
           ['over_email_send_rate_limit', 'over_request_rate_limit', 'too_many_requests'].includes(
             error.code || ''
           )) ||
-        (error instanceof AuthApiError && error.message.toLowerCase().includes('email rate limit exceeded'));
+        (error instanceof AuthApiError &&
+          error.message.toLowerCase().includes('email rate limit exceeded'));
 
       if (!isResetRateLimited) {
         console.error('Password reset error:', error);
@@ -132,7 +133,10 @@ export default function ForgotPasswordScreen() {
           </View>
 
           <TouchableOpacity
-            style={[styles.primaryButton, (loading || cooldownSeconds > 0) && styles.primaryButtonDisabled]}
+            style={[
+              styles.primaryButton,
+              (loading || cooldownSeconds > 0) && styles.primaryButtonDisabled,
+            ]}
             onPress={handleSendReset}
             disabled={loading || cooldownSeconds > 0}
             accessibilityRole="button"

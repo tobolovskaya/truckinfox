@@ -15,7 +15,10 @@ export default function NotificationsScreen() {
 
   return (
     <View style={styles.container}>
-      <ScreenHeader title={t('notifications') || 'Notifications'} onBackPress={() => router.back()} />
+      <ScreenHeader
+        title={t('notifications') || 'Notifications'}
+        onBackPress={() => router.back()}
+      />
       <EmptyState
         icon="notifications-outline"
         title={t('noNotifications')}
@@ -36,8 +39,8 @@ export default function NotificationsScreen() {
 
 const createStyles = (colors: ReturnType<typeof useAppThemeStyles>['colors']) =>
   StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
+    container: {
+      flex: 1,
+      backgroundColor: colors.background,
+    },
   });

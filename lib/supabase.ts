@@ -44,7 +44,9 @@ const isCloudHost = (value?: string): boolean => {
   return host !== 'localhost' && host !== '127.0.0.1';
 };
 
-export const isSupabaseConfigured = Boolean(rawSupabaseAnonKey && isCloudHost(normalizedSupabaseUrl));
+export const isSupabaseConfigured = Boolean(
+  rawSupabaseAnonKey && isCloudHost(normalizedSupabaseUrl)
+);
 
 if (!isSupabaseConfigured) {
   throw new Error(
@@ -52,15 +54,19 @@ if (!isSupabaseConfigured) {
   );
 }
 
-export const supabase = createClient(normalizedSupabaseUrl as string, rawSupabaseAnonKey as string, {
-  auth: {
-    persistSession: true,
-    autoRefreshToken: true,
-    detectSessionInUrl: false,
-  },
-  realtime: {
-    params: {
-      eventsPerSecond: 10,
+export const supabase = createClient(
+  normalizedSupabaseUrl as string,
+  rawSupabaseAnonKey as string,
+  {
+    auth: {
+      persistSession: true,
+      autoRefreshToken: true,
+      detectSessionInUrl: false,
     },
-  },
-});
+    realtime: {
+      params: {
+        eventsPerSecond: 10,
+      },
+    },
+  }
+);

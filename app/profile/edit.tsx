@@ -280,81 +280,81 @@ export default function EditProfileScreen() {
 
 const createStyles = (colors: ReturnType<typeof useAppThemeStyles>['colors']) =>
   StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
-  content: {
-    flex: 1,
-  },
-  scrollContent: {
-    paddingBottom: spacing.huge,
-  },
-  loadingState: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: spacing.xl,
-  },
-  loadingText: {
-    marginTop: spacing.md,
-    fontSize: fontSize.sm,
-    color: colors.text.secondary,
-  },
-  avatarSection: {
-    alignItems: 'center',
-    paddingVertical: spacing.xl,
-  },
-  avatarHint: {
-    marginTop: spacing.sm,
-    fontSize: fontSize.sm,
-    color: colors.text.secondary,
-  },
-  fieldGroup: {
-    marginBottom: spacing.lg,
-  },
-  label: {
-    fontSize: fontSize.sm,
-    fontWeight: fontWeight.semibold,
-    color: colors.text.primary,
-    marginBottom: spacing.xs,
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: colors.border.default,
-    backgroundColor: colors.white,
-    borderRadius: borderRadius.md,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    fontSize: fontSize.md,
-    color: colors.text.primary,
-  },
-  inputDisabled: {
-    backgroundColor: colors.backgroundLight,
-    color: colors.text.tertiary,
-  },
-  accountTypeRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  accountTypeLabel: {
-    fontSize: fontSize.md,
-    color: colors.text.primary,
-  },
-  accountTypePill: {
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs,
-    backgroundColor: `${colors.primary}15`,
-    borderRadius: borderRadius.full,
-  },
-  accountTypeText: {
-    fontSize: fontSize.sm,
-    fontWeight: fontWeight.semibold,
-    color: colors.primary,
-  },
-  saveSection: {
-    paddingHorizontal: spacing.lg,
-    marginTop: spacing.xl,
-  },
+    container: {
+      flex: 1,
+      backgroundColor: colors.background,
+    },
+    content: {
+      flex: 1,
+    },
+    scrollContent: {
+      paddingBottom: spacing.huge,
+    },
+    loadingState: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      padding: spacing.xl,
+    },
+    loadingText: {
+      marginTop: spacing.md,
+      fontSize: fontSize.sm,
+      color: colors.text.secondary,
+    },
+    avatarSection: {
+      alignItems: 'center',
+      paddingVertical: spacing.xl,
+    },
+    avatarHint: {
+      marginTop: spacing.sm,
+      fontSize: fontSize.sm,
+      color: colors.text.secondary,
+    },
+    fieldGroup: {
+      marginBottom: spacing.lg,
+    },
+    label: {
+      fontSize: fontSize.sm,
+      fontWeight: fontWeight.semibold,
+      color: colors.text.primary,
+      marginBottom: spacing.xs,
+    },
+    input: {
+      borderWidth: 1,
+      borderColor: colors.border.default,
+      backgroundColor: colors.white,
+      borderRadius: borderRadius.md,
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.sm,
+      fontSize: fontSize.md,
+      color: colors.text.primary,
+    },
+    inputDisabled: {
+      backgroundColor: colors.backgroundLight,
+      color: colors.text.tertiary,
+    },
+    accountTypeRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+    },
+    accountTypeLabel: {
+      fontSize: fontSize.md,
+      color: colors.text.primary,
+    },
+    accountTypePill: {
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.xs,
+      backgroundColor: `${colors.primary}15`,
+      borderRadius: borderRadius.full,
+    },
+    accountTypeText: {
+      fontSize: fontSize.sm,
+      fontWeight: fontWeight.semibold,
+      color: colors.primary,
+    },
+    saveSection: {
+      paddingHorizontal: spacing.lg,
+      marginTop: spacing.xl,
+    },
   });

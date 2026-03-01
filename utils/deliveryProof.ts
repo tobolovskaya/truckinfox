@@ -70,17 +70,18 @@ export const uploadImage = async (
       throw new Error('Delivery proof file is empty');
     }
 
-    const { error: uploadError } = await supabase.storage.from('cargo').upload(filePath, fileBytes, {
-      contentType: type === 'photo' ? 'image/jpeg' : 'image/png',
-      upsert: true,
-    });
+    const { error: uploadError } = await supabase.storage
+      .from('cargo')
+      .upload(filePath, fileBytes, {
+        contentType: type === 'photo' ? 'image/jpeg' : 'image/png',
+        upsert: true,
+      });
 
     if (uploadError) {
       throw uploadError;
     }
 
-    const { data: signedData, error: signedUrlError } = await supabase
-      .storage
+    const { data: signedData, error: signedUrlError } = await supabase.storage
       .from('cargo')
       .createSignedUrl(filePath, STORAGE_SIGNED_URL_EXPIRY_SECONDS);
 

@@ -5,9 +5,7 @@
  * in the React Native app.
  */
 
-import {
-  RealtimeChannel,
-} from '@supabase/supabase-js';
+import { RealtimeChannel } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
 
 type NotificationTimestamp = string | Date | { toDate: () => Date };

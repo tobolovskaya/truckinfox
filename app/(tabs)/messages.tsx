@@ -149,7 +149,10 @@ export default function MessagesScreen() {
       const userIds = Array.from(userIdsSet);
       const requestIds = Array.from(requestIdsSet);
 
-      const usersMap = new Map<string, { full_name?: string; user_type?: string; avatar_url?: string }>();
+      const usersMap = new Map<
+        string,
+        { full_name?: string; user_type?: string; avatar_url?: string }
+      >();
       const requestsMap = new Map<string, { title?: string }>();
 
       const userChunks = chunkArray(userIds, 50);
@@ -436,111 +439,111 @@ export default function MessagesScreen() {
 
 const createStyles = (colors: ReturnType<typeof useAppThemeStyles>['colors']) =>
   StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
-  header: {
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.lg,
-    paddingBottom: spacing.md,
-    backgroundColor: colors.white,
-  },
-  headerTitle: {
-    fontSize: fontSize.xxl,
-    fontWeight: fontWeight.bold,
-    color: colors.text.primary,
-  },
-  searchContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.white,
-    marginHorizontal: spacing.lg,
-    marginVertical: spacing.md,
-    paddingHorizontal: spacing.md,
-    borderRadius: borderRadius.lg,
-    borderWidth: 1,
-    borderColor: colors.border.light,
-  },
-  searchIcon: {
-    marginRight: spacing.sm,
-  },
-  searchInput: {
-    flex: 1,
-    fontSize: fontSize.md,
-    color: colors.text.primary,
-    paddingVertical: spacing.md,
-  },
-  conversationCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.white,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border.light,
-  },
-  conversationContent: {
-    flex: 1,
-    marginLeft: spacing.md,
-  },
-  unreadCard: {
-    backgroundColor: colors.backgroundVeryLight,
-  },
-  conversationHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: spacing.xs,
-  },
-  userName: {
-    flex: 1,
-    fontSize: fontSize.md,
-    fontWeight: fontWeight.semibold,
-    color: colors.text.primary,
-    marginRight: spacing.sm,
-  },
-  timestamp: {
-    fontSize: fontSize.sm,
-    color: colors.text.tertiary,
-  },
-  requestTitle: {
-    fontSize: fontSize.sm,
-    color: colors.text.secondary,
-    marginBottom: spacing.xs,
-  },
-  lastMessageRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  readIcon: {
-    marginRight: spacing.xs,
-  },
-  lastMessage: {
-    flex: 1,
-    fontSize: fontSize.sm,
-    color: colors.text.tertiary,
-  },
-  unreadMessage: {
-    fontWeight: fontWeight.semibold,
-    color: colors.text.primary,
-  },
-  unreadBadge: {
-    backgroundColor: colors.primary,
-    minWidth: 24,
-    height: 24,
-    borderRadius: borderRadius.full,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: spacing.xs,
-    marginLeft: spacing.sm,
-  },
-  unreadBadgeText: {
-    fontSize: fontSize.xs,
-    fontWeight: fontWeight.bold,
-    color: colors.white,
-  },
-  emptyContainer: {
-    flex: 1,
-  },
+    container: {
+      flex: 1,
+      backgroundColor: colors.background,
+    },
+    header: {
+      paddingHorizontal: spacing.lg,
+      paddingTop: spacing.lg,
+      paddingBottom: spacing.md,
+      backgroundColor: colors.white,
+    },
+    headerTitle: {
+      fontSize: fontSize.xxl,
+      fontWeight: fontWeight.bold,
+      color: colors.text.primary,
+    },
+    searchContainer: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: colors.white,
+      marginHorizontal: spacing.lg,
+      marginVertical: spacing.md,
+      paddingHorizontal: spacing.md,
+      borderRadius: borderRadius.lg,
+      borderWidth: 1,
+      borderColor: colors.border.light,
+    },
+    searchIcon: {
+      marginRight: spacing.sm,
+    },
+    searchInput: {
+      flex: 1,
+      fontSize: fontSize.md,
+      color: colors.text.primary,
+      paddingVertical: spacing.md,
+    },
+    conversationCard: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: colors.white,
+      paddingHorizontal: spacing.lg,
+      paddingVertical: spacing.md,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.border.light,
+    },
+    conversationContent: {
+      flex: 1,
+      marginLeft: spacing.md,
+    },
+    unreadCard: {
+      backgroundColor: colors.backgroundVeryLight,
+    },
+    conversationHeader: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: spacing.xs,
+    },
+    userName: {
+      flex: 1,
+      fontSize: fontSize.md,
+      fontWeight: fontWeight.semibold,
+      color: colors.text.primary,
+      marginRight: spacing.sm,
+    },
+    timestamp: {
+      fontSize: fontSize.sm,
+      color: colors.text.tertiary,
+    },
+    requestTitle: {
+      fontSize: fontSize.sm,
+      color: colors.text.secondary,
+      marginBottom: spacing.xs,
+    },
+    lastMessageRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    readIcon: {
+      marginRight: spacing.xs,
+    },
+    lastMessage: {
+      flex: 1,
+      fontSize: fontSize.sm,
+      color: colors.text.tertiary,
+    },
+    unreadMessage: {
+      fontWeight: fontWeight.semibold,
+      color: colors.text.primary,
+    },
+    unreadBadge: {
+      backgroundColor: colors.primary,
+      minWidth: 24,
+      height: 24,
+      borderRadius: borderRadius.full,
+      justifyContent: 'center',
+      alignItems: 'center',
+      paddingHorizontal: spacing.xs,
+      marginLeft: spacing.sm,
+    },
+    unreadBadgeText: {
+      fontSize: fontSize.xs,
+      fontWeight: fontWeight.bold,
+      color: colors.white,
+    },
+    emptyContainer: {
+      flex: 1,
+    },
   });

@@ -116,7 +116,10 @@ export default function MapScreen() {
   const fitKey = useMemo(
     () =>
       markerItems
-        .map(item => `${item.id}:${item.coordinate.latitude.toFixed(4)}:${item.coordinate.longitude.toFixed(4)}`)
+        .map(
+          item =>
+            `${item.id}:${item.coordinate.latitude.toFixed(4)}:${item.coordinate.longitude.toFixed(4)}`
+        )
         .join('|'),
     [markerItems]
   );
@@ -174,7 +177,9 @@ export default function MapScreen() {
       ) : markerItems.length === 0 ? (
         <View style={styles.stateContainer}>
           <Text style={styles.emptyTitle}>No requests with coordinates</Text>
-          <Text style={styles.emptyText}>Open requests will appear here when location data is available.</Text>
+          <Text style={styles.emptyText}>
+            Open requests will appear here when location data is available.
+          </Text>
         </View>
       ) : useClustering ? (
         <MapSuperCluster

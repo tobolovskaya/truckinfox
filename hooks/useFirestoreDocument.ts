@@ -30,7 +30,7 @@ export const useFirestoreDocument = <T>(collectionName: string, documentId: stri
         }
 
         if (row) {
-          setData(({ id: documentId, ...row } as unknown) as T);
+          setData({ id: documentId, ...row } as unknown as T);
         } else {
           setData(null);
         }

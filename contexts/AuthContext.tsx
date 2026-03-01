@@ -86,7 +86,9 @@ const mapSupabaseUser = (user: SupabaseUser): AppUser => ({
   displayName:
     (typeof user.user_metadata?.full_name === 'string' && user.user_metadata.full_name) || null,
   phoneNumber:
-    (typeof user.user_metadata?.phone === 'string' && user.user_metadata.phone) || user.phone || null,
+    (typeof user.user_metadata?.phone === 'string' && user.user_metadata.phone) ||
+    user.phone ||
+    null,
   photoURL:
     (typeof user.user_metadata?.avatar_url === 'string' && user.user_metadata.avatar_url) || null,
 });
@@ -117,7 +119,8 @@ const getAuthErrorMessage = (
       normalizedMessage.includes('already exists')
     ) {
       return {
-        message: 'Denne e-posten er allerede registrert. Logg inn eller bekreft e-posten hvis kontoen er ny.',
+        message:
+          'Denne e-posten er allerede registrert. Logg inn eller bekreft e-posten hvis kontoen er ny.',
         code: 'user_already_exists',
       };
     }
@@ -136,7 +139,8 @@ const getAuthErrorMessage = (
         return { message: 'Невірний email або пароль.', code: error.code };
       case 'email_not_confirmed':
         return {
-          message: 'E-posten er ikke bekreftet ennå. Sjekk innboksen din og bekreft kontoen før innlogging.',
+          message:
+            'E-posten er ikke bekreftet ennå. Sjekk innboksen din og bekreft kontoen før innlogging.',
           code: error.code,
         };
       case 'user_not_found':
@@ -169,7 +173,7 @@ const getAuthErrorMessage = (
     if (
       postgrestError.code === 'PGRST205' &&
       typeof postgrestError.message === 'string' &&
-      postgrestError.message.includes("public.profiles")
+      postgrestError.message.includes('public.profiles')
     ) {
       return {
         message:
@@ -311,8 +315,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (!data.session) {
         return {
           success: false,
-          error:
-            'Konto opprettet. Sjekk e-posten din og bekreft kontoen før innlogging.',
+          error: 'Konto opprettet. Sjekk e-posten din og bekreft kontoen før innlogging.',
           errorCode: 'email_confirmation_required',
         };
       }
@@ -340,7 +343,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (
           profileError.code === 'PGRST205' &&
           typeof profileError.message === 'string' &&
-          profileError.message.includes("public.profiles")
+          profileError.message.includes('public.profiles')
         ) {
           return {
             success: false,
@@ -360,7 +363,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } catch (error) {
       const errorInfo = getAuthErrorMessage(error);
 
-      if (!['profiles_table_missing', 'signup_rate_limited', 'email_confirmation_required', 'user_already_exists'].includes(errorInfo.code || '')) {
+      if (
+        ![
+          'profiles_table_missing',
+          'signup_rate_limited',
+          'email_confirmation_required',
+          'user_already_exists',
+        ].includes(errorInfo.code || '')
+      ) {
         console.error('Sign up error:', error);
       }
 

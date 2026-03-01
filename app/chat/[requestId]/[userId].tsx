@@ -67,8 +67,7 @@ interface ChatUser {
   rating: number;
 }
 
-const UUID_REGEX =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 const extractUuid = (value?: string): string | undefined => {
   if (!value) {
@@ -85,7 +84,9 @@ const extractUuid = (value?: string): string | undefined => {
 
 export default function ChatScreen() {
   const params = useLocalSearchParams();
-  const requestId = extractUuid(typeof params.requestId === 'string' ? params.requestId : undefined);
+  const requestId = extractUuid(
+    typeof params.requestId === 'string' ? params.requestId : undefined
+  );
   const userId = extractUuid(typeof params.userId === 'string' ? params.userId : undefined);
   const { user } = useAuth();
   const { t } = useTranslation();
@@ -371,8 +372,12 @@ export default function ChatScreen() {
           delivered_at: message.delivered_at,
           read_at: message.read_at,
           sender: {
-            full_name: message.sender_id === user.uid ? user.displayName || 'You' : chatUser?.full_name || 'Unknown',
-            user_type: message.sender_id === user.uid ? 'customer' : chatUser?.user_type || 'customer',
+            full_name:
+              message.sender_id === user.uid
+                ? user.displayName || 'You'
+                : chatUser?.full_name || 'Unknown',
+            user_type:
+              message.sender_id === user.uid ? 'customer' : chatUser?.user_type || 'customer',
           },
         }));
 
@@ -972,321 +977,321 @@ export default function ChatScreen() {
 
 const createStyles = (colors: ReturnType<typeof useAppThemeStyles>['colors']) =>
   StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.white,
-  },
-  headerInfo: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  avatar: {
-    width: 40,
-    height: 40,
-    borderRadius: borderRadius.full,
-    backgroundColor: colors.primary,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: spacing.md,
-  },
-  avatarInitials: {
-    fontSize: fontSize.md,
-    fontWeight: fontWeight.bold,
-    color: colors.white,
-  },
-  headerText: {
-    flex: 1,
-  },
-  userName: {
-    fontSize: fontSize.lg,
-    fontWeight: fontWeight.semibold,
-    color: colors.black,
-    marginBottom: 1,
-  },
-  userRole: {
-    fontSize: fontSize.sm,
-    color: colors.text.secondary,
-    fontWeight: fontWeight.medium,
-  },
-  requestCard: {
-    backgroundColor: colors.white,
-    marginHorizontal: spacing.lg,
-    marginVertical: spacing.md,
-    borderRadius: borderRadius.xl,
-    ...shadows.md,
-  },
-  requestCardContent: {
-    flexDirection: 'row',
-    padding: spacing.lg,
-    alignItems: 'flex-start',
-  },
-  requestIconContainer: {
-    width: 44,
-    height: 44,
-    borderRadius: borderRadius.full,
-    backgroundColor: colors.primaryLight,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 14,
-    ...shadows.sm,
-  },
-  requestIcon: {
-    fontSize: fontSize.xl,
-  },
-  requestDetails: {
-    flex: 1,
-  },
-  requestTitle: {
-    fontSize: fontSize.md,
-    fontWeight: fontWeight.semibold,
-    color: colors.text.primary,
-    marginBottom: spacing.sm,
-  },
-  routeVertical: {
-    paddingLeft: 4,
-  },
-  routePoint: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginVertical: 2,
-  },
-  routeIcon: {
-    fontSize: fontSize.sm,
-    marginRight: 8,
-  },
-  routeLocation: {
-    fontSize: fontSize.sm,
-    color: '#616161',
-    fontWeight: '500',
-    flex: 1,
-  },
-  routeArrow: {
-    paddingLeft: 4,
-    paddingVertical: 2,
-  },
-  routeArrowText: {
-    fontSize: fontSize.sm,
-    color: '#9CA3AF',
-    fontWeight: '600',
-  },
-  detailsButton: {
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 8,
-    marginTop: spacing.sm,
-    backgroundColor: '#F97316',
-    borderRadius: 8,
-    alignSelf: 'flex-start',
-  },
-  detailsButtonText: {
-    fontSize: fontSize.sm,
-    color: 'white',
-    fontWeight: '600',
-  },
-  chatContainer: {
-    flex: 1,
-  },
-  messagesContainer: {
-    flex: 1,
-  },
-  messagesContent: {
-    padding: spacing.md,
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingVertical: 40,
-  },
-  loadingText: {
-    fontSize: fontSize.md,
-    color: '#616161',
-  },
-  emptyContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingVertical: 60,
-  },
-  emptyText: {
-    fontSize: fontSize.md,
-    color: '#616161',
-    marginTop: spacing.sm,
-  },
-  dateSeparator: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginVertical: 24,
-    paddingHorizontal: spacing.md,
-  },
-  dateLine: {
-    flex: 1,
-    height: 1,
-    backgroundColor: '#E5E7EB',
-  },
-  dateText: {
-    fontSize: fontSize.sm,
-    color: '#8E8E93',
-    backgroundColor: colors.white,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 6,
-    marginHorizontal: 12,
-  },
-  messageContainer: {
-    marginVertical: 4,
-  },
-  sentMessageContainer: {
-    alignItems: 'flex-end',
-  },
-  receivedMessageContainer: {
-    alignItems: 'flex-start',
-  },
-  messageBubble: {
-    maxWidth: '75%',
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    borderRadius: 24,
-  },
-  sentMessage: {
-    backgroundColor: 'transparent', // For gradient
-    borderBottomRightRadius: 8,
-  },
-  receivedMessage: {
-    backgroundColor: '#E5E7EB',
-    borderBottomLeftRadius: 8,
-  },
-  messageContent: {
-    flexDirection: 'column',
-  },
-  messageText: {
-    fontSize: fontSize.md,
-    lineHeight: 22,
-    marginBottom: spacing.xxxs,
-  },
-  sentMessageText: {
-    color: 'white',
-  },
-  receivedMessageText: {
-    color: '#000000',
-  },
-  messageTime: {
-    fontSize: fontSize.xs,
-    alignSelf: 'flex-end',
-  },
-  sentMessageTime: {
-    color: 'rgba(255, 255, 255, 0.7)',
-  },
-  receivedMessageTime: {
-    color: '#616161',
-  },
-  messageTimeRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    alignSelf: 'flex-end',
-    gap: 4,
-  },
-  readIcon: {
-    marginLeft: 2,
-  },
-  inputContainer: {
-    backgroundColor: colors.white,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    borderTopWidth: 1,
-    borderTopColor: '#E5E7EB',
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-  },
-  attachButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 8,
-    backgroundColor: '#F8F9FA',
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-  },
-  attachIcon: {
-    fontSize: fontSize.lg,
-  },
-  inputWrapper: {
-    flex: 1,
-    backgroundColor: '#F8F9FA',
-    borderRadius: 24,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-    paddingHorizontal: spacing.md,
-    paddingVertical: 8,
-    marginRight: 8,
-    minHeight: 40,
-    justifyContent: 'center',
-  },
-  textInput: {
-    fontSize: fontSize.md,
-    color: '#212121',
-    minHeight: 36,
-    maxHeight: 100,
-    paddingVertical: 4,
-  },
-  sendButton: {
-    width: 44, // Minimum 44pt touch target (Apple HIG)
-    height: 44,
-    borderRadius: 22,
-    overflow: 'hidden',
-    shadowColor: '#FF7043',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  sendButtonGradient: {
-    width: '100%',
-    height: '100%',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  sendButtonEmoji: {
-    fontSize: fontSize.md,
-  },
-  sendButtonEmojiDisabled: {
-    opacity: 0.5,
-  },
-  sendButtonDisabled: {
-    opacity: 0.5,
-  },
-  typingIndicatorContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.sm,
-    gap: spacing.sm,
-  },
-  typingIndicator: {
-    paddingHorizontal: spacing.md,
-    paddingTop: spacing.sm,
-    paddingBottom: spacing.md,
-    marginBottom: spacing.xs,
-    backgroundColor: '#F3F4F6',
-    borderRadius: 20,
-    alignSelf: 'flex-start',
-    maxWidth: '75%',
-  },
-  typingDots: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  typingDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: '#9CA3AF',
-  },
-  typingText: {
-    fontSize: fontSize.sm,
-    color: colors.text.tertiary,
-    fontStyle: 'italic',
-  },
+    container: {
+      flex: 1,
+      backgroundColor: colors.white,
+    },
+    headerInfo: {
+      flex: 1,
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    avatar: {
+      width: 40,
+      height: 40,
+      borderRadius: borderRadius.full,
+      backgroundColor: colors.primary,
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginRight: spacing.md,
+    },
+    avatarInitials: {
+      fontSize: fontSize.md,
+      fontWeight: fontWeight.bold,
+      color: colors.white,
+    },
+    headerText: {
+      flex: 1,
+    },
+    userName: {
+      fontSize: fontSize.lg,
+      fontWeight: fontWeight.semibold,
+      color: colors.black,
+      marginBottom: 1,
+    },
+    userRole: {
+      fontSize: fontSize.sm,
+      color: colors.text.secondary,
+      fontWeight: fontWeight.medium,
+    },
+    requestCard: {
+      backgroundColor: colors.white,
+      marginHorizontal: spacing.lg,
+      marginVertical: spacing.md,
+      borderRadius: borderRadius.xl,
+      ...shadows.md,
+    },
+    requestCardContent: {
+      flexDirection: 'row',
+      padding: spacing.lg,
+      alignItems: 'flex-start',
+    },
+    requestIconContainer: {
+      width: 44,
+      height: 44,
+      borderRadius: borderRadius.full,
+      backgroundColor: colors.primaryLight,
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginRight: 14,
+      ...shadows.sm,
+    },
+    requestIcon: {
+      fontSize: fontSize.xl,
+    },
+    requestDetails: {
+      flex: 1,
+    },
+    requestTitle: {
+      fontSize: fontSize.md,
+      fontWeight: fontWeight.semibold,
+      color: colors.text.primary,
+      marginBottom: spacing.sm,
+    },
+    routeVertical: {
+      paddingLeft: 4,
+    },
+    routePoint: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginVertical: 2,
+    },
+    routeIcon: {
+      fontSize: fontSize.sm,
+      marginRight: 8,
+    },
+    routeLocation: {
+      fontSize: fontSize.sm,
+      color: '#616161',
+      fontWeight: '500',
+      flex: 1,
+    },
+    routeArrow: {
+      paddingLeft: 4,
+      paddingVertical: 2,
+    },
+    routeArrowText: {
+      fontSize: fontSize.sm,
+      color: '#9CA3AF',
+      fontWeight: '600',
+    },
+    detailsButton: {
+      paddingHorizontal: spacing.sm,
+      paddingVertical: 8,
+      marginTop: spacing.sm,
+      backgroundColor: '#F97316',
+      borderRadius: 8,
+      alignSelf: 'flex-start',
+    },
+    detailsButtonText: {
+      fontSize: fontSize.sm,
+      color: 'white',
+      fontWeight: '600',
+    },
+    chatContainer: {
+      flex: 1,
+    },
+    messagesContainer: {
+      flex: 1,
+    },
+    messagesContent: {
+      padding: spacing.md,
+    },
+    loadingContainer: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      paddingVertical: 40,
+    },
+    loadingText: {
+      fontSize: fontSize.md,
+      color: '#616161',
+    },
+    emptyContainer: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      paddingVertical: 60,
+    },
+    emptyText: {
+      fontSize: fontSize.md,
+      color: '#616161',
+      marginTop: spacing.sm,
+    },
+    dateSeparator: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginVertical: 24,
+      paddingHorizontal: spacing.md,
+    },
+    dateLine: {
+      flex: 1,
+      height: 1,
+      backgroundColor: '#E5E7EB',
+    },
+    dateText: {
+      fontSize: fontSize.sm,
+      color: '#8E8E93',
+      backgroundColor: colors.white,
+      paddingHorizontal: spacing.sm,
+      paddingVertical: 6,
+      marginHorizontal: 12,
+    },
+    messageContainer: {
+      marginVertical: 4,
+    },
+    sentMessageContainer: {
+      alignItems: 'flex-end',
+    },
+    receivedMessageContainer: {
+      alignItems: 'flex-start',
+    },
+    messageBubble: {
+      maxWidth: '75%',
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.sm,
+      borderRadius: 24,
+    },
+    sentMessage: {
+      backgroundColor: 'transparent', // For gradient
+      borderBottomRightRadius: 8,
+    },
+    receivedMessage: {
+      backgroundColor: '#E5E7EB',
+      borderBottomLeftRadius: 8,
+    },
+    messageContent: {
+      flexDirection: 'column',
+    },
+    messageText: {
+      fontSize: fontSize.md,
+      lineHeight: 22,
+      marginBottom: spacing.xxxs,
+    },
+    sentMessageText: {
+      color: 'white',
+    },
+    receivedMessageText: {
+      color: '#000000',
+    },
+    messageTime: {
+      fontSize: fontSize.xs,
+      alignSelf: 'flex-end',
+    },
+    sentMessageTime: {
+      color: 'rgba(255, 255, 255, 0.7)',
+    },
+    receivedMessageTime: {
+      color: '#616161',
+    },
+    messageTimeRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      alignSelf: 'flex-end',
+      gap: 4,
+    },
+    readIcon: {
+      marginLeft: 2,
+    },
+    inputContainer: {
+      backgroundColor: colors.white,
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.sm,
+      borderTopWidth: 1,
+      borderTopColor: '#E5E7EB',
+      flexDirection: 'row',
+      alignItems: 'flex-end',
+    },
+    attachButton: {
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginRight: 8,
+      backgroundColor: '#F8F9FA',
+      borderWidth: 1,
+      borderColor: '#E5E7EB',
+    },
+    attachIcon: {
+      fontSize: fontSize.lg,
+    },
+    inputWrapper: {
+      flex: 1,
+      backgroundColor: '#F8F9FA',
+      borderRadius: 24,
+      borderWidth: 1,
+      borderColor: '#E5E7EB',
+      paddingHorizontal: spacing.md,
+      paddingVertical: 8,
+      marginRight: 8,
+      minHeight: 40,
+      justifyContent: 'center',
+    },
+    textInput: {
+      fontSize: fontSize.md,
+      color: '#212121',
+      minHeight: 36,
+      maxHeight: 100,
+      paddingVertical: 4,
+    },
+    sendButton: {
+      width: 44, // Minimum 44pt touch target (Apple HIG)
+      height: 44,
+      borderRadius: 22,
+      overflow: 'hidden',
+      shadowColor: '#FF7043',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.2,
+      shadowRadius: 4,
+      elevation: 3,
+    },
+    sendButtonGradient: {
+      width: '100%',
+      height: '100%',
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    sendButtonEmoji: {
+      fontSize: fontSize.md,
+    },
+    sendButtonEmojiDisabled: {
+      opacity: 0.5,
+    },
+    sendButtonDisabled: {
+      opacity: 0.5,
+    },
+    typingIndicatorContainer: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingHorizontal: spacing.lg,
+      paddingVertical: spacing.sm,
+      gap: spacing.sm,
+    },
+    typingIndicator: {
+      paddingHorizontal: spacing.md,
+      paddingTop: spacing.sm,
+      paddingBottom: spacing.md,
+      marginBottom: spacing.xs,
+      backgroundColor: '#F3F4F6',
+      borderRadius: 20,
+      alignSelf: 'flex-start',
+      maxWidth: '75%',
+    },
+    typingDots: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 6,
+    },
+    typingDot: {
+      width: 8,
+      height: 8,
+      borderRadius: 4,
+      backgroundColor: '#9CA3AF',
+    },
+    typingText: {
+      fontSize: fontSize.sm,
+      color: colors.text.tertiary,
+      fontStyle: 'italic',
+    },
   });

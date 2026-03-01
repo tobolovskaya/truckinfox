@@ -1,13 +1,14 @@
-import { StyleSheet, Platform, Appearance } from 'react-native';
+import { StyleSheet, Platform } from 'react-native';
 import { theme } from '../theme/theme';
 
-const buildColors = (scheme: 'light' | 'dark' | null | undefined) => {
+const buildColors = () => {
   const resolvedTheme = theme;
   const resolvedColors = resolvedTheme.colors;
 
   const textColors = {
     primary: (resolvedColors as any).text?.primary ?? resolvedColors.onSurface ?? '#212121',
-    secondary: (resolvedColors as any).text?.secondary ?? resolvedColors.onSurfaceVariant ?? '#616161',
+    secondary:
+      (resolvedColors as any).text?.secondary ?? resolvedColors.onSurfaceVariant ?? '#616161',
     tertiary: (resolvedColors as any).text?.tertiary ?? '#9CA3AF',
   };
 
@@ -67,8 +68,7 @@ const buildColors = (scheme: 'light' | 'dark' | null | undefined) => {
   };
 };
 
-export const getAppColors = (scheme?: 'light' | 'dark' | null) =>
-  buildColors(scheme ?? Appearance.getColorScheme());
+export const getAppColors = (_scheme?: 'light' | 'dark' | null) => buildColors();
 
 export const colors = getAppColors();
 

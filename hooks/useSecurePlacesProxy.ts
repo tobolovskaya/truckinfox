@@ -78,8 +78,8 @@ export const useSecurePlacesProxy = () => {
       const data = await invokeWithFallback<PlacesAutocompleteResponse>(
         ['places-autocomplete', 'placesAutocomplete'],
         {
-        input,
-        components: components || 'country:no',
+          input,
+          components: components || 'country:no',
         }
       );
 

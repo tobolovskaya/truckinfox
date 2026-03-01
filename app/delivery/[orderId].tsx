@@ -79,7 +79,10 @@ export default function DeliveryTrackingScreen() {
       setDriverLocation({ latitude, longitude });
     };
 
-    const loadRequestContext = async (): Promise<{ requestId: string | null; countryCode: string | null }> => {
+    const loadRequestContext = async (): Promise<{
+      requestId: string | null;
+      countryCode: string | null;
+    }> => {
       const { data } = await supabase
         .from('orders')
         .select('request_id')
@@ -98,7 +101,8 @@ export default function DeliveryTrackingScreen() {
         .eq('id', requestId)
         .maybeSingle();
 
-      const countryCode = typeof requestRow?.country_code === 'string' ? requestRow.country_code : null;
+      const countryCode =
+        typeof requestRow?.country_code === 'string' ? requestRow.country_code : null;
 
       return { requestId, countryCode };
     };
@@ -181,7 +185,8 @@ export default function DeliveryTrackingScreen() {
             },
             payload => {
               const row = payload.new as Record<string, unknown>;
-              const eventCountryCode = typeof row.country_code === 'string' ? row.country_code : null;
+              const eventCountryCode =
+                typeof row.country_code === 'string' ? row.country_code : null;
 
               if (countryCode && eventCountryCode && eventCountryCode !== countryCode) {
                 return;
@@ -242,7 +247,9 @@ export default function DeliveryTrackingScreen() {
   }, [driverLocation, route]);
 
   const fitCoordinates = useMemo(() => {
-    const routePoints = route.filter(point => Number.isFinite(point.latitude) && Number.isFinite(point.longitude));
+    const routePoints = route.filter(
+      point => Number.isFinite(point.latitude) && Number.isFinite(point.longitude)
+    );
     if (driverLocation) {
       return [...routePoints, driverLocation];
     }

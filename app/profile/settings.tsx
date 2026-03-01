@@ -447,110 +447,110 @@ export default function SettingsScreen() {
 
 const createStyles = (colors: ReturnType<typeof useAppThemeStyles>['colors']) =>
   StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
-  centerContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  content: {
-    flex: 1,
-  },
-  scrollContent: {
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.md,
-    gap: spacing.lg,
-  },
-  section: {
-    gap: spacing.md,
-  },
-  sectionTitle: {
-    fontSize: fontSize.sm,
-    fontWeight: fontWeight.semibold,
-    color: colors.text.secondary,
-    textTransform: 'uppercase',
-    marginLeft: spacing.sm,
-  },
-  settingsCard: {
-    backgroundColor: colors.surface,
-    borderRadius: spacing.md,
-    overflow: 'hidden',
-  },
-  settingRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.md,
-  },
-  settingInfo: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.md,
-    marginRight: spacing.md,
-  },
-  settingTextContainer: {
-    flex: 1,
-  },
-  settingLabel: {
-    fontSize: fontSize.md,
-    fontWeight: fontWeight.semibold,
-    color: colors.text.primary,
-  },
-  settingValue: {
-    fontSize: fontSize.sm,
-    color: colors.text.secondary,
-    marginTop: spacing.xs,
-  },
-  divider: {
-    height: 1,
-    backgroundColor: colors.border.default,
-  },
-  smallDivider: {
-    height: 1,
-    backgroundColor: colors.border.default,
-    marginLeft: spacing.md + 24,
-  },
-  languageButtons: {
-    flexDirection: 'row',
-    gap: spacing.md,
-    paddingHorizontal: spacing.md,
-    paddingBottom: spacing.md,
-  },
-  languageButton: {
-    flex: 1,
-    paddingVertical: spacing.md,
-    borderRadius: spacing.sm,
-    backgroundColor: colors.surfaceVariant,
-    borderWidth: 1,
-    borderColor: colors.border.default,
-    alignItems: 'center',
-  },
-  languageButtonActive: {
-    backgroundColor: colors.primary,
-    borderColor: colors.primary,
-  },
-  languageButtonText: {
-    fontSize: fontSize.md,
-    fontWeight: fontWeight.semibold,
-    color: colors.text.secondary,
-  },
-  languageButtonTextActive: {
-    color: colors.white,
-  },
-  savingIndicator: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingVertical: spacing.lg,
-    gap: spacing.md,
-  },
-  savingText: {
-    fontSize: fontSize.sm,
-    color: colors.text.secondary,
-  },
+    container: {
+      flex: 1,
+      backgroundColor: colors.background,
+    },
+    centerContainer: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    content: {
+      flex: 1,
+    },
+    scrollContent: {
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.md,
+      gap: spacing.lg,
+    },
+    section: {
+      gap: spacing.md,
+    },
+    sectionTitle: {
+      fontSize: fontSize.sm,
+      fontWeight: fontWeight.semibold,
+      color: colors.text.secondary,
+      textTransform: 'uppercase',
+      marginLeft: spacing.sm,
+    },
+    settingsCard: {
+      backgroundColor: colors.surface,
+      borderRadius: spacing.md,
+      overflow: 'hidden',
+    },
+    settingRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.md,
+    },
+    settingInfo: {
+      flex: 1,
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.md,
+      marginRight: spacing.md,
+    },
+    settingTextContainer: {
+      flex: 1,
+    },
+    settingLabel: {
+      fontSize: fontSize.md,
+      fontWeight: fontWeight.semibold,
+      color: colors.text.primary,
+    },
+    settingValue: {
+      fontSize: fontSize.sm,
+      color: colors.text.secondary,
+      marginTop: spacing.xs,
+    },
+    divider: {
+      height: 1,
+      backgroundColor: colors.border.default,
+    },
+    smallDivider: {
+      height: 1,
+      backgroundColor: colors.border.default,
+      marginLeft: spacing.md + 24,
+    },
+    languageButtons: {
+      flexDirection: 'row',
+      gap: spacing.md,
+      paddingHorizontal: spacing.md,
+      paddingBottom: spacing.md,
+    },
+    languageButton: {
+      flex: 1,
+      paddingVertical: spacing.md,
+      borderRadius: spacing.sm,
+      backgroundColor: colors.surfaceVariant,
+      borderWidth: 1,
+      borderColor: colors.border.default,
+      alignItems: 'center',
+    },
+    languageButtonActive: {
+      backgroundColor: colors.primary,
+      borderColor: colors.primary,
+    },
+    languageButtonText: {
+      fontSize: fontSize.md,
+      fontWeight: fontWeight.semibold,
+      color: colors.text.secondary,
+    },
+    languageButtonTextActive: {
+      color: colors.white,
+    },
+    savingIndicator: {
+      flexDirection: 'row',
+      justifyContent: 'center',
+      alignItems: 'center',
+      paddingVertical: spacing.lg,
+      gap: spacing.md,
+    },
+    savingText: {
+      fontSize: fontSize.sm,
+      color: colors.text.secondary,
+    },
   });

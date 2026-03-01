@@ -77,7 +77,7 @@ type CargoRequestsQueryKey = [
   SortOption,
   string,
   string | undefined,
-  string | undefined
+  string | undefined,
 ];
 
 const PAGE_SIZE = 20;
@@ -227,10 +227,7 @@ const hydrateCargoRequest = async (
 
   let bids: Bid[] = [];
   try {
-    const { data: bidRows } = await supabase
-      .from('bids')
-      .select('*')
-      .eq('request_id', requestId);
+    const { data: bidRows } = await supabase.from('bids').select('*').eq('request_id', requestId);
     bids = (bidRows || []).map(row => ({ id: row.id, ...row }));
   } catch (error) {
     console.warn('Failed to hydrate request bids', error);
@@ -268,8 +265,7 @@ const hydrateCargoRequest = async (
       return Number.isFinite(normalizedWeight) ? normalizedWeight : 0;
     })(),
     user_id: requestUserId || '',
-    customer_id:
-      typeof requestData.customer_id === 'string' ? requestData.customer_id : undefined,
+    customer_id: typeof requestData.customer_id === 'string' ? requestData.customer_id : undefined,
     weight_kg:
       typeof requestData.weight_kg === 'number'
         ? requestData.weight_kg
@@ -290,11 +286,10 @@ const fetchCargoRequestsPage = async (
     return { items: [], nextOffset: null, hasMore: false };
   }
 
-  const normalizedSearchQuery = options.searchQuery?.trim()
-    ? normalizeSearchQuery(options.searchQuery)
-    : '';
-
-  let requestQuery = supabase.from('cargo_requests').select('*').range(offset, offset + PAGE_SIZE - 1);
+  let requestQuery = supabase
+    .from('cargo_requests')
+    .select('*')
+    .range(offset, offset + PAGE_SIZE - 1);
 
   if (options.activeTab === 'my' && options.userId) {
     requestQuery = requestQuery.eq('customer_id', options.userId).in('status', ['active', 'open']);
@@ -341,7 +336,9 @@ const fetchCargoRequestsPage = async (
   }
 
   const hydrated = await Promise.all(
-    (requestRows || []).map(row => hydrateCargoRequest(row as Record<string, unknown>, options.userId))
+    (requestRows || []).map(row =>
+      hydrateCargoRequest(row as Record<string, unknown>, options.userId)
+    )
   );
 
   const data = hydrated.filter((request): request is CargoRequest => request !== null);
@@ -399,7 +396,8 @@ export function useCargoRequests({
         pageParam
       ),
     initialPageParam: 0,
-    getNextPageParam: lastPage => (lastPage.hasMore && lastPage.nextOffset !== null ? lastPage.nextOffset : undefined),
+    getNextPageParam: lastPage =>
+      lastPage.hasMore && lastPage.nextOffset !== null ? lastPage.nextOffset : undefined,
     staleTime: 5 * 60 * 1000,
     gcTime: 30 * 60 * 1000,
   });

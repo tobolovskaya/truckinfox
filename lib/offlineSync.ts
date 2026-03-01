@@ -249,10 +249,7 @@ export const queryLocal = async (
       ...(row as Record<string, unknown>),
     }));
 
-    console.log(
-      `📖 Local query (from server): ${collectionName}`,
-      { count: results.length }
-    );
+    console.log(`📖 Local query (from server): ${collectionName}`, { count: results.length });
 
     return results;
   } catch (error) {

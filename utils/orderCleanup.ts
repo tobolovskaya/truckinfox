@@ -9,11 +9,6 @@ import { supabase } from '../lib/supabase';
 
 const DELETE_BATCH_SIZE = 200;
 
-type PendingOrderRow = {
-  id: string;
-  created_at: string;
-};
-
 function toIsoBeforeMinutes(minutes: number): string {
   const cutoff = new Date();
   cutoff.setMinutes(cutoff.getMinutes() - minutes);

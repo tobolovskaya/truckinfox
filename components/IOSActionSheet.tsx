@@ -173,8 +173,8 @@ export function IOSActionSheet({
                         option.disabled
                           ? theme.iconColors.ios.lightGray
                           : option.destructive
-                          ? theme.iconColors.ios.red
-                          : theme.iconColors.ios.blue
+                            ? theme.iconColors.ios.red
+                            : theme.iconColors.ios.blue
                       }
                       style={styles.optionIcon}
                     />

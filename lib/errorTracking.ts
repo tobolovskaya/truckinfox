@@ -19,12 +19,15 @@ const toErrorMessage = (value: unknown): string => {
 export const initializeGlobalErrorTracking = () => {
   const globalObj = globalThis as typeof globalThis & {
     ErrorUtils?: {
-      getGlobalHandler?: () => (error: unknown, isFatal?: boolean) => void;
-      setGlobalHandler?: (handler: (error: unknown, isFatal?: boolean) => void) => void;
+      getGlobalHandler?: () => (_error: unknown, _isFatal?: boolean) => void;
+      setGlobalHandler?: (_handler: (_error: unknown, _isFatal?: boolean) => void) => void;
     };
-    onunhandledrejection?: ((event: { reason?: unknown }) => void) | null;
-    addEventListener?: (type: string, listener: (event: { reason?: unknown }) => void) => void;
-    removeEventListener?: (type: string, listener: (event: { reason?: unknown }) => void) => void;
+    onunhandledrejection?: ((_event: { reason?: unknown }) => void) | null;
+    addEventListener?: (_type: string, _listener: (_event: { reason?: unknown }) => void) => void;
+    removeEventListener?: (
+      _type: string,
+      _listener: (_event: { reason?: unknown }) => void
+    ) => void;
   };
 
   const errorUtils = globalObj.ErrorUtils;
@@ -55,7 +58,7 @@ export const initializeGlobalErrorTracking = () => {
     typeof globalObj.addEventListener === 'function' &&
     typeof globalObj.removeEventListener === 'function';
 
-  let previousOnUnhandledRejection: ((event: { reason?: unknown }) => void) | null = null;
+  let previousOnUnhandledRejection: ((_event: { reason?: unknown }) => void) | null = null;
 
   if (supportsEventListener) {
     globalObj.addEventListener?.('unhandledrejection', onUnhandledRejection);

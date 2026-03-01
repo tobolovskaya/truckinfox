@@ -352,7 +352,11 @@ export default function HomeScreen() {
         }}
         showsVerticalScrollIndicator={false}
         refreshControl={
-          <IOSRefreshControl refreshing={refreshing} onRefresh={refresh} tintColor={colors.primary} />
+          <IOSRefreshControl
+            refreshing={refreshing}
+            onRefresh={refresh}
+            tintColor={colors.primary}
+          />
         }
         onEndReached={() => {
           if (hasMore && !loadingMore) {
@@ -374,7 +378,9 @@ export default function HomeScreen() {
               icon="cube-outline"
               title={t('noRequestsYet') || t('noCargoRequestsYet') || 'No requests yet'}
               description={
-                t('createFirstRequest') || t('createFirstCargoRequest') || 'Create your first request'
+                t('createFirstRequest') ||
+                t('createFirstCargoRequest') ||
+                'Create your first request'
               }
               illustration={EmptyCargoIllustration}
               actions={[
@@ -436,23 +442,23 @@ export default function HomeScreen() {
 
 const createStyles = (colors: ReturnType<typeof useAppThemeStyles>['colors']) =>
   StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
-  stickyControls: {
-    backgroundColor: colors.white,
-    paddingBottom: spacing.sm,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border.light,
-  },
-  footerLoader: {
-    paddingVertical: spacing.lg,
-    alignItems: 'center',
-    gap: spacing.sm,
-  },
-  footerLoaderText: {
-    fontSize: fontSize.sm,
-    color: colors.text.secondary,
-  },
+    container: {
+      flex: 1,
+      backgroundColor: colors.background,
+    },
+    stickyControls: {
+      backgroundColor: colors.white,
+      paddingBottom: spacing.sm,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.border.light,
+    },
+    footerLoader: {
+      paddingVertical: spacing.lg,
+      alignItems: 'center',
+      gap: spacing.sm,
+    },
+    footerLoaderText: {
+      fontSize: fontSize.sm,
+      color: colors.text.secondary,
+    },
   });

@@ -124,23 +124,27 @@ export default function UserProfileScreen() {
       const [{ data: reviewersData }, { data: ordersData }] = await Promise.all([
         reviewerIds.length
           ? supabase.from('profiles').select('id, full_name, user_type').in('id', reviewerIds)
-          : Promise.resolve({ data: [] as Array<{ id: string; full_name: string | null; user_type: string | null }> }),
+          : Promise.resolve({
+              data: [] as Array<{ id: string; full_name: string | null; user_type: string | null }>,
+            }),
         orderIds.length
           ? supabase.from('orders').select('id, request_id').in('id', orderIds)
           : Promise.resolve({ data: [] as Array<{ id: string; request_id: string | null }> }),
       ]);
 
       const requestIds = Array.from(
-        new Set((ordersData || []).map(orderRow => orderRow.request_id).filter((value): value is string => Boolean(value)))
+        new Set(
+          (ordersData || [])
+            .map(orderRow => orderRow.request_id)
+            .filter((value): value is string => Boolean(value))
+        )
       );
 
       const { data: requestsData } = requestIds.length
         ? await supabase.from('cargo_requests').select('id, title').in('id', requestIds)
         : { data: [] as Array<{ id: string; title: string | null }> };
 
-      const reviewerById = new Map(
-        (reviewersData || []).map(item => [item.id, item])
-      );
+      const reviewerById = new Map((reviewersData || []).map(item => [item.id, item]));
       const orderById = new Map((ordersData || []).map(item => [item.id, item]));
       const requestById = new Map((requestsData || []).map(item => [item.id, item]));
 
@@ -281,7 +285,9 @@ export default function UserProfileScreen() {
                     <View style={styles.reviewerInfo}>
                       <View style={styles.reviewerAvatar}>
                         <Ionicons
-                          name={isBusinessUserType(review.reviewer.user_type) ? 'business' : 'person'}
+                          name={
+                            isBusinessUserType(review.reviewer.user_type) ? 'business' : 'person'
+                          }
                           size={20}
                           color={theme.iconColors.primary}
                         />

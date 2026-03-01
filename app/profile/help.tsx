@@ -209,137 +209,137 @@ export default function HelpSupportScreen() {
 
 const createStyles = (colors: ReturnType<typeof useAppThemeStyles>['colors']) =>
   StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
-  content: {
-    flex: 1,
-  },
-  scrollContent: {
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.md,
-    gap: spacing.lg,
-  },
-  contactCard: {
-    backgroundColor: colors.white,
-    borderRadius: spacing.md,
-    padding: spacing.md,
-    borderLeftWidth: 3,
-    borderLeftColor: colors.primary,
-    gap: spacing.md,
-  },
-  contactHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.md,
-  },
-  contactInfo: {
-    flex: 1,
-  },
-  contactTitle: {
-    fontSize: fontSize.lg,
-    fontWeight: fontWeight.semibold,
-    color: colors.text.primary,
-  },
-  contactSubtitle: {
-    fontSize: fontSize.sm,
-    color: colors.text.secondary,
-    marginTop: spacing.xs,
-  },
-  contactButton: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    backgroundColor: `${colors.primary}10`,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.md,
-    borderRadius: spacing.sm,
-  },
-  contactButtonText: {
-    fontSize: fontSize.md,
-    fontWeight: fontWeight.semibold,
-    color: colors.primary,
-  },
-  section: {
-    gap: spacing.md,
-  },
-  sectionTitle: {
-    fontSize: fontSize.md,
-    fontWeight: fontWeight.semibold,
-    color: colors.text.primary,
-    marginLeft: spacing.xs,
-  },
-  faqContainer: {
-    backgroundColor: colors.white,
-    borderRadius: spacing.md,
-    overflow: 'hidden',
-  },
-  faqItem: {
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.md,
-  },
-  faqHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.md,
-  },
-  faqQuestion: {
-    flex: 1,
-    fontSize: fontSize.md,
-    fontWeight: fontWeight.semibold,
-    color: colors.text.primary,
-  },
-  faqAnswer: {
-    fontSize: fontSize.sm,
-    color: colors.text.secondary,
-    lineHeight: 20,
-    marginTop: spacing.md,
-    marginLeft: spacing.lg + spacing.sm,
-  },
-  faqDivider: {
-    height: 1,
-    backgroundColor: colors.border.default,
-  },
-  legalContainer: {
-    backgroundColor: colors.white,
-    borderRadius: spacing.md,
-    overflow: 'hidden',
-  },
-  legalItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.md,
-    gap: spacing.md,
-  },
-  legalTextContainer: {
-    flex: 1,
-  },
-  legalText: {
-    fontSize: fontSize.md,
-    fontWeight: fontWeight.semibold,
-    color: colors.text.primary,
-  },
-  legalDivider: {
-    height: 1,
-    backgroundColor: colors.border.default,
-    marginHorizontal: spacing.md,
-  },
-  infoBox: {
-    backgroundColor: `${colors.info}15`,
-    borderLeftWidth: 3,
-    borderLeftColor: colors.info,
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    padding: spacing.md,
-    borderRadius: spacing.sm,
-    gap: spacing.md,
-  },
-  infoText: {
-    flex: 1,
-    fontSize: fontSize.sm,
-    color: colors.text.secondary,
-    lineHeight: 18,
-  },
+    container: {
+      flex: 1,
+      backgroundColor: colors.background,
+    },
+    content: {
+      flex: 1,
+    },
+    scrollContent: {
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.md,
+      gap: spacing.lg,
+    },
+    contactCard: {
+      backgroundColor: colors.white,
+      borderRadius: spacing.md,
+      padding: spacing.md,
+      borderLeftWidth: 3,
+      borderLeftColor: colors.primary,
+      gap: spacing.md,
+    },
+    contactHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.md,
+    },
+    contactInfo: {
+      flex: 1,
+    },
+    contactTitle: {
+      fontSize: fontSize.lg,
+      fontWeight: fontWeight.semibold,
+      color: colors.text.primary,
+    },
+    contactSubtitle: {
+      fontSize: fontSize.sm,
+      color: colors.text.secondary,
+      marginTop: spacing.xs,
+    },
+    contactButton: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      backgroundColor: `${colors.primary}10`,
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.md,
+      borderRadius: spacing.sm,
+    },
+    contactButtonText: {
+      fontSize: fontSize.md,
+      fontWeight: fontWeight.semibold,
+      color: colors.primary,
+    },
+    section: {
+      gap: spacing.md,
+    },
+    sectionTitle: {
+      fontSize: fontSize.md,
+      fontWeight: fontWeight.semibold,
+      color: colors.text.primary,
+      marginLeft: spacing.xs,
+    },
+    faqContainer: {
+      backgroundColor: colors.white,
+      borderRadius: spacing.md,
+      overflow: 'hidden',
+    },
+    faqItem: {
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.md,
+    },
+    faqHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.md,
+    },
+    faqQuestion: {
+      flex: 1,
+      fontSize: fontSize.md,
+      fontWeight: fontWeight.semibold,
+      color: colors.text.primary,
+    },
+    faqAnswer: {
+      fontSize: fontSize.sm,
+      color: colors.text.secondary,
+      lineHeight: 20,
+      marginTop: spacing.md,
+      marginLeft: spacing.lg + spacing.sm,
+    },
+    faqDivider: {
+      height: 1,
+      backgroundColor: colors.border.default,
+    },
+    legalContainer: {
+      backgroundColor: colors.white,
+      borderRadius: spacing.md,
+      overflow: 'hidden',
+    },
+    legalItem: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.md,
+      gap: spacing.md,
+    },
+    legalTextContainer: {
+      flex: 1,
+    },
+    legalText: {
+      fontSize: fontSize.md,
+      fontWeight: fontWeight.semibold,
+      color: colors.text.primary,
+    },
+    legalDivider: {
+      height: 1,
+      backgroundColor: colors.border.default,
+      marginHorizontal: spacing.md,
+    },
+    infoBox: {
+      backgroundColor: `${colors.info}15`,
+      borderLeftWidth: 3,
+      borderLeftColor: colors.info,
+      flexDirection: 'row',
+      alignItems: 'flex-start',
+      padding: spacing.md,
+      borderRadius: spacing.sm,
+      gap: spacing.md,
+    },
+    infoText: {
+      flex: 1,
+      fontSize: fontSize.sm,
+      color: colors.text.secondary,
+      lineHeight: 18,
+    },
   });

@@ -79,7 +79,9 @@ export default function AvatarUpload({ avatarUrl, onUpload, size = 80 }: AvatarU
     }
 
     for (const bucket of avatarBuckets) {
-      const { data, error } = await supabase.storage.from(bucket).createSignedUrl(storagePath, 60 * 60);
+      const { data, error } = await supabase.storage
+        .from(bucket)
+        .createSignedUrl(storagePath, 60 * 60);
       if (!error && data?.signedUrl) {
         return `${data.signedUrl}${data.signedUrl.includes('?') ? '&' : '?'}t=${Date.now()}`;
       }
@@ -168,10 +170,12 @@ export default function AvatarUpload({ avatarUrl, onUpload, size = 80 }: AvatarU
       let lastUploadError: unknown = null;
 
       for (const bucket of avatarBuckets) {
-        const { error: uploadError } = await supabase.storage.from(bucket).upload(fileName, fileBytes, {
-          contentType: 'image/jpeg',
-          upsert: true,
-        });
+        const { error: uploadError } = await supabase.storage
+          .from(bucket)
+          .upload(fileName, fileBytes, {
+            contentType: 'image/jpeg',
+            upsert: true,
+          });
 
         if (!uploadError) {
           selectedBucket = bucket;
@@ -190,8 +194,7 @@ export default function AvatarUpload({ avatarUrl, onUpload, size = 80 }: AvatarU
         throw lastUploadError || new Error('No available storage bucket for avatar upload');
       }
 
-      const { data: signedData, error: signedUrlError } = await supabase
-        .storage
+      const { data: signedData, error: signedUrlError } = await supabase.storage
         .from(selectedBucket)
         .createSignedUrl(fileName, STORAGE_SIGNED_URL_EXPIRY_SECONDS);
 
@@ -327,7 +330,12 @@ export default function AvatarUpload({ avatarUrl, onUpload, size = 80 }: AvatarU
         )}
 
         {displayAvatarUrl && imageLoadError && (
-          <View style={[styles.placeholder, { width: size, height: size, position: 'absolute', top: 0, left: 0 }]}> 
+          <View
+            style={[
+              styles.placeholder,
+              { width: size, height: size, position: 'absolute', top: 0, left: 0 },
+            ]}
+          >
             <Ionicons name="person" size={size * 0.5} color={theme.iconColors.gray.primary} />
           </View>
         )}

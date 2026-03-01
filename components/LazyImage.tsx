@@ -132,8 +132,7 @@ export const LazyImage: React.FC<LazyImageProps> = ({
       return null;
     }
 
-    const { data, error: signedUrlError } = await supabase
-      .storage
+    const { data, error: signedUrlError } = await supabase.storage
       .from(storageLocation.bucket)
       .createSignedUrl(storageLocation.path, 60 * 60);
 

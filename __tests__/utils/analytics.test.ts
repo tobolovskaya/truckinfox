@@ -1,3 +1,4 @@
+import { afterAll, beforeAll, beforeEach, describe, expect, it, jest } from '@jest/globals';
 import {
   trackCargoRequestDeleted,
   trackReviewSubmitted,
@@ -5,15 +6,17 @@ import {
 } from '../../utils/analytics';
 
 const mockLogEvent = jest.fn();
-let consoleLogSpy: jest.SpyInstance;
+let consoleLogSpy: ReturnType<typeof jest.spyOn>;
 
 beforeAll(() => {
-  consoleLogSpy = jest.spyOn(console, 'log').mockImplementation((message?: unknown, ...args: unknown[]) => {
-    if (typeof message === 'string' && message.startsWith('📊 Analytics: ')) {
-      const eventName = message.replace('📊 Analytics: ', '');
-      mockLogEvent(eventName, args[0]);
-    }
-  });
+  consoleLogSpy = jest
+    .spyOn(console, 'log')
+    .mockImplementation((message?: unknown, ...args: unknown[]) => {
+      if (typeof message === 'string' && message.startsWith('📊 Analytics: ')) {
+        const eventName = message.replace('📊 Analytics: ', '');
+        mockLogEvent(eventName, args[0]);
+      }
+    });
 });
 
 afterAll(() => {

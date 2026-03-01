@@ -53,16 +53,14 @@ export default function LoginScreen() {
         throw error;
       }
 
-      Alert.alert(
-        t('success'),
-        'Ny bekreftelsesmail er sendt. Sjekk innboksen (og spam-mappen).'
-      );
+      Alert.alert(t('success'), 'Ny bekreftelsesmail er sendt. Sjekk innboksen (og spam-mappen).');
     } catch (error) {
       const isRateLimited =
         error instanceof AuthApiError &&
         (['over_email_send_rate_limit', 'over_request_rate_limit', 'too_many_requests'].includes(
           error.code || ''
-        ) || error.message.toLowerCase().includes('rate limit'));
+        ) ||
+          error.message.toLowerCase().includes('rate limit'));
 
       if (isRateLimited && error instanceof AuthApiError) {
         const retryAfterSeconds = parseRetryAfterSeconds(error.message);
@@ -73,10 +71,7 @@ export default function LoginScreen() {
         return;
       }
 
-      Alert.alert(
-        t('error'),
-        error instanceof Error ? error.message : t('somethingWentWrong')
-      );
+      Alert.alert(t('error'), error instanceof Error ? error.message : t('somethingWentWrong'));
     }
   };
 
@@ -96,7 +91,10 @@ export default function LoginScreen() {
             result.error ||
               'Database is not initialized for this Supabase project. Apply migrations and try again.'
           );
-        } else if (result.errorCode === 'user_not_found' || result.errorCode === 'auth/user-not-found') {
+        } else if (
+          result.errorCode === 'user_not_found' ||
+          result.errorCode === 'auth/user-not-found'
+        ) {
           Alert.alert(t('userNotFound'), t('wouldYouLikeToRegister'), [
             { text: t('cancel'), style: 'cancel' },
             {
@@ -107,7 +105,8 @@ export default function LoginScreen() {
         } else if (result.errorCode === 'email_not_confirmed') {
           Alert.alert(
             t('loginError'),
-            result.error || 'E-posten er ikke bekreftet ennå. Sjekk innboksen din og bekreft kontoen.',
+            result.error ||
+              'E-posten er ikke bekreftet ennå. Sjekk innboksen din og bekreft kontoen.',
             [
               { text: t('cancel'), style: 'cancel' },
               {

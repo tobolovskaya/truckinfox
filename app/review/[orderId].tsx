@@ -205,9 +205,9 @@ export default function ReviewScreen() {
       const { error: updateRatingError } = await supabase
         .from('profiles')
         .update({
-        rating: Number(avgRating.toFixed(2)), // Round to 2 decimal places
-        updated_at: new Date().toISOString(),
-      })
+          rating: Number(avgRating.toFixed(2)), // Round to 2 decimal places
+          updated_at: new Date().toISOString(),
+        })
         .eq('id', reviewedId);
 
       if (updateRatingError) {
@@ -215,9 +215,7 @@ export default function ReviewScreen() {
       }
 
       console.log(
-        `Updated rating for user ${reviewedId}: ${avgRating.toFixed(2)} (${
-          reviewsCount
-        } reviews)`
+        `Updated rating for user ${reviewedId}: ${avgRating.toFixed(2)} (${reviewsCount} reviews)`
       );
 
       // 📊 Track review submission

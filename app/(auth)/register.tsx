@@ -47,7 +47,7 @@ export default function RegisterScreen() {
     }
 
     const intervalId = setInterval(() => {
-      setCooldownSeconds((previous) => Math.max(previous - 1, 0));
+      setCooldownSeconds(previous => Math.max(previous - 1, 0));
     }, 1000);
 
     return () => clearInterval(intervalId);
@@ -103,7 +103,10 @@ export default function RegisterScreen() {
           return;
         }
 
-        if (result.errorCode === 'email_not_confirmed' || result.errorCode === 'user_already_exists') {
+        if (
+          result.errorCode === 'email_not_confirmed' ||
+          result.errorCode === 'user_already_exists'
+        ) {
           Alert.alert(
             t('error'),
             result.error ||
@@ -342,7 +345,10 @@ export default function RegisterScreen() {
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={[styles.primaryButton, (loading || cooldownSeconds > 0) && styles.primaryButtonDisabled]}
+            style={[
+              styles.primaryButton,
+              (loading || cooldownSeconds > 0) && styles.primaryButtonDisabled,
+            ]}
             onPress={handleRegister}
             disabled={loading || cooldownSeconds > 0}
             accessibilityRole="button"

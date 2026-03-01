@@ -28,12 +28,12 @@ describe('checkDuplicateRequest', () => {
 
   it('should detect duplicate requests', async () => {
     mockCargoRequestsResponse([
-        {
-          user_id: 'user1',
-          from_address: 'Oslo',
-          to_address: 'Bergen',
-        },
-      ]);
+      {
+        user_id: 'user1',
+        from_address: 'Oslo',
+        to_address: 'Bergen',
+      },
+    ]);
 
     const error = await checkDuplicateRequest('user1', 'Oslo', 'Bergen');
 
@@ -42,12 +42,12 @@ describe('checkDuplicateRequest', () => {
 
   it('should allow different addresses', async () => {
     mockCargoRequestsResponse([
-        {
-          user_id: 'user1',
-          from_address: 'Oslo',
-          to_address: 'Bergen',
-        },
-      ]);
+      {
+        user_id: 'user1',
+        from_address: 'Oslo',
+        to_address: 'Bergen',
+      },
+    ]);
 
     const error = await checkDuplicateRequest('user1', 'Oslo', 'Trondheim');
 

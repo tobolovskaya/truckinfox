@@ -10,7 +10,6 @@
  */
 
 import * as Notifications from 'expo-notifications';
-import { Platform } from 'react-native';
 import { supabase } from '../lib/supabase';
 
 // Configure notification behavior

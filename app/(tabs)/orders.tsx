@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -66,18 +66,6 @@ const toSafeDate = (value: Order['created_at']): Date => {
   }
 
   return new Date(0);
-};
-
-const mergeAndSortOrders = (customerOrders: Order[], carrierOrders: Order[]): Order[] => {
-  const uniqueOrders = new Map<string, Order>();
-
-  [...customerOrders, ...carrierOrders].forEach(order => {
-    uniqueOrders.set(order.id, order);
-  });
-
-  return Array.from(uniqueOrders.values()).sort(
-    (a, b) => toSafeDate(b.created_at).getTime() - toSafeDate(a.created_at).getTime()
-  );
 };
 
 const formatOrderDate = (value: Order['created_at']): string => {
@@ -246,65 +234,65 @@ export default function OrdersScreen() {
 
 const createStyles = (colors: ReturnType<typeof useAppThemeStyles>['colors']) =>
   StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  listContainer: {
-    padding: spacing.md,
-    gap: spacing.md,
-  },
-  orderCard: {
-    backgroundColor: colors.white,
-    borderRadius: 10,
-    padding: spacing.md,
-    shadowColor: '#000',
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
-    elevation: 2,
-  },
-  orderHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: spacing.sm,
-  },
-  orderTitle: {
-    fontSize: fontSize.md,
-    fontWeight: fontWeight.semibold,
-    color: colors.text.primary,
-    flex: 1,
-  },
-  statusBadge: {
-    borderRadius: 6,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 4,
-    marginLeft: spacing.sm,
-  },
-  statusBadgeText: {
-    fontSize: fontSize.sm,
-    fontWeight: fontWeight.semibold,
-    color: colors.white,
-  },
-  orderDetails: {
-    gap: spacing.xs,
-  },
-  detailRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  label: {
-    fontSize: fontSize.sm,
-    color: colors.text.secondary,
-  },
-  value: {
-    fontSize: fontSize.sm,
-    fontWeight: fontWeight.semibold,
-    color: colors.text.primary,
-  },
+    container: {
+      flex: 1,
+      backgroundColor: colors.background,
+    },
+    loadingContainer: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    listContainer: {
+      padding: spacing.md,
+      gap: spacing.md,
+    },
+    orderCard: {
+      backgroundColor: colors.white,
+      borderRadius: 10,
+      padding: spacing.md,
+      shadowColor: '#000',
+      shadowOpacity: 0.1,
+      shadowRadius: 3,
+      elevation: 2,
+    },
+    orderHeader: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: spacing.sm,
+    },
+    orderTitle: {
+      fontSize: fontSize.md,
+      fontWeight: fontWeight.semibold,
+      color: colors.text.primary,
+      flex: 1,
+    },
+    statusBadge: {
+      borderRadius: 6,
+      paddingHorizontal: spacing.sm,
+      paddingVertical: 4,
+      marginLeft: spacing.sm,
+    },
+    statusBadgeText: {
+      fontSize: fontSize.sm,
+      fontWeight: fontWeight.semibold,
+      color: colors.white,
+    },
+    orderDetails: {
+      gap: spacing.xs,
+    },
+    detailRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+    },
+    label: {
+      fontSize: fontSize.sm,
+      color: colors.text.secondary,
+    },
+    value: {
+      fontSize: fontSize.sm,
+      fontWeight: fontWeight.semibold,
+      color: colors.text.primary,
+    },
   });

@@ -92,8 +92,8 @@ export const safeUpdateDoc = async (
     const { error } = await supabase
       .from(tableName)
       .update({
-      ...data,
-      updated_at: new Date().toISOString(),
+        ...data,
+        updated_at: new Date().toISOString(),
       })
       .eq('id', documentId);
 
@@ -174,13 +174,12 @@ export const safeGetDoc = async (
     }
 
     if (data) {
-      console.log(
-        `📖 Document retrieved (${
-          'from server'
-        }): ${collectionName}/${documentId}`
-      );
+      console.log(`📖 Document retrieved (${'from server'}): ${collectionName}/${documentId}`);
       return {
-        data: { id: String((data as Record<string, unknown>).id), ...(data as Record<string, unknown>) },
+        data: {
+          id: String((data as Record<string, unknown>).id),
+          ...(data as Record<string, unknown>),
+        },
         fromCache: false,
         exists: true,
       };
@@ -232,13 +231,10 @@ export const safeQuery = async (
       ...(row as Record<string, unknown>),
     }));
 
-    console.log(
-      `📖 Query executed (from server): ${collectionName}`,
-      {
-        count: documents.length,
-        constraints: constraints.length,
-      }
-    );
+    console.log(`📖 Query executed (from server): ${collectionName}`, {
+      count: documents.length,
+      constraints: constraints.length,
+    });
 
     return { documents, fromCache: false };
   } catch (error) {

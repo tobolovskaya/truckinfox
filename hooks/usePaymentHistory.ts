@@ -81,19 +81,19 @@ export const usePaymentHistory = ({ userId, statusFilter }: UsePaymentHistoryOpt
           const cargoEntry = Array.isArray(cargoNode) ? cargoNode[0] : cargoNode;
 
           return {
-          id: payment.id,
-          user_id: payment.user_id,
-          order_id: payment.order_id,
-          amount: Number(payment.amount || 0),
-          currency: payment.currency,
-          status: payment.status,
-          payment_method: payment.payment_method,
-          description: payment.description || undefined,
-          created_at: payment.created_at,
-          updated_at: payment.updated_at,
-          invoice_url: payment.invoice_url || undefined,
-          reference_id: payment.reference_id || undefined,
-          order_title: cargoEntry?.title || undefined,
+            id: payment.id,
+            user_id: payment.user_id,
+            order_id: payment.order_id,
+            amount: Number(payment.amount || 0),
+            currency: payment.currency,
+            status: payment.status,
+            payment_method: payment.payment_method,
+            description: payment.description || undefined,
+            created_at: payment.created_at,
+            updated_at: payment.updated_at,
+            invoice_url: payment.invoice_url || undefined,
+            reference_id: payment.reference_id || undefined,
+            order_title: cargoEntry?.title || undefined,
           };
         }) as PaymentRecord[];
 
@@ -111,9 +111,7 @@ export const usePaymentHistory = ({ userId, statusFilter }: UsePaymentHistoryOpt
         console.error('Error fetching payment history:', error);
         if (error instanceof PostgrestError) {
           throw new Error(
-            error.code === '42501'
-              ? i18n.t('permissionDenied')
-              : i18n.t('errorLoadingPayments')
+            error.code === '42501' ? i18n.t('permissionDenied') : i18n.t('errorLoadingPayments')
           );
         }
         throw error;

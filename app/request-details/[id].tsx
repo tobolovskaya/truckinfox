@@ -236,7 +236,11 @@ export default function RequestDetailsScreen() {
       }
 
       const carrierIds = Array.from(
-        new Set((bidsRows || []).map(row => row.carrier_id).filter((value): value is string => Boolean(value)))
+        new Set(
+          (bidsRows || [])
+            .map(row => row.carrier_id)
+            .filter((value): value is string => Boolean(value))
+        )
       );
 
       const { data: carriersData } = carrierIds.length
@@ -244,7 +248,16 @@ export default function RequestDetailsScreen() {
             .from('profiles')
             .select('id, full_name, user_type, rating, phone, avatar_url')
             .in('id', carrierIds)
-        : { data: [] as Array<{ id: string; full_name: string | null; user_type: string | null; rating: number | null; phone: string | null; avatar_url: string | null }> };
+        : {
+            data: [] as Array<{
+              id: string;
+              full_name: string | null;
+              user_type: string | null;
+              rating: number | null;
+              phone: string | null;
+              avatar_url: string | null;
+            }>,
+          };
 
       const carrierById = new Map((carriersData || []).map(carrier => [carrier.id, carrier]));
 
@@ -256,7 +269,7 @@ export default function RequestDetailsScreen() {
         created_at: row.created_at,
         carrier_id: row.carrier_id,
         users: row.carrier_id
-          ? ((() => {
+          ? (() => {
               const carrier = carrierById.get(row.carrier_id);
               return carrier
                 ? {
@@ -267,7 +280,7 @@ export default function RequestDetailsScreen() {
                     avatar_url: carrier.avatar_url || undefined,
                   }
                 : undefined;
-            })())
+            })()
           : undefined,
       })) as Bid[];
 
@@ -553,18 +566,18 @@ export default function RequestDetailsScreen() {
       const { data: orderRow, error: orderInsertError } = await supabase
         .from('orders')
         .insert({
-        request_id: id,
-        customer_id: user.uid,
-        carrier_id: bid.carrier_id,
-        bid_id: bid.id,
-        total_amount: totalAmount,
-        platform_fee: platformFee,
-        carrier_amount: carrierAmount,
-        payment_status: 'pending',
-        status: 'active',
-        created_at: nowIso,
-        payment_initiated_at: nowIso,
-      })
+          request_id: id,
+          customer_id: user.uid,
+          carrier_id: bid.carrier_id,
+          bid_id: bid.id,
+          total_amount: totalAmount,
+          platform_fee: platformFee,
+          carrier_amount: carrierAmount,
+          payment_status: 'pending',
+          status: 'active',
+          created_at: nowIso,
+          payment_initiated_at: nowIso,
+        })
         .select('id')
         .single();
 
@@ -626,24 +639,20 @@ export default function RequestDetailsScreen() {
     }
 
     const bidCount = bids.length;
-    const requestTitle = request?.title || (t('cargoRequest') || 'Request');
+    const requestTitle = request?.title || t('cargoRequest') || 'Request';
     const message =
       bidCount > 0
         ? `${t('confirmDeleteMessage') || 'Are you sure you want to delete this request? This action cannot be undone.'}\n\n"${requestTitle}"\n${bidCount} ${bidCount === 1 ? 'bid' : 'bids'} ${t('willBeDeleted') || 'will also be deleted'}.`
         : `${t('confirmDeleteMessage') || 'Are you sure you want to delete this request? This action cannot be undone.'}\n\n"${requestTitle}"`;
 
-    Alert.alert(
-      t('confirmDelete') || 'Delete Request',
-      message,
-      [
-        { text: t('cancel') || 'Cancel', style: 'cancel' },
-        {
-          text: t('delete') || 'Delete',
-          style: 'destructive',
-          onPress: confirmDelete,
-        },
-      ]
-    );
+    Alert.alert(t('confirmDelete') || 'Delete Request', message, [
+      { text: t('cancel') || 'Cancel', style: 'cancel' },
+      {
+        text: t('delete') || 'Delete',
+        style: 'destructive',
+        onPress: confirmDelete,
+      },
+    ]);
   };
 
   const handleOpenInNavigator = async () => {
@@ -653,13 +662,9 @@ export default function RequestDetailsScreen() {
     const toLng = toFiniteNumber(request?.to_lng);
 
     const origin =
-      fromLat !== null && fromLng !== null
-        ? `${fromLat},${fromLng}`
-        : request?.from_address || '';
+      fromLat !== null && fromLng !== null ? `${fromLat},${fromLng}` : request?.from_address || '';
     const destination =
-      toLat !== null && toLng !== null
-        ? `${toLat},${toLng}`
-        : request?.to_address || '';
+      toLat !== null && toLng !== null ? `${toLat},${toLng}` : request?.to_address || '';
 
     if (!origin && !destination) {
       toast.error(t('couldNotOpenLink') || 'Could not open link');
@@ -823,7 +828,12 @@ export default function RequestDetailsScreen() {
         return (
           <View style={styles.section}>
             <Text style={styles.title}>{request?.title}</Text>
-            <View style={[styles.requestStatusBadge, { backgroundColor: requestStatusMeta.backgroundColor }]}>
+            <View
+              style={[
+                styles.requestStatusBadge,
+                { backgroundColor: requestStatusMeta.backgroundColor },
+              ]}
+            >
               <Text style={[styles.requestStatusBadgeText, { color: requestStatusMeta.textColor }]}>
                 {requestStatusMeta.label}
               </Text>
@@ -864,7 +874,7 @@ export default function RequestDetailsScreen() {
           </View>
         );
 
-      case 'route':
+      case 'route': {
         const fromLat = toFiniteNumber(request?.from_lat);
         const fromLng = toFiniteNumber(request?.from_lng);
         const toLat = toFiniteNumber(request?.to_lat);
@@ -1021,6 +1031,7 @@ export default function RequestDetailsScreen() {
             </View>
           );
         }
+      }
 
       case 'customer':
         if (!request?.users) return null;
@@ -1051,11 +1062,11 @@ export default function RequestDetailsScreen() {
                   <Ionicons name="person-circle-outline" size={20} color={colors.primary} />
                   <Text style={styles.profileButtonText}>{t('viewProfile') || 'View Profile'}</Text>
                 </TouchableOpacity>
-              {!isCustomer && (
-                <TouchableOpacity style={styles.chatButton} onPress={navigateToChat}>
-                  <Ionicons name="chatbubble-outline" size={20} color={colors.white} />
-                </TouchableOpacity>
-              )}
+                {!isCustomer && (
+                  <TouchableOpacity style={styles.chatButton} onPress={navigateToChat}>
+                    <Ionicons name="chatbubble-outline" size={20} color={colors.white} />
+                  </TouchableOpacity>
+                )}
               </View>
             </View>
           </View>
@@ -1160,8 +1171,8 @@ export default function RequestDetailsScreen() {
                       {bid.status === 'accepted'
                         ? 'Godtatt'
                         : bid.status === 'rejected'
-                        ? 'Avvist'
-                        : 'Venter'}
+                          ? 'Avvist'
+                          : 'Venter'}
                     </Text>
                   </View>
 
