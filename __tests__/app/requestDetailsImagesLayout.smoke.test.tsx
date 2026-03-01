@@ -3,6 +3,10 @@ import { render, waitFor } from '@testing-library/react-native';
 import RequestDetailsScreen from '../../app/request-details/[id]';
 import { useLocalSearchParams } from 'expo-router';
 
+jest.mock('@expo/vector-icons', () => ({
+  Ionicons: () => null,
+}));
+
 jest.mock('../../contexts/AuthContext', () => ({
   useAuth: () => ({ user: { uid: 'user-1' } }),
 }));
