@@ -22,6 +22,7 @@ describe('useCargoRequests', () => {
   const mockUnsubscribe = jest.fn();
   const mockSubscribe = jest.fn();
   const mockOn = jest.fn();
+  let lastRealtimeCallback: (() => void) | undefined;
 
   const defaultQueryResult = {
     data: {
@@ -58,9 +59,10 @@ describe('useCargoRequests', () => {
       invalidateQueries: mockInvalidateQueries,
     });
     (useInfiniteQuery as jest.Mock).mockReturnValue(defaultQueryResult);
+    lastRealtimeCallback = undefined;
 
     mockOn.mockImplementation((_event, _payload, callback) => {
-      mockOn.lastCallback = callback;
+      lastRealtimeCallback = callback as () => void;
       return { subscribe: mockSubscribe };
     });
     mockSubscribe.mockReturnValue({ unsubscribe: mockUnsubscribe });
@@ -288,7 +290,7 @@ describe('useCargoRequests', () => {
       })
     );
 
-    const callback = mockOn.lastCallback as (() => void) | undefined;
+    const callback = lastRealtimeCallback;
     expect(typeof callback).toBe('function');
 
     callback?.();

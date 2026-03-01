@@ -23,7 +23,7 @@ const getImageDimensions = async (uri: string): Promise<{ width: number; height:
 
 const getFileSizeBytes = async (uri: string): Promise<number | null> => {
   try {
-    const info = await FileSystem.getInfoAsync(uri, { size: true });
+    const info = await FileSystem.getInfoAsync(uri);
     return info.exists && typeof info.size === 'number' ? info.size : null;
   } catch {
     return null;

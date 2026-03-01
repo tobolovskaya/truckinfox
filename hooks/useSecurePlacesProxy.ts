@@ -83,7 +83,7 @@ export const useSecurePlacesProxy = () => {
         }
       );
 
-      return data.predictions || [];
+      return data?.predictions || [];
     } catch (error) {
       console.error('Error searching places via proxy:', error);
       return [];
@@ -105,7 +105,7 @@ export const useSecurePlacesProxy = () => {
         }
       );
 
-      return data.result || null;
+      return data?.result || null;
     } catch (error) {
       console.error('Error fetching place details via proxy:', error);
       return null;
@@ -122,7 +122,7 @@ export const useSecurePlacesProxy = () => {
         {}
       );
 
-      return data.status === 'ok';
+      return data?.status === 'ok';
     } catch (error) {
       console.error('Health check failed:', error);
       return false;

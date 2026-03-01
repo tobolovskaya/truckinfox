@@ -6,7 +6,7 @@ import { colors, spacing, fontSize, fontWeight } from '../../lib/sharedStyles';
 import { ScreenHeader } from '../../components/ScreenHeader';
 import { useCargoRequests } from '../../hooks/useCargoRequests';
 import { useAuth } from '../../contexts/AuthContext';
-import MapSuperCluster from '../../lib/MapSuperCluster';
+import MapSuperCluster from '../../lib/MapSuperCluster.native';
 
 const DEFAULT_REGION = {
   latitude: 59.9139,

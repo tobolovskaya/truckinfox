@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, ScrollView, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, spacing, fontSize, fontWeight, borderRadius } from '../../lib/sharedStyles';
 import { useTranslation } from 'react-i18next';
@@ -69,11 +69,7 @@ export const HomeFilterSheet: React.FC<HomeFilterSheetProps> = ({
       {activeTab === 'all' && (
         <>
           <Text style={styles.sheetSectionTitle}>{t('cargoType')}</Text>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.sheetOptionsRow}
-          >
+          <View style={[styles.sheetOptionsRow, styles.sheetOptionsWrap]}>
             <TouchableOpacity
               style={[styles.sheetOption, !selectedCargoType && styles.sheetOptionActive]}
               onPress={() => onCargoTypeChange('')}
@@ -102,7 +98,7 @@ export const HomeFilterSheet: React.FC<HomeFilterSheetProps> = ({
                 </TouchableOpacity>
               );
             })}
-          </ScrollView>
+          </View>
         </>
       )}
 
@@ -140,6 +136,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: spacing.sm,
     paddingBottom: spacing.xs,
+  },
+  sheetOptionsWrap: {
+    flexWrap: 'wrap',
   },
   sheetOption: {
     paddingHorizontal: spacing.md,
