@@ -120,13 +120,21 @@ const normalizeOrderAmounts = (
 export default function PaymentScreen() {
   const { orderId } = useLocalSearchParams();
   const { user } = useAuth();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const router = useRouter();
 
   const [order, setOrder] = useState<Order | null>(null);
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState(false);
   const vippsFunctionName = (process.env.EXPO_PUBLIC_VIPPS_FUNCTION_NAME || 'vipps-payment').trim();
+  const locale = i18n.language.startsWith('no') ? 'nb-NO' : 'en-US';
+
+  const formatNokAmount = (value: number) =>
+    new Intl.NumberFormat(locale, {
+      style: 'currency',
+      currency: 'NOK',
+      maximumFractionDigits: 0,
+    }).format(Number(value || 0));
 
   const extractVippsErrorMessage = async (error: unknown): Promise<string> => {
     if (error instanceof Error && error.name !== 'FunctionsHttpError') {
@@ -621,19 +629,19 @@ export default function PaymentScreen() {
         <ScreenSection title={t('paymentBreakdown')}>
           <View style={styles.paymentRow}>
             <Text style={styles.paymentLabel}>{t('carrierPayment')}:</Text>
-            <Text style={styles.paymentAmount}>{order.carrier_amount} NOK</Text>
+            <Text style={styles.paymentAmount}>{formatNokAmount(order.carrier_amount)}</Text>
           </View>
 
           <View style={styles.paymentRow}>
             <Text style={styles.paymentLabel}>{t('platformFee')}:</Text>
-            <Text style={styles.paymentAmount}>{order.platform_fee} NOK</Text>
+            <Text style={styles.paymentAmount}>{formatNokAmount(order.platform_fee)}</Text>
           </View>
 
           <View style={styles.divider} />
 
           <View style={styles.paymentRow}>
             <Text style={styles.totalLabel}>{t('totalAmount')}:</Text>
-            <Text style={styles.totalAmount}>{order.total_amount} NOK</Text>
+            <Text style={styles.totalAmount}>{formatNokAmount(order.total_amount)}</Text>
           </View>
         </ScreenSection>
 

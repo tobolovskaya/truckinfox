@@ -100,8 +100,7 @@ export default function CreateRequestScreen() {
   const { width } = useWindowDimensions();
   const isSmallScreen = width < 360;
   const insets = useSafeAreaInsets();
-  const TAB_BAR_ESTIMATED_HEIGHT = 72;
-  const formBottomInset = TAB_BAR_ESTIMATED_HEIGHT + Math.max(insets.bottom, spacing.sm) + spacing.xl;
+  const formBottomInset = Math.max(insets.bottom, spacing.sm) + spacing.xl;
   const { unreadCount } = useNotifications();
   const [formData, setFormData] = useState({
     title: '',
