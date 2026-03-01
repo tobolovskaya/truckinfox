@@ -570,9 +570,9 @@ export default function RequestDetailsScreen() {
         return;
       }
 
-      const totalAmount = bid.price;
-      const platformFee = Math.round(totalAmount * 0.1);
-      const carrierAmount = totalAmount - platformFee;
+      const carrierAmount = bid.price;
+      const platformFee = Math.round(carrierAmount * 0.1);
+      const totalAmount = carrierAmount + platformFee;
 
       const nowIso = new Date().toISOString();
       const { data: orderRow, error: orderInsertError } = await supabase

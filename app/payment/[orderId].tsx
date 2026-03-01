@@ -70,6 +70,53 @@ type EscrowPaymentRecord = {
   bid_id?: string;
 };
 
+type NormalizedAmounts = {
+  total_amount: number;
+  platform_fee: number;
+  carrier_amount: number;
+  wasLegacy: boolean;
+};
+
+const normalizeOrderAmounts = (
+  totalAmountRaw: number,
+  platformFeeRaw: number,
+  carrierAmountRaw: number
+): NormalizedAmounts => {
+  const totalAmount = Number(totalAmountRaw || 0);
+  const platformFee = Number(platformFeeRaw || 0);
+  const carrierAmount = Number(carrierAmountRaw || 0);
+
+  const expectedLegacyPlatformFee = Math.round(totalAmount * 0.1);
+  const expectedLegacyCarrierAmount = totalAmount - platformFee;
+
+  const looksLegacyModel =
+    totalAmount > 0 &&
+    platformFee >= 0 &&
+    carrierAmount >= 0 &&
+    Math.abs(platformFee - expectedLegacyPlatformFee) <= 1 &&
+    Math.abs(carrierAmount - expectedLegacyCarrierAmount) <= 1;
+
+  if (!looksLegacyModel) {
+    return {
+      total_amount: totalAmount,
+      platform_fee: platformFee,
+      carrier_amount: carrierAmount,
+      wasLegacy: false,
+    };
+  }
+
+  const normalizedCarrierAmount = totalAmount;
+  const normalizedPlatformFee = Math.round(normalizedCarrierAmount * 0.1);
+  const normalizedTotalAmount = normalizedCarrierAmount + normalizedPlatformFee;
+
+  return {
+    total_amount: normalizedTotalAmount,
+    platform_fee: normalizedPlatformFee,
+    carrier_amount: normalizedCarrierAmount,
+    wasLegacy: true,
+  };
+};
+
 export default function PaymentScreen() {
   const { orderId } = useLocalSearchParams();
   const { user } = useAuth();
@@ -124,6 +171,31 @@ export default function PaymentScreen() {
           phone: '',
         },
       };
+
+      const normalizedAmounts = normalizeOrderAmounts(
+        Number(orderRow.total_amount || 0),
+        Number(orderRow.platform_fee || 0),
+        Number(orderRow.carrier_amount || 0)
+      );
+
+      orderData.total_amount = normalizedAmounts.total_amount;
+      orderData.platform_fee = normalizedAmounts.platform_fee;
+      orderData.carrier_amount = normalizedAmounts.carrier_amount;
+
+      if (normalizedAmounts.wasLegacy) {
+        const { error: normalizeOrderError } = await supabase
+          .from('orders')
+          .update({
+            total_amount: normalizedAmounts.total_amount,
+            platform_fee: normalizedAmounts.platform_fee,
+            carrier_amount: normalizedAmounts.carrier_amount,
+          })
+          .eq('id', orderRow.id);
+
+        if (normalizeOrderError) {
+          console.warn('Failed to normalize legacy order amounts:', normalizeOrderError);
+        }
+      }
 
       // Fetch cargo request
       if (orderData.request_id) {
