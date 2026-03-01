@@ -26,6 +26,7 @@ import {
   useAppThemeStyles,
 } from '../../lib/sharedStyles';
 import { formatDistanceToNow } from 'date-fns';
+import { enUS, nb } from 'date-fns/locale';
 import { ScreenHeader } from '../../components/ScreenHeader';
 import { useUnreadCount } from '../../hooks/useNotifications';
 
@@ -84,11 +85,12 @@ const chunkArray = <T,>(items: T[], size: number): T[][] => {
 
 export default function MessagesScreen() {
   const { user } = useAuth();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const router = useRouter();
   const { colors } = useAppThemeStyles();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const { unreadCount } = useUnreadCount();
+  const dateLocale = useMemo(() => (i18n.language.startsWith('no') ? nb : enUS), [i18n.language]);
 
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [filteredConversations, setFilteredConversations] = useState<Conversation[]>([]);
@@ -285,7 +287,7 @@ export default function MessagesScreen() {
         onPress={() => handleConversationPress(item)}
         activeOpacity={0.7}
         accessibilityRole="button"
-        accessibilityLabel={`Open chat with ${item.other_user_name}`}
+        accessibilityLabel={t('openChatWith', { name: item.other_user_name })}
       >
         <Avatar photoURL={item.other_user_avatar} size={56} />
 
@@ -295,7 +297,10 @@ export default function MessagesScreen() {
               {item.other_user_name}
             </Text>
             <Text style={styles.timestamp}>
-              {formatDistanceToNow(item.last_message_time, { addSuffix: true })}
+              {formatDistanceToNow(item.last_message_time, {
+                addSuffix: true,
+                locale: dateLocale,
+              })}
             </Text>
           </View>
 
@@ -403,7 +408,7 @@ export default function MessagesScreen() {
             <TouchableOpacity
               onPress={() => setSearchQuery('')}
               accessibilityRole="button"
-              accessibilityLabel="Clear search"
+              accessibilityLabel={t('clearSearch')}
             >
               <Ionicons name="close-circle" size={20} color={colors.text.tertiary} />
             </TouchableOpacity>

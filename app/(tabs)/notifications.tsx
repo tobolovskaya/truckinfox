@@ -18,11 +18,8 @@ export default function NotificationsScreen() {
       <ScreenHeader title={t('notifications') || 'Notifications'} onBackPress={() => router.back()} />
       <EmptyState
         icon="notifications-outline"
-        title={t('noNotifications') || 'No notifications'}
-        description={
-          t('allCaughtUp') ||
-          "You're all caught up. Create a request or browse marketplace activity."
-        }
+        title={t('noNotifications')}
+        description={t('allCaughtUp')}
         illustration={EmptyCargoIllustration}
         actions={[
           {
