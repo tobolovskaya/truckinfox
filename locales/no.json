@@ -301,6 +301,7 @@
   "cargoInTransit": "Lasten din transporteres",
   "cargoDelivered": "Last er levert",
   "orderDetails": "Ordredetaljer",
+  "orderDetailsNotAvailable": "Ordredetaljer er ikke tilgjengelige",
   "participants": "Deltakere",
   "paymentInformation": "Betalingsinformasjon",
   "paymentStatus": "Betalingsstatus",

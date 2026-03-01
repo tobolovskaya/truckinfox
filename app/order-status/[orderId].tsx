@@ -685,7 +685,7 @@ export default function OrderStatusScreen() {
               </View>
             </>
           ) : (
-            <Text style={styles.errorText}>Order details not available</Text>
+            <Text style={styles.missingOrderDetailsText}>{t('orderDetailsNotAvailable')}</Text>
           )}
         </View>
 
@@ -946,6 +946,10 @@ const styles = StyleSheet.create({
   errorText: {
     fontSize: fontSize.lg,
     color: colors.error,
+  },
+  missingOrderDetailsText: {
+    fontSize: fontSize.md,
+    color: colors.text.secondary,
   },
   liveStatusRow: {
     paddingHorizontal: spacing.xl,

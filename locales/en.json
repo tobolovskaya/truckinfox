@@ -311,6 +311,7 @@
   "cargoInTransit": "Your cargo is being transported",
   "cargoDelivered": "Cargo has been delivered",
   "orderDetails": "Order Details",
+  "orderDetailsNotAvailable": "Order details are not available",
   "participants": "Participants",
   "paymentInformation": "Payment Information",
   "paymentStatus": "Payment Status",
