@@ -102,6 +102,45 @@ select * from public.storage_zero_byte_objects_v order by created_at desc limit 
 select * from public.storage_zero_byte_request_image_refs() limit 100;
 ```
 
+### Daily snapshot audit (scheduler-ready)
+
+Після migration `20260301104500_add_storage_zero_byte_daily_audit.sql` з'являються:
+
+- `public.storage_zero_byte_audit_runs` — таблиця історії snapshot-ів.
+- `public.capture_storage_zero_byte_snapshot(_notes text)` — функція для запису snapshot.
+- `public.storage_zero_byte_audit_latest_v` — останній snapshot.
+
+Приклади ручного запуску:
+
+```sql
+select public.capture_storage_zero_byte_snapshot('manual run from SQL editor');
+select * from public.storage_zero_byte_audit_latest_v;
+select run_at, total_zero_byte_count from public.storage_zero_byte_audit_runs order by run_at desc limit 30;
+```
+
+Retention (щоб таблиця snapshot-ів не розросталась):
+
+```sql
+select public.prune_storage_zero_byte_audit_runs(); -- default 180 days
+select public.prune_storage_zero_byte_audit_runs(365); -- custom window
+```
+
+Опційно (якщо увімкнено `pg_cron`) можна планувати щоденний запуск:
+
+```sql
+select cron.schedule(
+  'storage-zero-byte-daily',
+  '15 3 * * *',
+  $$select public.capture_storage_zero_byte_snapshot('pg_cron daily 03:15 UTC');$$
+);
+
+select cron.schedule(
+  'storage-zero-byte-retention-weekly',
+  '30 3 * * 0',
+  $$select public.prune_storage_zero_byte_audit_runs(180);$$
+);
+```
+
 ---
 
 ## Рекомендації для Realtime та Node.js Backend
