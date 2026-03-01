@@ -76,7 +76,7 @@ type IoniconName = ComponentProps<typeof Ionicons>['name'];
 export default function OrderStatusScreen() {
   const { orderId } = useLocalSearchParams();
   const { user } = useAuth();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const router = useRouter();
 
   const [order, setOrder] = useState<Order | null>(null);
@@ -90,6 +90,68 @@ export default function OrderStatusScreen() {
   const [signature, setSignature] = useState<string | null>(null);
   const [uploadingProof, setUploadingProof] = useState(false);
   const [signatureError, setSignatureError] = useState(false);
+
+  const locale = i18n.language.startsWith('no') ? 'nb-NO' : 'en-US';
+
+  const normalizeStatus = (value: string | undefined | null) =>
+    String(value || '')
+      .trim()
+      .toLowerCase();
+
+  const formatNokAmount = (value: number) =>
+    new Intl.NumberFormat(locale, {
+      style: 'currency',
+      currency: 'NOK',
+      maximumFractionDigits: 0,
+    }).format(Number(value || 0));
+
+  const formatDateTime = (value: Date | string) => {
+    const date = value instanceof Date ? value : new Date(value);
+    if (Number.isNaN(date.getTime())) {
+      return '-';
+    }
+    return date.toLocaleString(locale);
+  };
+
+  const getOrderStatusLabel = (status: string) => {
+    const normalized = normalizeStatus(status);
+    const map: Record<string, string> = {
+      active: 'orderActive',
+      in_transit: 'in_transit',
+      delivered: 'delivered',
+      completed: 'completed',
+      cancelled: 'cancelled',
+      canceled: 'cancelled',
+      pending: 'pending',
+    };
+    return t(map[normalized] || normalized);
+  };
+
+  const getStatusSubtitle = (status: string) => {
+    const normalized = normalizeStatus(status);
+    const map: Record<string, string> = {
+      active: 'waitingForCarrier',
+      in_transit: 'cargoInTransit',
+      delivered: 'cargoDelivered',
+      completed: 'cargoDelivered',
+      cancelled: 'orderCancelled',
+      canceled: 'orderCancelled',
+    };
+
+    const key = map[normalized];
+    return key ? t(key) : '';
+  };
+
+  const getPaymentStatusColor = (status: string) => {
+    const normalized = normalizeStatus(status);
+    if (normalized === 'completed' || normalized === 'paid' || normalized === 'released') {
+      return '#10B981';
+    }
+    if (normalized === 'failed' || normalized === 'refunded') {
+      return '#F44336';
+    }
+    return '#F59E0B';
+  };
 
   // Ensure orderId is a string
   const orderIdString = Array.isArray(orderId) ? orderId[0] : orderId;
@@ -443,9 +505,11 @@ export default function OrderStatusScreen() {
       active: '#FFC107', // Warning yellow
       in_transit: '#FF8A65', // Secondary orange
       delivered: '#4CAF50', // Success green
+      completed: '#4CAF50', // Success green
       cancelled: '#F44336', // Error red
+      canceled: '#F44336', // Error red
     };
-    return colors[status] || '#616161'; // Text secondary
+    return colors[normalizeStatus(status)] || '#616161'; // Text secondary
   };
 
   const getStatusIcon = (status: string): IoniconName => {
@@ -453,9 +517,11 @@ export default function OrderStatusScreen() {
       active: 'time-outline',
       in_transit: 'car-outline',
       delivered: 'checkmark-circle-outline',
+      completed: 'checkmark-circle-outline',
       cancelled: 'close-circle-outline',
+      canceled: 'close-circle-outline',
     };
-    return icons[status] || 'help-circle-outline';
+    return icons[normalizeStatus(status)] || 'help-circle-outline';
   };
 
   const getCargoTypeIcon = (type: string): IoniconName => {
@@ -538,13 +604,8 @@ export default function OrderStatusScreen() {
               />
             </View>
             <View style={styles.statusInfo}>
-              <Text style={styles.statusTitle}>{t(order.status)}</Text>
-              <Text style={styles.statusSubtitle}>
-                {order.status === 'active' && t('waitingForCarrier')}
-                {order.status === 'in_transit' && t('cargoInTransit')}
-                {order.status === 'delivered' && t('cargoDelivered')}
-                {order.status === 'cancelled' && t('orderCancelled')}
-              </Text>
+              <Text style={styles.statusTitle}>{getOrderStatusLabel(order.status)}</Text>
+              <Text style={styles.statusSubtitle}>{getStatusSubtitle(order.status)}</Text>
             </View>
           </View>
         </View>
@@ -616,7 +677,7 @@ export default function OrderStatusScreen() {
 
           <View style={styles.paymentRow}>
             <Text style={styles.paymentLabel}>{t('totalAmount')}:</Text>
-            <Text style={styles.paymentAmount}>{order.total_amount} NOK</Text>
+            <Text style={styles.paymentAmount}>{formatNokAmount(order.total_amount)}</Text>
           </View>
 
           <View style={styles.paymentRow}>
@@ -624,10 +685,10 @@ export default function OrderStatusScreen() {
             <Text
               style={[
                 styles.paymentStatus,
-                { color: order.payment_status === 'completed' ? '#10B981' : '#F59E0B' },
+                { color: getPaymentStatusColor(order.payment_status) },
               ]}
             >
-              {t(order.payment_status)}
+              {t(normalizeStatus(order.payment_status) || 'pending')}
             </Text>
           </View>
 
@@ -833,7 +894,7 @@ export default function OrderStatusScreen() {
               <View style={styles.deliveryTimeInfo}>
                 <Ionicons name="time-outline" size={16} color={theme.iconColors.gray.primary} />
                 <Text style={styles.deliveryTimeText}>
-                  {t('deliveredAt')}: {deliveryTime.toLocaleString()}
+                  {t('deliveredAt')}: {formatDateTime(deliveryTime)}
                 </Text>
               </View>
             )}

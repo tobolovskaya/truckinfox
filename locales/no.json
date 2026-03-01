@@ -331,6 +331,7 @@
   "status": "Status",
   "date": "Dato",
   "active": "Aktive",
+  "orderActive": "Aktiv",
   "completed": "Fullført",
   "cancelled": "Avbrutt",
   "created": "Opprettet",
