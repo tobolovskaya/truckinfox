@@ -460,8 +460,8 @@ export default function PaymentScreen() {
         throw new Error('Payment initiation did not return payment URL');
       }
     } catch (error: unknown) {
-      console.error('Vipps payment error:', error);
       const message = await extractVippsErrorMessage(error);
+      console.warn('Vipps payment handled error:', message);
 
       const isFunctionsHttpError =
         typeof error === 'object' &&
