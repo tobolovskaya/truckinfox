@@ -423,6 +423,8 @@
   "paymentSuccessMessage": "Betalingen din er behandlet. Midlene holdes nå i escrow.",
   "vippsPayment": "Vipps-betaling",
   "vippsRedirectMessage": "Du vil bli omdirigert til Vipps for å fullføre betalingen.",
+  "vippsFunctionNotDeployedDev": "Vipps Edge Function er ikke deployet i dette miljøet (404). Du kan fortsette med testbetaling i utviklingsmodus.",
+  "vippsFunctionNotAvailable": "Vipps er midlertidig utilgjengelig. Prøv igjen senere eller kontakt support.",
   "map": "Kart",
   "pickupLocation": "Hentingssted",
   "deliveryLocation": "Leveringssted",

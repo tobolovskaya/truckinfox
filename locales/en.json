@@ -448,6 +448,8 @@
   "paymentSuccessMessage": "Your payment has been processed successfully. The funds are now held in escrow.",
   "vippsPayment": "Vipps Payment",
   "vippsRedirectMessage": "You will be redirected to Vipps to complete the payment.",
+  "vippsFunctionNotDeployedDev": "Vipps Edge Function is not deployed in this environment (404). You can continue with test payment in development mode.",
+  "vippsFunctionNotAvailable": "Vipps is temporarily unavailable. Please try again later or contact support.",
   "map": "Map",
   "pickupLocation": "Pickup Location",
   "deliveryLocation": "Delivery Location",

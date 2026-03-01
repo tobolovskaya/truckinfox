@@ -126,6 +126,7 @@ export default function PaymentScreen() {
   const [order, setOrder] = useState<Order | null>(null);
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState(false);
+  const vippsFunctionName = (process.env.EXPO_PUBLIC_VIPPS_FUNCTION_NAME || 'vipps-payment').trim();
 
   const extractVippsErrorMessage = async (error: unknown): Promise<string> => {
     if (error instanceof Error && error.name !== 'FunctionsHttpError') {
@@ -297,6 +298,7 @@ export default function PaymentScreen() {
   const initiateVippsPayment = async () => {
     if (!order) return;
 
+    let createdEscrowPaymentId: string | null = null;
     setProcessing(true);
     try {
       // 🔐 Generate idempotency key to prevent duplicate payments
@@ -339,8 +341,17 @@ export default function PaymentScreen() {
         }
 
         // If payment exists but no Vipps URL, it might be stuck
-        // Log this for debugging
-        console.warn('Existing payment without Vipps URL:', existingPaymentId);
+        // Mark stale initiated payment as failed before creating a new one
+        const { error: stalePaymentUpdateError } = await supabase
+          .from('escrow_payments')
+          .update({ status: 'failed' })
+          .eq('id', existingPaymentId);
+
+        if (stalePaymentUpdateError) {
+          console.warn('Failed to mark stale payment as failed:', stalePaymentUpdateError);
+        } else {
+          console.warn('Existing payment without Vipps URL marked as failed:', existingPaymentId);
+        }
       }
 
       // Validate all required data before making the request
@@ -399,6 +410,8 @@ export default function PaymentScreen() {
         throw escrowInsertError || new Error('Failed to create escrow payment');
       }
 
+      createdEscrowPaymentId = insertedEscrowPayment.id;
+
       // Track payment initiated
       trackPaymentInitiated({
         order_id: order.id,
@@ -408,7 +421,7 @@ export default function PaymentScreen() {
       });
 
       const { data: result, error: functionError } = await supabase.functions.invoke(
-        'vipps-payment',
+        vippsFunctionName,
         {
           body: {
             escrow_payment_id: insertedEscrowPayment.id,
@@ -468,6 +481,41 @@ export default function PaymentScreen() {
         error !== null &&
         'name' in error &&
         (error as { name?: string }).name === 'FunctionsHttpError';
+
+      const isFunctionNotFound =
+        message.includes('HTTP 404') || message.toLowerCase().includes('requested function was not found');
+
+      if (createdEscrowPaymentId && isFunctionsHttpError) {
+        const { error: failedStatusUpdateError } = await supabase
+          .from('escrow_payments')
+          .update({ status: 'failed' })
+          .eq('id', createdEscrowPaymentId);
+
+        if (failedStatusUpdateError) {
+          console.warn('Failed to update escrow payment status to failed:', failedStatusUpdateError);
+        }
+      }
+
+      if (isFunctionNotFound) {
+        if (__DEV__) {
+          Alert.alert(t('vippsPayment'), t('vippsFunctionNotDeployedDev'), [
+            {
+              text: t('continue'),
+              onPress: () => {
+                simulatePaymentSuccess();
+              },
+            },
+            {
+              text: t('cancel'),
+              style: 'cancel',
+            },
+          ]);
+          return;
+        }
+
+        Alert.alert(t('error'), t('vippsFunctionNotAvailable'));
+        return;
+      }
 
       if (__DEV__ && isFunctionsHttpError) {
         Alert.alert(t('error'), message, [
