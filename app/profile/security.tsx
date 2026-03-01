@@ -29,6 +29,10 @@ export default function SecurityScreen() {
   const { user, signOut, signOutAllDevices } = useAuth();
   const [loading, setLoading] = useState(false);
 
+  const showComingSoon = () => {
+    Alert.alert(t('comingSoon'), t('comingSoon'));
+  };
+
   const handleSignOut = async () => {
     Alert.alert(t('signOut'), t('confirmSignOut'), [
       { text: t('cancel'), style: 'cancel' },
@@ -98,9 +102,7 @@ export default function SecurityScreen() {
       title: t('changePassword'),
       subtitle: t('changePasswordSubtitle'),
       iconColor: colors.primary,
-      onPress: () => {
-        Alert.alert(t('comingSoon'), 'Change password feature coming soon');
-      },
+      onPress: showComingSoon,
     },
     {
       id: 'two-factor',
@@ -108,9 +110,7 @@ export default function SecurityScreen() {
       title: t('twoFactorAuth'),
       subtitle: t('twoFactorSubtitle'),
       iconColor: colors.success,
-      onPress: () => {
-        Alert.alert(t('comingSoon'), 'Two-factor authentication coming soon');
-      },
+      onPress: showComingSoon,
     },
     {
       id: 'active-sessions',
@@ -118,9 +118,7 @@ export default function SecurityScreen() {
       title: t('activeSessions'),
       subtitle: t('activeSessionsSubtitle'),
       iconColor: colors.info,
-      onPress: () => {
-        Alert.alert(t('comingSoon'), 'Active sessions management coming soon');
-      },
+      onPress: showComingSoon,
     },
   ];
 

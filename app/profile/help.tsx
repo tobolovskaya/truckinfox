@@ -124,10 +124,7 @@ export default function HelpSupportScreen() {
                   style={styles.faqItem}
                   onPress={() => toggleFAQ(item.id)}
                   accessibilityRole="button"
-                  accessibilityLabel={`Question: ${item.question}`}
-                  accessibilityHint={
-                    expandedFAQ === item.id ? 'Double tap to collapse' : 'Double tap to expand'
-                  }
+                  accessibilityLabel={item.question}
                 >
                   <View style={styles.faqHeader}>
                     <Ionicons

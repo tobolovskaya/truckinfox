@@ -97,7 +97,7 @@ export default function ProfileScreen() {
             backgroundColor={`${colors.primary}15`}
             iconColor={colors.primary}
           />
-          <Text style={styles.userName}>{user?.displayName || 'User'}</Text>
+          <Text style={styles.userName}>{user?.displayName || t('customer')}</Text>
           <Text style={styles.userEmail}>{user?.email}</Text>
         </View>
 
@@ -131,7 +131,7 @@ export default function ProfileScreen() {
         </TouchableOpacity>
 
         {/* Version */}
-        <Text style={styles.version}>Version 1.0.0</Text>
+        <Text style={styles.version}>{`${t('version')} 1.0.0`}</Text>
       </ScrollView>
     </View>
   );

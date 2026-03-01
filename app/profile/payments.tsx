@@ -17,7 +17,7 @@ import { EmptyState } from '../../components/EmptyState';
 import { usePaymentHistory, PaymentRecord } from '../../hooks/usePaymentHistory';
 
 export default function PaymentsScreen() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { colors } = useAppThemeStyles();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const { user } = useAuth();
@@ -62,9 +62,12 @@ export default function PaymentsScreen() {
     refunded: t('paymentRefunded') || 'Refunded',
   };
 
+  const language = i18n?.language || 'en';
+  const locale = language.startsWith('no') ? 'nb-NO' : 'en-US';
+
   const formatCurrency = (amount: number, currency: string) => {
     try {
-      return new Intl.NumberFormat('no-NO', {
+      return new Intl.NumberFormat(locale, {
         style: 'currency',
         currency: currency.toUpperCase(),
       }).format(amount);
@@ -76,7 +79,7 @@ export default function PaymentsScreen() {
   const formatDate = (dateString: string) => {
     try {
       const date = new Date(dateString);
-      return new Intl.DateTimeFormat('no-NO', {
+      return new Intl.DateTimeFormat(locale, {
         year: 'numeric',
         month: 'short',
         day: 'numeric',
@@ -93,7 +96,7 @@ export default function PaymentsScreen() {
       <View style={styles.paymentHeader}>
         <View style={styles.paymentInfo}>
           <Text style={styles.paymentTitle}>
-            {item.order_title || `Order ${item.order_id.slice(-6)}`}
+            {item.order_title || `${t('order')} ${item.order_id.slice(-6)}`}
           </Text>
           <Text style={styles.paymentDate}>{formatDate(item.created_at)}</Text>
         </View>
