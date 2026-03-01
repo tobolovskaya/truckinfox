@@ -396,7 +396,7 @@ export default function RequestDetailsScreen() {
 
       const { data: currentRequest, error: currentRequestError } = await supabase
         .from('cargo_requests')
-        .select('status')
+        .select('status, accepted_bid_id')
         .eq('id', id as string)
         .maybeSingle();
 
@@ -407,9 +407,18 @@ export default function RequestDetailsScreen() {
       const currentStatus = String(currentRequest.status || '')
         .trim()
         .toLowerCase();
-      const terminalRequestStatuses = ['accepted', 'in_transit', 'delivered', 'completed', 'cancelled', 'canceled'];
+      const acceptedBidId =
+        typeof currentRequest.accepted_bid_id === 'string' ? currentRequest.accepted_bid_id : null;
 
-      if (terminalRequestStatuses.includes(currentStatus)) {
+      if (currentStatus === 'accepted') {
+        if (acceptedBidId === bid.id) {
+          navigateToPayment(bid);
+          return;
+        }
+        throw new Error('Forespørselen har allerede et annet godtatt bud');
+      }
+
+      if (['in_transit', 'delivered', 'completed', 'cancelled', 'canceled'].includes(currentStatus)) {
         throw new Error('Forespørselen er ikke lenger aktiv');
       }
 
