@@ -35,6 +35,25 @@ jest.mock('../../hooks/useDebounce', () => ({
   useDebounce: (value: string) => value,
 }));
 
+jest.mock('../../lib/supabase', () => ({
+  supabase: {
+    from: () => ({
+      select: () => ({
+        eq: () => ({
+          in: async () => ({ count: 0, error: null }),
+        }),
+      }),
+    }),
+    channel: () => ({
+      on: () => ({
+        subscribe: () => ({ unsubscribe: jest.fn() }),
+      }),
+      subscribe: () => ({ unsubscribe: jest.fn() }),
+      unsubscribe: jest.fn(),
+    }),
+  },
+}));
+
 jest.mock('react-i18next', () => ({
   useTranslation: () => ({ t: (key: string) => key }),
 }));
