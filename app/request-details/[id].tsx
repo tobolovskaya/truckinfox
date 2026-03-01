@@ -386,7 +386,11 @@ export default function RequestDetailsScreen() {
         throw new Error('Bud ikke funnet');
       }
 
-      if (selectedBid.status !== 'pending') {
+      const selectedBidStatus = String(selectedBid.status || '')
+        .trim()
+        .toLowerCase();
+
+      if (selectedBidStatus !== 'pending') {
         throw new Error('Budet er ikke lenger tilgjengelig');
       }
 
@@ -400,9 +404,12 @@ export default function RequestDetailsScreen() {
         throw new Error('Forespørsel ikke funnet');
       }
 
-      const currentStatus = String(currentRequest.status || '').toLowerCase();
+      const currentStatus = String(currentRequest.status || '')
+        .trim()
+        .toLowerCase();
+      const terminalRequestStatuses = ['accepted', 'in_transit', 'delivered', 'completed', 'cancelled', 'canceled'];
 
-      if (!['active', 'open', 'pending'].includes(currentStatus)) {
+      if (terminalRequestStatuses.includes(currentStatus)) {
         throw new Error('Forespørselen er ikke lenger aktiv');
       }
 
@@ -428,8 +435,7 @@ export default function RequestDetailsScreen() {
           accepted_bid_id: bid.id,
           updated_at: nowIso,
         })
-        .eq('id', id as string)
-        .in('status', ['active', 'open', 'pending']);
+        .eq('id', id as string);
 
       if (requestUpdateError) {
         throw requestUpdateError;
