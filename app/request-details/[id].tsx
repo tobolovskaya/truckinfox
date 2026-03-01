@@ -661,18 +661,36 @@ export default function RequestDetailsScreen() {
         ? `${toLat},${toLng}`
         : request?.to_address || '';
 
-    if (!destination) {
+    if (!origin && !destination) {
       toast.error(t('couldNotOpenLink') || 'Could not open link');
       return;
     }
 
-    const appleMapsUrl = `http://maps.apple.com/?saddr=${encodeURIComponent(origin)}&daddr=${encodeURIComponent(destination)}&dirflg=d`;
-    const googleMapsUrl = `https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(origin)}&destination=${encodeURIComponent(destination)}&travelmode=driving`;
-    const preferredUrl = Platform.OS === 'ios' ? appleMapsUrl : googleMapsUrl;
+    const encodedOrigin = encodeURIComponent(origin);
+    const encodedDestination = encodeURIComponent(destination || origin);
+
+    const appleMapsUrl = origin
+      ? `http://maps.apple.com/?saddr=${encodedOrigin}&daddr=${encodedDestination}&dirflg=d`
+      : `http://maps.apple.com/?daddr=${encodedDestination}&dirflg=d`;
+    const googleMapsUrl = `https://www.google.com/maps/dir/?api=1${origin ? `&origin=${encodedOrigin}` : ''}&destination=${encodedDestination}&travelmode=driving`;
+    const googleMapsAppUrl = `comgooglemaps://?${origin ? `saddr=${encodedOrigin}&` : ''}daddr=${encodedDestination}&directionsmode=driving`;
+    const androidIntentUrl = `google.navigation:q=${encodedDestination}`;
+
+    const urlCandidates =
+      Platform.OS === 'ios'
+        ? [appleMapsUrl, googleMapsAppUrl, googleMapsUrl]
+        : [androidIntentUrl, googleMapsUrl];
 
     try {
-      const canOpenPreferred = await Linking.canOpenURL(preferredUrl);
-      await Linking.openURL(canOpenPreferred ? preferredUrl : googleMapsUrl);
+      for (const url of urlCandidates) {
+        const canOpen = await Linking.canOpenURL(url);
+        if (canOpen) {
+          await Linking.openURL(url);
+          return;
+        }
+      }
+
+      toast.error(t('couldNotOpenLink') || 'Could not open link');
     } catch (error) {
       console.error('Failed to open navigator:', error);
       toast.error(t('couldNotOpenLink') || 'Could not open link');
@@ -736,6 +754,7 @@ export default function RequestDetailsScreen() {
   const formatDate = (dateString: string) => {
     if (!dateString) return '';
     const date = new Date(dateString);
+    if (Number.isNaN(date.getTime())) return '';
     return date.toLocaleDateString('no-NO', { day: '2-digit', month: 'short', year: 'numeric' });
   };
 
@@ -745,6 +764,7 @@ export default function RequestDetailsScreen() {
       typeof timestamp === 'object' && timestamp !== null && 'toDate' in timestamp
         ? (timestamp as { toDate: () => Date }).toDate()
         : new Date(timestamp as string);
+    if (Number.isNaN(date.getTime())) return '';
     return date.toLocaleDateString('no-NO', { day: '2-digit', month: 'short' });
   };
 
@@ -849,6 +869,7 @@ export default function RequestDetailsScreen() {
         const fromLng = toFiniteNumber(request?.from_lng);
         const toLat = toFiniteNumber(request?.to_lat);
         const toLng = toFiniteNumber(request?.to_lng);
+        const distanceKm = toFiniteNumber(request?.distance_km);
 
         // Show map if coordinates are available, otherwise show text addresses
         if (fromLat !== null && fromLng !== null && toLat !== null && toLng !== null) {
@@ -860,7 +881,9 @@ export default function RequestDetailsScreen() {
 
           return (
             <View style={styles.section}>
-              <Text style={[styles.sectionTitle, styles.sectionTitleStrong]}>Rute</Text>
+              <Text style={[styles.sectionTitle, styles.sectionTitleStrong]}>
+                {t('route') || 'Route'}
+              </Text>
               <View style={styles.mapContainer}>
                 <MapView
                   style={styles.map}
@@ -875,14 +898,14 @@ export default function RequestDetailsScreen() {
                     coordinate={{ latitude: fromLat, longitude: fromLng }}
                     title={t('pickup')}
                     description={request?.from_address || ''}
-                    pinColor="#4CAF50"
+                    pinColor={colors.success}
                   />
 
                   <Marker
                     coordinate={{ latitude: toLat, longitude: toLng }}
                     title={t('to')}
                     description={request?.to_address || ''}
-                    pinColor="#FF7043"
+                    pinColor={colors.error}
                   />
 
                   <Polyline
@@ -890,20 +913,15 @@ export default function RequestDetailsScreen() {
                       { latitude: fromLat, longitude: fromLng },
                       { latitude: toLat, longitude: toLng },
                     ]}
-                    strokeColor="#FF7043"
+                    strokeColor={colors.primary}
                     strokeWidth={3}
                   />
                 </MapView>
 
-                {request?.distance_km != null && (
+                {distanceKm !== null && (
                   <View style={styles.distanceBadge}>
                     <Ionicons name="navigate-outline" size={16} color="#FFF" />
-                    <Text style={styles.distanceBadgeText}>
-                      {typeof request.distance_km === 'number'
-                        ? request.distance_km.toFixed(0)
-                        : request.distance_km}{' '}
-                      km
-                    </Text>
+                    <Text style={styles.distanceBadgeText}>{distanceKm.toFixed(0)} km</Text>
                   </View>
                 )}
               </View>
@@ -913,7 +931,7 @@ export default function RequestDetailsScreen() {
                 <View style={styles.routeInfoRow}>
                   <Ionicons name="location" size={18} color={colors.success} />
                   <View style={styles.routeInfoCol}>
-                    <Text style={styles.routeLabel}>Fra</Text>
+                    <Text style={styles.routeLabel}>{t('from') || 'From'}</Text>
                     <Text style={styles.routeAddress}>{request?.from_address || ''}</Text>
                     <Text style={styles.routeDate}>{formatDate(request?.pickup_date || '')}</Text>
                   </View>
@@ -924,20 +942,17 @@ export default function RequestDetailsScreen() {
                 <View style={styles.routeInfoRow}>
                   <Ionicons name="location" size={18} color={colors.error} />
                   <View style={styles.routeInfoCol}>
-                    <Text style={styles.routeLabel}>Til</Text>
+                    <Text style={styles.routeLabel}>{t('to') || 'To'}</Text>
                     <Text style={styles.routeAddress}>{request?.to_address || ''}</Text>
                     <Text style={styles.routeDate}>{formatDate(request?.delivery_date || '')}</Text>
                   </View>
                 </View>
               </View>
 
-              {request?.distance_km && (
+              {distanceKm !== null && (
                 <View style={styles.distanceInfo}>
                   <Ionicons name="navigate-outline" size={16} color={colors.text.secondary} />
-                  <Text style={styles.distanceText}>
-                    {typeof request.distance_km === 'number' ? request.distance_km.toFixed(0) : '0'}{' '}
-                    km
-                  </Text>
+                  <Text style={styles.distanceText}>{distanceKm.toFixed(0)} km</Text>
                 </View>
               )}
 
@@ -958,12 +973,14 @@ export default function RequestDetailsScreen() {
           // Fallback to text view if no coordinates
           return (
             <View style={styles.section}>
-              <Text style={[styles.sectionTitle, styles.sectionTitleStrong]}>Rute</Text>
+              <Text style={[styles.sectionTitle, styles.sectionTitleStrong]}>
+                {t('route') || 'Route'}
+              </Text>
 
               <View style={styles.routeRow}>
                 <Ionicons name="location" size={24} color={colors.success} />
                 <View style={styles.routeInfo}>
-                  <Text style={styles.routeLabel}>Fra</Text>
+                  <Text style={styles.routeLabel}>{t('from') || 'From'}</Text>
                   <Text style={styles.routeAddress}>{request?.from_address}</Text>
                   <Text style={styles.routeDate}>{formatDate(request?.pickup_date || '')}</Text>
                 </View>
@@ -977,19 +994,16 @@ export default function RequestDetailsScreen() {
               <View style={styles.routeRow}>
                 <Ionicons name="location" size={24} color={colors.error} />
                 <View style={styles.routeInfo}>
-                  <Text style={styles.routeLabel}>Til</Text>
+                  <Text style={styles.routeLabel}>{t('to') || 'To'}</Text>
                   <Text style={styles.routeAddress}>{request?.to_address}</Text>
                   <Text style={styles.routeDate}>{formatDate(request?.delivery_date || '')}</Text>
                 </View>
               </View>
 
-              {request?.distance_km && (
+              {distanceKm !== null && (
                 <View style={styles.distanceInfo}>
                   <Ionicons name="navigate-outline" size={16} color={colors.text.secondary} />
-                  <Text style={styles.distanceText}>
-                    {typeof request.distance_km === 'number' ? request.distance_km.toFixed(0) : '0'}{' '}
-                    km
-                  </Text>
+                  <Text style={styles.distanceText}>{distanceKm.toFixed(0)} km</Text>
                 </View>
               )}
 
@@ -1763,7 +1777,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.xs,
-    backgroundColor: '#FF7043',
+    backgroundColor: colors.primary,
     borderRadius: borderRadius.full,
     paddingHorizontal: spacing.sm,
     paddingVertical: spacing.xs,
