@@ -689,4 +689,7 @@
   ,"photoChecklistItemSizeReference": "One photo with size reference (person, pallet, tape)"
   ,"photoChecklistItemLooseParts": "Loose parts/accessories that are shipped together"
   ,"photoReminderNoImages": "You can publish without photos, but photos usually reduce carrier refusals."
+  ,"priceRangeEstimateTitle": "Estimated route price range"
+  ,"priceRangeEstimateMeta": "Based on {{cargoType}} and {{distanceKm}} km route"
+  ,"priceRangeEstimatePending": "Select cargo type and both addresses to see an estimated range."
 }

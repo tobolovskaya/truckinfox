@@ -689,4 +689,7 @@
   ,"photoChecklistItemSizeReference": "Ett bilde med størrelsesreferanse (person, pall, målebånd)"
   ,"photoChecklistItemLooseParts": "Løse deler/tilbehør som sendes med"
   ,"photoReminderNoImages": "Du kan publisere uten bilder, men bilder reduserer vanligvis avslag fra transportører."
+  ,"priceRangeEstimateTitle": "Estimert prisintervall for ruten"
+  ,"priceRangeEstimateMeta": "Basert på {{cargoType}} og rute på {{distanceKm}} km"
+  ,"priceRangeEstimatePending": "Velg lasttype og begge adresser for å se estimert intervall."
 }

@@ -26,6 +26,7 @@ import { ScreenHeader } from '../../components/ScreenHeader';
 import { calculateDistance } from '../../utils/googlePlaces';
 import { compressImageForUpload } from '../../utils/imageCompression';
 import { normalizeCargoImageInputs, resolveCargoImageUrls } from '../../utils/cargoImages';
+import { estimateCargoPriceRange } from '../../utils/priceEstimation';
 import {
   CARGO_TYPE_PRESETS,
   CARGO_TYPES,
@@ -146,6 +147,12 @@ export default function EditRequestScreen() {
     delivery_date: new Date(Date.now() + MS_PER_DAY),
     price_type: '',
     price: '',
+  });
+
+  const estimatedPriceRange = estimateCargoPriceRange({
+    cargoType: formData.cargo_type,
+    distanceKm: formData.distance_km,
+    weightKg: formData.weight,
   });
 
   useEffect(() => {
@@ -1089,6 +1096,29 @@ export default function EditRequestScreen() {
             {/* Price - ALWAYS VISIBLE */}
             <View style={styles.fieldContainer}>
               <Text style={styles.fieldLabel}>Foreslått pris (NOK)</Text>
+              <View style={styles.priceRangeEstimateCard}>
+                <View style={styles.priceRangeEstimateHeader}>
+                  <Ionicons name="stats-chart-outline" size={16} color={colors.primary} />
+                  <Text style={styles.priceRangeEstimateTitle}>{t('priceRangeEstimateTitle')}</Text>
+                </View>
+                {estimatedPriceRange.min !== null && estimatedPriceRange.max !== null ? (
+                  <>
+                    <Text style={styles.priceRangeEstimateValue}>
+                      {`${estimatedPriceRange.min.toLocaleString(locale)}–${estimatedPriceRange.max.toLocaleString(locale)} NOK`}
+                    </Text>
+                    <Text style={styles.priceRangeEstimateMeta}>
+                      {t('priceRangeEstimateMeta', {
+                        cargoType: t(formData.cargo_type),
+                        distanceKm: estimatedPriceRange.distanceKm,
+                      })}
+                    </Text>
+                  </>
+                ) : (
+                  <Text style={styles.priceRangeEstimateMeta}>
+                    {t('priceRangeEstimatePending')}
+                  </Text>
+                )}
+              </View>
               <TextInput
                 style={[
                   styles.textInputNeutral,
@@ -1498,6 +1528,34 @@ const styles = StyleSheet.create({
   },
   quickTemplateChipTextSelected: {
     color: colors.primary,
+  },
+  priceRangeEstimateCard: {
+    borderWidth: 1,
+    borderColor: colors.border.light,
+    borderRadius: borderRadius.md,
+    backgroundColor: colors.white,
+    padding: spacing.sm,
+    marginBottom: spacing.sm,
+    gap: spacing.xxxs,
+  },
+  priceRangeEstimateHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+  },
+  priceRangeEstimateTitle: {
+    fontSize: fontSize.sm,
+    color: colors.text.secondary,
+    fontWeight: '500',
+  },
+  priceRangeEstimateValue: {
+    fontSize: fontSize.md,
+    color: colors.text.primary,
+    fontWeight: '600',
+  },
+  priceRangeEstimateMeta: {
+    fontSize: fontSize.xs,
+    color: colors.text.tertiary,
   },
   menuOverlay: {
     flex: 1,

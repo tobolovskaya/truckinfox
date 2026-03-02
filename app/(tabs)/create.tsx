@@ -34,6 +34,7 @@ import { calculateDistance } from '../../utils/googlePlaces';
 import { compressImageForUpload } from '../../utils/imageCompression';
 import { LazyImage } from '../../components/LazyImage';
 import { ScreenHeader } from '../../components/ScreenHeader';
+import { estimateCargoPriceRange } from '../../utils/priceEstimation';
 import { validateBeforeCreation } from '../../utils/requestValidation';
 import {
   CARGO_TYPE_PRESETS,
@@ -134,6 +135,12 @@ export default function CreateRequestScreen() {
   const fromAddressTextRef = useRef('');
   const toAddressTextRef = useRef('');
   const hasShownNoImageReminderRef = useRef(false);
+
+  const estimatedPriceRange = estimateCargoPriceRange({
+    cargoType: formData.cargo_type,
+    distanceKm: formData.distance_km,
+    weightKg: formData.weight,
+  });
   // Load draft on mount
   useEffect(() => {
     const loadDraft = async () => {
@@ -1411,6 +1418,29 @@ export default function CreateRequestScreen() {
               <Text style={[styles.fieldLabel, isSmallScreen && styles.fieldLabelCompact]}>
                 Foreslått pris (NOK)
               </Text>
+              <View style={styles.priceRangeEstimateCard}>
+                <View style={styles.priceRangeEstimateHeader}>
+                  <Ionicons name="stats-chart-outline" size={16} color={colors.primary} />
+                  <Text style={styles.priceRangeEstimateTitle}>{t('priceRangeEstimateTitle')}</Text>
+                </View>
+                {estimatedPriceRange.min !== null && estimatedPriceRange.max !== null ? (
+                  <>
+                    <Text style={styles.priceRangeEstimateValue}>
+                      {`${estimatedPriceRange.min.toLocaleString('no-NO')}–${estimatedPriceRange.max.toLocaleString('no-NO')} NOK`}
+                    </Text>
+                    <Text style={styles.priceRangeEstimateMeta}>
+                      {t('priceRangeEstimateMeta', {
+                        cargoType: t(formData.cargo_type),
+                        distanceKm: estimatedPriceRange.distanceKm,
+                      })}
+                    </Text>
+                  </>
+                ) : (
+                  <Text style={styles.priceRangeEstimateMeta}>
+                    {t('priceRangeEstimatePending')}
+                  </Text>
+                )}
+              </View>
               <View style={styles.inputWrapper}>
                 <TextInput
                   style={[
@@ -1954,6 +1984,34 @@ const styles = StyleSheet.create({
   },
   quickTemplateChipTextSelected: {
     color: colors.primary,
+  },
+  priceRangeEstimateCard: {
+    borderWidth: 1,
+    borderColor: colors.border.light,
+    borderRadius: borderRadius.md,
+    backgroundColor: colors.white,
+    padding: spacing.sm,
+    marginBottom: spacing.sm,
+    gap: spacing.xxxs,
+  },
+  priceRangeEstimateHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+  },
+  priceRangeEstimateTitle: {
+    fontSize: fontSize.sm,
+    color: colors.text.secondary,
+    fontWeight: fontWeight.medium,
+  },
+  priceRangeEstimateValue: {
+    fontSize: fontSize.md,
+    color: colors.text.primary,
+    fontWeight: fontWeight.semibold,
+  },
+  priceRangeEstimateMeta: {
+    fontSize: fontSize.xs,
+    color: colors.text.tertiary,
   },
   menuItem: {
     flexDirection: 'row',
