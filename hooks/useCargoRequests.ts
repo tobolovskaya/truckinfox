@@ -97,6 +97,49 @@ const toNumber = (value?: number): number => {
   return value;
 };
 
+const normalizeImageUrls = (value: unknown, legacyImageUrl?: unknown): string[] => {
+  const normalized = new Set<string>();
+
+  const pushIfValid = (candidate: unknown) => {
+    if (typeof candidate !== 'string') {
+      return;
+    }
+
+    const trimmed = candidate.trim();
+    if (!trimmed) {
+      return;
+    }
+
+    normalized.add(trimmed);
+  };
+
+  if (Array.isArray(value)) {
+    value.forEach(pushIfValid);
+  } else if (typeof value === 'string') {
+    const trimmed = value.trim();
+    if (trimmed.startsWith('[')) {
+      try {
+        const parsed = JSON.parse(trimmed) as unknown;
+        if (Array.isArray(parsed)) {
+          parsed.forEach(pushIfValid);
+        } else {
+          pushIfValid(trimmed);
+        }
+      } catch {
+        pushIfValid(trimmed);
+      }
+    } else {
+      pushIfValid(trimmed);
+    }
+  }
+
+  if (normalized.size === 0) {
+    pushIfValid(legacyImageUrl);
+  }
+
+  return Array.from(normalized);
+};
+
 const sortRequestsClientSide = (requests: CargoRequest[], sortBy: SortOption): CargoRequest[] => {
   const sorted = [...requests];
 
@@ -275,6 +318,7 @@ const hydrateCargoRequest = async (
     users: userData,
     bids,
     is_favorite: isFavorite,
+    images: normalizeImageUrls(requestData.images, requestData.image_url),
   } as CargoRequest;
 };
 

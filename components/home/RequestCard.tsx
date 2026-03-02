@@ -75,6 +75,10 @@ export const RequestCard: React.FC<RequestCardProps> = ({
   const cargoTypeLabel = React.useMemo(() => t(cargoType), [cargoType, t]);
   const cargoColors = getCargoTypeColors(cargoType);
   const cargoIcon = getCargoTypeIcon(cargoType);
+  const previewImageUri = React.useMemo(
+    () => request.images?.find(image => typeof image === 'string' && image.trim().length > 0),
+    [request.images]
+  );
 
   return (
     <TouchableOpacity
@@ -88,9 +92,9 @@ export const RequestCard: React.FC<RequestCardProps> = ({
       accessibilityHint={t('openRequestDetails')}
       accessible={true}
     >
-      {request.images?.[0] ? (
+      {previewImageUri ? (
         <LazyImage
-          uri={request.images[0]}
+          uri={previewImageUri}
           style={styles.image}
           resizeMode="cover"
           showErrorText={false}

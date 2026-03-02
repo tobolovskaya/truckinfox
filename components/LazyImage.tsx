@@ -71,13 +71,17 @@ export const LazyImage: React.FC<LazyImageProps> = ({
 }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
-  const [resolvedUri, setResolvedUri] = useState(uri);
+  const normalizedInputUri = uri.trim();
+  const [resolvedUri, setResolvedUri] = useState(normalizedInputUri);
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const shimmerAnim = useRef(new Animated.Value(0)).current;
   const traceRef = useRef<ReturnType<typeof startTrace>>(null);
   const traceStoppedRef = useRef(false);
   const signedUrlRetryAttemptedRef = useRef(false);
   const loggedFailureUrlsRef = useRef<Set<string>>(new Set());
+  const loadTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const loadingRef = useRef(loading);
+  const errorRef = useRef(error);
 
   const extractStorageLocation = (value: string): { bucket: string; path: string } | null => {
     const signedOrPublicMarkers = ['/object/sign/', '/object/public/'];
@@ -127,7 +131,7 @@ export const LazyImage: React.FC<LazyImageProps> = ({
   };
 
   const tryRefreshSignedUrl = async (): Promise<string | null> => {
-    const storageLocation = extractStorageLocation(resolvedUri || uri);
+    const storageLocation = extractStorageLocation(resolvedUri || normalizedInputUri);
     if (!storageLocation) {
       return null;
     }
@@ -156,20 +160,77 @@ export const LazyImage: React.FC<LazyImageProps> = ({
     }
   };
 
+  const clearLoadTimeout = () => {
+    if (loadTimeoutRef.current) {
+      clearTimeout(loadTimeoutRef.current);
+      loadTimeoutRef.current = null;
+    }
+  };
+
+  const scheduleLoadTimeout = () => {
+    clearLoadTimeout();
+
+    loadTimeoutRef.current = setTimeout(() => {
+      if (!loadingRef.current || errorRef.current) {
+        return;
+      }
+
+      const failedUri = resolvedUri || normalizedInputUri;
+      if (__DEV__ && failedUri && !loggedFailureUrlsRef.current.has(failedUri)) {
+        loggedFailureUrlsRef.current.add(failedUri);
+        console.debug('LazyImage: Timed out while loading image:', failedUri);
+      }
+
+      setLoading(false);
+      setError(true);
+      stopTrace();
+    }, 12000);
+  };
+
   // Stop trace on unmount if still running
   useEffect(() => {
     return () => {
+      clearLoadTimeout();
       stopTrace();
     };
   }, []);
 
   useEffect(() => {
-    setResolvedUri(uri);
-    setLoading(true);
-    setError(false);
+    loadingRef.current = loading;
+  }, [loading]);
+
+  useEffect(() => {
+    errorRef.current = error;
+  }, [error]);
+
+  useEffect(() => {
+    const nextUri = uri.trim();
+    setResolvedUri(nextUri);
+    const hasUri = nextUri.length > 0;
+    setLoading(hasUri);
+    setError(!hasUri);
     signedUrlRetryAttemptedRef.current = false;
     traceStoppedRef.current = false;
-    traceRef.current = startTrace(PerformanceTraces.IMAGE_LOAD_TIME);
+    traceRef.current = hasUri ? startTrace(PerformanceTraces.IMAGE_LOAD_TIME) : null;
+
+    clearLoadTimeout();
+    if (hasUri) {
+      loadTimeoutRef.current = setTimeout(() => {
+        if (!loadingRef.current || errorRef.current) {
+          return;
+        }
+
+        const failedUri = nextUri;
+        if (__DEV__ && failedUri && !loggedFailureUrlsRef.current.has(failedUri)) {
+          loggedFailureUrlsRef.current.add(failedUri);
+          console.debug('LazyImage: Timed out while loading image:', failedUri);
+        }
+
+        setLoading(false);
+        setError(true);
+        stopTrace();
+      }, 12000);
+    }
   }, [uri]);
 
   // Fade-in animation when image loads
@@ -245,9 +306,12 @@ export const LazyImage: React.FC<LazyImageProps> = ({
           onLoadStart={() => {
             setLoading(true);
             fadeAnim.setValue(0);
+            scheduleLoadTimeout();
           }}
           onLoad={() => {
+            clearLoadTimeout();
             setLoading(false);
+            setError(false);
             stopTrace();
           }}
           onError={() => {
@@ -260,26 +324,29 @@ export const LazyImage: React.FC<LazyImageProps> = ({
                   setResolvedUri(refreshedUrl);
                   setError(false);
                   setLoading(true);
+                  scheduleLoadTimeout();
                   return;
                 }
               }
 
-              const failedUri = resolvedUri || uri;
+              const failedUri = resolvedUri || normalizedInputUri;
               if (__DEV__ && !loggedFailureUrlsRef.current.has(failedUri)) {
                 loggedFailureUrlsRef.current.add(failedUri);
                 console.debug('LazyImage: Failed to load image:', failedUri);
               }
+              clearLoadTimeout();
               setLoading(false);
               setError(true);
               stopTrace();
             };
 
             handleError().catch(() => {
-              const failedUri = resolvedUri || uri;
+              const failedUri = resolvedUri || normalizedInputUri;
               if (__DEV__ && !loggedFailureUrlsRef.current.has(failedUri)) {
                 loggedFailureUrlsRef.current.add(failedUri);
                 console.debug('LazyImage: Failed to load image:', failedUri);
               }
+              clearLoadTimeout();
               setLoading(false);
               setError(true);
               stopTrace();
