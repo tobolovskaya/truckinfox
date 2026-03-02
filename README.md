@@ -137,7 +137,7 @@ truckinfox/
 │   ├── i18n.ts
 │   └── ...
 ├── hooks/                # Custom React hooks
-├── utils/                # Utility functions
+├── utils/                # Utility functions (e.g. cargoFormConstants.ts, cargoImages.ts)
 ├── theme/                # Design system
 ├── constants/            # App constants
 ├── locales/              # Translation files
@@ -146,6 +146,14 @@ truckinfox/
 └── mocks/                # Test data
 
 ```
+
+### Cargo Form Constants
+
+Shared form constants live in `utils/cargoFormConstants.ts`:
+
+- `CARGO_TYPES` - cargo type options used in create/edit flows.
+- `PRICE_TYPES` - pricing model options used in create/edit flows.
+- `CARGO_TYPE_PRESETS` - type-based default suggestions and helper hints.
 
 ## 🧪 Testing
 

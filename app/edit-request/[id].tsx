@@ -26,25 +26,10 @@ import { ScreenHeader } from '../../components/ScreenHeader';
 import { calculateDistance } from '../../utils/googlePlaces';
 import { compressImageForUpload } from '../../utils/imageCompression';
 import { normalizeCargoImageInputs, resolveCargoImageUrls } from '../../utils/cargoImages';
+import { CARGO_TYPE_PRESETS, CARGO_TYPES, PRICE_TYPES } from '../../utils/cargoFormConstants';
 import { LazyImage } from '../../components/LazyImage';
 import { colors, spacing, fontSize, borderRadius } from '../../lib/sharedStyles';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-
-const CARGO_TYPES = [
-  { id: 'automotive', label: 'Bil/Motor' },
-  { id: 'construction', label: 'Byggemateriale' },
-  { id: 'boats', label: 'Båter' },
-  { id: 'electronics', label: 'Elektronikk' },
-  { id: 'campingvogn', label: 'Campingvogn' },
-  { id: 'machinery', label: 'Maskineri' },
-  { id: 'furniture', label: 'Møbler' },
-  { id: 'other', label: 'Annet' },
-];
-
-const PRICE_TYPES = [
-  { id: 'negotiable', label: 'Kan forhandles' },
-  { id: 'fixed', label: 'Fast pris' },
-];
 
 const CARGO_LIMITS = {
   weight: { min: 1, max: 25000 },
@@ -243,6 +228,38 @@ export default function EditRequestScreen() {
     if (touchedFields[field]) {
       const error = validateField(field, value);
       setFieldErrors(prev => ({ ...prev, [field]: error }));
+    }
+  };
+
+  const applyCargoTypePreset = (cargoType: string) => {
+    const preset = CARGO_TYPE_PRESETS[cargoType];
+
+    setFormData(prev => {
+      const nextData = { ...prev, cargo_type: cargoType };
+
+      if (!preset) {
+        return nextData;
+      }
+
+      if (!String(prev.weight || '').trim()) {
+        nextData.weight = preset.weight;
+      }
+      if (!String(prev.length || '').trim()) {
+        nextData.length = preset.length;
+      }
+      if (!String(prev.width || '').trim()) {
+        nextData.width = preset.width;
+      }
+      if (!String(prev.height || '').trim()) {
+        nextData.height = preset.height;
+      }
+
+      return nextData;
+    });
+
+    if (touchedFields.cargo_type) {
+      const error = validateField('cargo_type', cargoType);
+      setFieldErrors(prev => ({ ...prev, cargo_type: error }));
     }
   };
 
@@ -786,6 +803,9 @@ export default function EditRequestScreen() {
                 </Text>
                 <Ionicons name="chevron-down" size={20} color="#6B7280" />
               </TouchableOpacity>
+              {formData.cargo_type && CARGO_TYPE_PRESETS[formData.cargo_type]?.hint ? (
+                <Text style={styles.fieldHint}>{CARGO_TYPE_PRESETS[formData.cargo_type].hint}</Text>
+              ) : null}
             </View>
 
             {/* From Address */}
@@ -1097,7 +1117,7 @@ export default function EditRequestScreen() {
                   formData.cargo_type === type.id && styles.menuItemSelected,
                 ]}
                 onPress={() => {
-                  updateFormData('cargo_type', type.id);
+                  applyCargoTypePreset(type.id);
                   handleBlur('cargo_type');
                   setShowCargoTypeMenu(false);
                   triggerHapticFeedback.light();
