@@ -14,7 +14,7 @@ import {
   getCargoTypeIcon,
   REQUEST_CARD_IMAGE_HEIGHT,
 } from '../../constants/cardStyles';
-import { formatCurrency, formatDate, formatWeight } from '../../utils/formatting';
+import { formatCurrency, formatDate } from '../../utils/formatting';
 import { useTranslation } from 'react-i18next';
 import { LazyImage } from '../LazyImage';
 
@@ -59,7 +59,6 @@ export const RequestCard: React.FC<RequestCardProps> = ({
   showFavorite = true,
   compact = false,
   cardStyle,
-  currentUserId,
 }) => {
   const { t } = useTranslation();
   const title = request.title || request.cargo_type || t('cargoRequest');
@@ -71,108 +70,11 @@ export const RequestCard: React.FC<RequestCardProps> = ({
       : typeof request.price === 'number' && request.price > 0
         ? formatCurrency(request.price)
         : t('priceOnAgreement');
-  const weightText =
-    typeof request.weight === 'number' && Number.isFinite(request.weight)
-      ? formatWeight(request.weight)
-      : t('weightUnknown');
   const dateText = request.pickup_date ? formatDate(request.pickup_date) : t('dateNotSet');
   const cargoType = request.cargo_type || 'other';
   const cargoTypeLabel = React.useMemo(() => t(cargoType), [cargoType, t]);
   const cargoColors = getCargoTypeColors(cargoType);
   const cargoIcon = getCargoTypeIcon(cargoType);
-  const normalizedStatus = (request.status || 'pending').toLowerCase();
-  const requestOwnerId = request.customer_id || request.user_id;
-  const isOwnRequest = Boolean(currentUserId && requestOwnerId && currentUserId === requestOwnerId);
-  const hasAcceptedBid =
-    Boolean(request.bids?.some(bid => (bid.status || '').toLowerCase() === 'accepted')) ||
-    ['in_transit', 'delivered', 'completed'].includes(normalizedStatus);
-  const isWaitingRequest =
-    !hasAcceptedBid && ['pending', 'open', 'active'].includes(normalizedStatus);
-  const isNewRequest = React.useMemo(() => {
-    if (!request.created_at) {
-      return false;
-    }
-    const createdAtMs = Date.parse(request.created_at);
-    if (Number.isNaN(createdAtMs)) {
-      return false;
-    }
-    return Date.now() - createdAtMs <= 24 * 60 * 60 * 1000;
-  }, [request.created_at]);
-
-  const quickBadges = React.useMemo(() => {
-    const badges: Array<{ label: string; textColor: string; backgroundColor: string }> = [];
-
-    if (isOwnRequest) {
-      badges.push({
-        label: t('statusQuickYours') || 'Yours',
-        textColor: colors.primary,
-        backgroundColor: colors.primaryLight,
-      });
-    }
-
-    if (hasAcceptedBid) {
-      badges.push({
-        label: t('accepted') || 'Accepted',
-        textColor: colors.status.success,
-        backgroundColor: colors.status.successBackground,
-      });
-    } else if (isWaitingRequest) {
-      badges.push({
-        label: t('pending') || 'Pending',
-        textColor: colors.text.secondary,
-        backgroundColor: colors.badge.background,
-      });
-    }
-
-    if (isNewRequest && !isOwnRequest) {
-      badges.push({
-        label: t('statusQuickNew') || 'New',
-        textColor: colors.status.info,
-        backgroundColor: colors.badge.background,
-      });
-    }
-
-    return badges.slice(0, 3);
-  }, [hasAcceptedBid, isNewRequest, isOwnRequest, isWaitingRequest, t]);
-
-  const statusMeta = React.useMemo(() => {
-    switch (normalizedStatus) {
-      case 'in_transit':
-        return {
-          label: t('in_transit') || 'In transit',
-          textColor: colors.status.warning,
-          backgroundColor: colors.badge.background,
-        };
-      case 'delivered':
-      case 'completed':
-        return {
-          label: t('delivered') || 'Delivered',
-          textColor: colors.status.success,
-          backgroundColor: colors.status.successBackground,
-        };
-      case 'cancelled':
-      case 'canceled':
-        return {
-          label: t('cancelled') || 'Cancelled',
-          textColor: colors.status.error,
-          backgroundColor: colors.status.errorBackground,
-        };
-      case 'open':
-      case 'active':
-        return {
-          label: t('active') || 'Active',
-          textColor: colors.status.info,
-          backgroundColor: colors.badge.background,
-        };
-      case 'pending':
-      default:
-        return {
-          label: t('pending') || 'Pending',
-          textColor: colors.text.secondary,
-          backgroundColor: colors.badge.background,
-        };
-    }
-  }, [normalizedStatus, t]);
 
   return (
     <TouchableOpacity
@@ -214,28 +116,7 @@ export const RequestCard: React.FC<RequestCardProps> = ({
         <View style={[styles.badge, { backgroundColor: cargoColors.background }]}>
           <Text style={[styles.badgeText, { color: cargoColors.text }]}>{cargoTypeLabel}</Text>
         </View>
-        <View style={[styles.statusBadge, { backgroundColor: statusMeta.backgroundColor }]}>
-          <Text style={[styles.statusBadgeText, { color: statusMeta.textColor }]}>
-            {statusMeta.label}
-          </Text>
-        </View>
-        <Text style={styles.metaText} numberOfLines={1}>
-          {weightText}
-        </Text>
       </View>
-
-      {quickBadges.length > 0 ? (
-        <View style={styles.quickBadgeRow}>
-          {quickBadges.map((badge, index) => (
-            <View
-              key={`${badge.label}-${index}`}
-              style={[styles.quickBadge, { backgroundColor: badge.backgroundColor }]}
-            >
-              <Text style={[styles.quickBadgeText, { color: badge.textColor }]}>{badge.label}</Text>
-            </View>
-          ))}
-        </View>
-      ) : null}
 
       <View style={styles.routeBlock}>
         <View style={styles.routeSection}>
@@ -344,30 +225,6 @@ const styles = StyleSheet.create({
   badgeText: {
     fontSize: fontSize.sm,
     color: colors.primary,
-    fontWeight: fontWeight.semibold,
-  },
-  statusBadge: {
-    borderRadius: borderRadius.md,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xxs,
-  },
-  statusBadgeText: {
-    fontSize: fontSize.sm,
-    fontWeight: fontWeight.semibold,
-  },
-  quickBadgeRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing.xs,
-    marginTop: spacing.xs,
-  },
-  quickBadge: {
-    borderRadius: borderRadius.sm,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xxxs,
-  },
-  quickBadgeText: {
-    fontSize: fontSize.sm,
     fontWeight: fontWeight.semibold,
   },
   routeBlock: {
