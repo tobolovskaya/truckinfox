@@ -1,6 +1,6 @@
 import 'react-native-reanimated';
 import 'react-native-get-random-values';
-import React, { useEffect } from 'react';
+import React, { useCallback, useEffect } from 'react';
 import { LogBox, View } from 'react-native';
 import { Stack, useRouter } from 'expo-router';
 import Constants from 'expo-constants';
@@ -37,19 +37,22 @@ LogBox.ignoreLogs([
 export default function RootLayout() {
   const router = useRouter();
 
-  const handleNotificationNavigation = (data: {
-    type?: string;
-    order_id?: string;
-    request_id?: string;
-  }) => {
-    const { type, order_id, request_id } = data;
+  const handleNotificationNavigation = useCallback(
+    (data: {
+      type?: string;
+      order_id?: string;
+      request_id?: string;
+    }) => {
+      const { type, order_id, request_id } = data;
 
-    if (type === 'bid_accepted' && order_id) {
-      router.push(`/order-status/${order_id}`);
-    } else if (type === 'new_bid' && request_id) {
-      router.push(`/request-details/${request_id}`);
-    }
-  };
+      if (type === 'bid_accepted' && order_id) {
+        router.push(`/order-status/${order_id}`);
+      } else if (type === 'new_bid' && request_id) {
+        router.push(`/request-details/${request_id}`);
+      }
+    },
+    [router]
+  );
 
   // Initialize offline-first sync on app startup
   useEffect(() => {
@@ -104,7 +107,7 @@ export default function RootLayout() {
     return () => {
       unsubscribe?.();
     };
-  }, [router]);
+  }, [handleNotificationNavigation]);
 
   return (
     <ErrorBoundary>
@@ -114,7 +117,7 @@ export default function RootLayout() {
             <AuthProvider>
               <ToastProvider>
                 <NotificationBannerProvider>
-                  <PaperProvider theme={theme as any}>
+                  <PaperProvider theme={theme}>
                     <View style={{ flex: 1 }}>
                       <NetworkStatusBar />
                       <Stack screenOptions={{ headerShown: false }} />

@@ -1,13 +1,14 @@
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, idempotency-key',
+  'Access-Control-Allow-Headers':
+    'authorization, x-client-info, apikey, content-type, idempotency-key',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 };
 
 declare const Deno: {
-  serve: (handler: (request: Request) => Response | Promise<Response>) => void;
+  serve: (_handler: (_request: Request) => Response | Promise<Response>) => void;
   env: {
-    get: (key: string) => string | undefined;
+    get: (_key: string) => string | undefined;
   };
 };
 
@@ -42,7 +43,8 @@ Deno.serve(async (request: Request) => {
   try {
     const payload = (await request.json()) as VippsPaymentRequest;
 
-    const escrowPaymentId = typeof payload.escrow_payment_id === 'string' ? payload.escrow_payment_id : '';
+    const escrowPaymentId =
+      typeof payload.escrow_payment_id === 'string' ? payload.escrow_payment_id : '';
     const orderId = typeof payload.order_id === 'string' ? payload.order_id : '';
     const amount = typeof payload.amount === 'number' ? payload.amount : Number.NaN;
     const customerPhone =

@@ -6,7 +6,7 @@ import HomeScreen from '../../app/(tabs)/home';
 jest.mock('react-native/Libraries/Lists/VirtualizedList', () => {
   const React = require('react');
   const { View } = require('react-native');
-  return React.forwardRef((props: any, ref: any) => {
+  return React.forwardRef((props: { children?: React.ReactNode }, ref: React.ForwardedRef<unknown>) => {
     const { children, ...rest } = props;
     return React.createElement(View, { ...rest, ref }, children);
   });

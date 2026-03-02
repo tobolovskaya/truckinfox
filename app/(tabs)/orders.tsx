@@ -124,9 +124,7 @@ export default function OrdersScreen() {
 
       const requestIds = Array.from(
         new Set(
-          ordersData
-            .map(item => item.request_id)
-            .filter((value): value is string => Boolean(value))
+          ordersData.map(item => item.request_id).filter((value): value is string => Boolean(value))
         )
       );
 

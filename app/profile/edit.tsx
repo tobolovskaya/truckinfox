@@ -95,7 +95,7 @@ export default function EditProfileScreen() {
     };
 
     loadProfile();
-  }, [t, user?.uid, user?.displayName, user?.email, user?.photoURL]);
+  }, [t, user?.uid, user?.displayName, user?.email, user?.phoneNumber, user?.photoURL]);
 
   const handleSave = async () => {
     if (!user?.uid) return;

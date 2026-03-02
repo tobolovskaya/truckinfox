@@ -517,7 +517,8 @@ export default function PaymentScreen() {
         (error as { name?: string }).name === 'FunctionsHttpError';
 
       const isFunctionNotFound =
-        message.includes('HTTP 404') || message.toLowerCase().includes('requested function was not found');
+        message.includes('HTTP 404') ||
+        message.toLowerCase().includes('requested function was not found');
 
       if (createdEscrowPaymentId && isFunctionsHttpError) {
         await updateEscrowStatus(createdEscrowPaymentId, 'failed');

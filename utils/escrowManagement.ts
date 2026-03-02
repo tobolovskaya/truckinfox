@@ -234,8 +234,12 @@ export const PAYOUT_STATUS_NAMES: { [key: string]: string } = {
  * @returns Boolean indicating if funds can be released
  */
 export function canReleaseFunds(orderStatus: string, escrowStatus: string): boolean {
-  const normalizedOrderStatus = String(orderStatus || '').trim().toLowerCase();
-  const normalizedEscrowStatus = String(escrowStatus || '').trim().toLowerCase();
+  const normalizedOrderStatus = String(orderStatus || '')
+    .trim()
+    .toLowerCase();
+  const normalizedEscrowStatus = String(escrowStatus || '')
+    .trim()
+    .toLowerCase();
   return normalizedOrderStatus === 'delivered' && normalizedEscrowStatus === 'paid';
 }
 

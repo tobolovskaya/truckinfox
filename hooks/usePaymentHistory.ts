@@ -26,6 +26,12 @@ interface PaymentHistoryPage {
   hasMore: boolean;
 }
 
+type CargoRequestTitleNode = { title?: string };
+type OrderWithCargoNode = { cargo_requests?: CargoRequestTitleNode | CargoRequestTitleNode[] | null };
+type PaymentHistoryRow = PaymentRecord & {
+  order?: OrderWithCargoNode | OrderWithCargoNode[] | null;
+};
+
 type PaymentHistoryQueryKey = [string, string];
 
 interface UsePaymentHistoryOptions {
@@ -74,7 +80,7 @@ export const usePaymentHistory = ({ userId, statusFilter }: UsePaymentHistoryOpt
         }
 
         const items = (data || []).map(payment => {
-          const paymentRow = payment as any;
+          const paymentRow = payment as PaymentHistoryRow;
           const orderNode = paymentRow.order;
           const orderEntry = Array.isArray(orderNode) ? orderNode[0] : orderNode;
           const cargoNode = orderEntry?.cargo_requests;

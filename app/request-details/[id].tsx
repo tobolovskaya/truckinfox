@@ -430,7 +430,9 @@ export default function RequestDetailsScreen() {
         throw new Error('Forespørselen har allerede et annet godtatt bud');
       }
 
-      if (['in_transit', 'delivered', 'completed', 'cancelled', 'canceled'].includes(currentStatus)) {
+      if (
+        ['in_transit', 'delivered', 'completed', 'cancelled', 'canceled'].includes(currentStatus)
+      ) {
         throw new Error('Forespørselen er ikke lenger aktiv');
       }
 
@@ -1210,7 +1212,9 @@ export default function RequestDetailsScreen() {
                       onPress={() => acceptBid(bid)}
                       disabled={acceptingBid === bid.id}
                       accessibilityRole="button"
-                      accessibilityLabel={acceptingBid === bid.id ? t('processing') : t('acceptBid')}
+                      accessibilityLabel={
+                        acceptingBid === bid.id ? t('processing') : t('acceptBid')
+                      }
                     >
                       {acceptingBid === bid.id ? (
                         <ActivityIndicator size="small" color={colors.white} />

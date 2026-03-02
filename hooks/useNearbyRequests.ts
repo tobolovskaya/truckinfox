@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import * as Location from 'expo-location';
 import { Alert, Linking, Platform } from 'react-native';
 import { useTranslation } from 'react-i18next';
@@ -214,26 +214,29 @@ export function useNearbyRequests(
   /**
    * Fetch nearby cargo requests
    */
-  const fetchNearbyRequests = async (location: UserLocation) => {
-    try {
-      console.log(`🔍 Searching for cargo within ${radiusKm}km...`);
+  const fetchNearbyRequests = useCallback(
+    async (location: UserLocation) => {
+      try {
+        console.log(`🔍 Searching for cargo within ${radiusKm}km...`);
 
-      const nearby = await findNearbyCargoRequests(
-        location.latitude,
-        location.longitude,
-        radiusKm,
-        searchType,
-        normalizedCountryCode
-      );
+        const nearby = await findNearbyCargoRequests(
+          location.latitude,
+          location.longitude,
+          radiusKm,
+          searchType,
+          normalizedCountryCode
+        );
 
-      console.log(`✅ Found ${nearby.length} nearby cargo requests`);
-      setRequests(nearby);
-    } catch (error: unknown) {
-      console.error('Error fetching nearby requests:', error);
-      const message = error instanceof Error ? error.message : 'Failed to fetch nearby requests';
-      setError(message);
-    }
-  };
+        console.log(`✅ Found ${nearby.length} nearby cargo requests`);
+        setRequests(nearby);
+      } catch (error: unknown) {
+        console.error('Error fetching nearby requests:', error);
+        const message = error instanceof Error ? error.message : 'Failed to fetch nearby requests';
+        setError(message);
+      }
+    },
+    [normalizedCountryCode, radiusKm, searchType]
+  );
 
   /**
    * Main initialization flow
@@ -336,7 +339,7 @@ export function useNearbyRequests(
     return () => {
       channel.unsubscribe();
     };
-  }, [searchType, normalizedCountryCode, userLocation]);
+  }, [fetchNearbyRequests, searchType, normalizedCountryCode, userLocation]);
 
   return {
     /**

@@ -4,7 +4,8 @@ import { supabase } from '../lib/supabase';
 
 type RealtimeEvent = 'INSERT' | 'UPDATE' | 'DELETE' | '*';
 
-type CollectionQueryBuilder = (_query: any) => any;
+type CollectionSelectQuery = ReturnType<ReturnType<typeof supabase.from>['select']>;
+type CollectionQueryBuilder = (_query: CollectionSelectQuery) => CollectionSelectQuery;
 
 interface UseSupabaseCollectionOptions {
   queryBuilder?: CollectionQueryBuilder;

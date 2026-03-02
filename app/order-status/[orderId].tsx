@@ -628,10 +628,7 @@ export default function OrderStatusScreen() {
           <View style={styles.paymentRow}>
             <Text style={styles.paymentLabel}>{t('paymentStatus')}:</Text>
             <Text
-              style={[
-                styles.paymentStatus,
-                { color: getPaymentStatusColor(order.payment_status) },
-              ]}
+              style={[styles.paymentStatus, { color: getPaymentStatusColor(order.payment_status) }]}
             >
               {t(normalizeStatus(order.payment_status) || 'pending')}
             </Text>
