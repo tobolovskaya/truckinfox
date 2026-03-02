@@ -38,11 +38,7 @@ export default function RootLayout() {
   const router = useRouter();
 
   const handleNotificationNavigation = useCallback(
-    (data: {
-      type?: string;
-      order_id?: string;
-      request_id?: string;
-    }) => {
+    (data: { type?: string; order_id?: string; request_id?: string }) => {
       const { type, order_id, request_id } = data;
 
       if (type === 'bid_accepted' && order_id) {

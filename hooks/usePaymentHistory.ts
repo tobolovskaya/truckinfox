@@ -27,7 +27,9 @@ interface PaymentHistoryPage {
 }
 
 type CargoRequestTitleNode = { title?: string };
-type OrderWithCargoNode = { cargo_requests?: CargoRequestTitleNode | CargoRequestTitleNode[] | null };
+type OrderWithCargoNode = {
+  cargo_requests?: CargoRequestTitleNode | CargoRequestTitleNode[] | null;
+};
 type PaymentHistoryRow = PaymentRecord & {
   order?: OrderWithCargoNode | OrderWithCargoNode[] | null;
 };

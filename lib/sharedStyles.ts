@@ -1,20 +1,31 @@
 import { StyleSheet, Platform } from 'react-native';
 import { theme } from '../theme/theme';
 
+type ExtendedThemeColors = typeof theme.colors & {
+  text?: {
+    primary?: string;
+    secondary?: string;
+    tertiary?: string;
+  };
+  border?: {
+    light?: string;
+    default?: string;
+  };
+};
+
 const buildColors = () => {
   const resolvedTheme = theme;
-  const resolvedColors = resolvedTheme.colors;
+  const resolvedColors = resolvedTheme.colors as ExtendedThemeColors;
 
   const textColors = {
-    primary: (resolvedColors as any).text?.primary ?? resolvedColors.onSurface ?? '#212121',
-    secondary:
-      (resolvedColors as any).text?.secondary ?? resolvedColors.onSurfaceVariant ?? '#616161',
-    tertiary: (resolvedColors as any).text?.tertiary ?? '#9CA3AF',
+    primary: resolvedColors.text?.primary ?? resolvedColors.onSurface ?? '#212121',
+    secondary: resolvedColors.text?.secondary ?? resolvedColors.onSurfaceVariant ?? '#616161',
+    tertiary: resolvedColors.text?.tertiary ?? '#9CA3AF',
   };
 
   const borderColors = {
-    light: (resolvedColors as any).border?.light ?? resolvedColors.outlineVariant ?? '#F3F4F6',
-    default: (resolvedColors as any).border?.default ?? resolvedColors.outline ?? '#E5E7EB',
+    light: resolvedColors.border?.light ?? resolvedColors.outlineVariant ?? '#F3F4F6',
+    default: resolvedColors.border?.default ?? resolvedColors.outline ?? '#E5E7EB',
   };
 
   return {
