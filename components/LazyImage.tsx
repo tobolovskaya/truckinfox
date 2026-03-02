@@ -77,6 +77,7 @@ export const LazyImage: React.FC<LazyImageProps> = ({
   const shimmerAnim = useRef(new Animated.Value(0)).current;
   const traceRef = useRef<ReturnType<typeof startTrace>>(null);
   const traceStoppedRef = useRef(false);
+  const transientRetryAttemptedRef = useRef(false);
   const signedUrlRetryAttemptedRef = useRef(false);
   const loggedFailureUrlsRef = useRef<Set<string>>(new Set());
   const loadTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -128,6 +129,11 @@ export const LazyImage: React.FC<LazyImageProps> = ({
     }
 
     return null;
+  };
+
+  const withCacheBusting = (value: string): string => {
+    const separator = value.includes('?') ? '&' : '?';
+    return `${value}${separator}_img_retry=${Date.now()}`;
   };
 
   const tryRefreshSignedUrl = async (): Promise<string | null> => {
@@ -209,6 +215,7 @@ export const LazyImage: React.FC<LazyImageProps> = ({
     const hasUri = nextUri.length > 0;
     setLoading(hasUri);
     setError(!hasUri);
+    transientRetryAttemptedRef.current = false;
     signedUrlRetryAttemptedRef.current = false;
     traceStoppedRef.current = false;
     traceRef.current = hasUri ? startTrace(PerformanceTraces.IMAGE_LOAD_TIME) : null;
@@ -316,6 +323,19 @@ export const LazyImage: React.FC<LazyImageProps> = ({
           }}
           onError={() => {
             const handleError = async () => {
+              if (!transientRetryAttemptedRef.current) {
+                transientRetryAttemptedRef.current = true;
+                const candidateUri = (resolvedUri || normalizedInputUri).trim();
+
+                if (candidateUri.length > 0) {
+                  setResolvedUri(withCacheBusting(candidateUri));
+                  setError(false);
+                  setLoading(true);
+                  scheduleLoadTimeout();
+                  return;
+                }
+              }
+
               if (!signedUrlRetryAttemptedRef.current) {
                 signedUrlRetryAttemptedRef.current = true;
                 const refreshedUrl = await tryRefreshSignedUrl();
