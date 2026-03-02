@@ -680,4 +680,13 @@
   ,"cargoTypeHintCampingvogn": "Campingvogn: oppgi totalvekt, bredde og om den er registrert/klar for tauing."
   ,"cargoTypeHintFurniture": "Møbler: skriv om møbler kan stables og om bæring i trapper kreves ved henting/levering."
   ,"cargoTypeHintOther": "Annet: bruk beskrivelsen til å forklare håndtering, løftebehov og spesielle hensyn."
+  ,"photoChecklistTitle": "Hva bør fotograferes"
+  ,"photoChecklistHint": "Gode bilder reduserer avslag fra transportører og gir raskere bud."
+  ,"photoChecklistItemOverall": "Hele lasten fra 2–3 vinkler"
+  ,"photoChecklistItemCorners": "Alle sider/hjørner og lastepunkter"
+  ,"photoChecklistItemDamage": "Nærbilder av eksisterende skader (hvis noen)"
+  ,"photoChecklistItemAccess": "Adkomst ved henting: dør, port, trapper, lav takhøyde"
+  ,"photoChecklistItemSizeReference": "Ett bilde med størrelsesreferanse (person, pall, målebånd)"
+  ,"photoChecklistItemLooseParts": "Løse deler/tilbehør som sendes med"
+  ,"photoReminderNoImages": "Du kan publisere uten bilder, men bilder reduserer vanligvis avslag fra transportører."
 }

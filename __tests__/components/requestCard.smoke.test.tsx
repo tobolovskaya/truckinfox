@@ -32,7 +32,7 @@ describe('RequestCard smoke', () => {
     created_at: new Date().toISOString(),
   };
 
-  it('does not show New quick badge for own request', () => {
+  it('does not show quick badges for own request', () => {
     const request: CargoRequest = {
       ...baseRequest,
       customer_id: 'user-1',
@@ -48,11 +48,11 @@ describe('RequestCard smoke', () => {
       />
     );
 
-    expect(queryByText('statusQuickYours')).toBeTruthy();
+    expect(queryByText('statusQuickYours')).toBeNull();
     expect(queryByText('statusQuickNew')).toBeNull();
   });
 
-  it('shows New quick badge for non-own recent request', () => {
+  it('does not show quick badges for non-own recent request', () => {
     const request: CargoRequest = {
       ...baseRequest,
       customer_id: 'another-user',
@@ -69,6 +69,6 @@ describe('RequestCard smoke', () => {
     );
 
     expect(queryByText('statusQuickYours')).toBeNull();
-    expect(queryByText('statusQuickNew')).toBeTruthy();
+    expect(queryByText('statusQuickNew')).toBeNull();
   });
 });

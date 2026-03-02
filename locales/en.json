@@ -680,4 +680,13 @@
   ,"cargoTypeHintCampingvogn": "Camper trailer: provide total weight, width, and whether it is registered/ready for towing."
   ,"cargoTypeHintFurniture": "Furniture: indicate whether items can be stacked and if stair carrying is required at pickup/delivery."
   ,"cargoTypeHintOther": "Other: use the description to explain handling, lifting needs, and special considerations."
+  ,"photoChecklistTitle": "What to photograph"
+  ,"photoChecklistHint": "Good photos reduce carrier refusals and speed up bids."
+  ,"photoChecklistItemOverall": "Full cargo from 2–3 angles"
+  ,"photoChecklistItemCorners": "All sides/corners and loading points"
+  ,"photoChecklistItemDamage": "Close-ups of existing damage (if any)"
+  ,"photoChecklistItemAccess": "Pickup access: door, gate, stairs, low ceiling"
+  ,"photoChecklistItemSizeReference": "One photo with size reference (person, pallet, tape)"
+  ,"photoChecklistItemLooseParts": "Loose parts/accessories that are shipped together"
+  ,"photoReminderNoImages": "You can publish without photos, but photos usually reduce carrier refusals."
 }

@@ -53,6 +53,15 @@ const DRAFT_EXPIRY_HOURS = 24;
 const AUTOSAVE_DEBOUNCE_MS = 2000;
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
+const PHOTO_CHECKLIST_KEYS = [
+  'photoChecklistItemOverall',
+  'photoChecklistItemCorners',
+  'photoChecklistItemDamage',
+  'photoChecklistItemAccess',
+  'photoChecklistItemSizeReference',
+  'photoChecklistItemLooseParts',
+] as const;
+
 const base64ToUint8Array = (base64: string): Uint8Array => {
   const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
   const normalized = base64.replace(/=+$/, '');
@@ -124,6 +133,7 @@ export default function CreateRequestScreen() {
   const [showPriceTypeMenu, setShowPriceTypeMenu] = useState(false);
   const fromAddressTextRef = useRef('');
   const toAddressTextRef = useRef('');
+  const hasShownNoImageReminderRef = useRef(false);
   // Load draft on mount
   useEffect(() => {
     const loadDraft = async () => {
@@ -654,6 +664,11 @@ export default function CreateRequestScreen() {
     if (!validateForm()) {
       triggerHapticFeedback.error();
       return;
+    }
+
+    if (images.length === 0 && !hasShownNoImageReminderRef.current) {
+      hasShownNoImageReminderRef.current = true;
+      toast.info(t('photoReminderNoImages'));
     }
 
     const shouldContinue = await checkForDuplicates();
@@ -1254,6 +1269,45 @@ export default function CreateRequestScreen() {
               {renderFieldError('weight', formData.weight)}
             </View>
 
+            {/* Photo Checklist */}
+            <View style={[styles.fieldContainer, isSmallScreen && styles.fieldContainerCompact]}>
+              <View
+                style={[
+                  styles.photoChecklistContainer,
+                  isSmallScreen && styles.photoChecklistContainerCompact,
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.photoChecklistTitle,
+                    isSmallScreen && styles.photoChecklistTitleCompact,
+                  ]}
+                >
+                  {t('photoChecklistTitle')}
+                </Text>
+                <Text style={[styles.fieldHint, isSmallScreen && styles.fieldHintCompact]}>
+                  {t('photoChecklistHint')}
+                </Text>
+                {PHOTO_CHECKLIST_KEYS.map(itemKey => (
+                  <View key={itemKey} style={styles.photoChecklistItemRow}>
+                    <Ionicons
+                      name="checkmark-circle-outline"
+                      size={isSmallScreen ? 16 : 18}
+                      color={colors.primary}
+                    />
+                    <Text
+                      style={[
+                        styles.photoChecklistItemText,
+                        isSmallScreen && styles.photoChecklistItemTextCompact,
+                      ]}
+                    >
+                      {t(itemKey)}
+                    </Text>
+                  </View>
+                ))}
+              </View>
+            </View>
+
             {/* Images */}
             <View style={[styles.fieldContainer, isSmallScreen && styles.fieldContainerCompact]}>
               <Text style={[styles.fieldLabel, isSmallScreen && styles.fieldLabelCompact]}>
@@ -1690,6 +1744,38 @@ const styles = StyleSheet.create({
   imageGridItemCompact: {
     width: 64,
     height: 64,
+  },
+  photoChecklistContainer: {
+    borderWidth: 1,
+    borderColor: colors.border.light,
+    borderRadius: borderRadius.md,
+    backgroundColor: colors.white,
+    padding: spacing.md,
+    gap: spacing.xs,
+  },
+  photoChecklistContainerCompact: {
+    padding: spacing.sm,
+  },
+  photoChecklistTitle: {
+    fontSize: fontSize.md,
+    fontWeight: fontWeight.semibold,
+    color: colors.text.primary,
+  },
+  photoChecklistTitleCompact: {
+    fontSize: fontSize.sm,
+  },
+  photoChecklistItemRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: spacing.xs,
+  },
+  photoChecklistItemText: {
+    flex: 1,
+    fontSize: fontSize.sm,
+    color: colors.text.secondary,
+  },
+  photoChecklistItemTextCompact: {
+    fontSize: fontSize.xs,
   },
   uploadProgressContainer: {
     marginTop: spacing.md,
