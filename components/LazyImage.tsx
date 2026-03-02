@@ -81,6 +81,7 @@ export const LazyImage: React.FC<LazyImageProps> = ({
   const signedUrlRetryAttemptedRef = useRef(false);
   const loggedFailureUrlsRef = useRef<Set<string>>(new Set());
   const loadTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const loadAttemptIdRef = useRef(0);
   const loadingRef = useRef(loading);
   const errorRef = useRef(error);
 
@@ -173,15 +174,20 @@ export const LazyImage: React.FC<LazyImageProps> = ({
     }
   };
 
-  const scheduleLoadTimeout = () => {
+  const scheduleLoadTimeout = (targetUri: string) => {
     clearLoadTimeout();
+    const attemptId = ++loadAttemptIdRef.current;
 
     loadTimeoutRef.current = setTimeout(() => {
+      if (attemptId !== loadAttemptIdRef.current) {
+        return;
+      }
+
       if (!loadingRef.current || errorRef.current) {
         return;
       }
 
-      const failedUri = resolvedUri || normalizedInputUri;
+      const failedUri = targetUri;
       if (__DEV__ && failedUri && !loggedFailureUrlsRef.current.has(failedUri)) {
         loggedFailureUrlsRef.current.add(failedUri);
         console.debug('LazyImage: Timed out while loading image:', failedUri);
@@ -215,6 +221,7 @@ export const LazyImage: React.FC<LazyImageProps> = ({
     const hasUri = nextUri.length > 0;
     setLoading(hasUri);
     setError(!hasUri);
+    loadAttemptIdRef.current += 1;
     transientRetryAttemptedRef.current = false;
     signedUrlRetryAttemptedRef.current = false;
     traceStoppedRef.current = false;
@@ -313,9 +320,11 @@ export const LazyImage: React.FC<LazyImageProps> = ({
           onLoadStart={() => {
             setLoading(true);
             fadeAnim.setValue(0);
-            scheduleLoadTimeout();
+            const targetUri = (resolvedUri || normalizedInputUri).trim();
+            scheduleLoadTimeout(targetUri);
           }}
           onLoad={() => {
+            loadAttemptIdRef.current += 1;
             clearLoadTimeout();
             setLoading(false);
             setError(false);
@@ -331,7 +340,7 @@ export const LazyImage: React.FC<LazyImageProps> = ({
                   setResolvedUri(withCacheBusting(candidateUri));
                   setError(false);
                   setLoading(true);
-                  scheduleLoadTimeout();
+                  scheduleLoadTimeout(candidateUri);
                   return;
                 }
               }
@@ -344,7 +353,7 @@ export const LazyImage: React.FC<LazyImageProps> = ({
                   setResolvedUri(refreshedUrl);
                   setError(false);
                   setLoading(true);
-                  scheduleLoadTimeout();
+                  scheduleLoadTimeout(refreshedUrl);
                   return;
                 }
               }
@@ -354,6 +363,7 @@ export const LazyImage: React.FC<LazyImageProps> = ({
                 loggedFailureUrlsRef.current.add(failedUri);
                 console.debug('LazyImage: Failed to load image:', failedUri);
               }
+              loadAttemptIdRef.current += 1;
               clearLoadTimeout();
               setLoading(false);
               setError(true);
@@ -366,6 +376,7 @@ export const LazyImage: React.FC<LazyImageProps> = ({
                 loggedFailureUrlsRef.current.add(failedUri);
                 console.debug('LazyImage: Failed to load image:', failedUri);
               }
+              loadAttemptIdRef.current += 1;
               clearLoadTimeout();
               setLoading(false);
               setError(true);
