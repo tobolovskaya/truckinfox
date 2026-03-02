@@ -47,6 +47,68 @@ const CARGO_TYPES = [
   { id: 'other', label: 'Annet' },
 ];
 
+const CARGO_TYPE_PRESETS: Record<
+  string,
+  { weight: string; length: string; width: string; height: string; hint: string }
+> = {
+  automotive: {
+    weight: '1800',
+    length: '450',
+    width: '190',
+    height: '170',
+    hint: 'Bil/motor: legg gjerne inn om kjøretøyet starter, ruller og har løse deler.',
+  },
+  machinery: {
+    weight: '2800',
+    length: '340',
+    width: '180',
+    height: '220',
+    hint: 'Maskineri/traktor: oppgi om maskinen kan kjøres selv og om skuffe/utstyr følger med.',
+  },
+  construction: {
+    weight: '1200',
+    length: '240',
+    width: '120',
+    height: '120',
+    hint: 'Byggemateriale: oppgi antall paller/pakker og om levering krever kran eller bakløfter.',
+  },
+  boats: {
+    weight: '2200',
+    length: '650',
+    width: '250',
+    height: '290',
+    hint: 'Båt: skriv total lengde inkl. henger/stativ og om mast eller løse deler er demontert.',
+  },
+  electronics: {
+    weight: '300',
+    length: '150',
+    width: '80',
+    height: '120',
+    hint: 'Elektronikk: oppgi om varene er palletert/emballert og om de er ekstra støtfølsomme.',
+  },
+  campingvogn: {
+    weight: '1700',
+    length: '720',
+    width: '245',
+    height: '265',
+    hint: 'Campingvogn: oppgi totalvekt, bredde og om den er registrert/klar for tauing.',
+  },
+  furniture: {
+    weight: '450',
+    length: '260',
+    width: '140',
+    height: '180',
+    hint: 'Møbler: skriv om møbler kan stables og om bæring i trapper kreves ved henting/levering.',
+  },
+  other: {
+    weight: '600',
+    length: '200',
+    width: '120',
+    height: '150',
+    hint: 'Annet: bruk beskrivelsen til å forklare håndtering, løftebehov og spesielle hensyn.',
+  },
+};
+
 const PRICE_TYPES = [
   { id: 'negotiable', label: 'Kan forhandles' },
   { id: 'fixed', label: 'Fast pris' },
@@ -338,6 +400,37 @@ export default function CreateRequestScreen() {
 
       return nextData;
     });
+  };
+
+  const applyCargoTypePreset = (cargoType: string) => {
+    const preset = CARGO_TYPE_PRESETS[cargoType];
+
+    setFormData(prev => {
+      const nextData = { ...prev, cargo_type: cargoType };
+
+      if (!preset) {
+        return nextData;
+      }
+
+      if (!String(prev.weight || '').trim()) {
+        nextData.weight = preset.weight;
+      }
+      if (!String(prev.length || '').trim()) {
+        nextData.length = preset.length;
+      }
+      if (!String(prev.width || '').trim()) {
+        nextData.width = preset.width;
+      }
+      if (!String(prev.height || '').trim()) {
+        nextData.height = preset.height;
+      }
+
+      return nextData;
+    });
+
+    if (liveValidation || touchedFields.cargo_type) {
+      debouncedValidateField('cargo_type', cargoType, { ...formData, cargo_type: cargoType });
+    }
   };
 
   const handleBlur = (field: string) => {
@@ -954,6 +1047,11 @@ export default function CreateRequestScreen() {
                 </Text>
                 <Ionicons name="chevron-down" size={20} color="#6B7280" />
               </TouchableOpacity>
+              {formData.cargo_type && CARGO_TYPE_PRESETS[formData.cargo_type]?.hint && (
+                <Text style={[styles.fieldHint, isSmallScreen && styles.fieldHintCompact]}>
+                  {CARGO_TYPE_PRESETS[formData.cargo_type].hint}
+                </Text>
+              )}
               {renderFieldError('cargo_type', formData.cargo_type)}
             </View>
 
@@ -1363,7 +1461,7 @@ export default function CreateRequestScreen() {
             accessibilityState={{ selected: formData.cargo_type === type.id }}
             style={[styles.menuItem, formData.cargo_type === type.id && styles.menuItemSelected]}
             onPress={() => {
-              updateFormData('cargo_type', type.id);
+              applyCargoTypePreset(type.id);
               handleBlur('cargo_type');
               setShowCargoTypeMenu(false);
               triggerHapticFeedback.light();
