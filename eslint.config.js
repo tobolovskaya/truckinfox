@@ -1,11 +1,11 @@
-import js from '@eslint/js';
-import tseslint from '@typescript-eslint/eslint-plugin';
-import tsparser from '@typescript-eslint/parser';
-import reactPlugin from 'eslint-plugin-react';
-import reactHooksPlugin from 'eslint-plugin-react-hooks';
-import prettierPlugin from 'eslint-plugin-prettier';
+const js = require('@eslint/js');
+const tseslint = require('@typescript-eslint/eslint-plugin');
+const tsparser = require('@typescript-eslint/parser');
+const reactPlugin = require('eslint-plugin-react');
+const reactHooksPlugin = require('eslint-plugin-react-hooks');
+const prettierPlugin = require('eslint-plugin-prettier');
 
-export default [
+module.exports = [
   js.configs.recommended,
   {
     files: ['**/*.{ts,tsx,js,jsx}'],
