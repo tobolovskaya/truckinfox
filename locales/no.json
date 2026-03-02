@@ -663,4 +663,21 @@
   "openLiveMap": "Åpne live-kart",
   "openInNavigator": "Åpne i navigasjon",
   "signatureUnavailable": "Signatur utilgjengelig"
+  ,"quickTemplates": "Hurtigmaler"
+  ,"quickTemplatesHint": "Trykk på en mal for å fylle inn typisk vekt og dimensjoner."
+  ,"quickTemplateAccessibilityHint": "Fyller inn typisk lasttype, vekt og dimensjoner"
+  ,"useQuickTemplate": "Bruk hurtigmal {{template}}"
+  ,"quickTemplatePassengerCar": "Personbil"
+  ,"quickTemplateTractor": "Traktor"
+  ,"quickTemplateEuropallet": "Europall"
+  ,"quickTemplateCamper": "Campingvogn"
+  ,"quickTemplateSofa": "Sofa"
+  ,"cargoTypeHintAutomotive": "Bil/motor: legg gjerne inn om kjøretøyet starter, ruller og har løse deler."
+  ,"cargoTypeHintMachinery": "Maskineri/traktor: oppgi om maskinen kan kjøres selv og om skuffe/utstyr følger med."
+  ,"cargoTypeHintConstruction": "Byggemateriale: oppgi antall paller/pakker og om levering krever kran eller bakløfter."
+  ,"cargoTypeHintBoats": "Båt: skriv total lengde inkl. henger/stativ og om mast eller løse deler er demontert."
+  ,"cargoTypeHintElectronics": "Elektronikk: oppgi om varene er palletert/emballert og om de er ekstra støtfølsomme."
+  ,"cargoTypeHintCampingvogn": "Campingvogn: oppgi totalvekt, bredde og om den er registrert/klar for tauing."
+  ,"cargoTypeHintFurniture": "Møbler: skriv om møbler kan stables og om bæring i trapper kreves ved henting/levering."
+  ,"cargoTypeHintOther": "Annet: bruk beskrivelsen til å forklare håndtering, løftebehov og spesielle hensyn."
 }

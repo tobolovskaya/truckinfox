@@ -663,4 +663,21 @@
   "openLiveMap": "Open live map",
   "signatureUnavailable": "Signature unavailable",
   "openInNavigator": "Open in navigator"
+  ,"quickTemplates": "Quick templates"
+  ,"quickTemplatesHint": "Tap a template to fill in typical weight and dimensions."
+  ,"quickTemplateAccessibilityHint": "Fills in typical cargo type, weight, and dimensions"
+  ,"useQuickTemplate": "Use quick template {{template}}"
+  ,"quickTemplatePassengerCar": "Passenger car"
+  ,"quickTemplateTractor": "Tractor"
+  ,"quickTemplateEuropallet": "Euro pallet"
+  ,"quickTemplateCamper": "Camper trailer"
+  ,"quickTemplateSofa": "Sofa"
+  ,"cargoTypeHintAutomotive": "Automotive: include whether the vehicle starts, rolls, and has loose parts."
+  ,"cargoTypeHintMachinery": "Machinery/tractor: specify if it can drive itself and whether bucket/attachments are included."
+  ,"cargoTypeHintConstruction": "Construction materials: include number of pallets/packages and whether crane or tail lift is needed."
+  ,"cargoTypeHintBoats": "Boat: provide total length incl. trailer/stand and whether mast or loose parts are dismantled."
+  ,"cargoTypeHintElectronics": "Electronics: specify if goods are palletized/packed and if they are extra shock-sensitive."
+  ,"cargoTypeHintCampingvogn": "Camper trailer: provide total weight, width, and whether it is registered/ready for towing."
+  ,"cargoTypeHintFurniture": "Furniture: indicate whether items can be stacked and if stair carrying is required at pickup/delivery."
+  ,"cargoTypeHintOther": "Other: use the description to explain handling, lifting needs, and special considerations."
 }

@@ -35,7 +35,12 @@ import { compressImageForUpload } from '../../utils/imageCompression';
 import { LazyImage } from '../../components/LazyImage';
 import { ScreenHeader } from '../../components/ScreenHeader';
 import { validateBeforeCreation } from '../../utils/requestValidation';
-import { CARGO_TYPE_PRESETS, CARGO_TYPES, PRICE_TYPES } from '../../utils/cargoFormConstants';
+import {
+  CARGO_TYPE_PRESETS,
+  CARGO_TYPES,
+  PRICE_TYPES,
+  QUICK_REQUEST_TEMPLATES,
+} from '../../utils/cargoFormConstants';
 
 const CARGO_LIMITS = {
   weight: { min: 1, max: 25000 },
@@ -353,6 +358,36 @@ export default function CreateRequestScreen() {
 
     if (liveValidation || touchedFields.cargo_type) {
       debouncedValidateField('cargo_type', cargoType, { ...formData, cargo_type: cargoType });
+    }
+  };
+
+  const applyQuickTemplate = (template: (typeof QUICK_REQUEST_TEMPLATES)[number]) => {
+    const nextData = {
+      ...formData,
+      cargo_type: template.cargo_type,
+      weight: template.weight,
+      length: template.length,
+      width: template.width,
+      height: template.height,
+    };
+
+    setFormData(nextData);
+    triggerHapticFeedback.light();
+
+    if (liveValidation || touchedFields.cargo_type) {
+      debouncedValidateField('cargo_type', nextData.cargo_type, nextData);
+    }
+    if (liveValidation || touchedFields.weight) {
+      debouncedValidateField('weight', nextData.weight, nextData);
+    }
+    if (liveValidation || touchedFields.length) {
+      debouncedValidateField('length', nextData.length, nextData);
+    }
+    if (liveValidation || touchedFields.width) {
+      debouncedValidateField('width', nextData.width, nextData);
+    }
+    if (liveValidation || touchedFields.height) {
+      debouncedValidateField('height', nextData.height, nextData);
     }
   };
 
@@ -970,12 +1005,60 @@ export default function CreateRequestScreen() {
                 </Text>
                 <Ionicons name="chevron-down" size={20} color="#6B7280" />
               </TouchableOpacity>
-              {formData.cargo_type && CARGO_TYPE_PRESETS[formData.cargo_type]?.hint && (
+              {formData.cargo_type && CARGO_TYPE_PRESETS[formData.cargo_type]?.hintKey && (
                 <Text style={[styles.fieldHint, isSmallScreen && styles.fieldHintCompact]}>
-                  {CARGO_TYPE_PRESETS[formData.cargo_type].hint}
+                  {t(CARGO_TYPE_PRESETS[formData.cargo_type].hintKey)}
                 </Text>
               )}
               {renderFieldError('cargo_type', formData.cargo_type)}
+            </View>
+
+            {/* Quick Templates */}
+            <View style={[styles.fieldContainer, isSmallScreen && styles.fieldContainerCompact]}>
+              <Text style={[styles.fieldLabel, isSmallScreen && styles.fieldLabelCompact]}>
+                {t('quickTemplates')}
+              </Text>
+              <View
+                style={[styles.quickTemplateRow, isSmallScreen && styles.quickTemplateRowCompact]}
+              >
+                {QUICK_REQUEST_TEMPLATES.map(template => {
+                  const isSelected =
+                    formData.cargo_type === template.cargo_type &&
+                    formData.weight === template.weight &&
+                    formData.length === template.length &&
+                    formData.width === template.width &&
+                    formData.height === template.height;
+
+                  return (
+                    <TouchableOpacity
+                      key={template.id}
+                      style={[
+                        styles.quickTemplateChip,
+                        isSelected && styles.quickTemplateChipSelected,
+                      ]}
+                      onPress={() => applyQuickTemplate(template)}
+                      accessibilityRole="button"
+                      accessibilityLabel={t('useQuickTemplate', {
+                        template: t(template.labelKey),
+                      })}
+                      accessibilityHint={t('quickTemplateAccessibilityHint')}
+                      accessibilityState={{ selected: isSelected }}
+                    >
+                      <Text
+                        style={[
+                          styles.quickTemplateChipText,
+                          isSelected && styles.quickTemplateChipTextSelected,
+                        ]}
+                      >
+                        {t(template.labelKey)}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+              <Text style={[styles.fieldHint, isSmallScreen && styles.fieldHintCompact]}>
+                {t('quickTemplatesHint')}
+              </Text>
             </View>
 
             {/* From Address */}
@@ -1261,7 +1344,7 @@ export default function CreateRequestScreen() {
                   ]}
                 >
                   {formData.price_type
-                    ? PRICE_TYPES.find(t => t.id === formData.price_type)?.label
+                    ? t(PRICE_TYPES.find(t => t.id === formData.price_type)?.labelKey || 'fixed')
                     : 'Velg prismodell'}
                 </Text>
                 <Ionicons name="chevron-down" size={20} color="#6B7280" />
@@ -1379,7 +1462,7 @@ export default function CreateRequestScreen() {
             key={type.id}
             testID={`cargo-type-${type.id}`}
             accessibilityRole="menuitem"
-            accessibilityLabel={`Velg ${t(type.id)} som lasttype`}
+            accessibilityLabel={`Velg ${t(type.labelKey)} som lasttype`}
             accessibilityHint="Dobbelttrykk for å velge denne lasttypen"
             accessibilityState={{ selected: formData.cargo_type === type.id }}
             style={[styles.menuItem, formData.cargo_type === type.id && styles.menuItemSelected]}
@@ -1396,7 +1479,7 @@ export default function CreateRequestScreen() {
                 formData.cargo_type === type.id && styles.menuItemTextSelected,
               ]}
             >
-              {t(type.id)}
+              {t(type.labelKey)}
             </Text>
             {formData.cargo_type === type.id && (
               <Ionicons name="checkmark" size={20} color="#10B981" />
@@ -1422,7 +1505,7 @@ export default function CreateRequestScreen() {
               triggerHapticFeedback.light();
             }}
             accessibilityRole="menuitem"
-            accessibilityLabel={type.label}
+            accessibilityLabel={t(type.labelKey)}
             accessibilityState={{ selected: formData.price_type === type.id }}
           >
             <Text
@@ -1431,7 +1514,7 @@ export default function CreateRequestScreen() {
                 formData.price_type === type.id && styles.menuItemTextSelected,
               ]}
             >
-              {type.label}
+              {t(type.labelKey)}
             </Text>
             {formData.price_type === type.id && (
               <Ionicons name="checkmark" size={20} color="#10B981" />
@@ -1757,6 +1840,34 @@ const styles = StyleSheet.create({
   },
   fieldHintCompact: {
     fontSize: fontSize.xs,
+  },
+  quickTemplateRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.xs,
+  },
+  quickTemplateRowCompact: {
+    gap: spacing.xxxs,
+  },
+  quickTemplateChip: {
+    borderWidth: 1,
+    borderColor: colors.border.default,
+    borderRadius: borderRadius.full,
+    backgroundColor: colors.white,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+  },
+  quickTemplateChipSelected: {
+    borderColor: colors.primary,
+    backgroundColor: colors.backgroundLight,
+  },
+  quickTemplateChipText: {
+    color: colors.text.secondary,
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.medium,
+  },
+  quickTemplateChipTextSelected: {
+    color: colors.primary,
   },
   menuItem: {
     flexDirection: 'row',

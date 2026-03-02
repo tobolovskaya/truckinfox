@@ -22,6 +22,7 @@ import {
 } from '../lib/sharedStyles';
 import { trackFilterApplied } from '../utils/analytics';
 import { startTrace, PerformanceTraces } from '../utils/performance';
+import { CARGO_TYPES as FORM_CARGO_TYPES } from '../utils/cargoFormConstants';
 import { StandardBottomSheet } from './StandardBottomSheet';
 
 const SAVED_FILTERS_KEY = '@truckinfox_saved_filters';
@@ -48,16 +49,16 @@ interface FilterSheetProps {
   initialFilters?: FilterOptions;
 }
 
-const CARGO_TYPES = [
-  { id: 'automotive', label: 'Bil/Motor', icon: 'car' },
-  { id: 'construction', label: 'Byggemateriale', icon: 'construct' },
-  { id: 'boats', label: 'Båter', icon: 'boat' },
-  { id: 'electronics', label: 'Elektronikk', icon: 'phone-portrait' },
-  { id: 'campingvogn', label: 'Campingvogn', icon: 'home' },
-  { id: 'machinery', label: 'Maskineri', icon: 'build' },
-  { id: 'furniture', label: 'Møbler', icon: 'bed' },
-  { id: 'other', label: 'Annet', icon: 'cube' },
-];
+const CARGO_TYPE_ICONS: Record<string, string> = {
+  automotive: 'car',
+  construction: 'construct',
+  boats: 'boat',
+  electronics: 'phone-portrait',
+  campingvogn: 'home',
+  machinery: 'build',
+  furniture: 'bed',
+  other: 'cube',
+};
 
 const SORT_OPTIONS = [
   { id: 'newest', label: 'Nyeste først', icon: 'time' },
@@ -283,14 +284,14 @@ export const FilterSheet: React.FC<FilterSheetProps> = ({
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>{t('cargoType')}</Text>
           <View style={styles.chipsContainer}>
-            {CARGO_TYPES.map(type => (
+            {FORM_CARGO_TYPES.map(type => (
               <TouchableOpacity
                 key={type.id}
                 style={[styles.chip, selectedTypes.includes(type.id) && styles.chipActive]}
                 onPress={() => toggleCargoType(type.id)}
               >
                 <Ionicons
-                  name={type.icon}
+                  name={CARGO_TYPE_ICONS[type.id] || 'cube'}
                   size={18}
                   color={selectedTypes.includes(type.id) ? 'white' : colors.primary}
                 />
@@ -300,7 +301,7 @@ export const FilterSheet: React.FC<FilterSheetProps> = ({
                     selectedTypes.includes(type.id) && styles.chipTextActive,
                   ]}
                 >
-                  {type.label}
+                  {t(type.labelKey)}
                 </Text>
               </TouchableOpacity>
             ))}

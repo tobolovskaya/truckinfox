@@ -26,7 +26,12 @@ import { ScreenHeader } from '../../components/ScreenHeader';
 import { calculateDistance } from '../../utils/googlePlaces';
 import { compressImageForUpload } from '../../utils/imageCompression';
 import { normalizeCargoImageInputs, resolveCargoImageUrls } from '../../utils/cargoImages';
-import { CARGO_TYPE_PRESETS, CARGO_TYPES, PRICE_TYPES } from '../../utils/cargoFormConstants';
+import {
+  CARGO_TYPE_PRESETS,
+  CARGO_TYPES,
+  PRICE_TYPES,
+  QUICK_REQUEST_TEMPLATES,
+} from '../../utils/cargoFormConstants';
 import { LazyImage } from '../../components/LazyImage';
 import { colors, spacing, fontSize, borderRadius } from '../../lib/sharedStyles';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -260,6 +265,39 @@ export default function EditRequestScreen() {
     if (touchedFields.cargo_type) {
       const error = validateField('cargo_type', cargoType);
       setFieldErrors(prev => ({ ...prev, cargo_type: error }));
+    }
+  };
+
+  const applyQuickTemplate = (template: (typeof QUICK_REQUEST_TEMPLATES)[number]) => {
+    const nextData = {
+      ...formData,
+      cargo_type: template.cargo_type,
+      weight: template.weight,
+      length: template.length,
+      width: template.width,
+      height: template.height,
+    };
+
+    setFormData(nextData);
+    triggerHapticFeedback.light();
+
+    if (touchedFields.cargo_type) {
+      setFieldErrors(prev => ({
+        ...prev,
+        cargo_type: validateField('cargo_type', nextData.cargo_type),
+      }));
+    }
+    if (touchedFields.weight) {
+      setFieldErrors(prev => ({ ...prev, weight: validateField('weight', nextData.weight) }));
+    }
+    if (touchedFields.length) {
+      setFieldErrors(prev => ({ ...prev, length: validateField('length', nextData.length) }));
+    }
+    if (touchedFields.width) {
+      setFieldErrors(prev => ({ ...prev, width: validateField('width', nextData.width) }));
+    }
+    if (touchedFields.height) {
+      setFieldErrors(prev => ({ ...prev, height: validateField('height', nextData.height) }));
     }
   };
 
@@ -803,9 +841,53 @@ export default function EditRequestScreen() {
                 </Text>
                 <Ionicons name="chevron-down" size={20} color="#6B7280" />
               </TouchableOpacity>
-              {formData.cargo_type && CARGO_TYPE_PRESETS[formData.cargo_type]?.hint ? (
-                <Text style={styles.fieldHint}>{CARGO_TYPE_PRESETS[formData.cargo_type].hint}</Text>
+              {formData.cargo_type && CARGO_TYPE_PRESETS[formData.cargo_type]?.hintKey ? (
+                <Text style={styles.fieldHint}>
+                  {t(CARGO_TYPE_PRESETS[formData.cargo_type].hintKey)}
+                </Text>
               ) : null}
+            </View>
+
+            {/* Quick Templates */}
+            <View style={styles.fieldContainer}>
+              <Text style={styles.fieldLabel}>{t('quickTemplates')}</Text>
+              <View style={styles.quickTemplateRow}>
+                {QUICK_REQUEST_TEMPLATES.map(template => {
+                  const isSelected =
+                    formData.cargo_type === template.cargo_type &&
+                    formData.weight === template.weight &&
+                    formData.length === template.length &&
+                    formData.width === template.width &&
+                    formData.height === template.height;
+
+                  return (
+                    <TouchableOpacity
+                      key={template.id}
+                      style={[
+                        styles.quickTemplateChip,
+                        isSelected && styles.quickTemplateChipSelected,
+                      ]}
+                      onPress={() => applyQuickTemplate(template)}
+                      accessibilityRole="button"
+                      accessibilityLabel={t('useQuickTemplate', {
+                        template: t(template.labelKey),
+                      })}
+                      accessibilityHint={t('quickTemplateAccessibilityHint')}
+                      accessibilityState={{ selected: isSelected }}
+                    >
+                      <Text
+                        style={[
+                          styles.quickTemplateChipText,
+                          isSelected && styles.quickTemplateChipTextSelected,
+                        ]}
+                      >
+                        {t(template.labelKey)}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+              <Text style={styles.fieldHint}>{t('quickTemplatesHint')}</Text>
             </View>
 
             {/* From Address */}
@@ -997,7 +1079,7 @@ export default function EditRequestScreen() {
                   style={[styles.dropdownText, !formData.price_type && styles.dropdownPlaceholder]}
                 >
                   {formData.price_type
-                    ? PRICE_TYPES.find(t => t.id === formData.price_type)?.label
+                    ? t(PRICE_TYPES.find(t => t.id === formData.price_type)?.labelKey || 'fixed')
                     : 'Velg prismodell'}
                 </Text>
                 <Ionicons name="chevron-down" size={20} color="#6B7280" />
@@ -1123,7 +1205,7 @@ export default function EditRequestScreen() {
                   triggerHapticFeedback.light();
                 }}
                 accessibilityRole="menuitem"
-                accessibilityLabel={`Velg ${t(type.id)} som lasttype`}
+                accessibilityLabel={`Velg ${t(type.labelKey)} som lasttype`}
               >
                 <Text
                   style={[
@@ -1131,7 +1213,7 @@ export default function EditRequestScreen() {
                     formData.cargo_type === type.id && styles.menuItemTextSelected,
                   ]}
                 >
-                  {t(type.id)}
+                  {t(type.labelKey)}
                 </Text>
                 {formData.cargo_type === type.id && (
                   <Ionicons name="checkmark" size={20} color="#10B981" />
@@ -1182,7 +1264,7 @@ export default function EditRequestScreen() {
                   triggerHapticFeedback.light();
                 }}
                 accessibilityRole="menuitem"
-                accessibilityLabel={type.label}
+                accessibilityLabel={t(type.labelKey)}
               >
                 <Text
                   style={[
@@ -1190,7 +1272,7 @@ export default function EditRequestScreen() {
                     formData.price_type === type.id && styles.menuItemTextSelected,
                   ]}
                 >
-                  {type.label}
+                  {t(type.labelKey)}
                 </Text>
                 {formData.price_type === type.id && (
                   <Ionicons name="checkmark" size={20} color="#10B981" />
@@ -1391,6 +1473,31 @@ const styles = StyleSheet.create({
     fontSize: fontSize.sm,
     color: '#6B7280',
     marginTop: spacing.xxxs,
+  },
+  quickTemplateRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.xs,
+  },
+  quickTemplateChip: {
+    borderWidth: 1,
+    borderColor: colors.border.default,
+    borderRadius: borderRadius.full,
+    backgroundColor: colors.white,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+  },
+  quickTemplateChipSelected: {
+    borderColor: colors.primary,
+    backgroundColor: colors.backgroundLight,
+  },
+  quickTemplateChipText: {
+    color: colors.text.secondary,
+    fontSize: fontSize.sm,
+    fontWeight: '500',
+  },
+  quickTemplateChipTextSelected: {
+    color: colors.primary,
   },
   menuOverlay: {
     flex: 1,
