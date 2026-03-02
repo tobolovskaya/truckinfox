@@ -23,6 +23,7 @@ import { useTranslation } from 'react-i18next';
 import { useToast } from '../../contexts/ToastContext';
 import { supabase } from '../../lib/supabase';
 import { triggerHapticFeedback } from '../../utils/haptics';
+import { normalizeCargoImageInputs, resolveCargoImageUrls } from '../../utils/cargoImages';
 import { SuccessAnimation } from '../../components/SuccessAnimation';
 import { LazyImage } from '../../components/LazyImage';
 import Avatar from '../../components/Avatar';
@@ -207,6 +208,9 @@ export default function RequestDetailsScreen() {
             : typeof requestRow.weight_kg === 'string'
               ? Number(requestRow.weight_kg)
               : 0;
+
+      const normalizedImages = normalizeCargoImageInputs(requestRow.images, requestRow.image_url);
+      data.images = await resolveCargoImageUrls(normalizedImages);
 
       // Fetch customer info
       if (data.user_id) {

@@ -4,6 +4,7 @@ import { InfiniteData, useInfiniteQuery, useQueryClient } from '@tanstack/react-
 import { supabase } from '../lib/supabase';
 import { i18n } from '../lib/i18n';
 import { normalizeSearchQuery } from '../utils/search';
+import { normalizeCargoImageInputs, resolveCargoImageUrls } from '../utils/cargoImages';
 
 export interface CargoRequest {
   id: string;
@@ -95,49 +96,6 @@ const toNumber = (value?: number): number => {
     return 0;
   }
   return value;
-};
-
-const normalizeImageUrls = (value: unknown, legacyImageUrl?: unknown): string[] => {
-  const normalized = new Set<string>();
-
-  const pushIfValid = (candidate: unknown) => {
-    if (typeof candidate !== 'string') {
-      return;
-    }
-
-    const trimmed = candidate.trim();
-    if (!trimmed) {
-      return;
-    }
-
-    normalized.add(trimmed);
-  };
-
-  if (Array.isArray(value)) {
-    value.forEach(pushIfValid);
-  } else if (typeof value === 'string') {
-    const trimmed = value.trim();
-    if (trimmed.startsWith('[')) {
-      try {
-        const parsed = JSON.parse(trimmed) as unknown;
-        if (Array.isArray(parsed)) {
-          parsed.forEach(pushIfValid);
-        } else {
-          pushIfValid(trimmed);
-        }
-      } catch {
-        pushIfValid(trimmed);
-      }
-    } else {
-      pushIfValid(trimmed);
-    }
-  }
-
-  if (normalized.size === 0) {
-    pushIfValid(legacyImageUrl);
-  }
-
-  return Array.from(normalized);
 };
 
 const sortRequestsClientSide = (requests: CargoRequest[], sortBy: SortOption): CargoRequest[] => {
@@ -291,6 +249,9 @@ const hydrateCargoRequest = async (
     }
   }
 
+  const normalizedImages = normalizeCargoImageInputs(requestData.images, requestData.image_url);
+  const resolvedPreviewImages = await resolveCargoImageUrls(normalizedImages, 1);
+
   return {
     ...(requestData as unknown as CargoRequest),
     id: requestId,
@@ -318,7 +279,7 @@ const hydrateCargoRequest = async (
     users: userData,
     bids,
     is_favorite: isFavorite,
-    images: normalizeImageUrls(requestData.images, requestData.image_url),
+    images: resolvedPreviewImages.length > 0 ? resolvedPreviewImages : normalizedImages,
   } as CargoRequest;
 };
 

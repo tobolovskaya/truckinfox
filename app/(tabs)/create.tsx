@@ -62,7 +62,6 @@ const DRAFT_KEY = 'cargo-request-draft';
 const DRAFT_EXPIRY_HOURS = 24;
 const AUTOSAVE_DEBOUNCE_MS = 2000;
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
-const STORAGE_SIGNED_URL_EXPIRY_SECONDS = 60 * 60 * 24 * 365;
 
 const base64ToUint8Array = (base64: string): Uint8Array => {
   const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
@@ -581,15 +580,7 @@ export default function CreateRequestScreen() {
             throw uploadError;
           }
 
-          const { data: signedData, error: signedUrlError } = await supabase.storage
-            .from('cargo')
-            .createSignedUrl(filePath, STORAGE_SIGNED_URL_EXPIRY_SECONDS);
-
-          if (signedUrlError || !signedData?.signedUrl) {
-            throw signedUrlError || new Error('Failed to create signed URL for uploaded image');
-          }
-
-          uploadedUrls.push(signedData.signedUrl);
+          uploadedUrls.push(filePath);
           setUploadProgress(prev => ({ ...prev, [imageKey]: 100 }));
         } catch (error) {
           console.error(`Error uploading image ${i}:`, error);

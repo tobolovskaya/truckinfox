@@ -25,6 +25,7 @@ import AddressInput from '../../components/AddressInput';
 import { ScreenHeader } from '../../components/ScreenHeader';
 import { calculateDistance } from '../../utils/googlePlaces';
 import { compressImageForUpload } from '../../utils/imageCompression';
+import { normalizeCargoImageInputs, resolveCargoImageUrls } from '../../utils/cargoImages';
 import { LazyImage } from '../../components/LazyImage';
 import { colors, spacing, fontSize, borderRadius } from '../../lib/sharedStyles';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -52,7 +53,6 @@ const CARGO_LIMITS = {
 } as const;
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
-const STORAGE_SIGNED_URL_EXPIRY_SECONDS = 60 * 60 * 24 * 365;
 
 const base64ToUint8Array = (base64: string): Uint8Array => {
   const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
@@ -402,9 +402,13 @@ export default function EditRequestScreen() {
         price: data.price.toString(),
       });
 
-      if (data.images) {
-        setImages(data.images);
-        setOriginalImages(data.images);
+      const normalizedImages = normalizeCargoImageInputs(requestData.images, requestData.image_url);
+      const resolvedImages = await resolveCargoImageUrls(normalizedImages);
+      const imagesForUi = resolvedImages.length > 0 ? resolvedImages : normalizedImages;
+
+      if (imagesForUi.length > 0) {
+        setImages(imagesForUi);
+        setOriginalImages(imagesForUi);
       }
     } catch (error) {
       console.error('Error fetching request:', error);
@@ -486,8 +490,14 @@ export default function EditRequestScreen() {
     for (let i = 0; i < images.length; i++) {
       const uri = images[i];
 
-      // If it's already a URL, keep it
-      if (uri.startsWith('http')) {
+      const isLikelyLocalUri =
+        uri.startsWith('file://') ||
+        uri.startsWith('content://') ||
+        uri.startsWith('ph://') ||
+        uri.startsWith('asset://');
+
+      // If already remote URL or existing storage path, keep as-is
+      if (!isLikelyLocalUri) {
         uploadedUrls.push(uri);
         continue;
       }
@@ -518,15 +528,7 @@ export default function EditRequestScreen() {
             throw uploadError;
           }
 
-          const { data: signedData, error: signedUrlError } = await supabase.storage
-            .from('cargo')
-            .createSignedUrl(filePath, STORAGE_SIGNED_URL_EXPIRY_SECONDS);
-
-          if (signedUrlError || !signedData?.signedUrl) {
-            throw signedUrlError || new Error('Failed to create signed URL for uploaded image');
-          }
-
-          uploadedUrls.push(signedData.signedUrl);
+          uploadedUrls.push(filePath);
         } catch (error) {
           console.error(`Error uploading image ${i}:`, error);
           continue;
