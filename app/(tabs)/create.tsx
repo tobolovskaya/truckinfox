@@ -134,6 +134,8 @@ export default function CreateRequestScreen() {
   const [showCargoTypeMenu, setShowCargoTypeMenu] = useState(false);
   const [showPriceTypeMenu, setShowPriceTypeMenu] = useState(false);
   const [isDriveable, setIsDriveable] = useState(true);
+  const [vehicleStarts, setVehicleStarts] = useState(true);
+  const [vehicleHasDamage, setVehicleHasDamage] = useState(false);
   const fromAddressTextRef = useRef('');
   const toAddressTextRef = useRef('');
   const hasShownNoImageReminderRef = useRef(false);
@@ -1091,30 +1093,105 @@ export default function CreateRequestScreen() {
               {renderFieldError('cargo_type', formData.cargo_type)}
             </View>
 
-            {/* Automotive Form Options */}
+            {/* Automotive Vehicle Condition */}
             {formData.cargo_type === 'automotive' && (
               <View style={[styles.fieldContainer, isSmallScreen && styles.fieldContainerCompact]}>
                 <Text style={[styles.fieldLabel, isSmallScreen && styles.fieldLabelCompact]}>
-                  {t('vehicleCondition') || 'Kjøretøyets tilstand'}
+                  {t('vehicleCondition')}
                 </Text>
-                <TouchableOpacity
-                  style={{ flexDirection: 'row', alignItems: 'center', marginTop: 8 }}
-                  onPress={() => setIsDriveable(!isDriveable)}
-                  activeOpacity={0.7}
-                  accessibilityRole="checkbox"
-                  accessibilityState={{ checked: isDriveable }}
-                >
-                  <Ionicons
-                    name={isDriveable ? 'checkbox' : 'square-outline'}
-                    size={24}
-                    color={isDriveable ? colors.primary : '#6B7280'}
-                  />
-                  <Text style={{ marginLeft: 8, fontSize: 16, color: '#374151' }}>
-                    {t('isDriveableRadioText') || 'Bilen er kjørbar / kan rulles'}
-                  </Text>
-                </TouchableOpacity>
+                <View style={styles.vehicleConditionCard}>
+                  {/* Q1: Is it driveable? */}
+                  <View style={styles.vehicleConditionRow}>
+                    <View style={styles.vehicleConditionTextWrap}>
+                      <Text style={styles.vehicleConditionQuestion}>{t('vehicleIsDriveable')}</Text>
+                      <Text style={styles.vehicleConditionHint}>{t('vehicleIsDriveableHint')}</Text>
+                    </View>
+                    <View style={styles.vehicleConditionToggleRow}>
+                      <TouchableOpacity
+                        style={[styles.conditionPill, isDriveable && styles.conditionPillActive]}
+                        onPress={() => setIsDriveable(true)}
+                        activeOpacity={0.8}
+                      >
+                        <Text style={[styles.conditionPillText, isDriveable && styles.conditionPillTextActive]}>
+                          {t('yes')}
+                        </Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        style={[styles.conditionPill, !isDriveable && styles.conditionPillActiveNo]}
+                        onPress={() => setIsDriveable(false)}
+                        activeOpacity={0.8}
+                      >
+                        <Text style={[styles.conditionPillText, !isDriveable && styles.conditionPillTextActive]}>
+                          {t('no')}
+                        </Text>
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+
+                  <View style={styles.vehicleConditionDivider} />
+
+                  {/* Q2: Does it start? */}
+                  <View style={styles.vehicleConditionRow}>
+                    <View style={styles.vehicleConditionTextWrap}>
+                      <Text style={styles.vehicleConditionQuestion}>{t('vehicleStarts')}</Text>
+                      <Text style={styles.vehicleConditionHint}>{t('vehicleStartsHint')}</Text>
+                    </View>
+                    <View style={styles.vehicleConditionToggleRow}>
+                      <TouchableOpacity
+                        style={[styles.conditionPill, vehicleStarts && styles.conditionPillActive]}
+                        onPress={() => setVehicleStarts(true)}
+                        activeOpacity={0.8}
+                      >
+                        <Text style={[styles.conditionPillText, vehicleStarts && styles.conditionPillTextActive]}>
+                          {t('yes')}
+                        </Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        style={[styles.conditionPill, !vehicleStarts && styles.conditionPillActiveNo]}
+                        onPress={() => setVehicleStarts(false)}
+                        activeOpacity={0.8}
+                      >
+                        <Text style={[styles.conditionPillText, !vehicleStarts && styles.conditionPillTextActive]}>
+                          {t('no')}
+                        </Text>
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+
+                  <View style={styles.vehicleConditionDivider} />
+
+                  {/* Q3: Has visible damage? */}
+                  <View style={styles.vehicleConditionRow}>
+                    <View style={styles.vehicleConditionTextWrap}>
+                      <Text style={styles.vehicleConditionQuestion}>{t('vehicleHasDamage')}</Text>
+                      <Text style={styles.vehicleConditionHint}>{t('vehicleHasDamageHint')}</Text>
+                    </View>
+                    <View style={styles.vehicleConditionToggleRow}>
+                      <TouchableOpacity
+                        style={[styles.conditionPill, vehicleHasDamage && styles.conditionPillActiveNo]}
+                        onPress={() => setVehicleHasDamage(true)}
+                        activeOpacity={0.8}
+                      >
+                        <Text style={[styles.conditionPillText, vehicleHasDamage && styles.conditionPillTextActive]}>
+                          {t('yes')}
+                        </Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        style={[styles.conditionPill, !vehicleHasDamage && styles.conditionPillActive]}
+                        onPress={() => setVehicleHasDamage(false)}
+                        activeOpacity={0.8}
+                      >
+                        <Text style={[styles.conditionPillText, !vehicleHasDamage && styles.conditionPillTextActive]}>
+                          {t('no')}
+                        </Text>
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                </View>
               </View>
             )}
+
+
 
             {/* Quick Templates */}
             <View style={[styles.fieldContainer, isSmallScreen && styles.fieldContainerCompact]}>
@@ -2145,5 +2222,73 @@ const styles = StyleSheet.create({
   menuItemTextSelected: {
     color: colors.success,
     fontWeight: '600',
+  },
+  vehicleConditionCard: {
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    borderRadius: 16,
+    backgroundColor: '#FFFFFF',
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 4,
+    elevation: 2,
+    marginTop: spacing.xs,
+  },
+  vehicleConditionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: spacing.md,
+    gap: spacing.sm,
+  },
+  vehicleConditionTextWrap: {
+    flex: 1,
+  },
+  vehicleConditionQuestion: {
+    fontSize: fontSize.md,
+    fontWeight: '600',
+    color: '#111827',
+  },
+  vehicleConditionHint: {
+    fontSize: fontSize.sm,
+    color: '#6B7280',
+    marginTop: 2,
+  },
+  vehicleConditionToggleRow: {
+    flexDirection: 'row',
+    gap: spacing.xs,
+  },
+  vehicleConditionDivider: {
+    height: 1,
+    backgroundColor: '#F3F4F6',
+    marginHorizontal: spacing.md,
+  },
+  conditionPill: {
+    borderWidth: 1.5,
+    borderColor: '#E5E7EB',
+    borderRadius: borderRadius.full,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+    backgroundColor: '#F9FAFB',
+    minWidth: 48,
+    alignItems: 'center',
+  },
+  conditionPillActive: {
+    borderColor: colors.primary,
+    backgroundColor: colors.primaryLight,
+  },
+  conditionPillActiveNo: {
+    borderColor: '#EF4444',
+    backgroundColor: '#FEF2F2',
+  },
+  conditionPillText: {
+    fontSize: fontSize.sm,
+    fontWeight: '600',
+    color: '#6B7280',
+  },
+  conditionPillTextActive: {
+    color: '#111827',
   },
 });

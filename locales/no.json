@@ -693,5 +693,11 @@
   "priceRangeEstimateMeta": "Basert på {{cargoType}} og rute på {{distanceKm}} km",
   "priceRangeEstimatePending": "Velg lasttype og begge adresser for å se estimert intervall.",
   "vehicleCondition": "Kjøretøyets tilstand",
-  "isDriveableRadioText": "Bilen er kjørbar / kan rulles"
+  "isDriveableRadioText": "Bilen er kjørbar / kan rulles",
+  "vehicleIsDriveable": "Bilen kan rulles",
+  "vehicleIsDriveableHint": "Kan kjøres eller skubbes på plass uten kran",
+  "vehicleStarts": "Bilen starter",
+  "vehicleStartsHint": "Motoren starter og kjøretøyet er drivbart",
+  "vehicleHasDamage": "Synlige skader",
+  "vehicleHasDamageHint": "Riper, bulker eller andre skader på karosseriet"
 }

@@ -2,8 +2,10 @@ import React, { useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
+  ScrollView,
   StyleSheet,
   Text,
+  TouchableOpacity,
   useWindowDimensions,
   View,
 } from 'react-native';
@@ -337,6 +339,33 @@ export default function HomeScreen() {
           selectedCargoType={selectedCargoType}
           onReset={handleResetFilters}
         />
+
+        {/* Quick Cargo Type Filter Chips */}
+        {activeTab === 'all' && (
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.quickFilterRow}
+            style={styles.quickFilterScroll}
+          >
+            {(['', ...cargoTypes] as string[]).map(type => {
+              const isActive = selectedCargoType === type;
+              const label = type === '' ? t('all') : t(type);
+              return (
+                <TouchableOpacity
+                  key={type || 'all'}
+                  style={[styles.quickFilterChip, isActive && styles.quickFilterChipActive]}
+                  onPress={() => setSelectedCargoType(type)}
+                  activeOpacity={0.8}
+                >
+                  <Text style={[styles.quickFilterChipText, isActive && styles.quickFilterChipTextActive]}>
+                    {label}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </ScrollView>
+        )}
       </View>
 
       {/* Requests List */}
@@ -460,5 +489,36 @@ const createStyles = (colors: ReturnType<typeof useAppThemeStyles>['colors']) =>
     footerLoaderText: {
       fontSize: fontSize.sm,
       color: colors.text.secondary,
+    },
+    quickFilterScroll: {
+      marginTop: spacing.sm,
+      marginHorizontal: -spacing.lg,
+    },
+    quickFilterRow: {
+      flexDirection: 'row',
+      gap: spacing.xs,
+      paddingHorizontal: spacing.lg,
+      paddingBottom: spacing.xs,
+    },
+    quickFilterChip: {
+      borderWidth: 1.5,
+      borderColor: colors.border.default,
+      borderRadius: 20,
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.xs,
+      backgroundColor: colors.white,
+    },
+    quickFilterChipActive: {
+      borderColor: colors.primary,
+      backgroundColor: colors.primaryLight,
+    },
+    quickFilterChipText: {
+      fontSize: fontSize.sm,
+      fontWeight: '500' as const,
+      color: colors.text.secondary,
+    },
+    quickFilterChipTextActive: {
+      color: colors.primary,
+      fontWeight: '700' as const,
     },
   });

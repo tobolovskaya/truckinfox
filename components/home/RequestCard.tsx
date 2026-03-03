@@ -152,6 +152,12 @@ export const RequestCard: React.FC<RequestCardProps> = ({
 
       <View style={styles.footerRow}>
         <Text style={styles.metaText}>{dateText}</Text>
+        {typeof request.distance === 'number' && request.distance > 0 && (
+          <View style={styles.distanceBadge}>
+            <Ionicons name="navigate-outline" size={12} color={colors.primary} />
+            <Text style={styles.distanceBadgeText}>{Math.round(request.distance)} km</Text>
+          </View>
+        )}
         {showFavorite && onToggleFavorite && (
           <TouchableOpacity
             onPress={() => onToggleFavorite(request.id)}
@@ -278,5 +284,19 @@ const styles = StyleSheet.create({
     fontSize: fontSize.sm,
     color: colors.text.secondary,
     flexShrink: 1,
+  },
+  distanceBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    backgroundColor: colors.primaryLight,
+    borderRadius: borderRadius.full,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 3,
+  },
+  distanceBadgeText: {
+    fontSize: fontSize.xs,
+    fontWeight: fontWeight.semibold,
+    color: colors.primary,
   },
 });
