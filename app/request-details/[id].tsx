@@ -398,15 +398,15 @@ export default function RequestDetailsScreen() {
     }
     const conditionFromMeta = parseAutomotiveMeta(request.automotive_meta || null);
     const detailsFromMeta = parseAutomotiveMetaDetails(request.automotive_meta || null);
+    const parsedLegacy = parseAutomotiveDescription(request.description);
     if (conditionFromMeta) {
       return {
-        cleanDescription: request.description || '',
+        cleanDescription: parsedLegacy.cleanDescription,
         condition: conditionFromMeta,
         details: detailsFromMeta,
       };
     }
 
-    const parsedLegacy = parseAutomotiveDescription(request.description);
     return {
       ...parsedLegacy,
       details: detailsFromMeta,
