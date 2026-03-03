@@ -97,8 +97,8 @@ export default function HomeScreen() {
       countryCode: currentUser?.country_code,
     });
 
-  const horizontalPadding = width < 360 ? spacing.md : spacing.lg;
-  const gridGap = width < 360 ? spacing.sm : spacing.md;
+  const horizontalPadding = width < 360 ? spacing.sm : spacing.md;
+  const gridGap = width < 360 ? spacing.xs : spacing.sm;
   const isSingleColumnLayout =
     !REQUEST_CARD_FORCE_TWO_COLUMNS && width < REQUEST_CARD_SINGLE_COLUMN_BREAKPOINT;
   const cardWidth = isSingleColumnLayout
@@ -452,7 +452,7 @@ const createStyles = (colors: ReturnType<typeof useAppThemeStyles>['colors']) =>
     },
     stickyControls: {
       backgroundColor: colors.white,
-      paddingBottom: spacing.sm,
+      paddingBottom: spacing.xs,
       borderBottomWidth: 1,
       borderBottomColor: colors.border.light,
     },

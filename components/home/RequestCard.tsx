@@ -277,16 +277,16 @@ const styles = StyleSheet.create({
     fontWeight: fontWeight.bold,
   },
   contentWrap: {
-    paddingHorizontal: spacing.md,
+    paddingHorizontal: spacing.sm,
     paddingVertical: spacing.sm,
     gap: spacing.xs,
   },
   contentWrapCompact: {
-    paddingHorizontal: spacing.md,
+    paddingHorizontal: spacing.sm,
     paddingTop: spacing.sm,
-    paddingBottom: spacing.sm,
+    paddingBottom: 0,
     gap: spacing.xxxs,
-    minHeight: 134,
+    minHeight: 120,
   },
   title: {
     fontSize: fontSize.lg,

@@ -56,7 +56,7 @@ const styles = StyleSheet.create({
   searchRow: {
     flexDirection: 'row',
     gap: spacing.sm,
-    marginBottom: spacing.md,
+    marginBottom: spacing.sm,
     alignItems: 'center',
   },
   searchInputWrap: {
@@ -64,9 +64,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     minHeight: TOUCH_TARGET.MIN,
-    gap: spacing.sm,
+    gap: spacing.xs,
     paddingHorizontal: spacing.md,
-    paddingVertical: spacing.md,
+    paddingVertical: spacing.sm,
     backgroundColor: colors.background,
     borderRadius: 8,
     borderWidth: 1,
@@ -81,8 +81,8 @@ const styles = StyleSheet.create({
   filterButton: {
     minWidth: TOUCH_TARGET.MIN,
     minHeight: TOUCH_TARGET.MIN,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.sm,
     backgroundColor: colors.background,
     borderRadius: 8,
     borderWidth: 1,
