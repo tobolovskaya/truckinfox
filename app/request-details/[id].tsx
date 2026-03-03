@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import {
   ActivityIndicator,
+  Animated,
   Alert,
   Dimensions,
   Image,
@@ -224,6 +225,7 @@ export default function RequestDetailsScreen() {
 
   const flatListRef = useRef(null);
   const mapRef = useRef<MapView | null>(null);
+  const vehicleConditionFadeAnim = useRef(new Animated.Value(0)).current;
   const language = i18n?.language || 'en';
   const locale = language.startsWith('no') ? 'nb-NO' : 'en-US';
 
@@ -286,6 +288,62 @@ export default function RequestDetailsScreen() {
 
     return parseAutomotiveDescription(request.description);
   }, [request?.cargo_type, request?.description]);
+
+  const hasAutomotiveCondition = Boolean(automotiveDetails.condition);
+
+  useEffect(() => {
+    if (!hasAutomotiveCondition) {
+      vehicleConditionFadeAnim.setValue(0);
+      return;
+    }
+
+    vehicleConditionFadeAnim.setValue(0);
+    Animated.timing(vehicleConditionFadeAnim, {
+      toValue: 1,
+      duration: 220,
+      useNativeDriver: true,
+    }).start();
+  }, [hasAutomotiveCondition, vehicleConditionFadeAnim]);
+
+  const renderVehicleConditionBadge = (
+    value: boolean | null,
+    options?: { invertForDisplay?: boolean }
+  ) => {
+    const displayPositive = value === null ? null : options?.invertForDisplay ? !value : value;
+
+    const badgeStyle =
+      value === null
+        ? styles.vehicleConditionValueUnknown
+        : displayPositive
+          ? styles.vehicleConditionValueYes
+          : styles.vehicleConditionValueNo;
+
+    const textStyle =
+      value === null
+        ? styles.vehicleConditionValueTextUnknown
+        : displayPositive
+          ? styles.vehicleConditionValueTextYes
+          : styles.vehicleConditionValueTextNo;
+
+    const iconName: React.ComponentProps<typeof Ionicons>['name'] =
+      value === null ? 'remove-circle-outline' : displayPositive ? 'checkmark-circle' : 'close-circle';
+
+    const iconColor =
+      value === null
+        ? colors.text.secondary
+        : displayPositive
+          ? colors.status.success
+          : colors.status.error;
+
+    const label = value === null ? '-' : value ? t('yes') : t('no');
+
+    return (
+      <View style={[styles.vehicleConditionValue, badgeStyle]}>
+        <Ionicons name={iconName} size={14} color={iconColor} style={styles.vehicleConditionValueIcon} />
+        <Text style={[styles.vehicleConditionValueText, textStyle]}>{label}</Text>
+      </View>
+    );
+  };
 
   useEffect(() => {
     fetchRequest();
@@ -1004,66 +1062,25 @@ export default function RequestDetailsScreen() {
               </Text>
             </View>
             {automotiveDetails.condition && (
-              <View style={styles.vehicleConditionCardDetails}>
+              <Animated.View
+                style={[styles.vehicleConditionCardDetails, { opacity: vehicleConditionFadeAnim }]}
+              >
                 <Text style={styles.vehicleConditionTitle}>{t('vehicleCondition')}</Text>
                 <View style={styles.vehicleConditionRowDetails}>
                   <Text style={styles.vehicleConditionLabel}>{t('vehicleIsDriveable')}</Text>
-                  <Text
-                    style={[
-                      styles.vehicleConditionValue,
-                      automotiveDetails.condition.isDriveable === null
-                        ? styles.vehicleConditionValueUnknown
-                        : automotiveDetails.condition.isDriveable
-                          ? styles.vehicleConditionValueYes
-                          : styles.vehicleConditionValueNo,
-                    ]}
-                  >
-                    {automotiveDetails.condition.isDriveable === null
-                      ? '-'
-                      : automotiveDetails.condition.isDriveable
-                        ? t('yes')
-                        : t('no')}
-                  </Text>
+                  {renderVehicleConditionBadge(automotiveDetails.condition.isDriveable)}
                 </View>
                 <View style={styles.vehicleConditionRowDetails}>
                   <Text style={styles.vehicleConditionLabel}>{t('vehicleStarts')}</Text>
-                  <Text
-                    style={[
-                      styles.vehicleConditionValue,
-                      automotiveDetails.condition.starts === null
-                        ? styles.vehicleConditionValueUnknown
-                        : automotiveDetails.condition.starts
-                          ? styles.vehicleConditionValueYes
-                          : styles.vehicleConditionValueNo,
-                    ]}
-                  >
-                    {automotiveDetails.condition.starts === null
-                      ? '-'
-                      : automotiveDetails.condition.starts
-                        ? t('yes')
-                        : t('no')}
-                  </Text>
+                  {renderVehicleConditionBadge(automotiveDetails.condition.starts)}
                 </View>
                 <View style={styles.vehicleConditionRowDetails}>
                   <Text style={styles.vehicleConditionLabel}>{t('vehicleHasDamage')}</Text>
-                  <Text
-                    style={[
-                      styles.vehicleConditionValue,
-                      automotiveDetails.condition.hasDamage === null
-                        ? styles.vehicleConditionValueUnknown
-                        : automotiveDetails.condition.hasDamage
-                          ? styles.vehicleConditionValueNo
-                          : styles.vehicleConditionValueYes,
-                    ]}
-                  >
-                    {automotiveDetails.condition.hasDamage === null
-                      ? '-'
-                      : automotiveDetails.condition.hasDamage
-                        ? t('yes')
-                        : t('no')}
-                  </Text>
+                  {renderVehicleConditionBadge(automotiveDetails.condition.hasDamage, {
+                    invertForDisplay: true,
+                  })}
                 </View>
-              </View>
+              </Animated.View>
             )}
             <Text style={styles.description}>{automotiveDetails.cleanDescription || request?.description}</Text>
 
@@ -1707,25 +1724,38 @@ const styles = StyleSheet.create({
     marginRight: spacing.sm,
   },
   vehicleConditionValue: {
-    fontSize: fontSize.sm,
-    fontWeight: '600',
-    color: colors.text.primary,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xxxs,
     paddingHorizontal: spacing.sm,
     paddingVertical: spacing.xxxs,
     borderRadius: borderRadius.full,
     overflow: 'hidden',
   },
   vehicleConditionValueYes: {
-    color: colors.status.success,
     backgroundColor: colors.status.successBackground,
   },
   vehicleConditionValueNo: {
-    color: colors.status.error,
     backgroundColor: colors.status.errorBackground,
   },
   vehicleConditionValueUnknown: {
-    color: colors.text.secondary,
     backgroundColor: colors.badge.background,
+  },
+  vehicleConditionValueIcon: {
+    color: colors.text.secondary,
+  },
+  vehicleConditionValueText: {
+    fontSize: fontSize.sm,
+    fontWeight: '600',
+  },
+  vehicleConditionValueTextYes: {
+    color: colors.status.success,
+  },
+  vehicleConditionValueTextNo: {
+    color: colors.status.error,
+  },
+  vehicleConditionValueTextUnknown: {
+    color: colors.text.secondary,
   },
   sectionTitle: {
     fontSize: fontSize.lg,
