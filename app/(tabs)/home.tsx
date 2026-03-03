@@ -2,10 +2,8 @@ import React, { useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
-  ScrollView,
   StyleSheet,
   Text,
-  TouchableOpacity,
   useWindowDimensions,
   View,
 } from 'react-native';
@@ -333,40 +331,8 @@ export default function HomeScreen() {
           onFilterPress={() => setIsFilterSheetVisible(true)}
         />
 
-        {/* Active Filters Display */}
-        <HomeActiveFilters
-          sortBy={sortBy}
-          selectedCargoType={selectedCargoType}
-          onReset={handleResetFilters}
-        />
-
-        {/* Quick Cargo Type Filter Chips */}
-        {activeTab === 'all' && (
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.quickFilterRow}
-            style={styles.quickFilterScroll}
-          >
-            {(['', ...cargoTypes] as string[]).map(type => {
-              const isActive = selectedCargoType === type;
-              const label = type === '' ? t('all') : t(type);
-              return (
-                <TouchableOpacity
-                  key={type || 'all'}
-                  style={[styles.quickFilterChip, isActive && styles.quickFilterChipActive]}
-                  onPress={() => setSelectedCargoType(type)}
-                  activeOpacity={0.8}
-                >
-                  <Text style={[styles.quickFilterChipText, isActive && styles.quickFilterChipTextActive]}>
-                    {label}
-                  </Text>
-                </TouchableOpacity>
-              );
-            })}
-          </ScrollView>
-        )}
       </View>
+
 
       {/* Requests List */}
       <FlatList
