@@ -23,7 +23,7 @@ import { HomeActiveFilters } from '../../components/home/HomeActiveFilters';
 import { EmptyState } from '../../components/EmptyState';
 import { IOSRefreshControl } from '../../components/IOSRefreshControl';
 import { Onboarding } from '../../components/Onboarding';
-import EmptyCargoIllustration from '../../assets/empty-cargo.svg';
+import EmptyHomeIllustration from '../../assets/empty-home.svg';
 import { useTranslation } from 'react-i18next';
 import { useUnreadCount } from '../../hooks/useNotifications';
 import { useDebounce } from '../../hooks/useDebounce';
@@ -377,7 +377,7 @@ export default function HomeScreen() {
                 t('createFirstCargoRequest') ||
                 'Create your first request'
               }
-              illustration={EmptyCargoIllustration}
+              illustration={EmptyHomeIllustration}
               actions={[
                 {
                   label: t('createRequest') || 'Create request',

@@ -1,0 +1,20 @@
+<svg width="320" height="240" viewBox="0 0 320 240" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="320" height="240" rx="24" fill="#F5F7FA"/>
+  <ellipse cx="160" cy="196" rx="94" ry="12" fill="#E6EBF2"/>
+
+  <rect x="84" y="62" width="152" height="112" rx="16" fill="#FFFFFF" stroke="#D7DEE8" stroke-width="4"/>
+  <rect x="106" y="84" width="108" height="14" rx="7" fill="#EEF2F7"/>
+  <rect x="106" y="108" width="82" height="11" rx="5.5" fill="#F4F6FA"/>
+  <rect x="106" y="126" width="96" height="11" rx="5.5" fill="#F4F6FA"/>
+
+  <path d="M236 114L268 96V166C268 176.837 259.837 186 249.5 186H236V114Z" fill="#FF8A65"/>
+  <rect x="236" y="124" width="24" height="22" fill="#FFF2ED"/>
+
+  <circle cx="110" cy="186" r="14" fill="#2C3E50"/>
+  <circle cx="224" cy="186" r="14" fill="#2C3E50"/>
+  <circle cx="110" cy="186" r="6" fill="#BFC9D8"/>
+  <circle cx="224" cy="186" r="6" fill="#BFC9D8"/>
+
+  <circle cx="72" cy="94" r="20" fill="#4CAF50"/>
+  <path d="M62 94L70 102L84 88" stroke="white" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

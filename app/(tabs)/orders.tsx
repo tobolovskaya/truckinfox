@@ -15,7 +15,7 @@ import { spacing, fontSize, fontWeight, useAppThemeStyles } from '../../lib/shar
 import { LinearGradient } from 'expo-linear-gradient';
 import { ScreenHeader } from '../../components/ScreenHeader';
 import { EmptyState } from '../../components/EmptyState';
-import EmptyCargoIllustration from '../../assets/empty-cargo.svg';
+import EmptyOrdersIllustration from '../../assets/empty-orders.svg';
 import { useUnreadCount } from '../../hooks/useNotifications';
 
 interface Order {
@@ -300,7 +300,7 @@ export default function OrdersScreen() {
           icon="list-outline"
           title={t('noOrdersFound') || 'No orders yet'}
           description={t('createRequestToSeeOrders') || 'Create a request to start getting orders'}
-          illustration={EmptyCargoIllustration}
+          illustration={EmptyOrdersIllustration}
           actions={[
             {
               label: t('createRequest') || t('createCargoRequest') || 'Create request',
