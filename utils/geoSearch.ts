@@ -190,24 +190,62 @@ export async function findCargoAlongRoute(
   countryCode?: string
 ): Promise<CargoRequestResult[]> {
   try {
-    // Search near route start
-    const nearStartPromise = findNearbyCargoRequests(
-      fromLat,
-      fromLng,
-      radiusInKm,
-      'from',
-      countryCode
-    );
+    const totalDistanceKm = calculateGeoDistance(fromLat, fromLng, toLat, toLng);
 
-    // Search near route end
-    const nearEndPromise = findNearbyCargoRequests(toLat, toLng, radiusInKm, 'to', countryCode);
+    const segments = Math.min(7, Math.max(2, Math.ceil(totalDistanceKm / 150)));
 
-    const [nearStart, nearEnd] = await Promise.all([nearStartPromise, nearEndPromise]);
+    const routePoints = Array.from({ length: segments + 1 }, (_, index) => {
+      const ratio = index / segments;
+      return {
+        lat: fromLat + (toLat - fromLat) * ratio,
+        lng: fromLng + (toLng - fromLng) * ratio,
+      };
+    });
 
-    // Combine and deduplicate results
-    const combined = [...nearStart, ...nearEnd];
-    const unique = combined.filter(
-      (doc, index, self) => index === self.findIndex(d => d.id === doc.id)
+    const searchPromises = routePoints.flatMap(point => [
+      findNearbyCargoRequests(point.lat, point.lng, radiusInKm, 'from', countryCode),
+      findNearbyCargoRequests(point.lat, point.lng, radiusInKm, 'to', countryCode),
+    ]);
+
+    const searchResults = await Promise.all(searchPromises);
+    const combined = searchResults.flat();
+
+    const byId = new Map<string, CargoRequestResult & { distance_to_route_km?: number }>();
+
+    for (const item of combined) {
+      const distanceValue =
+        typeof item.distance_to_search_center === 'number'
+          ? item.distance_to_search_center
+          : Number.POSITIVE_INFINITY;
+
+      const existing = byId.get(item.id);
+      if (!existing) {
+        byId.set(item.id, {
+          ...item,
+          distance_to_route_km: Number.isFinite(distanceValue) ? distanceValue : undefined,
+        });
+        continue;
+      }
+
+      const existingDistance =
+        typeof existing.distance_to_route_km === 'number'
+          ? existing.distance_to_route_km
+          : Number.POSITIVE_INFINITY;
+
+      if (distanceValue < existingDistance) {
+        byId.set(item.id, {
+          ...existing,
+          ...item,
+          distance_to_route_km: distanceValue,
+        });
+      }
+    }
+
+    const unique = Array.from(byId.values());
+    unique.sort(
+      (a, b) =>
+        (a.distance_to_route_km ?? Number.POSITIVE_INFINITY) -
+        (b.distance_to_route_km ?? Number.POSITIVE_INFINITY)
     );
 
     return unique;
