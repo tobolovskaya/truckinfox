@@ -87,6 +87,9 @@ interface Bid {
     rating: number;
     phone: string;
     avatar_url?: string;
+    completed_transports?: number;
+    on_time_rate?: number | null;
+    review_count?: number;
   };
 }
 
@@ -100,7 +103,22 @@ type AutomotiveMeta = {
   driveable?: unknown;
   starts?: unknown;
   damage?: unknown;
+  vin?: unknown;
+  has_keys?: unknown;
+  wheel_lock?: unknown;
+  ground_clearance_cm?: unknown;
+  needs_winch?: unknown;
+  transport_type?: unknown;
 } | null;
+
+type AutomotiveMetaDetails = {
+  vin?: string;
+  hasKeys?: boolean;
+  hasWheelLock?: boolean;
+  groundClearanceCm?: number;
+  needsWinch?: boolean;
+  transportType?: 'open' | 'enclosed';
+};
 
 const parseBooleanToken = (value: string): boolean | null => {
   const normalized = value.trim().toLowerCase();
@@ -142,6 +160,56 @@ const parseAutomotiveMeta = (value: AutomotiveMeta): AutomotiveCondition | null 
     parsed.isDriveable !== null || parsed.starts !== null || parsed.hasDamage !== null;
 
   return hasAnyCondition ? parsed : null;
+};
+
+const parseAutomotiveMetaDetails = (value: AutomotiveMeta): AutomotiveMetaDetails | null => {
+  if (!value || typeof value !== 'object') {
+    return null;
+  }
+
+  const meta = value as {
+    vin?: unknown;
+    has_keys?: unknown;
+    wheel_lock?: unknown;
+    ground_clearance_cm?: unknown;
+    needs_winch?: unknown;
+    transport_type?: unknown;
+  };
+
+  const readBoolean = (input: unknown): boolean | undefined => {
+    if (typeof input === 'boolean') {
+      return input;
+    }
+    if (typeof input === 'string') {
+      const parsed = parseBooleanToken(input);
+      return parsed === null ? undefined : parsed;
+    }
+    if (typeof input === 'number') {
+      if (input === 1) return true;
+      if (input === 0) return false;
+    }
+    return undefined;
+  };
+
+  const clearanceRaw = meta.ground_clearance_cm;
+  const clearance =
+    typeof clearanceRaw === 'number'
+      ? clearanceRaw
+      : typeof clearanceRaw === 'string'
+        ? Number(clearanceRaw)
+        : NaN;
+
+  const parsed: AutomotiveMetaDetails = {
+    vin: typeof meta.vin === 'string' && meta.vin.trim().length > 0 ? meta.vin.trim() : undefined,
+    hasKeys: readBoolean(meta.has_keys),
+    hasWheelLock: readBoolean(meta.wheel_lock),
+    groundClearanceCm: Number.isFinite(clearance) ? clearance : undefined,
+    needsWinch: readBoolean(meta.needs_winch),
+    transportType: meta.transport_type === 'enclosed' ? 'enclosed' : meta.transport_type === 'open' ? 'open' : undefined,
+  };
+
+  const hasAnyValue = Object.values(parsed).some(value => value !== undefined);
+  return hasAnyValue ? parsed : null;
 };
 
 const parseAutomotiveDescription = (description: string | null | undefined) => {
@@ -325,20 +393,48 @@ export default function RequestDetailsScreen() {
       return {
         cleanDescription: request?.description || '',
         condition: null as AutomotiveCondition | null,
+        details: null as AutomotiveMetaDetails | null,
       };
     }
     const conditionFromMeta = parseAutomotiveMeta(request.automotive_meta || null);
+    const detailsFromMeta = parseAutomotiveMetaDetails(request.automotive_meta || null);
     if (conditionFromMeta) {
       return {
         cleanDescription: request.description || '',
         condition: conditionFromMeta,
+        details: detailsFromMeta,
       };
     }
 
-    return parseAutomotiveDescription(request.description);
+    const parsedLegacy = parseAutomotiveDescription(request.description);
+    return {
+      ...parsedLegacy,
+      details: detailsFromMeta,
+    };
   }, [request?.automotive_meta, request?.cargo_type, request?.description]);
 
   const hasAutomotiveCondition = Boolean(automotiveDetails.condition);
+  const hasAutomotiveMetaDetails = Boolean(automotiveDetails.details);
+  const shouldShowDeliveryChecklist =
+    request?.user_id === user?.uid &&
+    ['accepted', 'in_transit', 'delivered', 'completed'].includes(normalizedRequestStatus);
+  const deliveryChecklist = [
+    {
+      key: 'pickup',
+      label: t('pickupConfirmed') || 'Pickup confirmed',
+      done: ['accepted', 'in_transit', 'delivered', 'completed'].includes(normalizedRequestStatus),
+    },
+    {
+      key: 'in_transit',
+      label: t('in_transit') || 'In transit',
+      done: ['in_transit', 'delivered', 'completed'].includes(normalizedRequestStatus),
+    },
+    {
+      key: 'delivered',
+      label: t('delivered') || 'Delivered',
+      done: ['delivered', 'completed'].includes(normalizedRequestStatus),
+    },
+  ];
 
   useEffect(() => {
     if (!hasAutomotiveCondition) {
@@ -392,6 +488,13 @@ export default function RequestDetailsScreen() {
         <Text style={[styles.vehicleConditionValueText, textStyle]}>{label}</Text>
       </View>
     );
+  };
+
+  const renderBooleanText = (value?: boolean) => {
+    if (typeof value !== 'boolean') {
+      return '-';
+    }
+    return value ? t('yes') : t('no');
   };
 
   useEffect(() => {
@@ -495,6 +598,42 @@ export default function RequestDetailsScreen() {
           }>,
         };
 
+      let completedByCarrier = new Map<string, number>();
+      let reviewsByCarrier = new Map<string, number>();
+
+      if (carrierIds.length) {
+        const { data: completedRows } = await supabase
+          .from('orders')
+          .select('carrier_id')
+          .in('carrier_id', carrierIds)
+          .eq('status', 'delivered');
+
+        if (completedRows?.length) {
+          completedByCarrier = completedRows.reduce((acc, row) => {
+            if (!row.carrier_id) {
+              return acc;
+            }
+            acc.set(row.carrier_id, (acc.get(row.carrier_id) || 0) + 1);
+            return acc;
+          }, new Map<string, number>());
+        }
+
+        const { data: reviewsRows } = await supabase
+          .from('reviews')
+          .select('reviewed_id')
+          .in('reviewed_id', carrierIds);
+
+        if (reviewsRows?.length) {
+          reviewsByCarrier = reviewsRows.reduce((acc, row) => {
+            if (!row.reviewed_id) {
+              return acc;
+            }
+            acc.set(row.reviewed_id, (acc.get(row.reviewed_id) || 0) + 1);
+            return acc;
+          }, new Map<string, number>());
+        }
+      }
+
       const carrierById = new Map((carriersData || []).map(carrier => [carrier.id, carrier]));
 
       const bidsData = (bidsRows || []).map(row => ({
@@ -514,6 +653,9 @@ export default function RequestDetailsScreen() {
                 rating: Number(carrier.rating || 0),
                 phone: carrier.phone || '',
                 avatar_url: carrier.avatar_url || undefined,
+                completed_transports: completedByCarrier.get(row.carrier_id) || 0,
+                review_count: reviewsByCarrier.get(row.carrier_id) || 0,
+                on_time_rate: null,
               }
               : undefined;
           })()
@@ -1046,7 +1188,7 @@ export default function RequestDetailsScreen() {
   };
 
   const isCustomer = request?.user_id === user?.uid;
-  const canSubmitBid = !isCustomer && ['active', 'open'].includes(normalizedRequestStatus);
+  const canSubmitBid = !isCustomer && ['open', 'bidding'].includes(normalizedRequestStatus);
   const hasBidFromUser = bids.some(bid => bid.carrier_id === user?.uid);
 
   const renderItem = ({ item }: { item: string; index: number }) => {
@@ -1130,6 +1272,57 @@ export default function RequestDetailsScreen() {
                   })}
                 </View>
               </Animated.View>
+            )}
+            {hasAutomotiveMetaDetails && (
+              <View style={styles.vehicleMetaCard}>
+                <Text style={styles.vehicleConditionTitle}>Vehicle details</Text>
+
+                <View style={styles.vehicleConditionRowDetails}>
+                  <Text style={styles.vehicleConditionLabel}>Transport type</Text>
+                  <Text style={styles.vehicleMetaValue}>
+                    {automotiveDetails.details?.transportType === 'enclosed'
+                      ? 'Enclosed trailer'
+                      : automotiveDetails.details?.transportType === 'open'
+                        ? 'Open trailer'
+                        : '-'}
+                  </Text>
+                </View>
+
+                <View style={styles.vehicleConditionRowDetails}>
+                  <Text style={styles.vehicleConditionLabel}>VIN</Text>
+                  <Text style={styles.vehicleMetaValue}>{automotiveDetails.details?.vin || '-'}</Text>
+                </View>
+
+                <View style={styles.vehicleConditionRowDetails}>
+                  <Text style={styles.vehicleConditionLabel}>Has keys</Text>
+                  <Text style={styles.vehicleMetaValue}>
+                    {renderBooleanText(automotiveDetails.details?.hasKeys)}
+                  </Text>
+                </View>
+
+                <View style={styles.vehicleConditionRowDetails}>
+                  <Text style={styles.vehicleConditionLabel}>Wheel lock</Text>
+                  <Text style={styles.vehicleMetaValue}>
+                    {renderBooleanText(automotiveDetails.details?.hasWheelLock)}
+                  </Text>
+                </View>
+
+                <View style={styles.vehicleConditionRowDetails}>
+                  <Text style={styles.vehicleConditionLabel}>Ground clearance</Text>
+                  <Text style={styles.vehicleMetaValue}>
+                    {typeof automotiveDetails.details?.groundClearanceCm === 'number'
+                      ? `${automotiveDetails.details.groundClearanceCm} cm`
+                      : '-'}
+                  </Text>
+                </View>
+
+                <View style={styles.vehicleConditionRowDetails}>
+                  <Text style={styles.vehicleConditionLabel}>Needs winch</Text>
+                  <Text style={styles.vehicleMetaValue}>
+                    {renderBooleanText(automotiveDetails.details?.needsWinch)}
+                  </Text>
+                </View>
+              </View>
             )}
             <Text style={styles.description}>{automotiveDetails.cleanDescription || request?.description}</Text>
 
@@ -1389,6 +1582,35 @@ export default function RequestDetailsScreen() {
           </View>
         );
 
+      case 'checklist':
+        if (!shouldShowDeliveryChecklist) return null;
+        return (
+          <View style={styles.section}>
+            <Text style={[styles.sectionTitle, styles.sectionTitleStrong]}>Delivery checklist</Text>
+            <View style={styles.checklistContainer}>
+              {deliveryChecklist.map(step => (
+                <View key={step.key} style={styles.checklistRow}>
+                  <View
+                    style={[
+                      styles.checklistDot,
+                      step.done ? styles.checklistDotDone : styles.checklistDotPending,
+                    ]}
+                  >
+                    <Ionicons
+                      name={step.done ? 'checkmark' : 'ellipse-outline'}
+                      size={12}
+                      color={step.done ? colors.white : colors.text.secondary}
+                    />
+                  </View>
+                  <Text style={[styles.checklistText, step.done && styles.checklistTextDone]}>
+                    {step.label}
+                  </Text>
+                </View>
+              ))}
+            </View>
+          </View>
+        );
+
       case 'bidForm':
         if (!canSubmitBid || hasBidFromUser) return null;
         return (
@@ -1456,6 +1678,27 @@ export default function RequestDetailsScreen() {
                 </View>
 
                 {bid.message && <Text style={styles.bidMessage}>{bid.message}</Text>}
+
+                <View style={styles.bidQualityRow}>
+                  <View style={styles.bidQualityChip}>
+                    <Ionicons name="car-outline" size={12} color={colors.text.secondary} />
+                    <Text style={styles.bidQualityText}>
+                      {bid.users?.completed_transports || 0} completed
+                    </Text>
+                  </View>
+                  <View style={styles.bidQualityChip}>
+                    <Ionicons name="chatbubble-ellipses-outline" size={12} color={colors.text.secondary} />
+                    <Text style={styles.bidQualityText}>{bid.users?.review_count || 0} reviews</Text>
+                  </View>
+                  <View style={styles.bidQualityChip}>
+                    <Ionicons name="time-outline" size={12} color={colors.text.secondary} />
+                    <Text style={styles.bidQualityText}>
+                      {typeof bid.users?.on_time_rate === 'number'
+                        ? `${Math.round(bid.users.on_time_rate)}% on-time`
+                        : 'On-time n/a'}
+                    </Text>
+                  </View>
+                </View>
 
                 <View style={styles.bidFooter}>
                   <View
@@ -1548,7 +1791,7 @@ export default function RequestDetailsScreen() {
     );
   }
 
-  const sections = ['images', 'info', 'route', 'customer', 'bidForm', 'bids'];
+  const sections = ['images', 'info', 'route', 'customer', 'checklist', 'bidForm', 'bids'];
 
   return (
     <View style={styles.container}>
@@ -1806,6 +2049,20 @@ const styles = StyleSheet.create({
   vehicleConditionValueTextUnknown: {
     color: colors.text.secondary,
   },
+  vehicleMetaCard: {
+    backgroundColor: colors.backgroundLight,
+    borderWidth: 1,
+    borderColor: colors.border.light,
+    borderRadius: borderRadius.md,
+    padding: spacing.md,
+    marginBottom: spacing.md,
+    gap: spacing.xs,
+  },
+  vehicleMetaValue: {
+    fontSize: fontSize.sm,
+    color: colors.text.primary,
+    fontWeight: '600',
+  },
   sectionTitle: {
     fontSize: fontSize.lg,
     fontWeight: '600',
@@ -2043,6 +2300,28 @@ const styles = StyleSheet.create({
     lineHeight: 20,
     marginBottom: spacing.sm,
   },
+  bidQualityRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.xs,
+    marginBottom: spacing.sm,
+  },
+  bidQualityChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xxxs,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    borderRadius: borderRadius.full,
+    backgroundColor: colors.white,
+    borderWidth: 1,
+    borderColor: colors.border.light,
+  },
+  bidQualityText: {
+    fontSize: fontSize.xs,
+    color: colors.text.secondary,
+    fontWeight: '500',
+  },
   bidFooter: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -2088,6 +2367,43 @@ const styles = StyleSheet.create({
     fontSize: fontSize.sm,
     fontWeight: '600',
     color: colors.white,
+  },
+  checklistContainer: {
+    backgroundColor: colors.backgroundLight,
+    borderRadius: borderRadius.md,
+    borderWidth: 1,
+    borderColor: colors.border.light,
+    padding: spacing.md,
+    gap: spacing.sm,
+  },
+  checklistRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  checklistDot: {
+    width: 22,
+    height: 22,
+    borderRadius: borderRadius.full,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  checklistDotDone: {
+    backgroundColor: colors.status.success,
+  },
+  checklistDotPending: {
+    backgroundColor: colors.badge.background,
+    borderWidth: 1,
+    borderColor: colors.border.light,
+  },
+  checklistText: {
+    fontSize: fontSize.sm,
+    color: colors.text.secondary,
+    fontWeight: '500',
+  },
+  checklistTextDone: {
+    color: colors.text.primary,
+    fontWeight: '600',
   },
   galleryModal: {
     flex: 1,

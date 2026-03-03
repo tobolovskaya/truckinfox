@@ -77,12 +77,24 @@ type AutomotiveMeta = {
   driveable?: unknown;
   starts?: unknown;
   damage?: unknown;
+  vin?: unknown;
+  has_keys?: unknown;
+  wheel_lock?: unknown;
+  ground_clearance_cm?: unknown;
+  needs_winch?: unknown;
+  transport_type?: unknown;
 } | null;
 
 type AutomotiveCondition = {
   isDriveable: boolean;
   starts: boolean;
   hasDamage: boolean;
+  vin: string;
+  hasKeys: boolean;
+  hasWheelLock: boolean;
+  groundClearanceCm: string;
+  needsWinch: boolean;
+  transportType: 'open' | 'enclosed';
 };
 
 const parseBooleanToken = (value: string): boolean | null => {
@@ -100,6 +112,12 @@ const parseAutomotivePayload = (
     isDriveable: true,
     starts: true,
     hasDamage: false,
+    vin: '',
+    hasKeys: true,
+    hasWheelLock: false,
+    groundClearanceCm: '',
+    needsWinch: false,
+    transportType: 'open',
   };
 
   if (automotiveMeta && typeof automotiveMeta === 'object') {
@@ -127,6 +145,21 @@ const parseAutomotivePayload = (
         isDriveable: readBoolean(automotiveMeta.driveable, defaultCondition.isDriveable),
         starts: readBoolean(automotiveMeta.starts, defaultCondition.starts),
         hasDamage: readBoolean(automotiveMeta.damage, defaultCondition.hasDamage),
+        vin:
+          typeof automotiveMeta.vin === 'string'
+            ? automotiveMeta.vin.trim().slice(0, 32)
+            : defaultCondition.vin,
+        hasKeys: readBoolean(automotiveMeta.has_keys, defaultCondition.hasKeys),
+        hasWheelLock: readBoolean(automotiveMeta.wheel_lock, defaultCondition.hasWheelLock),
+        groundClearanceCm:
+          typeof automotiveMeta.ground_clearance_cm === 'number'
+            ? String(Math.max(0, Math.round(automotiveMeta.ground_clearance_cm)))
+            : typeof automotiveMeta.ground_clearance_cm === 'string'
+              ? automotiveMeta.ground_clearance_cm
+              : defaultCondition.groundClearanceCm,
+        needsWinch: readBoolean(automotiveMeta.needs_winch, defaultCondition.needsWinch),
+        transportType:
+          automotiveMeta.transport_type === 'enclosed' ? 'enclosed' : defaultCondition.transportType,
       },
     };
   }
@@ -175,6 +208,12 @@ const parseAutomotivePayload = (
       isDriveable: parsedCondition.isDriveable ?? defaultCondition.isDriveable,
       starts: parsedCondition.starts ?? defaultCondition.starts,
       hasDamage: parsedCondition.hasDamage ?? defaultCondition.hasDamage,
+      vin: defaultCondition.vin,
+      hasKeys: defaultCondition.hasKeys,
+      hasWheelLock: defaultCondition.hasWheelLock,
+      groundClearanceCm: defaultCondition.groundClearanceCm,
+      needsWinch: defaultCondition.needsWinch,
+      transportType: defaultCondition.transportType,
     },
   };
 };
@@ -234,6 +273,12 @@ export default function EditRequestScreen() {
   const [isDriveable, setIsDriveable] = useState(true);
   const [vehicleStarts, setVehicleStarts] = useState(true);
   const [vehicleHasDamage, setVehicleHasDamage] = useState(false);
+  const [vehicleVin, setVehicleVin] = useState('');
+  const [vehicleHasKeys, setVehicleHasKeys] = useState(true);
+  const [vehicleHasWheelLock, setVehicleHasWheelLock] = useState(false);
+  const [vehicleGroundClearanceCm, setVehicleGroundClearanceCm] = useState('');
+  const [vehicleNeedsWinch, setVehicleNeedsWinch] = useState(false);
+  const [transportType, setTransportType] = useState<'open' | 'enclosed'>('open');
 
   const fromAddressTextRef = useRef('');
   const toAddressTextRef = useRef('');
@@ -583,6 +628,12 @@ export default function EditRequestScreen() {
         setIsDriveable(automotivePayload.condition.isDriveable);
         setVehicleStarts(automotivePayload.condition.starts);
         setVehicleHasDamage(automotivePayload.condition.hasDamage);
+        setVehicleVin(automotivePayload.condition.vin);
+        setVehicleHasKeys(automotivePayload.condition.hasKeys);
+        setVehicleHasWheelLock(automotivePayload.condition.hasWheelLock);
+        setVehicleGroundClearanceCm(automotivePayload.condition.groundClearanceCm);
+        setVehicleNeedsWinch(automotivePayload.condition.needsWinch);
+        setTransportType(automotivePayload.condition.transportType);
       }
 
       const normalizedImages = normalizeCargoImageInputs(requestData.images, requestData.image_url);
@@ -763,6 +814,14 @@ export default function EditRequestScreen() {
               driveable: isDriveable,
               starts: vehicleStarts,
               damage: vehicleHasDamage,
+              vin: sanitizeInput(vehicleVin.trim(), 32) || null,
+              has_keys: vehicleHasKeys,
+              wheel_lock: vehicleHasWheelLock,
+              ground_clearance_cm: vehicleGroundClearanceCm.trim()
+                ? sanitizeNumber(vehicleGroundClearanceCm, 0, 200)
+                : null,
+              needs_winch: vehicleNeedsWinch,
+              transport_type: transportType,
             }
             : null,
         updated_at: new Date().toISOString(),
@@ -1073,6 +1132,136 @@ export default function EditRequestScreen() {
                         <Text style={[styles.conditionPillText, !vehicleHasDamage && styles.conditionPillTextActive]}>
                           {t('no')}
                         </Text>
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+
+                  <View style={styles.vehicleConditionDivider} />
+
+                  <View style={styles.vehicleConditionRowStacked}>
+                    <Text style={styles.vehicleConditionQuestion}>Transport type</Text>
+                    <View style={styles.transportTypeRow}>
+                      <TouchableOpacity
+                        style={[styles.transportTypePill, transportType === 'open' && styles.conditionPillActive]}
+                        onPress={() => setTransportType('open')}
+                        accessibilityRole="button"
+                        accessibilityLabel="Open trailer"
+                      >
+                        <Text style={[styles.conditionPillText, transportType === 'open' && styles.conditionPillTextActive]}>Open trailer</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        style={[styles.transportTypePill, transportType === 'enclosed' && styles.conditionPillActive]}
+                        onPress={() => setTransportType('enclosed')}
+                        accessibilityRole="button"
+                        accessibilityLabel="Enclosed"
+                      >
+                        <Text style={[styles.conditionPillText, transportType === 'enclosed' && styles.conditionPillTextActive]}>Enclosed</Text>
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+
+                  <View style={styles.vehicleConditionDivider} />
+
+                  <View style={styles.vehicleConditionRowStacked}>
+                    <Text style={styles.vehicleConditionQuestion}>VIN (optional)</Text>
+                    <TextInput
+                      style={styles.vehicleMetaInput}
+                      value={vehicleVin}
+                      onChangeText={setVehicleVin}
+                      autoCapitalize="characters"
+                      placeholder="e.g. YV1TS..."
+                      placeholderTextColor="#9CA3AF"
+                    />
+                  </View>
+
+                  <View style={styles.vehicleConditionDivider} />
+
+                  <View style={styles.vehicleConditionRowStacked}>
+                    <Text style={styles.vehicleConditionQuestion}>Ground clearance (cm)</Text>
+                    <TextInput
+                      style={styles.vehicleMetaInput}
+                      value={vehicleGroundClearanceCm}
+                      onChangeText={setVehicleGroundClearanceCm}
+                      keyboardType="numeric"
+                      placeholder="e.g. 14"
+                      placeholderTextColor="#9CA3AF"
+                    />
+                  </View>
+
+                  <View style={styles.vehicleConditionDivider} />
+
+                  <View style={styles.vehicleConditionRow}>
+                    <View style={styles.vehicleConditionTextWrap}>
+                      <Text style={styles.vehicleConditionQuestion}>Keys included</Text>
+                    </View>
+                    <View style={styles.vehicleConditionToggleRow}>
+                      <TouchableOpacity
+                        style={[styles.conditionPill, vehicleHasKeys && styles.conditionPillActive]}
+                        onPress={() => setVehicleHasKeys(true)}
+                        accessibilityRole="button"
+                        accessibilityLabel={t('yes')}
+                      >
+                        <Text style={[styles.conditionPillText, vehicleHasKeys && styles.conditionPillTextActive]}>{t('yes')}</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        style={[styles.conditionPill, !vehicleHasKeys && styles.conditionPillActiveNo]}
+                        onPress={() => setVehicleHasKeys(false)}
+                        accessibilityRole="button"
+                        accessibilityLabel={t('no')}
+                      >
+                        <Text style={[styles.conditionPillText, !vehicleHasKeys && styles.conditionPillTextActive]}>{t('no')}</Text>
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+
+                  <View style={styles.vehicleConditionDivider} />
+
+                  <View style={styles.vehicleConditionRow}>
+                    <View style={styles.vehicleConditionTextWrap}>
+                      <Text style={styles.vehicleConditionQuestion}>Wheel lock</Text>
+                    </View>
+                    <View style={styles.vehicleConditionToggleRow}>
+                      <TouchableOpacity
+                        style={[styles.conditionPill, vehicleHasWheelLock && styles.conditionPillActiveNo]}
+                        onPress={() => setVehicleHasWheelLock(true)}
+                        accessibilityRole="button"
+                        accessibilityLabel={t('yes')}
+                      >
+                        <Text style={[styles.conditionPillText, vehicleHasWheelLock && styles.conditionPillTextActive]}>{t('yes')}</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        style={[styles.conditionPill, !vehicleHasWheelLock && styles.conditionPillActive]}
+                        onPress={() => setVehicleHasWheelLock(false)}
+                        accessibilityRole="button"
+                        accessibilityLabel={t('no')}
+                      >
+                        <Text style={[styles.conditionPillText, !vehicleHasWheelLock && styles.conditionPillTextActive]}>{t('no')}</Text>
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+
+                  <View style={styles.vehicleConditionDivider} />
+
+                  <View style={styles.vehicleConditionRow}>
+                    <View style={styles.vehicleConditionTextWrap}>
+                      <Text style={styles.vehicleConditionQuestion}>Needs winch</Text>
+                    </View>
+                    <View style={styles.vehicleConditionToggleRow}>
+                      <TouchableOpacity
+                        style={[styles.conditionPill, vehicleNeedsWinch && styles.conditionPillActiveNo]}
+                        onPress={() => setVehicleNeedsWinch(true)}
+                        accessibilityRole="button"
+                        accessibilityLabel={t('yes')}
+                      >
+                        <Text style={[styles.conditionPillText, vehicleNeedsWinch && styles.conditionPillTextActive]}>{t('yes')}</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        style={[styles.conditionPill, !vehicleNeedsWinch && styles.conditionPillActive]}
+                        onPress={() => setVehicleNeedsWinch(false)}
+                        accessibilityRole="button"
+                        accessibilityLabel={t('no')}
+                      >
+                        <Text style={[styles.conditionPillText, !vehicleNeedsWinch && styles.conditionPillTextActive]}>{t('no')}</Text>
                       </TouchableOpacity>
                     </View>
                   </View>
@@ -1790,6 +1979,34 @@ const styles = StyleSheet.create({
   vehicleConditionToggleRow: {
     flexDirection: 'row',
     gap: spacing.xs,
+  },
+  vehicleConditionRowStacked: {
+    padding: spacing.md,
+    gap: spacing.xs,
+  },
+  vehicleMetaInput: {
+    borderWidth: 1,
+    borderColor: colors.border.default,
+    borderRadius: borderRadius.md,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    fontSize: fontSize.md,
+    color: colors.text.primary,
+    backgroundColor: colors.white,
+  },
+  transportTypeRow: {
+    flexDirection: 'row',
+    gap: spacing.xs,
+  },
+  transportTypePill: {
+    flex: 1,
+    borderWidth: 1.5,
+    borderColor: '#E5E7EB',
+    borderRadius: borderRadius.full,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+    backgroundColor: '#F9FAFB',
+    alignItems: 'center',
   },
   vehicleConditionDivider: {
     height: 1,

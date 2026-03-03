@@ -142,6 +142,12 @@ export default function CreateRequestScreen() {
   const [isDriveable, setIsDriveable] = useState(true);
   const [vehicleStarts, setVehicleStarts] = useState(true);
   const [vehicleHasDamage, setVehicleHasDamage] = useState(false);
+  const [vehicleVin, setVehicleVin] = useState('');
+  const [vehicleHasKeys, setVehicleHasKeys] = useState(true);
+  const [vehicleHasWheelLock, setVehicleHasWheelLock] = useState(false);
+  const [vehicleGroundClearanceCm, setVehicleGroundClearanceCm] = useState('');
+  const [vehicleNeedsWinch, setVehicleNeedsWinch] = useState(false);
+  const [transportType, setTransportType] = useState<'open' | 'enclosed'>('open');
   const fromAddressTextRef = useRef('');
   const toAddressTextRef = useRef('');
   const hasShownNoImageReminderRef = useRef(false);
@@ -151,6 +157,10 @@ export default function CreateRequestScreen() {
     distanceKm: formData.distance_km,
     weightKg: formData.weight,
   });
+  const priceInputValue = Number(formData.price || 0);
+  const isPricePreviewAvailable = formData.price_type === 'fixed' && Number.isFinite(priceInputValue) && priceInputValue > 0;
+  const previewPlatformFee = isPricePreviewAvailable ? Math.round(priceInputValue * 0.1) : 0;
+  const previewTotalCustomerPrice = isPricePreviewAvailable ? priceInputValue + previewPlatformFee : 0;
   // Load draft on mount
   useEffect(() => {
     const loadDraft = async () => {
@@ -181,6 +191,15 @@ export default function CreateRequestScreen() {
                 : new Date(Date.now() + MS_PER_DAY),
             });
             setImages(parsed.images || []);
+            setIsDriveable(parsed.isDriveable ?? true);
+            setVehicleStarts(parsed.vehicleStarts ?? true);
+            setVehicleHasDamage(parsed.vehicleHasDamage ?? false);
+            setVehicleVin(parsed.vehicleVin || '');
+            setVehicleHasKeys(parsed.vehicleHasKeys ?? true);
+            setVehicleHasWheelLock(parsed.vehicleHasWheelLock ?? false);
+            setVehicleGroundClearanceCm(parsed.vehicleGroundClearanceCm || '');
+            setVehicleNeedsWinch(parsed.vehicleNeedsWinch ?? false);
+            setTransportType(parsed.transportType === 'enclosed' ? 'enclosed' : 'open');
           } else {
             await AsyncStorage.removeItem(DRAFT_KEY);
           }
@@ -199,6 +218,15 @@ export default function CreateRequestScreen() {
         const payload = {
           ...formData,
           images,
+          isDriveable,
+          vehicleStarts,
+          vehicleHasDamage,
+          vehicleVin,
+          vehicleHasKeys,
+          vehicleHasWheelLock,
+          vehicleGroundClearanceCm,
+          vehicleNeedsWinch,
+          transportType,
           pickup_date: formData.pickup_date?.toISOString?.() || new Date().toISOString(),
           delivery_date: formData.delivery_date?.toISOString?.() || new Date().toISOString(),
           savedAt: new Date().toISOString(),
@@ -212,7 +240,19 @@ export default function CreateRequestScreen() {
 
     const timeoutId = setTimeout(saveDraft, AUTOSAVE_DEBOUNCE_MS);
     return () => clearTimeout(timeoutId);
-  }, [formData, images]);
+  }, [
+    formData,
+    images,
+    isDriveable,
+    vehicleStarts,
+    vehicleHasDamage,
+    vehicleVin,
+    vehicleHasKeys,
+    vehicleHasWheelLock,
+    vehicleGroundClearanceCm,
+    vehicleNeedsWinch,
+    transportType,
+  ]);
 
   const buildAutoDescription = () => {
     const descriptionParts: string[] = [];
@@ -777,6 +817,12 @@ export default function CreateRequestScreen() {
               driveable: isDriveable,
               starts: vehicleStarts,
               damage: vehicleHasDamage,
+              vin: sanitizeInput(vehicleVin.trim(), 32) || null,
+              has_keys: vehicleHasKeys,
+              wheel_lock: vehicleHasWheelLock,
+              ground_clearance_cm: sanitizeNumber(vehicleGroundClearanceCm, 0, 200),
+              needs_winch: vehicleNeedsWinch,
+              transport_type: transportType,
             }
             : null,
       };
@@ -1205,6 +1251,133 @@ export default function CreateRequestScreen() {
                         <Text style={[styles.conditionPillText, !vehicleHasDamage && styles.conditionPillTextActive]}>
                           {t('no')}
                         </Text>
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+
+                  <View style={styles.vehicleConditionDivider} />
+
+                  <View style={styles.vehicleConditionRowStacked}>
+                    <Text style={styles.vehicleConditionQuestion}>Transport type</Text>
+                    <Text style={styles.vehicleConditionHint}>Choose trailer type for this car</Text>
+                    <View style={styles.transportTypeRow}>
+                      <TouchableOpacity
+                        style={[styles.transportTypePill, transportType === 'open' && styles.conditionPillActive]}
+                        onPress={() => setTransportType('open')}
+                        activeOpacity={0.8}
+                      >
+                        <Text style={[styles.conditionPillText, transportType === 'open' && styles.conditionPillTextActive]}>
+                          Open trailer
+                        </Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        style={[styles.transportTypePill, transportType === 'enclosed' && styles.conditionPillActive]}
+                        onPress={() => setTransportType('enclosed')}
+                        activeOpacity={0.8}
+                      >
+                        <Text style={[styles.conditionPillText, transportType === 'enclosed' && styles.conditionPillTextActive]}>
+                          Enclosed
+                        </Text>
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+
+                  <View style={styles.vehicleConditionDivider} />
+
+                  <View style={styles.vehicleConditionRowStacked}>
+                    <Text style={styles.vehicleConditionQuestion}>VIN (optional)</Text>
+                    <TextInput
+                      style={styles.vehicleMetaInput}
+                      value={vehicleVin}
+                      onChangeText={setVehicleVin}
+                      autoCapitalize="characters"
+                      placeholder="e.g. YV1TS..."
+                      placeholderTextColor="#9CA3AF"
+                    />
+                  </View>
+
+                  <View style={styles.vehicleConditionDivider} />
+
+                  <View style={styles.vehicleConditionRowStacked}>
+                    <Text style={styles.vehicleConditionQuestion}>Ground clearance (cm)</Text>
+                    <TextInput
+                      style={styles.vehicleMetaInput}
+                      value={vehicleGroundClearanceCm}
+                      onChangeText={setVehicleGroundClearanceCm}
+                      keyboardType="numeric"
+                      placeholder="e.g. 14"
+                      placeholderTextColor="#9CA3AF"
+                    />
+                  </View>
+
+                  <View style={styles.vehicleConditionDivider} />
+
+                  <View style={styles.vehicleConditionRow}>
+                    <View style={styles.vehicleConditionTextWrap}>
+                      <Text style={styles.vehicleConditionQuestion}>Keys included</Text>
+                    </View>
+                    <View style={styles.vehicleConditionToggleRow}>
+                      <TouchableOpacity
+                        style={[styles.conditionPill, vehicleHasKeys && styles.conditionPillActive]}
+                        onPress={() => setVehicleHasKeys(true)}
+                        activeOpacity={0.8}
+                      >
+                        <Text style={[styles.conditionPillText, vehicleHasKeys && styles.conditionPillTextActive]}>{t('yes')}</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        style={[styles.conditionPill, !vehicleHasKeys && styles.conditionPillActiveNo]}
+                        onPress={() => setVehicleHasKeys(false)}
+                        activeOpacity={0.8}
+                      >
+                        <Text style={[styles.conditionPillText, !vehicleHasKeys && styles.conditionPillTextActive]}>{t('no')}</Text>
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+
+                  <View style={styles.vehicleConditionDivider} />
+
+                  <View style={styles.vehicleConditionRow}>
+                    <View style={styles.vehicleConditionTextWrap}>
+                      <Text style={styles.vehicleConditionQuestion}>Wheel lock</Text>
+                    </View>
+                    <View style={styles.vehicleConditionToggleRow}>
+                      <TouchableOpacity
+                        style={[styles.conditionPill, vehicleHasWheelLock && styles.conditionPillActiveNo]}
+                        onPress={() => setVehicleHasWheelLock(true)}
+                        activeOpacity={0.8}
+                      >
+                        <Text style={[styles.conditionPillText, vehicleHasWheelLock && styles.conditionPillTextActive]}>{t('yes')}</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        style={[styles.conditionPill, !vehicleHasWheelLock && styles.conditionPillActive]}
+                        onPress={() => setVehicleHasWheelLock(false)}
+                        activeOpacity={0.8}
+                      >
+                        <Text style={[styles.conditionPillText, !vehicleHasWheelLock && styles.conditionPillTextActive]}>{t('no')}</Text>
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+
+                  <View style={styles.vehicleConditionDivider} />
+
+                  <View style={styles.vehicleConditionRow}>
+                    <View style={styles.vehicleConditionTextWrap}>
+                      <Text style={styles.vehicleConditionQuestion}>Needs winch</Text>
+                    </View>
+                    <View style={styles.vehicleConditionToggleRow}>
+                      <TouchableOpacity
+                        style={[styles.conditionPill, vehicleNeedsWinch && styles.conditionPillActiveNo]}
+                        onPress={() => setVehicleNeedsWinch(true)}
+                        activeOpacity={0.8}
+                      >
+                        <Text style={[styles.conditionPillText, vehicleNeedsWinch && styles.conditionPillTextActive]}>{t('yes')}</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        style={[styles.conditionPill, !vehicleNeedsWinch && styles.conditionPillActive]}
+                        onPress={() => setVehicleNeedsWinch(false)}
+                        activeOpacity={0.8}
+                      >
+                        <Text style={[styles.conditionPillText, !vehicleNeedsWinch && styles.conditionPillTextActive]}>{t('no')}</Text>
                       </TouchableOpacity>
                     </View>
                   </View>
@@ -1660,6 +1833,26 @@ export default function CreateRequestScreen() {
                 <Text style={[styles.fieldHint, isSmallScreen && styles.fieldHintCompact]}>
                   {t('priceNegotiableHint')}
                 </Text>
+              )}
+              {isPricePreviewAvailable && (
+                <View style={styles.summaryPriceCard}>
+                  <Text style={styles.summaryPriceTitle}>Estimated customer total</Text>
+                  <View style={styles.summaryPriceRow}>
+                    <Text style={styles.summaryPriceLabel}>Carrier bid</Text>
+                    <Text style={styles.summaryPriceValue}>{`${priceInputValue.toLocaleString('no-NO')} kr`}</Text>
+                  </View>
+                  <View style={styles.summaryPriceRow}>
+                    <Text style={styles.summaryPriceLabel}>Platform fee (10%)</Text>
+                    <Text style={styles.summaryPriceValue}>{`${previewPlatformFee.toLocaleString('no-NO')} kr`}</Text>
+                  </View>
+                  <View style={[styles.summaryPriceRow, styles.summaryPriceRowTotal]}>
+                    <Text style={styles.summaryPriceTotalLabel}>Total estimate</Text>
+                    <Text style={styles.summaryPriceTotalValue}>{`${previewTotalCustomerPrice.toLocaleString('no-NO')} kr`}</Text>
+                  </View>
+                  <Text style={styles.summaryPriceHint}>
+                    Insurance coverage details are confirmed after bid acceptance.
+                  </Text>
+                </View>
               )}
               {renderFieldError('price', formData.price)}
             </View>
@@ -2306,6 +2499,34 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: spacing.xs,
   },
+  vehicleConditionRowStacked: {
+    padding: spacing.md,
+    gap: spacing.xs,
+  },
+  vehicleMetaInput: {
+    borderWidth: 1,
+    borderColor: colors.border.default,
+    borderRadius: borderRadius.md,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    fontSize: fontSize.md,
+    color: colors.text.primary,
+    backgroundColor: colors.white,
+  },
+  transportTypeRow: {
+    flexDirection: 'row',
+    gap: spacing.xs,
+  },
+  transportTypePill: {
+    flex: 1,
+    borderWidth: 1.5,
+    borderColor: '#E5E7EB',
+    borderRadius: borderRadius.full,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+    backgroundColor: '#F9FAFB',
+    alignItems: 'center',
+  },
   vehicleConditionDivider: {
     height: 1,
     backgroundColor: '#F3F4F6',
@@ -2336,5 +2557,54 @@ const styles = StyleSheet.create({
   },
   conditionPillTextActive: {
     color: '#111827',
+  },
+  summaryPriceCard: {
+    borderWidth: 1,
+    borderColor: colors.border.light,
+    borderRadius: borderRadius.md,
+    backgroundColor: colors.white,
+    padding: spacing.sm,
+    marginTop: spacing.sm,
+    gap: spacing.xxxs,
+  },
+  summaryPriceTitle: {
+    fontSize: fontSize.sm,
+    color: colors.text.secondary,
+    fontWeight: '600',
+  },
+  summaryPriceRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  summaryPriceRowTotal: {
+    marginTop: spacing.xxxs,
+    paddingTop: spacing.xxxs,
+    borderTopWidth: 1,
+    borderTopColor: colors.border.light,
+  },
+  summaryPriceLabel: {
+    fontSize: fontSize.sm,
+    color: colors.text.secondary,
+  },
+  summaryPriceValue: {
+    fontSize: fontSize.sm,
+    color: colors.text.primary,
+    fontWeight: '500',
+  },
+  summaryPriceTotalLabel: {
+    fontSize: fontSize.md,
+    color: colors.text.primary,
+    fontWeight: '600',
+  },
+  summaryPriceTotalValue: {
+    fontSize: fontSize.md,
+    color: colors.primary,
+    fontWeight: '700',
+  },
+  summaryPriceHint: {
+    fontSize: fontSize.xs,
+    color: colors.text.tertiary,
+    marginTop: spacing.xxxs,
   },
 });
