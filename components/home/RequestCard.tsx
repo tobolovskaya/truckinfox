@@ -332,7 +332,7 @@ const styles = StyleSheet.create({
     gap: spacing.xs,
   },
   routeLineCompact: {
-    minHeight: 24,
+    minHeight: 22,
   },
   routeText: {
     flex: 1,
