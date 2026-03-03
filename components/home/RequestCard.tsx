@@ -284,7 +284,9 @@ const styles = StyleSheet.create({
   typeOverlayBadgeCompact: {
     paddingHorizontal: spacing.xxxs,
     paddingVertical: spacing.xxxs,
-    maxWidth: '50%',
+    width: 90,
+    maxWidth: 90,
+    minWidth: 90,
   },
   typeOverlayText: {
     fontSize: fontSize.xs,
@@ -306,8 +308,9 @@ const styles = StyleSheet.create({
   priceOverlayBadgeCompact: {
     paddingHorizontal: spacing.xxxs,
     paddingVertical: spacing.xxxs,
-    maxWidth: '50%',
-    minWidth: 78,
+    width: 90,
+    maxWidth: 90,
+    minWidth: 90,
   },
   priceOverlayText: {
     fontSize: fontSize.sm,
