@@ -132,6 +132,7 @@ export const RequestCard: React.FC<RequestCardProps> = ({
             <Ionicons name={cargoIcon} size={40} color={cargoColors.text} />
           </View>
         )}
+        <View style={[styles.imageOverlayTopBackdrop, compact && styles.imageOverlayTopBackdropCompact]} />
         <View style={[styles.imageOverlayTop, compact && styles.imageOverlayTopCompact]}>
           <View
             style={[
@@ -265,6 +266,22 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: spacing.xs,
   },
+  imageOverlayTopBackdrop: {
+    position: 'absolute',
+    top: spacing.xs,
+    left: spacing.xs,
+    right: spacing.xs,
+    height: 34,
+    borderRadius: borderRadius.full,
+    backgroundColor: colors.white,
+    opacity: 0.72,
+  },
+  imageOverlayTopBackdropCompact: {
+    top: spacing.xxxs,
+    left: spacing.xxxs,
+    right: spacing.xxxs,
+    height: 30,
+  },
   imageOverlayTopCompact: {
     top: spacing.xxxs,
     left: spacing.xxxs,
@@ -296,7 +313,7 @@ const styles = StyleSheet.create({
     fontSize: 11,
   },
   priceOverlayBadge: {
-    backgroundColor: colors.white,
+    backgroundColor: colors.primaryLight,
     borderRadius: borderRadius.full,
     paddingHorizontal: spacing.sm,
     paddingVertical: spacing.xxs,
@@ -304,6 +321,9 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-end',
     flexShrink: 0,
     justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: colors.primary,
+    minHeight: 26,
   },
   priceOverlayBadgeCompact: {
     paddingHorizontal: spacing.xxxs,
@@ -311,6 +331,7 @@ const styles = StyleSheet.create({
     width: 90,
     maxWidth: 90,
     minWidth: 90,
+    minHeight: 30,
   },
   priceOverlayText: {
     fontSize: fontSize.sm,
@@ -318,6 +339,7 @@ const styles = StyleSheet.create({
     color: colors.primary,
     includeFontPadding: false,
     flexShrink: 1,
+    letterSpacing: 0.2,
   },
   priceOverlayTextCompact: {
     fontSize: fontSize.sm,
