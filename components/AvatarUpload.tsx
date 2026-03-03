@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
-import * as FileSystem from 'expo-file-system/legacy';
+import { File as ExpoFile } from 'expo-file-system';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { useTranslation } from 'react-i18next';
@@ -157,9 +157,7 @@ export default function AvatarUpload({ avatarUrl, onUpload, size = 80 }: AvatarU
       const fileName = `${user.uid}/avatar.jpg`;
 
       // Read local file bytes directly to avoid 0-byte uploads on mobile URI fetch.
-      const base64 = await FileSystem.readAsStringAsync(uri, {
-        encoding: 'base64',
-      });
+      const base64 = await new ExpoFile(uri).base64();
       const fileBytes = base64ToUint8Array(base64);
 
       if (!fileBytes || fileBytes.byteLength === 0) {

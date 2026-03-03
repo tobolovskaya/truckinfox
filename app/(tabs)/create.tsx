@@ -13,7 +13,7 @@ import { KeyboardAwareFlatList } from 'react-native-keyboard-aware-scroll-view';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as ImagePicker from 'expo-image-picker';
-import * as FileSystem from 'expo-file-system/legacy';
+import { File as ExpoFile } from 'expo-file-system';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTranslation } from 'react-i18next';
@@ -672,9 +672,7 @@ export default function CreateRequestScreen() {
         const imageKey = `image_${i + 1}`;
 
         try {
-          const base64 = await FileSystem.readAsStringAsync(compressedUri, {
-            encoding: 'base64',
-          });
+          const base64 = await new ExpoFile(compressedUri).base64();
           const fileBytes = base64ToUint8Array(base64);
 
           if (!fileBytes || fileBytes.byteLength === 0) {

@@ -1,5 +1,5 @@
 import { manipulateAsync, SaveFormat } from 'expo-image-manipulator';
-import * as FileSystem from 'expo-file-system/legacy';
+import { File as ExpoFile } from 'expo-file-system';
 import { Image } from 'react-native';
 
 const DEFAULT_MAX_WIDTH = 1200;
@@ -25,8 +25,8 @@ const getImageDimensions = async (
 
 const getFileSizeBytes = async (uri: string): Promise<number | null> => {
   try {
-    const info = await FileSystem.getInfoAsync(uri);
-    return info.exists && typeof info.size === 'number' ? info.size : null;
+    const file = new ExpoFile(uri);
+    return file.exists ? file.size : null;
   } catch {
     return null;
   }

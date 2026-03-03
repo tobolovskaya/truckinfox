@@ -1,7 +1,7 @@
 import { supabase } from '../lib/supabase';
 import { trackDeliveryProofSubmitted } from './analytics';
 import { compressImageForUpload } from './imageCompression';
-import * as FileSystem from 'expo-file-system/legacy';
+import { File as ExpoFile } from 'expo-file-system';
 
 const STORAGE_SIGNED_URL_EXPIRY_SECONDS = 60 * 60 * 24 * 365;
 
@@ -61,9 +61,7 @@ export const uploadImage = async (
     const uriToUpload = type === 'photo' ? await compressImageForUpload(uri) : uri;
     const filePath = `delivery-proofs/${orderId}/${filename}`;
 
-    const base64 = await FileSystem.readAsStringAsync(uriToUpload, {
-      encoding: 'base64',
-    });
+    const base64 = await new ExpoFile(uriToUpload).base64();
     const fileBytes = base64ToUint8Array(base64);
 
     if (!fileBytes || fileBytes.byteLength === 0) {

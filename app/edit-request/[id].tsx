@@ -20,7 +20,7 @@ import { triggerHapticFeedback } from '../../utils/haptics';
 import { SuccessAnimation } from '../../components/SuccessAnimation';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import * as ImagePicker from 'expo-image-picker';
-import * as FileSystem from 'expo-file-system/legacy';
+import { File as ExpoFile } from 'expo-file-system';
 import AddressInput from '../../components/AddressInput';
 import { ScreenHeader } from '../../components/ScreenHeader';
 import { calculateDistance } from '../../utils/googlePlaces';
@@ -570,9 +570,7 @@ export default function EditRequestScreen() {
         const filePath = `${ownerId}/${requestId}/${Date.now()}_${i}.${ext}`;
 
         try {
-          const base64 = await FileSystem.readAsStringAsync(compressedUri, {
-            encoding: 'base64',
-          });
+          const base64 = await new ExpoFile(compressedUri).base64();
           const fileBytes = base64ToUint8Array(base64);
 
           if (!fileBytes || fileBytes.byteLength === 0) {
