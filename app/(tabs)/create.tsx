@@ -132,6 +132,7 @@ export default function CreateRequestScreen() {
   const [showDeliveryDate, setShowDeliveryDate] = useState(false);
   const [showCargoTypeMenu, setShowCargoTypeMenu] = useState(false);
   const [showPriceTypeMenu, setShowPriceTypeMenu] = useState(false);
+  const [isDriveable, setIsDriveable] = useState(true);
   const fromAddressTextRef = useRef('');
   const toAddressTextRef = useRef('');
   const hasShownNoImageReminderRef = useRef(false);
@@ -381,6 +382,7 @@ export default function CreateRequestScreen() {
   const applyQuickTemplate = (template: (typeof QUICK_REQUEST_TEMPLATES)[number]) => {
     const nextData = {
       ...formData,
+      title: template.titleKey ? String(t(template.titleKey)) : formData.title,
       cargo_type: template.cargo_type,
       weight: template.weight,
       length: template.length,
@@ -692,7 +694,13 @@ export default function CreateRequestScreen() {
       }
 
       const title = sanitizeInput(formData.title.trim(), 200);
-      const description = sanitizeInput(formData.description.trim(), 2000);
+
+      let descriptionText = formData.description.trim();
+      if (formData.cargo_type === 'automotive') {
+        descriptionText = `[${isDriveable ? t('driveable') || 'Kjørbar / Kan rulles' : t('nonDriveable') || 'Trenger vinsj / Ikke kjørbar'}]\n\n${descriptionText}`;
+      }
+
+      const description = sanitizeInput(descriptionText, 2000);
       const fromAddress = sanitizeInput(formData.from_address.trim(), 300);
       const toAddress = sanitizeInput(formData.to_address.trim(), 300);
       let insertPayload: Record<string, unknown> = {
@@ -1034,6 +1042,31 @@ export default function CreateRequestScreen() {
               )}
               {renderFieldError('cargo_type', formData.cargo_type)}
             </View>
+
+            {/* Automotive Form Options */}
+            {formData.cargo_type === 'automotive' && (
+              <View style={[styles.fieldContainer, isSmallScreen && styles.fieldContainerCompact]}>
+                <Text style={[styles.fieldLabel, isSmallScreen && styles.fieldLabelCompact]}>
+                  {t('vehicleCondition') || 'Kjøretøyets tilstand'}
+                </Text>
+                <TouchableOpacity
+                  style={{ flexDirection: 'row', alignItems: 'center', marginTop: 8 }}
+                  onPress={() => setIsDriveable(!isDriveable)}
+                  activeOpacity={0.7}
+                  accessibilityRole="checkbox"
+                  accessibilityState={{ checked: isDriveable }}
+                >
+                  <Ionicons
+                    name={isDriveable ? 'checkbox' : 'square-outline'}
+                    size={24}
+                    color={isDriveable ? colors.primary : '#6B7280'}
+                  />
+                  <Text style={{ marginLeft: 8, fontSize: 16, color: '#374151' }}>
+                    {t('isDriveableRadioText') || 'Bilen er kjørbar / kan rulles'}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            )}
 
             {/* Quick Templates */}
             <View style={[styles.fieldContainer, isSmallScreen && styles.fieldContainerCompact]}>

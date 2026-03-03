@@ -24,6 +24,7 @@ export interface QuickRequestTemplate {
   length: string;
   width: string;
   height: string;
+  titleKey?: string;
 }
 
 export const CARGO_TYPES: CargoTypeOption[] = [
@@ -51,6 +52,7 @@ export const QUICK_REQUEST_TEMPLATES: QuickRequestTemplate[] = [
     length: '450',
     width: '190',
     height: '170',
+    titleKey: 'automotiveTitle',
   },
   {
     id: 'template-tractor',
@@ -60,6 +62,7 @@ export const QUICK_REQUEST_TEMPLATES: QuickRequestTemplate[] = [
     length: '340',
     width: '180',
     height: '220',
+    titleKey: 'tractorTitle',
   },
   {
     id: 'template-europallet',
@@ -69,6 +72,7 @@ export const QUICK_REQUEST_TEMPLATES: QuickRequestTemplate[] = [
     length: '120',
     width: '80',
     height: '150',
+    titleKey: 'europalletTitle',
   },
   {
     id: 'template-camper',
@@ -78,6 +82,7 @@ export const QUICK_REQUEST_TEMPLATES: QuickRequestTemplate[] = [
     length: '720',
     width: '245',
     height: '265',
+    titleKey: 'camperTitle',
   },
   {
     id: 'template-sofa',
@@ -87,6 +92,7 @@ export const QUICK_REQUEST_TEMPLATES: QuickRequestTemplate[] = [
     length: '240',
     width: '100',
     height: '95',
+    titleKey: 'sofaTitle',
   },
 ];
 
