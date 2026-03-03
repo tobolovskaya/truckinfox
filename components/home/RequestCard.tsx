@@ -82,7 +82,6 @@ export const RequestCard: React.FC<RequestCardProps> = ({
   );
   const dateText = request.pickup_date ? formatDate(request.pickup_date) : t('dateNotSet');
   const cargoType = request.cargo_type || 'other';
-  const cargoTypeLabel = React.useMemo(() => t(cargoType), [cargoType, t]);
   const cargoColors = getCargoTypeColors(cargoType);
   const cargoIcon = getCargoTypeIcon(cargoType);
   const previewImageUri = React.useMemo(
@@ -132,26 +131,10 @@ export const RequestCard: React.FC<RequestCardProps> = ({
             <Ionicons name={cargoIcon} size={40} color={cargoColors.text} />
           </View>
         )}
-        <View style={[styles.imageOverlayTopBackdrop, compact && styles.imageOverlayTopBackdropCompact]} />
-        <View style={[styles.imageOverlayTop, compact && styles.imageOverlayTopCompact]}>
-          <View
-            style={[
-              styles.typeOverlayBadge,
-              compact && styles.typeOverlayBadgeCompact,
-              { backgroundColor: cargoColors.background },
-            ]}
-          >
-            <Ionicons name={cargoIcon} size={compact ? 11 : 12} color={cargoColors.text} />
+        <View style={[styles.priceOverlayFloating, compact && styles.priceOverlayFloatingCompact]}>
+          <View style={[styles.priceOverlayBadgeFloating, compact && styles.priceOverlayBadgeFloatingCompact]}>
             <Text
-              style={[styles.typeOverlayText, compact && styles.typeOverlayTextCompact, { color: cargoColors.text }]}
-              numberOfLines={1}
-            >
-              {cargoTypeLabel}
-            </Text>
-          </View>
-          <View style={[styles.priceOverlayBadge, compact && styles.priceOverlayBadgeCompact]}>
-            <Text
-              style={[styles.priceOverlayText, compact && styles.priceOverlayTextCompact]}
+              style={[styles.priceOverlayTextFloating, compact && styles.priceOverlayTextFloatingCompact]}
               numberOfLines={1}
               adjustsFontSizeToFit
               minimumFontScale={0.85}
@@ -256,96 +239,42 @@ const styles = StyleSheet.create({
   imagePlaceholderCompact: {
     height: REQUEST_CARD_IMAGE_HEIGHT + 12,
   },
-  imageOverlayTop: {
+  priceOverlayFloating: {
     position: 'absolute',
-    top: spacing.xs,
     left: spacing.xs,
-    right: spacing.xs,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    gap: spacing.xs,
-  },
-  imageOverlayTopBackdrop: {
-    position: 'absolute',
     top: spacing.xs,
-    left: spacing.xs,
-    right: spacing.xs,
-    height: 34,
-    borderRadius: borderRadius.full,
-    backgroundColor: colors.white,
-    opacity: 0.72,
   },
-  imageOverlayTopBackdropCompact: {
-    top: spacing.xxs,
+  priceOverlayFloatingCompact: {
     left: spacing.xxxs,
-    right: spacing.xxxs,
-    height: 30,
+    top: spacing.xxxs,
   },
-  imageOverlayTopCompact: {
-    top: spacing.xxs,
-    left: spacing.xxxs,
-    right: spacing.xxxs,
-    gap: spacing.xxxs,
-  },
-  typeOverlayBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xxs,
+  priceOverlayBadgeFloating: {
+    backgroundColor: colors.overlay,
     borderRadius: borderRadius.full,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xxs,
-    maxWidth: '66%',
-    flexShrink: 1,
+    paddingHorizontal: spacing.lg,
+    paddingTop: 0,
+    paddingBottom: spacing.xs,
+    maxWidth: '88%',
+    alignSelf: 'flex-start',
   },
-  typeOverlayBadgeCompact: {
-    paddingHorizontal: spacing.xs,
-    paddingVertical: spacing.xxxs,
-    flex: 1,
-    minWidth: 0,
-    maxWidth: '56%',
+  priceOverlayBadgeFloatingCompact: {
+    paddingHorizontal: spacing.md,
+    paddingTop: 0,
+    paddingBottom: spacing.xs,
+    maxWidth: '82%',
   },
-  typeOverlayText: {
-    fontSize: fontSize.xs,
-    fontWeight: fontWeight.semibold,
-  },
-  typeOverlayTextCompact: {
-    fontSize: 12,
-  },
-  priceOverlayBadge: {
-    backgroundColor: colors.primaryLight,
-    borderRadius: borderRadius.full,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xxs,
-    maxWidth: '44%',
-    alignSelf: 'flex-end',
-    flexShrink: 0,
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: colors.primary,
-    minHeight: 26,
-  },
-  priceOverlayBadgeCompact: {
-    paddingHorizontal: spacing.xxs,
-    paddingVertical: spacing.xxs,
-    flex: 1,
-    minWidth: 0,
-    maxWidth: '44%',
-    minHeight: 28,
-  },
-  priceOverlayText: {
-    fontSize: fontSize.sm,
-    fontWeight: fontWeight.bold,
-    color: colors.primary,
-    includeFontPadding: false,
-    flexShrink: 1,
-    letterSpacing: 0.2,
-  },
-  priceOverlayTextCompact: {
-    fontSize: 13,
-    lineHeight: 16,
+  priceOverlayTextFloating: {
+    fontSize: fontSize.xxl,
+    lineHeight: 26,
     textAlign: 'center',
-    fontWeight: fontWeight.semibold,
+    fontWeight: fontWeight.bold,
+    color: colors.white,
+    includeFontPadding: false,
+  },
+  priceOverlayTextFloatingCompact: {
+    fontSize: fontSize.lg,
+    lineHeight: 20,
+    fontWeight: fontWeight.bold,
   },
   contentWrap: {
     paddingHorizontal: spacing.md,
@@ -354,9 +283,10 @@ const styles = StyleSheet.create({
   },
   contentWrapCompact: {
     paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.sm,
+    paddingTop: spacing.sm,
+    paddingBottom: spacing.xs,
     gap: spacing.xxxs,
-    minHeight: 146,
+    minHeight: 134,
   },
   title: {
     fontSize: fontSize.lg,
