@@ -816,7 +816,7 @@ export default function OrderStatusScreen() {
               style={[
                 styles.submitProofButton,
                 (uploadingProof || deliveryPhotos.length === 0 || !signature) &&
-                  styles.submitProofButtonDisabled,
+                styles.submitProofButtonDisabled,
               ]}
               onPress={submitDeliveryProof}
               disabled={uploadingProof || deliveryPhotos.length === 0 || !signature}
@@ -959,9 +959,15 @@ const styles = StyleSheet.create({
     backgroundColor: colors.white,
     marginHorizontal: spacing.xl,
     marginTop: spacing.xl,
-    borderRadius: borderRadius.lg,
+    borderRadius: borderRadius.xl,
     padding: spacing.xl,
-    ...shadows.md,
+    borderWidth: 1,
+    borderColor: 'rgba(230,230,230,0.5)',
+    shadowColor: colors.primary,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.1,
+    shadowRadius: 10,
+    elevation: 3,
   },
   statusHeader: {
     flexDirection: 'row',

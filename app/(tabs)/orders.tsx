@@ -12,6 +12,7 @@ import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '../../lib/supabase';
 import { spacing, fontSize, fontWeight, useAppThemeStyles } from '../../lib/sharedStyles';
+import { LinearGradient } from 'expo-linear-gradient';
 import { ScreenHeader } from '../../components/ScreenHeader';
 import { EmptyState } from '../../components/EmptyState';
 import EmptyCargoIllustration from '../../assets/empty-cargo.svg';
@@ -27,15 +28,15 @@ interface Order {
   status: string;
   payment_status: string;
   created_at?:
-    | string
-    | number
-    | Date
-    | {
-        seconds?: number;
-        nanoseconds?: number;
-        toDate?: () => Date;
-      }
-    | null;
+  | string
+  | number
+  | Date
+  | {
+    seconds?: number;
+    nanoseconds?: number;
+    toDate?: () => Date;
+  }
+  | null;
   cargo_title?: string;
   cargo_type?: string;
   cargo_from_address?: string;
@@ -221,48 +222,59 @@ export default function OrdersScreen() {
   };
 
   const renderOrderItem = ({ item }: { item: Order }) => (
-    <TouchableOpacity
-      style={styles.orderCard}
-      onPress={() => router.push(`/order-status/${item.id}`)}
-      accessibilityRole="button"
-      accessibilityLabel={`Order ${item.id}`}
-    >
-      <View style={styles.orderHeader}>
-        <Text style={styles.orderTitle} numberOfLines={1}>
-          {item.cargo_title || t('order')} (#{item.id.slice(0, 8)})
-        </Text>
-        <View
-          style={[
-            styles.statusBadge,
-            { backgroundColor: getPaymentStatusColor(item.payment_status) },
-          ]}
-        >
-          <Text style={styles.statusBadgeText}>{t(item.payment_status)}</Text>
-        </View>
-      </View>
+    <View style={styles.cardContainer}>
+      <TouchableOpacity
+        style={styles.orderCardInner}
+        onPress={() => router.push(`/order-status/${item.id}`)}
+        accessibilityRole="button"
+        accessibilityLabel={`Order ${item.id}`}
+        activeOpacity={0.8}
+      >
+        <LinearGradient
+          colors={['#ffffff', '#fcfcfc']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={StyleSheet.absoluteFill}
+        />
+        <View style={styles.orderCardContent}>
+          <View style={styles.orderHeader}>
+            <Text style={styles.orderTitle} numberOfLines={1}>
+              {item.cargo_title || t('order')} (#{item.id.slice(0, 8)})
+            </Text>
+            <View
+              style={[
+                styles.statusBadge,
+                { backgroundColor: getPaymentStatusColor(item.payment_status) },
+              ]}
+            >
+              <Text style={styles.statusBadgeText}>{t(item.payment_status)}</Text>
+            </View>
+          </View>
 
-      {!item.cargo_title && (item.cargo_from_address || item.cargo_to_address) && (
-        <Text style={styles.orderSubtitle} numberOfLines={1}>
-          {item.cargo_from_address || t('addressNotAvailable')} →{' '}
-          {item.cargo_to_address || t('addressNotAvailable')}
-        </Text>
-      )}
+          {!item.cargo_title && (item.cargo_from_address || item.cargo_to_address) && (
+            <Text style={styles.orderSubtitle} numberOfLines={1}>
+              {item.cargo_from_address || t('addressNotAvailable')} →{' '}
+              {item.cargo_to_address || t('addressNotAvailable')}
+            </Text>
+          )}
 
-      <View style={styles.orderDetails}>
-        <View style={styles.detailRow}>
-          <Text style={styles.label}>{t('amount')}:</Text>
-          <Text style={styles.value}>{formatNokAmount(item.total_amount)}</Text>
+          <View style={styles.orderDetails}>
+            <View style={styles.detailRow}>
+              <Text style={styles.label}>{t('amount')}:</Text>
+              <Text style={styles.value}>{formatNokAmount(item.total_amount)}</Text>
+            </View>
+            <View style={styles.detailRow}>
+              <Text style={styles.label}>{t('status')}:</Text>
+              <Text style={styles.value}>{getStatusLabel(item.status)}</Text>
+            </View>
+            <View style={styles.detailRow}>
+              <Text style={styles.label}>{t('date')}:</Text>
+              <Text style={styles.value}>{formatOrderDate(item.created_at, locale)}</Text>
+            </View>
+          </View>
         </View>
-        <View style={styles.detailRow}>
-          <Text style={styles.label}>{t('status')}:</Text>
-          <Text style={styles.value}>{getStatusLabel(item.status)}</Text>
-        </View>
-        <View style={styles.detailRow}>
-          <Text style={styles.label}>{t('date')}:</Text>
-          <Text style={styles.value}>{formatOrderDate(item.created_at, locale)}</Text>
-        </View>
-      </View>
-    </TouchableOpacity>
+      </TouchableOpacity>
+    </View>
   );
 
   return (
@@ -328,14 +340,21 @@ const createStyles = (colors: ReturnType<typeof useAppThemeStyles>['colors']) =>
       padding: spacing.md,
       gap: spacing.md,
     },
-    orderCard: {
-      backgroundColor: colors.white,
-      borderRadius: 10,
+    cardContainer: {
+      shadowColor: colors.primary,
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.12,
+      shadowRadius: 10,
+      elevation: 4,
+    },
+    orderCardInner: {
+      borderRadius: 16,
+      overflow: 'hidden',
+      borderWidth: 1,
+      borderColor: 'rgba(230,230,230,0.5)',
+    },
+    orderCardContent: {
       padding: spacing.md,
-      shadowColor: '#000',
-      shadowOpacity: 0.1,
-      shadowRadius: 3,
-      elevation: 2,
     },
     orderHeader: {
       flexDirection: 'row',

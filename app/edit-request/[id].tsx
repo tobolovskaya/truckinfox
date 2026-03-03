@@ -20,7 +20,7 @@ import { triggerHapticFeedback } from '../../utils/haptics';
 import { SuccessAnimation } from '../../components/SuccessAnimation';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import * as ImagePicker from 'expo-image-picker';
-import * as FileSystem from 'expo-file-system/legacy';
+import * as FileSystem from 'expo-file-system';
 import AddressInput from '../../components/AddressInput';
 import { ScreenHeader } from '../../components/ScreenHeader';
 import { calculateDistance } from '../../utils/googlePlaces';
@@ -717,9 +717,9 @@ export default function EditRequestScreen() {
       console.error('Error updating request:', error);
       const message =
         error &&
-        typeof error === 'object' &&
-        'code' in error &&
-        (error as { code?: string }).code === '42501'
+          typeof error === 'object' &&
+          'code' in error &&
+          (error as { code?: string }).code === '42501'
           ? 'Du har ikke tilgang til å redigere forespørselen nå (RLS policy). Logg inn på nytt og sjekk Supabase policy for cargo_requests.'
           : error instanceof Error
             ? error.message

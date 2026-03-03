@@ -11,8 +11,9 @@ import {
 } from 'react-native';
 import { KeyboardAwareFlatList } from 'react-native-keyboard-aware-scroll-view';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import * as ImagePicker from 'expo-image-picker';
-import * as FileSystem from 'expo-file-system/legacy';
+import * as FileSystem from 'expo-file-system';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTranslation } from 'react-i18next';
@@ -1524,6 +1525,12 @@ export default function CreateRequestScreen() {
                 accessibilityLabel={loading ? 'Publiserer lastforespørsel' : 'Publiser last'}
                 accessibilityState={{ disabled: loading, busy: loading }}
               >
+                <LinearGradient
+                  colors={[colors.primary, '#E05A10']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={[StyleSheet.absoluteFill, { borderRadius: borderRadius.full }]}
+                />
                 {loading ? (
                   <ActivityIndicator color={colors.white} accessibilityLabel="Publiserer" />
                 ) : (
@@ -1919,11 +1926,18 @@ const styles = StyleSheet.create({
     color: '#6B7280',
   },
   publishButton: {
-    flex: 1,
-    padding: spacing.md,
-    borderRadius: borderRadius.md,
-    backgroundColor: colors.primary,
+    flex: 2,
+    backgroundColor: colors.primary, // Fallback
+    paddingVertical: spacing.md,
+    borderRadius: borderRadius.full,
     alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: colors.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 6,
+    overflow: 'hidden', // to keep gradient inside borders
   },
   publishButtonCompact: {
     padding: spacing.sm,

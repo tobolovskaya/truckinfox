@@ -1,7 +1,7 @@
 import { supabase } from '../lib/supabase';
 import { trackDeliveryProofSubmitted } from './analytics';
 import { compressImageForUpload } from './imageCompression';
-import * as FileSystem from 'expo-file-system/legacy';
+import * as FileSystem from 'expo-file-system';
 
 const STORAGE_SIGNED_URL_EXPIRY_SECONDS = 60 * 60 * 24 * 365;
 

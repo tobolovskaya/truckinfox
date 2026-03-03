@@ -17,6 +17,7 @@ import {
 import { formatCurrency, formatDate } from '../../utils/formatting';
 import { useTranslation } from 'react-i18next';
 import { LazyImage } from '../LazyImage';
+import { LinearGradient } from 'expo-linear-gradient';
 
 export interface CargoRequest {
   id: string;
@@ -92,6 +93,12 @@ export const RequestCard: React.FC<RequestCardProps> = ({
       accessibilityHint={t('openRequestDetails')}
       accessible={true}
     >
+      <LinearGradient
+        colors={['#ffffff', '#fafafa']}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={StyleSheet.absoluteFill}
+      />
       {previewImageUri ? (
         <LazyImage
           uri={previewImageUri}
@@ -170,7 +177,12 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.lg,
     padding: spacing.lg,
     marginBottom: spacing.lg,
-    ...shadows.sm,
+    shadowColor: colors.primary, // Premium shadow
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 5,
+    overflow: 'hidden', // Contain gradient
   },
   cardCompact: {
     padding: spacing.md,
