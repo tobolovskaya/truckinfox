@@ -398,9 +398,7 @@ export default function PaymentScreen() {
         .single();
 
       if (userError || !userRow?.phone) {
-        throw new Error(
-          'User phone number is required for Vipps payment. Please update your profile.'
-        );
+        throw new Error(t('vippsPhoneRequired'));
       }
 
       const customerPhone = userRow.phone;
@@ -504,7 +502,7 @@ export default function PaymentScreen() {
           },
         ]);
       } else {
-        throw new Error('Payment initiation did not return payment URL');
+        throw new Error(t('paymentInitiationMissingUrl'));
       }
     } catch (error: unknown) {
       const message = await extractVippsErrorMessage(error);

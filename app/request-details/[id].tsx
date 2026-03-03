@@ -88,6 +88,111 @@ interface Bid {
   };
 }
 
+type AutomotiveCondition = {
+  isDriveable: boolean | null;
+  starts: boolean | null;
+  hasDamage: boolean | null;
+};
+
+const parseBooleanToken = (value: string): boolean | null => {
+  const normalized = value.trim().toLowerCase();
+  if (['yes', 'ja', 'true', '1'].includes(normalized)) return true;
+  if (['no', 'nei', 'false', '0'].includes(normalized)) return false;
+  return null;
+};
+
+const parseAutomotiveDescription = (description: string | null | undefined) => {
+  if (!description) {
+    return {
+      cleanDescription: '',
+      condition: null as AutomotiveCondition | null,
+    };
+  }
+
+  let cleaned = description;
+  const condition: AutomotiveCondition = {
+    isDriveable: null,
+    starts: null,
+    hasDamage: null,
+  };
+
+  const machineTagMatch = cleaned.match(/^\[automotive_condition\|([^\]]+)\]\s*/i);
+  if (machineTagMatch) {
+    const pairs = machineTagMatch[1].split('|');
+    for (const pair of pairs) {
+      const [rawKey, rawValue] = pair.split('=');
+      const key = (rawKey || '').trim().toLowerCase();
+      const value = parseBooleanToken(rawValue || '');
+
+      if (key === 'driveable') {
+        condition.isDriveable = value;
+      } else if (key === 'starts') {
+        condition.starts = value;
+      } else if (key === 'damage') {
+        condition.hasDamage = value;
+      }
+    }
+
+    cleaned = cleaned.slice(machineTagMatch[0].length);
+  }
+
+  const humanTagMatch = cleaned.match(/^\[([\s\S]*?)\]\s*/);
+  if (humanTagMatch) {
+    const block = humanTagMatch[1];
+    const lowerBlock = block.toLowerCase();
+    const likelyAutomotiveBlock =
+      /driveable|non.?driveable|kjørbar|kan rulles|vinsj|starter|starts|skader|damage/.test(
+        lowerBlock
+      );
+
+    if (likelyAutomotiveBlock) {
+      const lines = block
+        .split('\n')
+        .map(line => line.trim())
+        .filter(Boolean);
+
+      for (const line of lines) {
+        const [rawLabel, rawValue] = line.includes(':')
+          ? line.split(/:(.+)/).slice(0, 2)
+          : [line, ''];
+        const label = (rawLabel || '').toLowerCase();
+        const value = parseBooleanToken(rawValue || '');
+
+        if (
+          condition.isDriveable === null &&
+          /(driveable|kjørbar|rulles|non.?driveable|vinsj)/.test(label)
+        ) {
+          if (value !== null) {
+            condition.isDriveable = value;
+          } else if (/ikke|non|vinsj/.test(label)) {
+            condition.isDriveable = false;
+          } else if (/kjørbar|rulles|driveable/.test(label)) {
+            condition.isDriveable = true;
+          }
+        }
+
+        if (condition.starts === null && /(starts|starter)/.test(label) && value !== null) {
+          condition.starts = value;
+        }
+
+        if (condition.hasDamage === null && /(damage|skader)/.test(label) && value !== null) {
+          condition.hasDamage = value;
+        }
+      }
+
+      cleaned = cleaned.slice(humanTagMatch[0].length);
+    }
+  }
+
+  const hasAnyCondition =
+    condition.isDriveable !== null || condition.starts !== null || condition.hasDamage !== null;
+
+  return {
+    cleanDescription: cleaned.trim(),
+    condition: hasAnyCondition ? condition : null,
+  };
+};
+
 const toFiniteNumber = (value: unknown): number | null => {
   if (typeof value === 'number' && Number.isFinite(value)) {
     return value;
@@ -118,7 +223,7 @@ export default function RequestDetailsScreen() {
   const [deleting, setDeleting] = useState(false);
 
   const flatListRef = useRef(null);
-  const mapRef = useRef<typeof MapView | null>(null);
+  const mapRef = useRef<MapView | null>(null);
   const language = i18n?.language || 'en';
   const locale = language.startsWith('no') ? 'nb-NO' : 'en-US';
 
@@ -170,6 +275,17 @@ export default function RequestDetailsScreen() {
         };
     }
   }, [normalizedRequestStatus, t]);
+
+  const automotiveDetails = React.useMemo(() => {
+    if (request?.cargo_type !== 'automotive') {
+      return {
+        cleanDescription: request?.description || '',
+        condition: null as AutomotiveCondition | null,
+      };
+    }
+
+    return parseAutomotiveDescription(request.description);
+  }, [request?.cargo_type, request?.description]);
 
   useEffect(() => {
     fetchRequest();
@@ -887,7 +1003,69 @@ export default function RequestDetailsScreen() {
                 {requestStatusMeta.label}
               </Text>
             </View>
-            <Text style={styles.description}>{request?.description}</Text>
+            {automotiveDetails.condition && (
+              <View style={styles.vehicleConditionCardDetails}>
+                <Text style={styles.vehicleConditionTitle}>{t('vehicleCondition')}</Text>
+                <View style={styles.vehicleConditionRowDetails}>
+                  <Text style={styles.vehicleConditionLabel}>{t('vehicleIsDriveable')}</Text>
+                  <Text
+                    style={[
+                      styles.vehicleConditionValue,
+                      automotiveDetails.condition.isDriveable === null
+                        ? styles.vehicleConditionValueUnknown
+                        : automotiveDetails.condition.isDriveable
+                          ? styles.vehicleConditionValueYes
+                          : styles.vehicleConditionValueNo,
+                    ]}
+                  >
+                    {automotiveDetails.condition.isDriveable === null
+                      ? '-'
+                      : automotiveDetails.condition.isDriveable
+                        ? t('yes')
+                        : t('no')}
+                  </Text>
+                </View>
+                <View style={styles.vehicleConditionRowDetails}>
+                  <Text style={styles.vehicleConditionLabel}>{t('vehicleStarts')}</Text>
+                  <Text
+                    style={[
+                      styles.vehicleConditionValue,
+                      automotiveDetails.condition.starts === null
+                        ? styles.vehicleConditionValueUnknown
+                        : automotiveDetails.condition.starts
+                          ? styles.vehicleConditionValueYes
+                          : styles.vehicleConditionValueNo,
+                    ]}
+                  >
+                    {automotiveDetails.condition.starts === null
+                      ? '-'
+                      : automotiveDetails.condition.starts
+                        ? t('yes')
+                        : t('no')}
+                  </Text>
+                </View>
+                <View style={styles.vehicleConditionRowDetails}>
+                  <Text style={styles.vehicleConditionLabel}>{t('vehicleHasDamage')}</Text>
+                  <Text
+                    style={[
+                      styles.vehicleConditionValue,
+                      automotiveDetails.condition.hasDamage === null
+                        ? styles.vehicleConditionValueUnknown
+                        : automotiveDetails.condition.hasDamage
+                          ? styles.vehicleConditionValueNo
+                          : styles.vehicleConditionValueYes,
+                    ]}
+                  >
+                    {automotiveDetails.condition.hasDamage === null
+                      ? '-'
+                      : automotiveDetails.condition.hasDamage
+                        ? t('yes')
+                        : t('no')}
+                  </Text>
+                </View>
+              </View>
+            )}
+            <Text style={styles.description}>{automotiveDetails.cleanDescription || request?.description}</Text>
 
             <View style={styles.infoGrid}>
               <View style={styles.infoItem}>
@@ -945,7 +1123,7 @@ export default function RequestDetailsScreen() {
               </Text>
               <View style={styles.mapContainer}>
                 <MapView
-                  ref={mapRef as React.RefObject<typeof MapView>}
+                  ref={mapRef}
                   style={styles.map}
                   initialRegion={{
                     latitude: centerLat,
@@ -954,7 +1132,6 @@ export default function RequestDetailsScreen() {
                     longitudeDelta: lngDelta,
                   }}
                   onMapReady={() => {
-                    // @ts-expect-error - fitToCoordinates is available at runtime
                     mapRef.current?.fitToCoordinates(
                       [
                         { latitude: fromLat, longitude: fromLng },
@@ -1503,6 +1680,53 @@ const styles = StyleSheet.create({
     lineHeight: 22,
     marginBottom: spacing.lg,
   },
+  vehicleConditionCardDetails: {
+    backgroundColor: colors.backgroundLight,
+    borderWidth: 1,
+    borderColor: colors.border.light,
+    borderRadius: borderRadius.md,
+    padding: spacing.md,
+    marginBottom: spacing.md,
+    gap: spacing.xs,
+  },
+  vehicleConditionTitle: {
+    fontSize: fontSize.md,
+    fontWeight: '600',
+    color: colors.text.primary,
+    marginBottom: spacing.xs,
+  },
+  vehicleConditionRowDetails: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  vehicleConditionLabel: {
+    fontSize: fontSize.sm,
+    color: colors.text.secondary,
+    flex: 1,
+    marginRight: spacing.sm,
+  },
+  vehicleConditionValue: {
+    fontSize: fontSize.sm,
+    fontWeight: '600',
+    color: colors.text.primary,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xxxs,
+    borderRadius: borderRadius.full,
+    overflow: 'hidden',
+  },
+  vehicleConditionValueYes: {
+    color: colors.status.success,
+    backgroundColor: colors.status.successBackground,
+  },
+  vehicleConditionValueNo: {
+    color: colors.status.error,
+    backgroundColor: colors.status.errorBackground,
+  },
+  vehicleConditionValueUnknown: {
+    color: colors.text.secondary,
+    backgroundColor: colors.badge.background,
+  },
   sectionTitle: {
     fontSize: fontSize.lg,
     fontWeight: '600',
@@ -1843,6 +2067,32 @@ const styles = StyleSheet.create({
   },
   mapContainer: {
     position: 'relative',
+  },
+  markerFrom: {
+    width: 24,
+    height: 24,
+    borderRadius: borderRadius.full,
+    backgroundColor: colors.success,
+    borderWidth: 2,
+    borderColor: colors.white,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  markerTo: {
+    width: 24,
+    height: 24,
+    borderRadius: borderRadius.full,
+    backgroundColor: colors.error,
+    borderWidth: 2,
+    borderColor: colors.white,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  markerInner: {
+    width: 8,
+    height: 8,
+    borderRadius: borderRadius.full,
+    backgroundColor: colors.white,
   },
   distanceBadge: {
     position: 'absolute',

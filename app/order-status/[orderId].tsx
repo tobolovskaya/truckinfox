@@ -303,7 +303,7 @@ export default function OrderStatusScreen() {
       // Request camera permission
       const { status } = await ImagePicker.requestCameraPermissionsAsync();
       if (status !== 'granted') {
-        Alert.alert(t('error'), 'Camera permission is required to take photos');
+        Alert.alert(t('error'), t('cameraPermissionRequired'));
         return;
       }
 
@@ -319,7 +319,7 @@ export default function OrderStatusScreen() {
       }
     } catch (error: unknown) {
       console.error('Error taking photo:', error);
-      Alert.alert(t('error'), 'Failed to take photo');
+      Alert.alert(t('error'), t('failedToTakePhoto'));
     }
   };
 
@@ -328,7 +328,7 @@ export default function OrderStatusScreen() {
     try {
       const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (status !== 'granted') {
-        Alert.alert(t('error'), 'Gallery permission is required to select photos');
+        Alert.alert(t('error'), t('galleryPermissionRequired'));
         return;
       }
 
@@ -346,7 +346,7 @@ export default function OrderStatusScreen() {
       }
     } catch (error: unknown) {
       console.error('Error picking photo:', error);
-      Alert.alert(t('error'), 'Failed to pick photo');
+      Alert.alert(t('error'), t('failedToPickImage'));
     }
   };
 
@@ -459,14 +459,14 @@ export default function OrderStatusScreen() {
 
         Alert.alert(
           t('deliveryConfirmed'),
-          `Delivery confirmed! ${result.message}\n\nYou can now leave a review for the carrier.`,
+          t('deliveryConfirmedWithPayout', { message: result.message }),
           [
             {
-              text: 'Leave Review',
+              text: t('leaveReview'),
               onPress: () => router.push(`/review/${orderIdString}`),
             },
             {
-              text: 'Skip',
+              text: t('skip'),
               style: 'cancel',
               onPress: () => router.replace('/(tabs)/orders'),
             },
@@ -478,14 +478,14 @@ export default function OrderStatusScreen() {
         console.error('Error releasing funds:', escrowError);
         Alert.alert(
           t('deliveryConfirmed'),
-          'Delivery confirmed! Note: Fund release will be processed shortly.\n\nYou can now leave a review for the carrier.',
+          t('deliveryConfirmedPayoutPending'),
           [
             {
-              text: 'Leave Review',
+              text: t('leaveReview'),
               onPress: () => router.push(`/review/${orderIdString}`),
             },
             {
-              text: 'Skip',
+              text: t('skip'),
               style: 'cancel',
               onPress: () => router.replace('/(tabs)/orders'),
             },

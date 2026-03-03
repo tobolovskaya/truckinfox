@@ -92,6 +92,12 @@ const base64ToUint8Array = (base64: string): Uint8Array => {
   return new Uint8Array(output);
 };
 
+const normalizeDateOnly = (value: Date) => {
+  const normalized = new Date(value);
+  normalized.setHours(0, 0, 0, 0);
+  return normalized;
+};
+
 export default function CreateRequestScreen() {
   const { user } = useAuth();
   const { t } = useTranslation();
@@ -519,6 +525,14 @@ export default function CreateRequestScreen() {
       return false;
     }
 
+    const pickupDate = normalizeDateOnly(formData.pickup_date);
+    const deliveryDate = normalizeDateOnly(formData.delivery_date);
+    if (deliveryDate.getTime() < pickupDate.getTime()) {
+      toast.error(t('deliveryDateMustBeAfterPickup'));
+      triggerHapticFeedback.error();
+      return false;
+    }
+
     return true;
   };
 
@@ -725,7 +739,13 @@ export default function CreateRequestScreen() {
 
       let descriptionText = formData.description.trim();
       if (formData.cargo_type === 'automotive') {
-        descriptionText = `[${isDriveable ? t('driveable') || 'Kjørbar / Kan rulles' : t('nonDriveable') || 'Trenger vinsj / Ikke kjørbar'}]\n\n${descriptionText}`;
+        const automotiveConditionTag = `[automotive_condition|driveable=${isDriveable ? 'yes' : 'no'}|starts=${vehicleStarts ? 'yes' : 'no'}|damage=${vehicleHasDamage ? 'yes' : 'no'}]`;
+        const vehicleConditionDetails = [
+          `${t('vehicleIsDriveable')}: ${isDriveable ? t('yes') : t('no')}`,
+          `${t('vehicleStarts')}: ${vehicleStarts ? t('yes') : t('no')}`,
+          `${t('vehicleHasDamage')}: ${vehicleHasDamage ? t('yes') : t('no')}`,
+        ].join('\n');
+        descriptionText = `${automotiveConditionTag}\n[${vehicleConditionDetails}]\n\n${descriptionText}`;
       }
 
       const description = sanitizeInput(descriptionText, 2000);
@@ -1495,14 +1515,14 @@ export default function CreateRequestScreen() {
                 ]}
               >
                 <Text style={[styles.fieldLabel, isSmallScreen && styles.fieldLabelCompact]}>
-                  Hentedato
+                  {t('pickupDate')}
                 </Text>
                 <TouchableOpacity
                   style={[styles.dateInput, isSmallScreen && styles.dateInputCompact]}
                   onPress={() => setShowPickupDate(true)}
                   accessibilityRole="button"
-                  accessibilityLabel="Select pickup date"
-                  accessibilityHint="Choose when the cargo should be picked up"
+                  accessibilityLabel={t('selectPickupDate')}
+                  accessibilityHint={t('selectPickupDateHint')}
                   accessibilityValue={{ text: formData.pickup_date.toLocaleDateString('no-NO') }}
                 >
                   <TextInput
@@ -1523,14 +1543,14 @@ export default function CreateRequestScreen() {
                 ]}
               >
                 <Text style={[styles.fieldLabel, isSmallScreen && styles.fieldLabelCompact]}>
-                  Leveringsdato
+                  {t('deliveryDate')}
                 </Text>
                 <TouchableOpacity
                   style={[styles.dateInput, isSmallScreen && styles.dateInputCompact]}
                   onPress={() => setShowDeliveryDate(true)}
                   accessibilityRole="button"
-                  accessibilityLabel="Select delivery date"
-                  accessibilityHint="Choose when the cargo should be delivered"
+                  accessibilityLabel={t('selectDeliveryDate')}
+                  accessibilityHint={t('selectDeliveryDateHint')}
                   accessibilityValue={{ text: formData.delivery_date.toLocaleDateString('no-NO') }}
                 >
                   <TextInput
@@ -1547,14 +1567,14 @@ export default function CreateRequestScreen() {
             {/* Price Type */}
             <View style={[styles.fieldContainer, isSmallScreen && styles.fieldContainerCompact]}>
               <Text style={[styles.fieldLabel, isSmallScreen && styles.fieldLabelCompact]}>
-                Prismodell
+                {t('priceType')}
               </Text>
               <TouchableOpacity
                 style={[styles.dropdownButton, isSmallScreen && styles.dropdownButtonCompact]}
                 onPress={() => setShowPriceTypeMenu(true)}
                 accessibilityRole="button"
-                accessibilityLabel="Velg prismodell"
-                accessibilityHint="Åpner meny for å velge prismodell"
+                accessibilityLabel={t('selectPriceType')}
+                accessibilityHint={t('selectPriceTypeHint')}
               >
                 <Text
                   style={[
@@ -1565,7 +1585,7 @@ export default function CreateRequestScreen() {
                 >
                   {formData.price_type
                     ? t(PRICE_TYPES.find(t => t.id === formData.price_type)?.labelKey || 'fixed')
-                    : 'Velg prismodell'}
+                    : t('selectPriceType')}
                 </Text>
                 <Ionicons name="chevron-down" size={20} color="#6B7280" />
               </TouchableOpacity>
@@ -1575,7 +1595,7 @@ export default function CreateRequestScreen() {
             {/* Price - ALWAYS VISIBLE */}
             <View style={[styles.fieldContainer, isSmallScreen && styles.fieldContainerCompact]}>
               <Text style={[styles.fieldLabel, isSmallScreen && styles.fieldLabelCompact]}>
-                Foreslått pris (kr)
+                {t('suggestedPriceNok')}
               </Text>
               <View style={styles.priceRangeEstimateCard}>
                 <View style={styles.priceRangeEstimateHeader}>
@@ -1619,7 +1639,7 @@ export default function CreateRequestScreen() {
               </View>
               {formData.price_type === 'negotiable' && (
                 <Text style={[styles.fieldHint, isSmallScreen && styles.fieldHintCompact]}>
-                  Pris kan forhandles med transportør
+                  {t('priceNegotiableHint')}
                 </Text>
               )}
               {renderFieldError('price', formData.price)}
@@ -1631,10 +1651,10 @@ export default function CreateRequestScreen() {
                 style={[styles.cancelButton, isSmallScreen && styles.cancelButtonCompact]}
                 onPress={() => router.push('/(tabs)/home')}
                 accessibilityRole="button"
-                accessibilityLabel="Avbryt"
+                accessibilityLabel={t('cancel')}
               >
                 <Text style={[styles.cancelButtonText, isSmallScreen && styles.buttonTextCompact]}>
-                  Avbryt
+                  {t('cancel')}
                 </Text>
               </TouchableOpacity>
 
@@ -1647,7 +1667,7 @@ export default function CreateRequestScreen() {
                 onPress={handleSubmit}
                 disabled={loading}
                 accessibilityRole="button"
-                accessibilityLabel={loading ? 'Publiserer lastforespørsel' : 'Publiser last'}
+                accessibilityLabel={loading ? t('publishingCargo') : t('publishCargo')}
                 accessibilityState={{ disabled: loading, busy: loading }}
               >
                 <LinearGradient
@@ -1657,12 +1677,12 @@ export default function CreateRequestScreen() {
                   style={[StyleSheet.absoluteFill, { borderRadius: borderRadius.full }]}
                 />
                 {loading ? (
-                  <ActivityIndicator color={colors.white} accessibilityLabel="Publiserer" />
+                  <ActivityIndicator color={colors.white} accessibilityLabel={t('creating')} />
                 ) : (
                   <Text
                     style={[styles.publishButtonText, isSmallScreen && styles.buttonTextCompact]}
                   >
-                    Publiser last
+                    {t('publishCargo')}
                   </Text>
                 )}
               </TouchableOpacity>
@@ -1677,10 +1697,14 @@ export default function CreateRequestScreen() {
           value={formData.pickup_date}
           mode="date"
           display="default"
+          minimumDate={new Date()}
           onChange={(_event, selectedDate) => {
             setShowPickupDate(false);
             if (selectedDate) {
               updateFormData('pickup_date', selectedDate);
+              if (normalizeDateOnly(formData.delivery_date).getTime() < normalizeDateOnly(selectedDate).getTime()) {
+                updateFormData('delivery_date', selectedDate);
+              }
             }
           }}
         />
@@ -1691,6 +1715,7 @@ export default function CreateRequestScreen() {
           value={formData.delivery_date}
           mode="date"
           display="default"
+          minimumDate={formData.pickup_date}
           onChange={(_event, selectedDate) => {
             setShowDeliveryDate(false);
             if (selectedDate) {
