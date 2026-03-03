@@ -416,7 +416,9 @@ export default function CreateRequestScreen() {
   const applyQuickTemplate = (template: (typeof QUICK_REQUEST_TEMPLATES)[number]) => {
     const nextData = {
       ...formData,
-      title: template.titleKey ? String(t(template.titleKey)) : formData.title,
+      description: template.descriptionKey
+        ? String(t(template.descriptionKey))
+        : formData.description,
       cargo_type: template.cargo_type,
       weight: template.weight,
       length: template.length,
