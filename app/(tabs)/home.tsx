@@ -397,7 +397,26 @@ export default function HomeScreen() {
         })(),
       }));
 
-      setRouteResults(mappedResults);
+      const sortedByMinDetour = [...mappedResults].sort((left, right) => {
+        const leftDetour =
+          typeof left.route_distance_km === 'number'
+            ? left.route_distance_km
+            : Number.POSITIVE_INFINITY;
+        const rightDetour =
+          typeof right.route_distance_km === 'number'
+            ? right.route_distance_km
+            : Number.POSITIVE_INFINITY;
+
+        if (leftDetour !== rightDetour) {
+          return leftDetour - rightDetour;
+        }
+
+        const leftCreatedAt = left.created_at ? new Date(left.created_at).getTime() : 0;
+        const rightCreatedAt = right.created_at ? new Date(right.created_at).getTime() : 0;
+        return rightCreatedAt - leftCreatedAt;
+      });
+
+      setRouteResults(sortedByMinDetour);
       setRouteSearched(true);
     } catch (error) {
       console.warn('Failed to search cargo along route', error);
