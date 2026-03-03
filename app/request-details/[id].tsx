@@ -63,6 +63,7 @@ interface CargoRequest {
   user_id: string;
   customer_id?: string;
   weight_kg?: number;
+  automotive_meta?: AutomotiveMeta;
   images?: string[];
   users?: {
     full_name: string;
@@ -95,11 +96,52 @@ type AutomotiveCondition = {
   hasDamage: boolean | null;
 };
 
+type AutomotiveMeta = {
+  driveable?: unknown;
+  starts?: unknown;
+  damage?: unknown;
+} | null;
+
 const parseBooleanToken = (value: string): boolean | null => {
   const normalized = value.trim().toLowerCase();
   if (['yes', 'ja', 'true', '1'].includes(normalized)) return true;
   if (['no', 'nei', 'false', '0'].includes(normalized)) return false;
   return null;
+};
+
+const parseAutomotiveMeta = (value: AutomotiveMeta): AutomotiveCondition | null => {
+  if (!value || typeof value !== 'object') {
+    return null;
+  }
+
+  const readBoolean = (input: unknown): boolean | null => {
+    if (typeof input === 'boolean') {
+      return input;
+    }
+
+    if (typeof input === 'string') {
+      return parseBooleanToken(input);
+    }
+
+    if (typeof input === 'number') {
+      if (input === 1) return true;
+      if (input === 0) return false;
+    }
+
+    return null;
+  };
+
+  const meta = value as { driveable?: unknown; starts?: unknown; damage?: unknown };
+  const parsed: AutomotiveCondition = {
+    isDriveable: readBoolean(meta.driveable),
+    starts: readBoolean(meta.starts),
+    hasDamage: readBoolean(meta.damage),
+  };
+
+  const hasAnyCondition =
+    parsed.isDriveable !== null || parsed.starts !== null || parsed.hasDamage !== null;
+
+  return hasAnyCondition ? parsed : null;
 };
 
 const parseAutomotiveDescription = (description: string | null | undefined) => {
@@ -285,9 +327,16 @@ export default function RequestDetailsScreen() {
         condition: null as AutomotiveCondition | null,
       };
     }
+    const conditionFromMeta = parseAutomotiveMeta(request.automotive_meta || null);
+    if (conditionFromMeta) {
+      return {
+        cleanDescription: request.description || '',
+        condition: conditionFromMeta,
+      };
+    }
 
     return parseAutomotiveDescription(request.description);
-  }, [request?.cargo_type, request?.description]);
+  }, [request?.automotive_meta, request?.cargo_type, request?.description]);
 
   const hasAutomotiveCondition = Boolean(automotiveDetails.condition);
 

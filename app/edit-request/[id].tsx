@@ -73,6 +73,112 @@ const base64ToUint8Array = (base64: string): Uint8Array => {
   return new Uint8Array(output);
 };
 
+type AutomotiveMeta = {
+  driveable?: unknown;
+  starts?: unknown;
+  damage?: unknown;
+} | null;
+
+type AutomotiveCondition = {
+  isDriveable: boolean;
+  starts: boolean;
+  hasDamage: boolean;
+};
+
+const parseBooleanToken = (value: string): boolean | null => {
+  const normalized = value.trim().toLowerCase();
+  if (['yes', 'ja', 'true', '1'].includes(normalized)) return true;
+  if (['no', 'nei', 'false', '0'].includes(normalized)) return false;
+  return null;
+};
+
+const parseAutomotivePayload = (
+  automotiveMeta: AutomotiveMeta | undefined,
+  description: string | null | undefined
+): { cleanDescription: string; condition: AutomotiveCondition } => {
+  const defaultCondition: AutomotiveCondition = {
+    isDriveable: true,
+    starts: true,
+    hasDamage: false,
+  };
+
+  if (automotiveMeta && typeof automotiveMeta === 'object') {
+    const readBoolean = (value: unknown, fallback: boolean) => {
+      if (typeof value === 'boolean') {
+        return value;
+      }
+
+      if (typeof value === 'string') {
+        const parsed = parseBooleanToken(value);
+        return parsed === null ? fallback : parsed;
+      }
+
+      if (typeof value === 'number') {
+        if (value === 1) return true;
+        if (value === 0) return false;
+      }
+
+      return fallback;
+    };
+
+    return {
+      cleanDescription: (description || '').trim(),
+      condition: {
+        isDriveable: readBoolean(automotiveMeta.driveable, defaultCondition.isDriveable),
+        starts: readBoolean(automotiveMeta.starts, defaultCondition.starts),
+        hasDamage: readBoolean(automotiveMeta.damage, defaultCondition.hasDamage),
+      },
+    };
+  }
+
+  let cleaned = description || '';
+  const parsedCondition: { isDriveable: boolean | null; starts: boolean | null; hasDamage: boolean | null } = {
+    isDriveable: null,
+    starts: null,
+    hasDamage: null,
+  };
+
+  const machineTagMatch = cleaned.match(/^\[automotive_condition\|([^\]]+)\]\s*/i);
+  if (machineTagMatch) {
+    const pairs = machineTagMatch[1].split('|');
+    for (const pair of pairs) {
+      const [rawKey, rawValue] = pair.split('=');
+      const key = (rawKey || '').trim().toLowerCase();
+      const value = parseBooleanToken(rawValue || '');
+
+      if (key === 'driveable' && value !== null) {
+        parsedCondition.isDriveable = value;
+      } else if (key === 'starts' && value !== null) {
+        parsedCondition.starts = value;
+      } else if (key === 'damage' && value !== null) {
+        parsedCondition.hasDamage = value;
+      }
+    }
+
+    cleaned = cleaned.slice(machineTagMatch[0].length);
+  }
+
+  const humanTagMatch = cleaned.match(/^\[([\s\S]*?)\]\s*/);
+  if (humanTagMatch) {
+    const block = humanTagMatch[1].toLowerCase();
+    const likelyAutomotiveBlock =
+      /driveable|non.?driveable|kjørbar|kan rulles|vinsj|starter|starts|skader|damage/.test(block);
+
+    if (likelyAutomotiveBlock) {
+      cleaned = cleaned.slice(humanTagMatch[0].length);
+    }
+  }
+
+  return {
+    cleanDescription: cleaned.trim(),
+    condition: {
+      isDriveable: parsedCondition.isDriveable ?? defaultCondition.isDriveable,
+      starts: parsedCondition.starts ?? defaultCondition.starts,
+      hasDamage: parsedCondition.hasDamage ?? defaultCondition.hasDamage,
+    },
+  };
+};
+
 interface CargoRequest {
   id: string;
   title: string;
@@ -98,6 +204,7 @@ interface CargoRequest {
   user_id?: string;
   customer_id?: string;
   weight_kg?: number;
+  automotive_meta?: AutomotiveMeta;
   images?: string[];
   bids: unknown[];
 }
@@ -124,6 +231,9 @@ export default function EditRequestScreen() {
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [images, setImages] = useState<string[]>([]);
   const [originalImages, setOriginalImages] = useState<string[]>([]);
+  const [isDriveable, setIsDriveable] = useState(true);
+  const [vehicleStarts, setVehicleStarts] = useState(true);
+  const [vehicleHasDamage, setVehicleHasDamage] = useState(false);
 
   const fromAddressTextRef = useRef('');
   const toAddressTextRef = useRef('');
@@ -443,9 +553,14 @@ export default function EditRequestScreen() {
         }
       }
 
+      const automotivePayload =
+        data.cargo_type === 'automotive'
+          ? parseAutomotivePayload(data.automotive_meta, data.description)
+          : null;
+
       setFormData({
         title: data.title,
-        description: data.description,
+        description: automotivePayload?.cleanDescription ?? data.description,
         cargo_type: data.cargo_type,
         weight: (data.weight_kg ?? data.weight ?? '').toString(),
         length,
@@ -463,6 +578,12 @@ export default function EditRequestScreen() {
         price_type: data.price_type,
         price: data.price.toString(),
       });
+
+      if (automotivePayload) {
+        setIsDriveable(automotivePayload.condition.isDriveable);
+        setVehicleStarts(automotivePayload.condition.starts);
+        setVehicleHasDamage(automotivePayload.condition.hasDamage);
+      }
 
       const normalizedImages = normalizeCargoImageInputs(requestData.images, requestData.image_url);
       const resolvedImages = await resolveCargoImageUrls(normalizedImages);
@@ -636,6 +757,14 @@ export default function EditRequestScreen() {
         delivery_date: formData.delivery_date.toISOString().split('T')[0],
         price_type: formData.price_type,
         price: formData.price_type === 'fixed' ? sanitizeNumber(formData.price, 0, 1000000) : 0,
+        automotive_meta:
+          formData.cargo_type === 'automotive'
+            ? {
+              driveable: isDriveable,
+              starts: vehicleStarts,
+              damage: vehicleHasDamage,
+            }
+            : null,
         updated_at: new Date().toISOString(),
       };
 
@@ -852,6 +981,104 @@ export default function EditRequestScreen() {
                 </Text>
               ) : null}
             </View>
+
+            {formData.cargo_type === 'automotive' && (
+              <View style={styles.fieldContainer}>
+                <Text style={styles.fieldLabel}>{t('vehicleCondition') || 'Kjøretøytilstand'}</Text>
+                <View style={styles.vehicleConditionCard}>
+                  <View style={styles.vehicleConditionRow}>
+                    <View style={styles.vehicleConditionTextWrap}>
+                      <Text style={styles.vehicleConditionQuestion}>{t('vehicleIsDriveable')}</Text>
+                      <Text style={styles.vehicleConditionHint}>{t('vehicleIsDriveableHint')}</Text>
+                    </View>
+                    <View style={styles.vehicleConditionToggleRow}>
+                      <TouchableOpacity
+                        style={[styles.conditionPill, isDriveable && styles.conditionPillActive]}
+                        onPress={() => setIsDriveable(true)}
+                        accessibilityRole="button"
+                        accessibilityLabel={t('yes')}
+                      >
+                        <Text style={[styles.conditionPillText, isDriveable && styles.conditionPillTextActive]}>
+                          {t('yes')}
+                        </Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        style={[styles.conditionPill, !isDriveable && styles.conditionPillActiveNo]}
+                        onPress={() => setIsDriveable(false)}
+                        accessibilityRole="button"
+                        accessibilityLabel={t('no')}
+                      >
+                        <Text style={[styles.conditionPillText, !isDriveable && styles.conditionPillTextActive]}>
+                          {t('no')}
+                        </Text>
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+
+                  <View style={styles.vehicleConditionDivider} />
+
+                  <View style={styles.vehicleConditionRow}>
+                    <View style={styles.vehicleConditionTextWrap}>
+                      <Text style={styles.vehicleConditionQuestion}>{t('vehicleStarts')}</Text>
+                      <Text style={styles.vehicleConditionHint}>{t('vehicleStartsHint')}</Text>
+                    </View>
+                    <View style={styles.vehicleConditionToggleRow}>
+                      <TouchableOpacity
+                        style={[styles.conditionPill, vehicleStarts && styles.conditionPillActive]}
+                        onPress={() => setVehicleStarts(true)}
+                        accessibilityRole="button"
+                        accessibilityLabel={t('yes')}
+                      >
+                        <Text style={[styles.conditionPillText, vehicleStarts && styles.conditionPillTextActive]}>
+                          {t('yes')}
+                        </Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        style={[styles.conditionPill, !vehicleStarts && styles.conditionPillActiveNo]}
+                        onPress={() => setVehicleStarts(false)}
+                        accessibilityRole="button"
+                        accessibilityLabel={t('no')}
+                      >
+                        <Text style={[styles.conditionPillText, !vehicleStarts && styles.conditionPillTextActive]}>
+                          {t('no')}
+                        </Text>
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+
+                  <View style={styles.vehicleConditionDivider} />
+
+                  <View style={styles.vehicleConditionRow}>
+                    <View style={styles.vehicleConditionTextWrap}>
+                      <Text style={styles.vehicleConditionQuestion}>{t('vehicleHasDamage')}</Text>
+                      <Text style={styles.vehicleConditionHint}>{t('vehicleHasDamageHint')}</Text>
+                    </View>
+                    <View style={styles.vehicleConditionToggleRow}>
+                      <TouchableOpacity
+                        style={[styles.conditionPill, vehicleHasDamage && styles.conditionPillActiveNo]}
+                        onPress={() => setVehicleHasDamage(true)}
+                        accessibilityRole="button"
+                        accessibilityLabel={t('yes')}
+                      >
+                        <Text style={[styles.conditionPillText, vehicleHasDamage && styles.conditionPillTextActive]}>
+                          {t('yes')}
+                        </Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        style={[styles.conditionPill, !vehicleHasDamage && styles.conditionPillActive]}
+                        onPress={() => setVehicleHasDamage(false)}
+                        accessibilityRole="button"
+                        accessibilityLabel={t('no')}
+                      >
+                        <Text style={[styles.conditionPillText, !vehicleHasDamage && styles.conditionPillTextActive]}>
+                          {t('no')}
+                        </Text>
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                </View>
+              </View>
+            )}
 
             {/* Quick Templates */}
             <View style={styles.fieldContainer}>
@@ -1526,6 +1753,74 @@ const styles = StyleSheet.create({
   },
   quickTemplateChipTextSelected: {
     color: colors.primary,
+  },
+  vehicleConditionCard: {
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    borderRadius: 16,
+    backgroundColor: '#FFFFFF',
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 4,
+    elevation: 2,
+    marginTop: spacing.xs,
+  },
+  vehicleConditionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: spacing.md,
+    gap: spacing.sm,
+  },
+  vehicleConditionTextWrap: {
+    flex: 1,
+  },
+  vehicleConditionQuestion: {
+    fontSize: fontSize.md,
+    fontWeight: '600',
+    color: '#111827',
+  },
+  vehicleConditionHint: {
+    fontSize: fontSize.sm,
+    color: '#6B7280',
+    marginTop: 2,
+  },
+  vehicleConditionToggleRow: {
+    flexDirection: 'row',
+    gap: spacing.xs,
+  },
+  vehicleConditionDivider: {
+    height: 1,
+    backgroundColor: '#F3F4F6',
+    marginHorizontal: spacing.md,
+  },
+  conditionPill: {
+    borderWidth: 1.5,
+    borderColor: '#E5E7EB',
+    borderRadius: borderRadius.full,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+    backgroundColor: '#F9FAFB',
+    minWidth: 48,
+    alignItems: 'center',
+  },
+  conditionPillActive: {
+    borderColor: colors.primary,
+    backgroundColor: colors.primaryLight,
+  },
+  conditionPillActiveNo: {
+    borderColor: '#EF4444',
+    backgroundColor: '#FEF2F2',
+  },
+  conditionPillText: {
+    fontSize: fontSize.sm,
+    fontWeight: '600',
+    color: '#6B7280',
+  },
+  conditionPillTextActive: {
+    color: '#111827',
   },
   priceRangeEstimateCard: {
     borderWidth: 1,

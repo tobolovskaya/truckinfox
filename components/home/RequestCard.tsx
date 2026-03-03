@@ -34,6 +34,7 @@ export interface CargoRequest {
   customer_id?: string;
   distance?: number;
   images?: string[];
+  bid_count?: number;
   bids?: Array<{ status?: string }>;
   users?: {
     full_name?: string;
@@ -88,6 +89,12 @@ export const RequestCard: React.FC<RequestCardProps> = ({
     () => request.images?.find(image => typeof image === 'string' && image.trim().length > 0),
     [request.images]
   );
+  const bidCount =
+    typeof request.bid_count === 'number' && Number.isFinite(request.bid_count)
+      ? Math.max(0, Math.round(request.bid_count))
+      : Array.isArray(request.bids)
+        ? request.bids.length
+        : 0;
 
   return (
     <TouchableOpacity
@@ -173,6 +180,12 @@ export const RequestCard: React.FC<RequestCardProps> = ({
             <Text style={[styles.metaText, compact && styles.metaTextCompact]}>{dateText}</Text>
           </View>
           <View style={styles.footerActions}>
+            {bidCount > 0 && (
+              <View style={[styles.bidCountBadge, compact && styles.bidCountBadgeCompact]}>
+                <Ionicons name="chatbubble-ellipses-outline" size={11} color={colors.primary} />
+                <Text style={styles.bidCountBadgeText}>{`${bidCount} ${t('bids')}`}</Text>
+              </View>
+            )}
             {!compact && typeof request.distance === 'number' && request.distance > 0 && (
               <View style={[styles.distanceBadge, compact && styles.distanceBadgeCompact]}>
                 <Ionicons name="navigate-outline" size={11} color={colors.primary} />
@@ -366,6 +379,23 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.xxxs,
   },
   distanceBadgeText: {
+    fontSize: fontSize.xs,
+    fontWeight: fontWeight.semibold,
+    color: colors.primary,
+  },
+  bidCountBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xxxs,
+    backgroundColor: colors.primaryLight,
+    borderRadius: borderRadius.full,
+    paddingHorizontal: spacing.xs,
+    paddingVertical: spacing.xxxs,
+  },
+  bidCountBadgeCompact: {
+    paddingHorizontal: spacing.xxxs,
+  },
+  bidCountBadgeText: {
     fontSize: fontSize.xs,
     fontWeight: fontWeight.semibold,
     color: colors.primary,

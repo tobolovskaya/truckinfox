@@ -748,16 +748,7 @@ export default function CreateRequestScreen() {
 
       const title = sanitizeInput(formData.title.trim(), 200);
 
-      let descriptionText = formData.description.trim();
-      if (formData.cargo_type === 'automotive') {
-        const automotiveConditionTag = `[automotive_condition|driveable=${isDriveable ? 'yes' : 'no'}|starts=${vehicleStarts ? 'yes' : 'no'}|damage=${vehicleHasDamage ? 'yes' : 'no'}]`;
-        const vehicleConditionDetails = [
-          `${t('vehicleIsDriveable')}: ${isDriveable ? t('yes') : t('no')}`,
-          `${t('vehicleStarts')}: ${vehicleStarts ? t('yes') : t('no')}`,
-          `${t('vehicleHasDamage')}: ${vehicleHasDamage ? t('yes') : t('no')}`,
-        ].join('\n');
-        descriptionText = `${automotiveConditionTag}\n[${vehicleConditionDetails}]\n\n${descriptionText}`;
-      }
+      const descriptionText = formData.description.trim();
 
       const description = sanitizeInput(descriptionText, 2000);
       const fromAddress = sanitizeInput(formData.from_address.trim(), 300);
@@ -780,6 +771,14 @@ export default function CreateRequestScreen() {
         delivery_date: formData.delivery_date.toISOString().split('T')[0],
         price_type: formData.price_type,
         price: formData.price_type === 'fixed' ? sanitizeNumber(formData.price, 0, 1000000) : 0,
+        automotive_meta:
+          formData.cargo_type === 'automotive'
+            ? {
+              driveable: isDriveable,
+              starts: vehicleStarts,
+              damage: vehicleHasDamage,
+            }
+            : null,
       };
 
       let insertedRequest: { id: string } | null = null;

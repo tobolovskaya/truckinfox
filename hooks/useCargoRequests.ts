@@ -37,6 +37,7 @@ export interface CargoRequest {
   };
   bids: Bid[];
   is_favorite?: boolean;
+  bid_count?: number;
   user_favorites?: { id: string; user_id: string }[];
   images?: string[];
 }
@@ -84,16 +85,7 @@ type CargoRequestsQueryKey = [
 const PAGE_SIZE = 20;
 const ACTIVE_REQUEST_STATUSES = ['open', 'bidding'] as const;
 
-type HydratedProfile = {
-  full_name?: string | null;
-  user_type?: string | null;
-  rating?: number | null;
-  avatar_url?: string | null;
-};
-
 type CargoRequestHydrationData = {
-  profilesById: Map<string, HydratedProfile>;
-  bidsByRequestId: Map<string, Bid[]>;
   favoriteRequestIds: Set<string>;
 };
 
@@ -201,12 +193,10 @@ const fetchCargoRequestHydrationData = async (
   requestRows: Record<string, unknown>[],
   userId?: string
 ): Promise<CargoRequestHydrationData> => {
-  const profilesById = new Map<string, HydratedProfile>();
-  const bidsByRequestId = new Map<string, Bid[]>();
   const favoriteRequestIds = new Set<string>();
 
   if (requestRows.length === 0) {
-    return { profilesById, bidsByRequestId, favoriteRequestIds };
+    return { favoriteRequestIds };
   }
 
   const requestIds = Array.from(
@@ -216,60 +206,6 @@ const fetchCargoRequestHydrationData = async (
         .filter((value): value is string => typeof value === 'string' && value.length > 0)
     )
   );
-
-  const ownerIds = Array.from(
-    new Set(
-      requestRows
-        .map(row => {
-          if (typeof row.customer_id === 'string' && row.customer_id.length > 0) {
-            return row.customer_id;
-          }
-          if (typeof row.user_id === 'string' && row.user_id.length > 0) {
-            return row.user_id;
-          }
-          return null;
-        })
-        .filter((value): value is string => typeof value === 'string')
-    )
-  );
-
-  if (ownerIds.length > 0) {
-    try {
-      const { data: profileRows } = await supabase
-        .from('profiles')
-        .select('id, full_name, user_type, rating, avatar_url')
-        .in('id', ownerIds);
-
-      (profileRows || []).forEach(profile => {
-        if (typeof profile.id === 'string') {
-          profilesById.set(profile.id, {
-            full_name: profile.full_name,
-            user_type: profile.user_type,
-            rating: profile.rating,
-            avatar_url: profile.avatar_url,
-          });
-        }
-      });
-    } catch (error) {
-      console.warn('Failed to batch hydrate request owner profiles', error);
-    }
-  }
-
-  if (requestIds.length > 0) {
-    try {
-      const { data: bidRows } = await supabase.from('bids').select('*').in('request_id', requestIds);
-      (bidRows || []).forEach(row => {
-        if (typeof row.request_id !== 'string' || typeof row.id !== 'string') {
-          return;
-        }
-        const existing = bidsByRequestId.get(row.request_id) || [];
-        existing.push({ id: row.id, ...row });
-        bidsByRequestId.set(row.request_id, existing);
-      });
-    } catch (error) {
-      console.warn('Failed to batch hydrate request bids', error);
-    }
-  }
 
   if (userId && requestIds.length > 0) {
     try {
@@ -289,7 +225,7 @@ const fetchCargoRequestHydrationData = async (
     }
   }
 
-  return { profilesById, bidsByRequestId, favoriteRequestIds };
+  return { favoriteRequestIds };
 };
 
 const hydrateCargoRequest = async (
@@ -314,20 +250,38 @@ const hydrateCargoRequest = async (
     rating: 0,
   };
 
-  if (requestUserId) {
-    const userRow = hydrationData.profilesById.get(requestUserId);
-    if (userRow) {
-      userData = {
-        full_name: userRow.full_name || 'Unknown User',
-        user_type: userRow.user_type || 'customer',
-        rating: typeof userRow.rating === 'number' ? userRow.rating : 0,
-        avatar_url: userRow.avatar_url || undefined,
-      };
-    }
+  const ownerFullName =
+    typeof requestData.owner_full_name === 'string' ? requestData.owner_full_name : undefined;
+  const ownerUserType =
+    typeof requestData.owner_user_type === 'string' ? requestData.owner_user_type : undefined;
+  const ownerRatingRaw = requestData.owner_rating;
+  const ownerRating =
+    typeof ownerRatingRaw === 'number'
+      ? ownerRatingRaw
+      : typeof ownerRatingRaw === 'string'
+        ? Number(ownerRatingRaw)
+        : NaN;
+  const ownerAvatarUrl =
+    typeof requestData.owner_avatar_url === 'string' ? requestData.owner_avatar_url : undefined;
+
+  if (ownerFullName || ownerUserType || Number.isFinite(ownerRating) || ownerAvatarUrl) {
+    userData = {
+      full_name: ownerFullName || 'Unknown User',
+      user_type: ownerUserType || 'customer',
+      rating: Number.isFinite(ownerRating) ? ownerRating : 0,
+      avatar_url: ownerAvatarUrl,
+    };
   }
 
-  const bids = hydrationData.bidsByRequestId.get(requestId) || [];
+  const bids: Bid[] = [];
   const isFavorite = hydrationData.favoriteRequestIds.has(requestId);
+  const bidCountRaw = requestData.bid_count;
+  const bidCount =
+    typeof bidCountRaw === 'number'
+      ? bidCountRaw
+      : typeof bidCountRaw === 'string'
+        ? Number(bidCountRaw)
+        : 0;
 
   const normalizedImages = normalizeCargoImageInputs(requestData.images, requestData.image_url);
   const resolvedPreviewImages = await resolveCargoImageUrls(normalizedImages, 1);
@@ -358,6 +312,7 @@ const hydrateCargoRequest = async (
           : undefined,
     users: userData,
     bids,
+    bid_count: Number.isFinite(bidCount) ? bidCount : 0,
     is_favorite: isFavorite,
     images: resolvedPreviewImages.length > 0 ? resolvedPreviewImages : normalizedImages,
   } as CargoRequest;
@@ -372,7 +327,7 @@ const fetchCargoRequestsPage = async (
   }
 
   let requestQuery = supabase
-    .from('cargo_requests')
+    .from('cargo_requests_feed')
     .select('*')
     .range(offset, offset + PAGE_SIZE - 1);
 
