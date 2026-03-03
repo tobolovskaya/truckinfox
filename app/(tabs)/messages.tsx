@@ -17,7 +17,7 @@ import { supabase } from '../../lib/supabase';
 import Avatar from '../../components/Avatar';
 import { SkeletonLoader } from '../../components/SkeletonLoader';
 import { EmptyState } from '../../components/EmptyState';
-import EmptyCargoIllustration from '../../assets/empty-cargo.svg';
+import EmptyMessagesIllustration from '../../assets/empty-messages.svg';
 import {
   spacing,
   fontSize,
@@ -345,7 +345,7 @@ export default function MessagesScreen() {
       icon="chatbubbles-outline"
       title={t('noMessages') || 'No messages yet'}
       description={t('startConversation') || 'Start your first conversation'}
-      illustration={EmptyCargoIllustration}
+      illustration={EmptyMessagesIllustration}
       actions={[
         {
           label: t('createRequest') || 'Create request',
