@@ -1164,100 +1164,6 @@ export default function CreateRequestScreen() {
               </Text>
             </View>
 
-            {/* From Address */}
-            <View style={[styles.fieldContainer, isSmallScreen && styles.fieldContainerCompact]}>
-              <AddressAutocomplete
-                value={formData.from_address}
-                label="Fra adresse"
-                placeholder="Skriv inn startsted..."
-                error={getFieldError('from_address', formData.from_address)}
-                onChangeText={text => {
-                  fromAddressTextRef.current = text;
-                  updateFormData('from_address', text);
-                  if (text !== formData.from_address) {
-                    clearDistanceIfNeeded('from_address');
-                  }
-                }}
-                onSelect={(address, lat, lng) => handleFromAddressSelect(address, lat, lng)}
-              />
-            </View>
-
-            {/* To Address */}
-            <View style={[styles.fieldContainer, isSmallScreen && styles.fieldContainerCompact]}>
-              <AddressAutocomplete
-                value={formData.to_address}
-                label="Til adresse"
-                placeholder="Skriv inn destinasjon..."
-                error={getFieldError('to_address', formData.to_address)}
-                onChangeText={text => {
-                  toAddressTextRef.current = text;
-                  updateFormData('to_address', text);
-                  if (text !== formData.to_address) {
-                    clearDistanceIfNeeded('to_address');
-                  }
-                }}
-                onSelect={(address, lat, lng) => handleToAddressSelect(address, lat, lng)}
-              />
-            </View>
-
-            {/* Dates */}
-            <View style={[styles.dateRow, isSmallScreen && styles.dateRowCompact]}>
-              <View
-                style={[
-                  styles.fieldContainer,
-                  isSmallScreen && styles.fieldContainerCompact,
-                  { flex: 1, marginRight: isSmallScreen ? 0 : 8 },
-                ]}
-              >
-                <Text style={[styles.fieldLabel, isSmallScreen && styles.fieldLabelCompact]}>
-                  Hentedato
-                </Text>
-                <TouchableOpacity
-                  style={[styles.dateInput, isSmallScreen && styles.dateInputCompact]}
-                  onPress={() => setShowPickupDate(true)}
-                  accessibilityRole="button"
-                  accessibilityLabel="Select pickup date"
-                  accessibilityHint="Choose when the cargo should be picked up"
-                  accessibilityValue={{ text: formData.pickup_date.toLocaleDateString('no-NO') }}
-                >
-                  <TextInput
-                    style={[styles.dateTextInput, isSmallScreen && styles.dateTextInputCompact]}
-                    value={formData.pickup_date.toLocaleDateString('no-NO')}
-                    editable={false}
-                    placeholder="dd.mm.åååå"
-                  />
-                  <Ionicons name="calendar-outline" size={20} color="#6B7280" />
-                </TouchableOpacity>
-              </View>
-
-              <View
-                style={[
-                  styles.fieldContainer,
-                  isSmallScreen && styles.fieldContainerCompact,
-                  { flex: 1, marginLeft: isSmallScreen ? 0 : 8 },
-                ]}
-              >
-                <Text style={[styles.fieldLabel, isSmallScreen && styles.fieldLabelCompact]}>
-                  Leveringsdato
-                </Text>
-                <TouchableOpacity
-                  style={[styles.dateInput, isSmallScreen && styles.dateInputCompact]}
-                  onPress={() => setShowDeliveryDate(true)}
-                  accessibilityRole="button"
-                  accessibilityLabel="Select delivery date"
-                  accessibilityHint="Choose when the cargo should be delivered"
-                  accessibilityValue={{ text: formData.delivery_date.toLocaleDateString('no-NO') }}
-                >
-                  <TextInput
-                    style={[styles.dateTextInput, isSmallScreen && styles.dateTextInputCompact]}
-                    value={formData.delivery_date.toLocaleDateString('no-NO')}
-                    editable={false}
-                    placeholder="dd.mm.åååå"
-                  />
-                  <Ionicons name="calendar-outline" size={20} color="#6B7280" />
-                </TouchableOpacity>
-              </View>
-            </View>
 
             {/* Dimensions */}
             <View style={[styles.fieldContainer, isSmallScreen && styles.fieldContainerCompact]}>
@@ -1466,6 +1372,101 @@ export default function CreateRequestScreen() {
               )}
             </View>
 
+            {/* From Address */}
+            <View style={[styles.fieldContainer, isSmallScreen && styles.fieldContainerCompact]}>
+              <AddressAutocomplete
+                value={formData.from_address}
+                label="Fra adresse"
+                placeholder="Skriv inn startsted..."
+                error={getFieldError('from_address', formData.from_address)}
+                onChangeText={text => {
+                  fromAddressTextRef.current = text;
+                  updateFormData('from_address', text);
+                  if (text !== formData.from_address) {
+                    clearDistanceIfNeeded('from_address');
+                  }
+                }}
+                onSelect={(address, lat, lng) => handleFromAddressSelect(address, lat, lng)}
+              />
+            </View>
+
+            {/* To Address */}
+            <View style={[styles.fieldContainer, isSmallScreen && styles.fieldContainerCompact]}>
+              <AddressAutocomplete
+                value={formData.to_address}
+                label="Til adresse"
+                placeholder="Skriv inn destinasjon..."
+                error={getFieldError('to_address', formData.to_address)}
+                onChangeText={text => {
+                  toAddressTextRef.current = text;
+                  updateFormData('to_address', text);
+                  if (text !== formData.to_address) {
+                    clearDistanceIfNeeded('to_address');
+                  }
+                }}
+                onSelect={(address, lat, lng) => handleToAddressSelect(address, lat, lng)}
+              />
+            </View>
+
+            {/* Dates */}
+            <View style={[styles.dateRow, isSmallScreen && styles.dateRowCompact]}>
+              <View
+                style={[
+                  styles.fieldContainer,
+                  isSmallScreen && styles.fieldContainerCompact,
+                  { flex: 1, marginRight: isSmallScreen ? 0 : 8 },
+                ]}
+              >
+                <Text style={[styles.fieldLabel, isSmallScreen && styles.fieldLabelCompact]}>
+                  Hentedato
+                </Text>
+                <TouchableOpacity
+                  style={[styles.dateInput, isSmallScreen && styles.dateInputCompact]}
+                  onPress={() => setShowPickupDate(true)}
+                  accessibilityRole="button"
+                  accessibilityLabel="Select pickup date"
+                  accessibilityHint="Choose when the cargo should be picked up"
+                  accessibilityValue={{ text: formData.pickup_date.toLocaleDateString('no-NO') }}
+                >
+                  <TextInput
+                    style={[styles.dateTextInput, isSmallScreen && styles.dateTextInputCompact]}
+                    value={formData.pickup_date.toLocaleDateString('no-NO')}
+                    editable={false}
+                    placeholder="dd.mm.åååå"
+                  />
+                  <Ionicons name="calendar-outline" size={20} color="#6B7280" />
+                </TouchableOpacity>
+              </View>
+
+              <View
+                style={[
+                  styles.fieldContainer,
+                  isSmallScreen && styles.fieldContainerCompact,
+                  { flex: 1, marginLeft: isSmallScreen ? 0 : 8 },
+                ]}
+              >
+                <Text style={[styles.fieldLabel, isSmallScreen && styles.fieldLabelCompact]}>
+                  Leveringsdato
+                </Text>
+                <TouchableOpacity
+                  style={[styles.dateInput, isSmallScreen && styles.dateInputCompact]}
+                  onPress={() => setShowDeliveryDate(true)}
+                  accessibilityRole="button"
+                  accessibilityLabel="Select delivery date"
+                  accessibilityHint="Choose when the cargo should be delivered"
+                  accessibilityValue={{ text: formData.delivery_date.toLocaleDateString('no-NO') }}
+                >
+                  <TextInput
+                    style={[styles.dateTextInput, isSmallScreen && styles.dateTextInputCompact]}
+                    value={formData.delivery_date.toLocaleDateString('no-NO')}
+                    editable={false}
+                    placeholder="dd.mm.åååå"
+                  />
+                  <Ionicons name="calendar-outline" size={20} color="#6B7280" />
+                </TouchableOpacity>
+              </View>
+            </View>
+
             {/* Price Type */}
             <View style={[styles.fieldContainer, isSmallScreen && styles.fieldContainerCompact]}>
               <Text style={[styles.fieldLabel, isSmallScreen && styles.fieldLabelCompact]}>
@@ -1497,7 +1498,7 @@ export default function CreateRequestScreen() {
             {/* Price - ALWAYS VISIBLE */}
             <View style={[styles.fieldContainer, isSmallScreen && styles.fieldContainerCompact]}>
               <Text style={[styles.fieldLabel, isSmallScreen && styles.fieldLabelCompact]}>
-                Foreslått pris (NOK)
+                Foreslått pris (kr)
               </Text>
               <View style={styles.priceRangeEstimateCard}>
                 <View style={styles.priceRangeEstimateHeader}>
@@ -1507,7 +1508,7 @@ export default function CreateRequestScreen() {
                 {estimatedPriceRange.min !== null && estimatedPriceRange.max !== null ? (
                   <>
                     <Text style={styles.priceRangeEstimateValue}>
-                      {`${estimatedPriceRange.min.toLocaleString('no-NO')}–${estimatedPriceRange.max.toLocaleString('no-NO')} NOK`}
+                      {`${estimatedPriceRange.min.toLocaleString('no-NO')}–${estimatedPriceRange.max.toLocaleString('no-NO')} kr`}
                     </Text>
                     <Text style={styles.priceRangeEstimateMeta}>
                       {t('priceRangeEstimateMeta', {
