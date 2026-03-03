@@ -277,13 +277,13 @@ const styles = StyleSheet.create({
     opacity: 0.72,
   },
   imageOverlayTopBackdropCompact: {
-    top: spacing.xxxs,
+    top: spacing.xxs,
     left: spacing.xxxs,
     right: spacing.xxxs,
     height: 30,
   },
   imageOverlayTopCompact: {
-    top: spacing.xxxs,
+    top: spacing.xxs,
     left: spacing.xxxs,
     right: spacing.xxxs,
     gap: spacing.xxxs,
