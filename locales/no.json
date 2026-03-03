@@ -664,6 +664,7 @@
   "openInNavigator": "Åpne i navigasjon",
   "signatureUnavailable": "Signatur utilgjengelig",
   "quickTemplates": "Hurtigmaler",
+  "fillDescription": "Fyll beskrivelse",
   "quickTemplatesHint": "Trykk på en mal for å fylle inn typisk vekt og dimensjoner.",
   "quickTemplateAccessibilityHint": "Fyller inn typisk lasttype, vekt og dimensjoner",
   "useQuickTemplate": "Bruk hurtigmal {{template}}",

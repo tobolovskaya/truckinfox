@@ -664,6 +664,7 @@
   "signatureUnavailable": "Signature unavailable",
   "openInNavigator": "Open in navigator"
   ,"quickTemplates": "Quick templates"
+  ,"fillDescription": "Fill description"
   ,"quickTemplatesHint": "Tap a template to fill in typical weight and dimensions."
   ,"quickTemplateAccessibilityHint": "Fills in typical cargo type, weight, and dimensions"
   ,"useQuickTemplate": "Use quick template {{template}}"

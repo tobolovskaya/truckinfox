@@ -214,30 +214,36 @@ export default function CreateRequestScreen() {
     return () => clearTimeout(timeoutId);
   }, [formData, images]);
 
-  // Auto-generate title based on addresses and cargo type
-  useEffect(() => {
-    // Only auto-generate if user hasn't explicitly customized the title
-    if (!touchedFields.title || formData.title.trim() === '') {
-      const getCity = (address: string) => (address ? address.split(',')[0].trim() : '');
-      const fromCity = getCity(formData.from_address);
-      const toCity = getCity(formData.to_address);
-      const rawCargoKey = formData.cargo_type ? t(formData.cargo_type) : t('cargo') || 'Last';
-      const cargoName = String(rawCargoKey).charAt(0).toUpperCase() + String(rawCargoKey).slice(1);
+  const buildAutoDescription = () => {
+    const descriptionParts: string[] = [];
 
-      let newTitle = cargoName;
-      if (fromCity && toCity) {
-        newTitle += ` fra ${fromCity} til ${toCity}`;
-      } else if (fromCity) {
-        newTitle += ` fra ${fromCity}`;
-      } else if (toCity) {
-        newTitle += ` til ${toCity}`;
-      }
-
-      if (newTitle !== formData.title && (fromCity || toCity || formData.cargo_type)) {
-        setFormData(prev => ({ ...prev, title: newTitle }));
-      }
+    if (formData.cargo_type) {
+      descriptionParts.push(`${t('cargoType')}: ${String(t(formData.cargo_type))}`);
     }
-  }, [formData.from_address, formData.to_address, formData.cargo_type, touchedFields.title, t]);
+
+    if (formData.from_address) {
+      descriptionParts.push(`${t('fromAddress')}: ${formData.from_address}`);
+    }
+
+    if (formData.to_address) {
+      descriptionParts.push(`${t('toAddress')}: ${formData.to_address}`);
+    }
+
+    if (String(formData.weight || '').trim()) {
+      descriptionParts.push(`${t('weight')}: ${formData.weight} kg`);
+    }
+
+    const length = String(formData.length || '').trim();
+    const width = String(formData.width || '').trim();
+    const height = String(formData.height || '').trim();
+
+    if (length || width || height) {
+      const dimensions = [length || '-', width || '-', height || '-'].join(' x ');
+      descriptionParts.push(`${t('dimensions')}: ${dimensions} cm`);
+    }
+
+    return descriptionParts.join('\n');
+  };
 
   const validateField = (field: string, value: unknown, nextData: typeof formData = formData) => {
     switch (field) {
@@ -1307,34 +1313,12 @@ export default function CreateRequestScreen() {
 
             {/* Title */}
             <View style={[styles.fieldContainer, isSmallScreen && styles.fieldContainerCompact]}>
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing.xs }}>
-                <Text
-                  style={[styles.fieldLabel, { marginBottom: 0 }, isSmallScreen && styles.fieldLabelCompact]}
-                  accessibilityRole="header"
-                >
-                  {t('title')}
-                </Text>
-                <TouchableOpacity
-                  onPress={() => {
-                    const getCity = (a: string) => (a ? a.split(',')[0].trim() : '');
-                    const fromCity = getCity(formData.from_address);
-                    const toCity = getCity(formData.to_address);
-                    const rawCargoKey = formData.cargo_type ? t(formData.cargo_type) : t('cargo') || 'Last';
-                    const cargoName = String(rawCargoKey).charAt(0).toUpperCase() + String(rawCargoKey).slice(1);
-                    let newTitle = cargoName;
-                    if (fromCity && toCity) newTitle += ` fra ${fromCity} til ${toCity}`;
-                    else if (fromCity) newTitle += ` fra ${fromCity}`;
-                    else if (toCity) newTitle += ` til ${toCity}`;
-                    setFormData(prev => ({ ...prev, title: newTitle }));
-                    try { triggerHapticFeedback.light(); } catch { }
-                  }}
-                  style={{ flexDirection: 'row', alignItems: 'center' }}
-                  activeOpacity={0.7}
-                >
-                  <Ionicons name="color-wand-outline" size={16} color={colors.primary} />
-                  <Text style={{ marginLeft: 4, fontSize: 13, color: colors.primary, fontWeight: '600' }}>Auto-fyll</Text>
-                </TouchableOpacity>
-              </View>
+              <Text
+                style={[styles.fieldLabel, isSmallScreen && styles.fieldLabelCompact]}
+                accessibilityRole="header"
+              >
+                {t('title')}
+              </Text>
               <View style={styles.inputWrapper}>
                 <TextInput
                   testID="cargo-title-input"
@@ -1362,12 +1346,43 @@ export default function CreateRequestScreen() {
 
             {/* Description */}
             <View style={[styles.fieldContainer, isSmallScreen && styles.fieldContainerCompact]}>
-              <Text
-                style={[styles.fieldLabel, isSmallScreen && styles.fieldLabelCompact]}
-                accessibilityRole="header"
+              <View
+                style={{
+                  flexDirection: 'row',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  marginBottom: spacing.xs,
+                }}
               >
-                {t('description')}
-              </Text>
+                <Text
+                  style={[styles.fieldLabel, { marginBottom: 0 }, isSmallScreen && styles.fieldLabelCompact]}
+                  accessibilityRole="header"
+                >
+                  {t('description')}
+                </Text>
+                <TouchableOpacity
+                  onPress={() => {
+                    const autoDescription = buildAutoDescription();
+                    if (autoDescription.trim()) {
+                      updateFormData('description', autoDescription);
+                      try {
+                        triggerHapticFeedback.light();
+                      } catch {
+                        // Haptic feedback not available
+                      }
+                    }
+                  }}
+                  style={{ flexDirection: 'row', alignItems: 'center' }}
+                  activeOpacity={0.7}
+                >
+                  <Ionicons name="color-wand-outline" size={16} color={colors.primary} />
+                  <Text
+                    style={{ marginLeft: 4, fontSize: 13, color: colors.primary, fontWeight: '600' }}
+                  >
+                    {t('fillDescription')}
+                  </Text>
+                </TouchableOpacity>
+              </View>
               <View style={styles.inputWrapper}>
                 <TextInput
                   testID="cargo-description-input"
