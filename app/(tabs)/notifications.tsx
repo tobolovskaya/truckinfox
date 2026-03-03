@@ -4,7 +4,7 @@ import { useRouter } from 'expo-router';
 import { useAppThemeStyles } from '../../lib/sharedStyles';
 import { ScreenHeader } from '../../components/ScreenHeader';
 import { EmptyState } from '../../components/EmptyState';
-import EmptyCargoIllustration from '../../assets/empty-cargo.svg';
+import EmptyNotificationsIllustration from '../../assets/empty-notifications.svg';
 import { useTranslation } from 'react-i18next';
 
 export default function NotificationsScreen() {
@@ -23,7 +23,7 @@ export default function NotificationsScreen() {
         icon="notifications-outline"
         title={t('noNotifications')}
         description={t('allCaughtUp')}
-        illustration={EmptyCargoIllustration}
+        illustration={EmptyNotificationsIllustration}
         actions={[
           {
             label: t('createRequest') || 'Create request',
