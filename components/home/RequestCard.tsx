@@ -217,7 +217,7 @@ const styles = StyleSheet.create({
   },
   cardCompact: {
     borderRadius: borderRadius.lg,
-    marginBottom: spacing.lg,
+    marginBottom: 0,
   },
   imageContainer: {
     position: 'relative',
@@ -282,9 +282,9 @@ const styles = StyleSheet.create({
     gap: spacing.xs,
   },
   contentWrapCompact: {
-    paddingHorizontal: spacing.sm,
+    paddingHorizontal: spacing.md,
     paddingTop: spacing.sm,
-    paddingBottom: spacing.xs,
+    paddingBottom: spacing.sm,
     gap: spacing.xxxs,
     minHeight: 134,
   },

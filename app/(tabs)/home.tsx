@@ -416,7 +416,7 @@ export default function HomeScreen() {
               currentUserId={user?.uid}
               showFavorite={false}
               compact
-              cardStyle={{ width: cardWidth, marginBottom: gridGap }}
+              cardStyle={{ width: cardWidth }}
             />
           )
         }
