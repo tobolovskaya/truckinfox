@@ -4,16 +4,19 @@ import {
   FlatList,
   StyleSheet,
   Text,
+  TextInput,
+  TouchableOpacity,
   useWindowDimensions,
   View,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Ionicons } from '@expo/vector-icons';
 import { spacing, fontSize, useAppThemeStyles } from '../../lib/sharedStyles';
 import { useAuth } from '../../contexts/AuthContext';
 import { useCargoRequests, type SortOption } from '../../hooks/useCargoRequests';
 import { useCurrentUser } from '../../hooks/useCurrentUser';
-import { RequestCard } from '../../components/home/RequestCard';
+import { RequestCard, type CargoRequest } from '../../components/home/RequestCard';
 import { SkeletonLoader } from '../../components/SkeletonLoader';
 import { HomeHeader } from '../../components/home/HomeHeader';
 import { HomeTabBar } from '../../components/home/HomeTabBar';
@@ -32,6 +35,8 @@ import { useTranslation } from 'react-i18next';
 import { useUnreadCount } from '../../hooks/useNotifications';
 import { useDebounce } from '../../hooks/useDebounce';
 import { supabase } from '../../lib/supabase';
+import { findCargoAlongRoute } from '../../utils/geoSearch';
+import { getPlaceDetails, searchNorwegianPlaces } from '../../utils/googlePlaces';
 
 const HOME_FILTERS_STORAGE_KEY = 'home_filters';
 const LEGACY_HOME_FILTERS_STORAGE_KEY = '@home_marketplace_filters';
@@ -61,6 +66,14 @@ export default function HomeScreen() {
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [myActiveRequestsCount, setMyActiveRequestsCount] = useState(0);
   const [hasPersistedState, setHasPersistedState] = useState<boolean | null>(null);
+  const [routeModeEnabled, setRouteModeEnabled] = useState(false);
+  const [routeFrom, setRouteFrom] = useState('');
+  const [routeTo, setRouteTo] = useState('');
+  const [routeRadiusKm, setRouteRadiusKm] = useState('25');
+  const [routeResults, setRouteResults] = useState<CargoRequest[]>([]);
+  const [routeLoading, setRouteLoading] = useState(false);
+  const [routeSearched, setRouteSearched] = useState(false);
+  const [routeError, setRouteError] = useState('');
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
   const { width } = useWindowDimensions();
   const cargoTypes = useMemo(
@@ -316,6 +329,90 @@ export default function HomeScreen() {
   const avatarUrl = currentUser?.avatar_url || user?.photoURL || undefined;
   const onboardingUserType = currentUser?.user_type === 'carrier' ? 'carrier' : 'customer';
 
+  const resolvePlaceCoordinates = async (
+    input: string
+  ): Promise<{ lat: number; lng: number } | null> => {
+    const normalizedInput = input.trim();
+    if (!normalizedInput) {
+      return null;
+    }
+
+    const suggestions = await searchNorwegianPlaces(normalizedInput);
+    const firstSuggestion = suggestions[0];
+    if (!firstSuggestion) {
+      return null;
+    }
+
+    if (firstSuggestion.geometry?.location) {
+      return firstSuggestion.geometry.location;
+    }
+
+    const details = await getPlaceDetails(firstSuggestion.place_id);
+    return details?.geometry?.location ?? null;
+  };
+
+  const handleRouteSearch = async () => {
+    if (!routeFrom.trim() || !routeTo.trim()) {
+      setRouteError(t('routeFillFromTo'));
+      setRouteSearched(true);
+      setRouteResults([]);
+      return;
+    }
+
+    const parsedRadius = Number(routeRadiusKm);
+    const radius = Number.isFinite(parsedRadius) ? Math.min(80, Math.max(5, parsedRadius)) : 25;
+
+    try {
+      setRouteLoading(true);
+      setRouteError('');
+
+      const [fromPoint, toPoint] = await Promise.all([
+        resolvePlaceCoordinates(routeFrom),
+        resolvePlaceCoordinates(routeTo),
+      ]);
+
+      if (!fromPoint || !toPoint) {
+        setRouteError(t('routeInvalidLocations'));
+        setRouteSearched(true);
+        setRouteResults([]);
+        return;
+      }
+
+      const result = await findCargoAlongRoute(
+        fromPoint.lat,
+        fromPoint.lng,
+        toPoint.lat,
+        toPoint.lng,
+        radius,
+        currentUser?.country_code
+      );
+
+      const mappedResults = result.map(item => ({
+        ...(item as CargoRequest),
+        route_distance_km: (() => {
+          const rawDistance = (item as { distance_to_route_km?: unknown }).distance_to_route_km;
+          return typeof rawDistance === 'number' && Number.isFinite(rawDistance)
+            ? rawDistance
+            : undefined;
+        })(),
+      }));
+
+      setRouteResults(mappedResults);
+      setRouteSearched(true);
+    } catch (error) {
+      console.warn('Failed to search cargo along route', error);
+      setRouteError(t('routeSearchFailed'));
+      setRouteSearched(true);
+      setRouteResults([]);
+    } finally {
+      setRouteLoading(false);
+    }
+  };
+
+  const listRequests = routeModeEnabled ? routeResults : requests;
+  const listLoading = routeModeEnabled ? routeLoading : loading;
+  const listRefreshing = routeModeEnabled ? routeLoading : refreshing;
+
   return (
     <View style={styles.container}>
       {/* Header: Avatar + Notifications */}
@@ -339,13 +436,95 @@ export default function HomeScreen() {
           onFilterPress={() => setIsFilterSheetVisible(true)}
         />
 
+        <View style={styles.routeModeSection}>
+          <TouchableOpacity
+            style={[styles.routeModeToggle, routeModeEnabled && styles.routeModeToggleActive]}
+            onPress={() => setRouteModeEnabled(previous => !previous)}
+            accessibilityRole="button"
+            accessibilityLabel={t('routeMode')}
+          >
+            <View style={styles.routeModeLabelWrap}>
+              <Ionicons
+                name="git-compare-outline"
+                size={16}
+                color={routeModeEnabled ? colors.white : colors.text.secondary}
+              />
+              <Text style={[styles.routeModeLabel, routeModeEnabled && styles.routeModeLabelActive]}>
+                {t('routeMode')}
+              </Text>
+            </View>
+            <Ionicons
+              name={routeModeEnabled ? 'checkmark-circle' : 'ellipse-outline'}
+              size={18}
+              color={routeModeEnabled ? colors.white : colors.text.secondary}
+            />
+          </TouchableOpacity>
+
+          {routeModeEnabled ? (
+            <View style={styles.routeControlsWrap}>
+              <View style={styles.routeFieldRow}>
+                <TextInput
+                  style={styles.routeFieldInput}
+                  placeholder={t('routeFromPlaceholder')}
+                  placeholderTextColor={colors.text.secondary}
+                  value={routeFrom}
+                  onChangeText={setRouteFrom}
+                  autoCapitalize="words"
+                  autoCorrect={false}
+                  returnKeyType="next"
+                />
+                <TextInput
+                  style={styles.routeFieldInput}
+                  placeholder={t('routeToPlaceholder')}
+                  placeholderTextColor={colors.text.secondary}
+                  value={routeTo}
+                  onChangeText={setRouteTo}
+                  autoCapitalize="words"
+                  autoCorrect={false}
+                  returnKeyType="search"
+                />
+              </View>
+
+              <View style={styles.routeActionsRow}>
+                <View style={styles.routeRadiusWrap}>
+                  <Text style={styles.routeRadiusLabel}>{t('routeRadiusKm')}</Text>
+                  <TextInput
+                    style={styles.routeRadiusInput}
+                    value={routeRadiusKm}
+                    onChangeText={setRouteRadiusKm}
+                    keyboardType="numeric"
+                    placeholder="25"
+                    placeholderTextColor={colors.text.secondary}
+                  />
+                </View>
+
+                <TouchableOpacity
+                  style={styles.routeSearchButton}
+                  onPress={handleRouteSearch}
+                  disabled={routeLoading}
+                  accessibilityRole="button"
+                  accessibilityLabel={t('routeSearch')}
+                >
+                  {routeLoading ? (
+                    <ActivityIndicator size="small" color={colors.white} />
+                  ) : (
+                    <Text style={styles.routeSearchButtonText}>{t('routeSearch')}</Text>
+                  )}
+                </TouchableOpacity>
+              </View>
+
+              {routeError ? <Text style={styles.routeErrorText}>{routeError}</Text> : null}
+            </View>
+          ) : null}
+        </View>
+
       </View>
 
 
       {/* Requests List */}
       <FlatList
         key={isSingleColumnLayout ? 'single-column' : 'two-column'}
-        data={loading ? skeletonItems : requests}
+        data={listLoading ? skeletonItems : listRequests}
         keyExtractor={(item, index) => ('id' in item ? item.id : `request-${index}`)}
         numColumns={isSingleColumnLayout ? 1 : 2}
         columnWrapperStyle={isSingleColumnLayout ? undefined : { gap: gridGap }}
@@ -357,19 +536,19 @@ export default function HomeScreen() {
         showsVerticalScrollIndicator={false}
         refreshControl={
           <IOSRefreshControl
-            refreshing={refreshing}
-            onRefresh={refresh}
+            refreshing={listRefreshing}
+            onRefresh={routeModeEnabled ? handleRouteSearch : refresh}
             tintColor={colors.primary}
           />
         }
         onEndReached={() => {
-          if (hasMore && !loadingMore) {
+          if (!routeModeEnabled && hasMore && !loadingMore) {
             fetchMoreRequests();
           }
         }}
         onEndReachedThreshold={0.5}
         ListFooterComponent={
-          loadingMore ? (
+          !routeModeEnabled && loadingMore ? (
             <View style={styles.footerLoader}>
               <ActivityIndicator size="small" color={colors.primary} />
               <Text style={styles.footerLoaderText}>{t('loadingMore')}</Text>
@@ -377,14 +556,20 @@ export default function HomeScreen() {
           ) : null
         }
         ListEmptyComponent={
-          !loading ? (
+          !listLoading ? (
             <EmptyState
               icon="cube-outline"
-              title={t('noRequestsYet') || t('noCargoRequestsYet') || 'No requests yet'}
+              title={
+                routeModeEnabled && routeSearched
+                  ? t('routeNoMatches')
+                  : t('noRequestsYet') || t('noCargoRequestsYet') || 'No requests yet'
+              }
               description={
-                t('createFirstRequest') ||
-                t('createFirstCargoRequest') ||
-                'Create your first request'
+                routeModeEnabled && routeSearched
+                  ? t('routeNoMatchesDescription')
+                  : t('createFirstRequest') ||
+                    t('createFirstCargoRequest') ||
+                    'Create your first request'
               }
               illustration={EmptyHomeIllustration}
               actions={[
@@ -399,7 +584,7 @@ export default function HomeScreen() {
           ) : null
         }
         renderItem={({ item, index }) =>
-          loading ? (
+          listLoading ? (
             <SkeletonLoader
               variant="card"
               count={1}
@@ -455,6 +640,104 @@ const createStyles = (colors: ReturnType<typeof useAppThemeStyles>['colors']) =>
       paddingBottom: spacing.xs,
       borderBottomWidth: 1,
       borderBottomColor: colors.border.light,
+    },
+    routeModeSection: {
+      marginBottom: spacing.xs,
+      gap: spacing.xs,
+    },
+    routeModeToggle: {
+      minHeight: 38,
+      borderWidth: 1,
+      borderColor: colors.border.default,
+      borderRadius: 10,
+      backgroundColor: colors.background,
+      paddingHorizontal: spacing.md,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+    },
+    routeModeToggleActive: {
+      backgroundColor: colors.primary,
+      borderColor: colors.primary,
+    },
+    routeModeLabelWrap: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.xs,
+    },
+    routeModeLabel: {
+      color: colors.text.secondary,
+      fontSize: fontSize.sm,
+      fontWeight: '600' as const,
+    },
+    routeModeLabelActive: {
+      color: colors.white,
+    },
+    routeControlsWrap: {
+      borderWidth: 1,
+      borderColor: colors.border.default,
+      borderRadius: 10,
+      backgroundColor: colors.background,
+      padding: spacing.sm,
+      gap: spacing.sm,
+    },
+    routeFieldRow: {
+      flexDirection: 'row',
+      gap: spacing.sm,
+    },
+    routeFieldInput: {
+      flex: 1,
+      minHeight: 38,
+      borderWidth: 1,
+      borderColor: colors.border.default,
+      borderRadius: 8,
+      backgroundColor: colors.white,
+      paddingHorizontal: spacing.sm,
+      fontSize: fontSize.sm,
+      color: colors.text.primary,
+    },
+    routeActionsRow: {
+      flexDirection: 'row',
+      gap: spacing.sm,
+      alignItems: 'flex-end',
+    },
+    routeRadiusWrap: {
+      width: 90,
+      gap: spacing.xs,
+    },
+    routeRadiusLabel: {
+      fontSize: fontSize.xs,
+      color: colors.text.secondary,
+      fontWeight: '600' as const,
+    },
+    routeRadiusInput: {
+      minHeight: 38,
+      borderWidth: 1,
+      borderColor: colors.border.default,
+      borderRadius: 8,
+      backgroundColor: colors.white,
+      paddingHorizontal: spacing.sm,
+      fontSize: fontSize.sm,
+      color: colors.text.primary,
+    },
+    routeSearchButton: {
+      flex: 1,
+      minHeight: 38,
+      borderRadius: 8,
+      backgroundColor: colors.primary,
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingHorizontal: spacing.md,
+    },
+    routeSearchButtonText: {
+      color: colors.white,
+      fontSize: fontSize.sm,
+      fontWeight: '700' as const,
+    },
+    routeErrorText: {
+      fontSize: fontSize.xs,
+      color: colors.error,
+      fontWeight: '600' as const,
     },
     footerLoader: {
       paddingVertical: spacing.lg,

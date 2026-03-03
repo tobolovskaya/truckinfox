@@ -33,6 +33,7 @@ export interface CargoRequest {
   user_id?: string;
   customer_id?: string;
   distance?: number;
+  route_distance_km?: number;
   images?: string[];
   bid_count?: number;
   bids?: Array<{ status?: string }>;
@@ -95,6 +96,10 @@ export const RequestCard: React.FC<RequestCardProps> = ({
       : Array.isArray(request.bids)
         ? request.bids.length
         : 0;
+  const routeDistanceKm =
+    typeof request.route_distance_km === 'number' && Number.isFinite(request.route_distance_km)
+      ? Math.max(0, request.route_distance_km)
+      : undefined;
 
   return (
     <TouchableOpacity
@@ -184,6 +189,14 @@ export const RequestCard: React.FC<RequestCardProps> = ({
               <View style={[styles.bidCountBadge, compact && styles.bidCountBadgeCompact]}>
                 <Ionicons name="chatbubble-ellipses-outline" size={11} color={colors.primary} />
                 <Text style={styles.bidCountBadgeText}>{`${bidCount} ${t('bids')}`}</Text>
+              </View>
+            )}
+            {typeof routeDistanceKm === 'number' && (
+              <View style={[styles.routeDistanceBadge, compact && styles.routeDistanceBadgeCompact]}>
+                <Ionicons name="trail-sign-outline" size={11} color={colors.primary} />
+                <Text style={styles.routeDistanceBadgeText}>
+                  {`~${Math.round(routeDistanceKm)} ${t('km')} ${t('offRoute')}`}
+                </Text>
               </View>
             )}
             {!compact && typeof request.distance === 'number' && request.distance > 0 && (
@@ -396,6 +409,23 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.xxxs,
   },
   bidCountBadgeText: {
+    fontSize: fontSize.xs,
+    fontWeight: fontWeight.semibold,
+    color: colors.primary,
+  },
+  routeDistanceBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xxxs,
+    backgroundColor: colors.primaryLight,
+    borderRadius: borderRadius.full,
+    paddingHorizontal: spacing.xs,
+    paddingVertical: spacing.xxxs,
+  },
+  routeDistanceBadgeCompact: {
+    paddingHorizontal: spacing.xxxs,
+  },
+  routeDistanceBadgeText: {
     fontSize: fontSize.xs,
     fontWeight: fontWeight.semibold,
     color: colors.primary,
