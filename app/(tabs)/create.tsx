@@ -414,16 +414,21 @@ export default function CreateRequestScreen() {
   };
 
   const applyQuickTemplate = (template: (typeof QUICK_REQUEST_TEMPLATES)[number]) => {
+    const shouldAutofillDescription = !String(formData.description || '').trim();
+    const shouldAutofillWeight = !String(formData.weight || '').trim();
+    const shouldAutofillLength = !String(formData.length || '').trim();
+    const shouldAutofillWidth = !String(formData.width || '').trim();
+    const shouldAutofillHeight = !String(formData.height || '').trim();
     const nextData = {
       ...formData,
-      description: template.descriptionKey
+      description: shouldAutofillDescription && template.descriptionKey
         ? String(t(template.descriptionKey))
         : formData.description,
       cargo_type: template.cargo_type,
-      weight: template.weight,
-      length: template.length,
-      width: template.width,
-      height: template.height,
+      weight: shouldAutofillWeight ? template.weight : formData.weight,
+      length: shouldAutofillLength ? template.length : formData.length,
+      width: shouldAutofillWidth ? template.width : formData.width,
+      height: shouldAutofillHeight ? template.height : formData.height,
     };
 
     setFormData(nextData);
