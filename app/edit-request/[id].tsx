@@ -1139,23 +1139,24 @@ export default function EditRequestScreen() {
                   <View style={styles.vehicleConditionDivider} />
 
                   <View style={styles.vehicleConditionRowStacked}>
-                    <Text style={styles.vehicleConditionQuestion}>Transport type</Text>
+                    <Text style={styles.vehicleConditionQuestion}>{t('transportType')}</Text>
+                    <Text style={styles.vehicleConditionHint}>{t('transportTypeHint')}</Text>
                     <View style={styles.transportTypeRow}>
                       <TouchableOpacity
                         style={[styles.transportTypePill, transportType === 'open' && styles.conditionPillActive]}
                         onPress={() => setTransportType('open')}
                         accessibilityRole="button"
-                        accessibilityLabel="Open trailer"
+                        accessibilityLabel={t('openTrailer')}
                       >
-                        <Text style={[styles.conditionPillText, transportType === 'open' && styles.conditionPillTextActive]}>Open trailer</Text>
+                        <Text style={[styles.conditionPillText, transportType === 'open' && styles.conditionPillTextActive]}>{t('openTrailer')}</Text>
                       </TouchableOpacity>
                       <TouchableOpacity
                         style={[styles.transportTypePill, transportType === 'enclosed' && styles.conditionPillActive]}
                         onPress={() => setTransportType('enclosed')}
                         accessibilityRole="button"
-                        accessibilityLabel="Enclosed"
+                        accessibilityLabel={t('enclosedTrailer')}
                       >
-                        <Text style={[styles.conditionPillText, transportType === 'enclosed' && styles.conditionPillTextActive]}>Enclosed</Text>
+                        <Text style={[styles.conditionPillText, transportType === 'enclosed' && styles.conditionPillTextActive]}>{t('enclosedTrailer')}</Text>
                       </TouchableOpacity>
                     </View>
                   </View>
@@ -1163,7 +1164,7 @@ export default function EditRequestScreen() {
                   <View style={styles.vehicleConditionDivider} />
 
                   <View style={styles.vehicleConditionRowStacked}>
-                    <Text style={styles.vehicleConditionQuestion}>VIN (optional)</Text>
+                    <Text style={styles.vehicleConditionQuestion}>{t('vinOptional')}</Text>
                     <TextInput
                       style={styles.vehicleMetaInput}
                       value={vehicleVin}
@@ -1177,7 +1178,7 @@ export default function EditRequestScreen() {
                   <View style={styles.vehicleConditionDivider} />
 
                   <View style={styles.vehicleConditionRowStacked}>
-                    <Text style={styles.vehicleConditionQuestion}>Ground clearance (cm)</Text>
+                    <Text style={styles.vehicleConditionQuestion}>{t('groundClearanceCm')}</Text>
                     <TextInput
                       style={styles.vehicleMetaInput}
                       value={vehicleGroundClearanceCm}
@@ -1192,7 +1193,7 @@ export default function EditRequestScreen() {
 
                   <View style={styles.vehicleConditionRow}>
                     <View style={styles.vehicleConditionTextWrap}>
-                      <Text style={styles.vehicleConditionQuestion}>Keys included</Text>
+                      <Text style={styles.vehicleConditionQuestion}>{t('keysIncluded')}</Text>
                     </View>
                     <View style={styles.vehicleConditionToggleRow}>
                       <TouchableOpacity
@@ -1218,7 +1219,7 @@ export default function EditRequestScreen() {
 
                   <View style={styles.vehicleConditionRow}>
                     <View style={styles.vehicleConditionTextWrap}>
-                      <Text style={styles.vehicleConditionQuestion}>Wheel lock</Text>
+                      <Text style={styles.vehicleConditionQuestion}>{t('wheelLock')}</Text>
                     </View>
                     <View style={styles.vehicleConditionToggleRow}>
                       <TouchableOpacity
@@ -1244,7 +1245,7 @@ export default function EditRequestScreen() {
 
                   <View style={styles.vehicleConditionRow}>
                     <View style={styles.vehicleConditionTextWrap}>
-                      <Text style={styles.vehicleConditionQuestion}>Needs winch</Text>
+                      <Text style={styles.vehicleConditionQuestion}>{t('needsWinch')}</Text>
                     </View>
                     <View style={styles.vehicleConditionToggleRow}>
                       <TouchableOpacity

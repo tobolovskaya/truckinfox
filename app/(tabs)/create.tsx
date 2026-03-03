@@ -1258,8 +1258,8 @@ export default function CreateRequestScreen() {
                   <View style={styles.vehicleConditionDivider} />
 
                   <View style={styles.vehicleConditionRowStacked}>
-                    <Text style={styles.vehicleConditionQuestion}>Transport type</Text>
-                    <Text style={styles.vehicleConditionHint}>Choose trailer type for this car</Text>
+                    <Text style={styles.vehicleConditionQuestion}>{t('transportType')}</Text>
+                    <Text style={styles.vehicleConditionHint}>{t('transportTypeHint')}</Text>
                     <View style={styles.transportTypeRow}>
                       <TouchableOpacity
                         style={[styles.transportTypePill, transportType === 'open' && styles.conditionPillActive]}
@@ -1267,7 +1267,7 @@ export default function CreateRequestScreen() {
                         activeOpacity={0.8}
                       >
                         <Text style={[styles.conditionPillText, transportType === 'open' && styles.conditionPillTextActive]}>
-                          Open trailer
+                          {t('openTrailer')}
                         </Text>
                       </TouchableOpacity>
                       <TouchableOpacity
@@ -1276,7 +1276,7 @@ export default function CreateRequestScreen() {
                         activeOpacity={0.8}
                       >
                         <Text style={[styles.conditionPillText, transportType === 'enclosed' && styles.conditionPillTextActive]}>
-                          Enclosed
+                          {t('enclosedTrailer')}
                         </Text>
                       </TouchableOpacity>
                     </View>
@@ -1285,7 +1285,7 @@ export default function CreateRequestScreen() {
                   <View style={styles.vehicleConditionDivider} />
 
                   <View style={styles.vehicleConditionRowStacked}>
-                    <Text style={styles.vehicleConditionQuestion}>VIN (optional)</Text>
+                    <Text style={styles.vehicleConditionQuestion}>{t('vinOptional')}</Text>
                     <TextInput
                       style={styles.vehicleMetaInput}
                       value={vehicleVin}
@@ -1299,7 +1299,7 @@ export default function CreateRequestScreen() {
                   <View style={styles.vehicleConditionDivider} />
 
                   <View style={styles.vehicleConditionRowStacked}>
-                    <Text style={styles.vehicleConditionQuestion}>Ground clearance (cm)</Text>
+                    <Text style={styles.vehicleConditionQuestion}>{t('groundClearanceCm')}</Text>
                     <TextInput
                       style={styles.vehicleMetaInput}
                       value={vehicleGroundClearanceCm}
@@ -1314,7 +1314,7 @@ export default function CreateRequestScreen() {
 
                   <View style={styles.vehicleConditionRow}>
                     <View style={styles.vehicleConditionTextWrap}>
-                      <Text style={styles.vehicleConditionQuestion}>Keys included</Text>
+                      <Text style={styles.vehicleConditionQuestion}>{t('keysIncluded')}</Text>
                     </View>
                     <View style={styles.vehicleConditionToggleRow}>
                       <TouchableOpacity
@@ -1338,7 +1338,7 @@ export default function CreateRequestScreen() {
 
                   <View style={styles.vehicleConditionRow}>
                     <View style={styles.vehicleConditionTextWrap}>
-                      <Text style={styles.vehicleConditionQuestion}>Wheel lock</Text>
+                      <Text style={styles.vehicleConditionQuestion}>{t('wheelLock')}</Text>
                     </View>
                     <View style={styles.vehicleConditionToggleRow}>
                       <TouchableOpacity
@@ -1362,7 +1362,7 @@ export default function CreateRequestScreen() {
 
                   <View style={styles.vehicleConditionRow}>
                     <View style={styles.vehicleConditionTextWrap}>
-                      <Text style={styles.vehicleConditionQuestion}>Needs winch</Text>
+                      <Text style={styles.vehicleConditionQuestion}>{t('needsWinch')}</Text>
                     </View>
                     <View style={styles.vehicleConditionToggleRow}>
                       <TouchableOpacity
@@ -1836,21 +1836,21 @@ export default function CreateRequestScreen() {
               )}
               {isPricePreviewAvailable && (
                 <View style={styles.summaryPriceCard}>
-                  <Text style={styles.summaryPriceTitle}>Estimated customer total</Text>
+                  <Text style={styles.summaryPriceTitle}>{t('estimatedCustomerTotal')}</Text>
                   <View style={styles.summaryPriceRow}>
-                    <Text style={styles.summaryPriceLabel}>Carrier bid</Text>
+                    <Text style={styles.summaryPriceLabel}>{t('carrierBid')}</Text>
                     <Text style={styles.summaryPriceValue}>{`${priceInputValue.toLocaleString('no-NO')} kr`}</Text>
                   </View>
                   <View style={styles.summaryPriceRow}>
-                    <Text style={styles.summaryPriceLabel}>Platform fee (10%)</Text>
+                    <Text style={styles.summaryPriceLabel}>{t('platformFee10')}</Text>
                     <Text style={styles.summaryPriceValue}>{`${previewPlatformFee.toLocaleString('no-NO')} kr`}</Text>
                   </View>
                   <View style={[styles.summaryPriceRow, styles.summaryPriceRowTotal]}>
-                    <Text style={styles.summaryPriceTotalLabel}>Total estimate</Text>
+                    <Text style={styles.summaryPriceTotalLabel}>{t('totalEstimate')}</Text>
                     <Text style={styles.summaryPriceTotalValue}>{`${previewTotalCustomerPrice.toLocaleString('no-NO')} kr`}</Text>
                   </View>
                   <Text style={styles.summaryPriceHint}>
-                    Insurance coverage details are confirmed after bid acceptance.
+                    {t('insuranceCoverageHint')}
                   </Text>
                 </View>
               )}

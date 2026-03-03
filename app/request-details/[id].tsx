@@ -1275,15 +1275,15 @@ export default function RequestDetailsScreen() {
             )}
             {hasAutomotiveMetaDetails && (
               <View style={styles.vehicleMetaCard}>
-                <Text style={styles.vehicleConditionTitle}>Vehicle details</Text>
+                <Text style={styles.vehicleConditionTitle}>{t('vehicleDetails')}</Text>
 
                 <View style={styles.vehicleConditionRowDetails}>
-                  <Text style={styles.vehicleConditionLabel}>Transport type</Text>
+                  <Text style={styles.vehicleConditionLabel}>{t('transportType')}</Text>
                   <Text style={styles.vehicleMetaValue}>
                     {automotiveDetails.details?.transportType === 'enclosed'
-                      ? 'Enclosed trailer'
+                      ? t('enclosedTrailer')
                       : automotiveDetails.details?.transportType === 'open'
-                        ? 'Open trailer'
+                        ? t('openTrailer')
                         : '-'}
                   </Text>
                 </View>
@@ -1294,21 +1294,21 @@ export default function RequestDetailsScreen() {
                 </View>
 
                 <View style={styles.vehicleConditionRowDetails}>
-                  <Text style={styles.vehicleConditionLabel}>Has keys</Text>
+                  <Text style={styles.vehicleConditionLabel}>{t('keysIncluded')}</Text>
                   <Text style={styles.vehicleMetaValue}>
                     {renderBooleanText(automotiveDetails.details?.hasKeys)}
                   </Text>
                 </View>
 
                 <View style={styles.vehicleConditionRowDetails}>
-                  <Text style={styles.vehicleConditionLabel}>Wheel lock</Text>
+                  <Text style={styles.vehicleConditionLabel}>{t('wheelLock')}</Text>
                   <Text style={styles.vehicleMetaValue}>
                     {renderBooleanText(automotiveDetails.details?.hasWheelLock)}
                   </Text>
                 </View>
 
                 <View style={styles.vehicleConditionRowDetails}>
-                  <Text style={styles.vehicleConditionLabel}>Ground clearance</Text>
+                  <Text style={styles.vehicleConditionLabel}>{t('groundClearance')}</Text>
                   <Text style={styles.vehicleMetaValue}>
                     {typeof automotiveDetails.details?.groundClearanceCm === 'number'
                       ? `${automotiveDetails.details.groundClearanceCm} cm`
@@ -1317,7 +1317,7 @@ export default function RequestDetailsScreen() {
                 </View>
 
                 <View style={styles.vehicleConditionRowDetails}>
-                  <Text style={styles.vehicleConditionLabel}>Needs winch</Text>
+                  <Text style={styles.vehicleConditionLabel}>{t('needsWinch')}</Text>
                   <Text style={styles.vehicleMetaValue}>
                     {renderBooleanText(automotiveDetails.details?.needsWinch)}
                   </Text>
@@ -1586,7 +1586,7 @@ export default function RequestDetailsScreen() {
         if (!shouldShowDeliveryChecklist) return null;
         return (
           <View style={styles.section}>
-            <Text style={[styles.sectionTitle, styles.sectionTitleStrong]}>Delivery checklist</Text>
+            <Text style={[styles.sectionTitle, styles.sectionTitleStrong]}>{t('deliveryChecklist')}</Text>
             <View style={styles.checklistContainer}>
               {deliveryChecklist.map(step => (
                 <View key={step.key} style={styles.checklistRow}>
@@ -1683,7 +1683,7 @@ export default function RequestDetailsScreen() {
                   <View style={styles.bidQualityChip}>
                     <Ionicons name="car-outline" size={12} color={colors.text.secondary} />
                     <Text style={styles.bidQualityText}>
-                      {bid.users?.completed_transports || 0} completed
+                      {bid.users?.completed_transports || 0} {t('completedShort')}
                     </Text>
                   </View>
                   <View style={styles.bidQualityChip}>
@@ -1694,8 +1694,8 @@ export default function RequestDetailsScreen() {
                     <Ionicons name="time-outline" size={12} color={colors.text.secondary} />
                     <Text style={styles.bidQualityText}>
                       {typeof bid.users?.on_time_rate === 'number'
-                        ? `${Math.round(bid.users.on_time_rate)}% on-time`
-                        : 'On-time n/a'}
+                        ? t('onTimeRate', { value: Math.round(bid.users.on_time_rate) })
+                        : t('onTimeNA')}
                     </Text>
                   </View>
                 </View>
