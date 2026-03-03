@@ -10,7 +10,7 @@ const normalizeForSearch = (value: string): string =>
     .toLowerCase();
 
 const getGooglePlacesApiKey = (): string | undefined =>
-  process.env.EXPO_PUBLIC_GOOGLE_PLACES_API_KEY;
+  process.env.EXPO_PUBLIC_GOOGLE_PLACES_API_KEY ?? process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY;
 
 const buildOfflineCityResults = (input: string): PlaceSuggestion[] => {
   const normalizedInput = normalizeForSearch(input);
@@ -99,6 +99,8 @@ export const norwegianCities = [
   { name: 'Kristiansand', lat: 58.1467, lng: 7.9956 },
   { name: 'Fredrikstad', lat: 59.2181, lng: 10.9298 },
   { name: 'Tromsø', lat: 69.6492, lng: 18.9553 },
+  { name: 'Bodø', lat: 67.2804, lng: 14.4049 },
+  { name: 'Narvik', lat: 68.4385, lng: 17.4273 },
   { name: 'Drammen', lat: 59.7434, lng: 10.2045 },
   { name: 'Asker', lat: 59.8327, lng: 10.4345 },
   { name: 'Lillehammer', lat: 61.1153, lng: 10.4662 },

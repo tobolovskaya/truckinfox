@@ -26,6 +26,7 @@ import { HomeActiveFilters } from '../../components/home/HomeActiveFilters';
 import { EmptyState } from '../../components/EmptyState';
 import { IOSRefreshControl } from '../../components/IOSRefreshControl';
 import { Onboarding } from '../../components/Onboarding';
+import AddressInput from '../../components/AddressInput';
 import EmptyHomeIllustration from '../../assets/empty-home.svg';
 import {
   REQUEST_CARD_FORCE_TWO_COLUMNS,
@@ -36,11 +37,43 @@ import { useUnreadCount } from '../../hooks/useNotifications';
 import { useDebounce } from '../../hooks/useDebounce';
 import { supabase } from '../../lib/supabase';
 import { findCargoAlongRoute } from '../../utils/geoSearch';
-import { getPlaceDetails, searchNorwegianPlaces } from '../../utils/googlePlaces';
+import { getPlaceDetails, norwegianCities, searchNorwegianPlaces } from '../../utils/googlePlaces';
 
 const HOME_FILTERS_STORAGE_KEY = 'home_filters';
 const LEGACY_HOME_FILTERS_STORAGE_KEY = '@home_marketplace_filters';
 const HOME_ONBOARDING_SEEN_KEY_PREFIX = 'home_onboarding_seen';
+
+const normalizeRouteCityInput = (value: string): string =>
+  value
+    .replace(/,\s*(norge|norway)\s*$/i, '')
+    .replace(/ø/gim, 'o')
+    .replace(/æ/gim, 'ae')
+    .replace(/å/gim, 'a')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .trim();
+
+const findOfflineCityCoordinates = (value: string): { lat: number; lng: number } | null => {
+  const normalizedValue = normalizeRouteCityInput(value);
+  if (!normalizedValue) {
+    return null;
+  }
+
+  const exactMatch = norwegianCities.find(
+    city => normalizeRouteCityInput(city.name) === normalizedValue
+  );
+
+  if (exactMatch) {
+    return { lat: exactMatch.lat, lng: exactMatch.lng };
+  }
+
+  const partialMatch = norwegianCities.find(city =>
+    normalizeRouteCityInput(city.name).includes(normalizedValue)
+  );
+
+  return partialMatch ? { lat: partialMatch.lat, lng: partialMatch.lng } : null;
+};
 
 type PersistedHomeState = {
   activeTab: 'all' | 'my';
@@ -69,6 +102,10 @@ export default function HomeScreen() {
   const [routeModeEnabled, setRouteModeEnabled] = useState(false);
   const [routeFrom, setRouteFrom] = useState('');
   const [routeTo, setRouteTo] = useState('');
+  const [routeFromCoords, setRouteFromCoords] = useState<{ lat: number; lng: number } | null>(
+    null
+  );
+  const [routeToCoords, setRouteToCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [routeRadiusKm, setRouteRadiusKm] = useState('25');
   const [routeResults, setRouteResults] = useState<CargoRequest[]>([]);
   const [routeLoading, setRouteLoading] = useState(false);
@@ -337,10 +374,15 @@ export default function HomeScreen() {
       return null;
     }
 
+    const offlineDirectMatch = findOfflineCityCoordinates(normalizedInput);
+    if (offlineDirectMatch) {
+      return offlineDirectMatch;
+    }
+
     const suggestions = await searchNorwegianPlaces(normalizedInput);
     const firstSuggestion = suggestions[0];
     if (!firstSuggestion) {
-      return null;
+      return findOfflineCityCoordinates(normalizedInput);
     }
 
     if (firstSuggestion.geometry?.location) {
@@ -348,7 +390,15 @@ export default function HomeScreen() {
     }
 
     const details = await getPlaceDetails(firstSuggestion.place_id);
-    return details?.geometry?.location ?? null;
+    if (details?.geometry?.location) {
+      return details.geometry.location;
+    }
+
+    const fallbackFromSuggestion = findOfflineCityCoordinates(
+      firstSuggestion.structured_formatting.main_text || firstSuggestion.description
+    );
+
+    return fallbackFromSuggestion ?? findOfflineCityCoordinates(normalizedInput);
   };
 
   const handleRouteSearch = async () => {
@@ -367,8 +417,8 @@ export default function HomeScreen() {
       setRouteError('');
 
       const [fromPoint, toPoint] = await Promise.all([
-        resolvePlaceCoordinates(routeFrom),
-        resolvePlaceCoordinates(routeTo),
+        routeFromCoords ?? resolvePlaceCoordinates(routeFrom),
+        routeToCoords ?? resolvePlaceCoordinates(routeTo),
       ]);
 
       if (!fromPoint || !toPoint) {
@@ -482,25 +532,35 @@ export default function HomeScreen() {
           {routeModeEnabled ? (
             <View style={styles.routeControlsWrap}>
               <View style={styles.routeFieldRow}>
-                <TextInput
-                  style={styles.routeFieldInput}
+                <AddressInput
                   placeholder={t('routeFromPlaceholder')}
-                  placeholderTextColor={colors.text.secondary}
                   value={routeFrom}
-                  onChangeText={setRouteFrom}
-                  autoCapitalize="words"
-                  autoCorrect={false}
-                  returnKeyType="next"
+                  onChangeText={text => {
+                    setRouteFrom(text);
+                    setRouteFromCoords(null);
+                    setRouteError('');
+                  }}
+                  onAddressSelect={(address, coordinates) => {
+                    setRouteFrom(address);
+                    setRouteFromCoords(coordinates ?? null);
+                    setRouteError('');
+                  }}
+                  style={styles.routeAddressInput}
                 />
-                <TextInput
-                  style={styles.routeFieldInput}
+                <AddressInput
                   placeholder={t('routeToPlaceholder')}
-                  placeholderTextColor={colors.text.secondary}
                   value={routeTo}
-                  onChangeText={setRouteTo}
-                  autoCapitalize="words"
-                  autoCorrect={false}
-                  returnKeyType="search"
+                  onChangeText={text => {
+                    setRouteTo(text);
+                    setRouteToCoords(null);
+                    setRouteError('');
+                  }}
+                  onAddressSelect={(address, coordinates) => {
+                    setRouteTo(address);
+                    setRouteToCoords(coordinates ?? null);
+                    setRouteError('');
+                  }}
+                  style={styles.routeAddressInput}
                 />
               </View>
 
@@ -703,6 +763,9 @@ const createStyles = (colors: ReturnType<typeof useAppThemeStyles>['colors']) =>
     routeFieldRow: {
       flexDirection: 'row',
       gap: spacing.sm,
+    },
+    routeAddressInput: {
+      flex: 1,
     },
     routeFieldInput: {
       flex: 1,
