@@ -286,7 +286,7 @@ const styles = StyleSheet.create({
     top: spacing.xxxs,
     left: spacing.xxxs,
     right: spacing.xxxs,
-    gap: spacing.xxs,
+    gap: spacing.xxxs,
   },
   typeOverlayBadge: {
     flexDirection: 'row',
@@ -299,18 +299,18 @@ const styles = StyleSheet.create({
     flexShrink: 1,
   },
   typeOverlayBadgeCompact: {
-    paddingHorizontal: spacing.xxs,
+    paddingHorizontal: spacing.xs,
     paddingVertical: spacing.xxxs,
-    width: 90,
-    maxWidth: 90,
-    minWidth: 90,
+    flex: 1,
+    minWidth: 0,
+    maxWidth: '56%',
   },
   typeOverlayText: {
     fontSize: fontSize.xs,
     fontWeight: fontWeight.semibold,
   },
   typeOverlayTextCompact: {
-    fontSize: 11,
+    fontSize: 12,
   },
   priceOverlayBadge: {
     backgroundColor: colors.primaryLight,
@@ -326,12 +326,12 @@ const styles = StyleSheet.create({
     minHeight: 26,
   },
   priceOverlayBadgeCompact: {
-    paddingHorizontal: spacing.xxxs,
+    paddingHorizontal: spacing.xxs,
     paddingVertical: spacing.xxs,
-    width: 90,
-    maxWidth: 90,
-    minWidth: 90,
-    minHeight: 30,
+    flex: 1,
+    minWidth: 0,
+    maxWidth: '44%',
+    minHeight: 28,
   },
   priceOverlayText: {
     fontSize: fontSize.sm,
@@ -342,7 +342,8 @@ const styles = StyleSheet.create({
     letterSpacing: 0.2,
   },
   priceOverlayTextCompact: {
-    fontSize: fontSize.sm,
+    fontSize: 13,
+    lineHeight: 16,
     textAlign: 'center',
     fontWeight: fontWeight.semibold,
   },
