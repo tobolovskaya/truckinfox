@@ -252,7 +252,7 @@ export default function HomeScreen() {
         .from('cargo_requests')
         .select('id', { head: true, count: 'exact' })
         .eq('customer_id', user.uid)
-        .in('status', ['active', 'open']);
+        .in('status', ['open', 'bidding']);
 
       if (error) {
         console.warn('Failed to fetch active request count', error);

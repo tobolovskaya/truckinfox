@@ -82,6 +82,20 @@ type CargoRequestsQueryKey = [
 ];
 
 const PAGE_SIZE = 20;
+const ACTIVE_REQUEST_STATUSES = ['open', 'bidding'] as const;
+
+type HydratedProfile = {
+  full_name?: string | null;
+  user_type?: string | null;
+  rating?: number | null;
+  avatar_url?: string | null;
+};
+
+type CargoRequestHydrationData = {
+  profilesById: Map<string, HydratedProfile>;
+  bidsByRequestId: Map<string, Bid[]>;
+  favoriteRequestIds: Set<string>;
+};
 
 const toTimestamp = (value?: string): number => {
   if (!value) {
@@ -135,7 +149,7 @@ const applyClientSideFilters = (
   if (activeTab === 'my') {
     filtered = filtered.filter(request => {
       const ownerId = request.customer_id || request.user_id;
-      return ownerId === userId && ['active', 'open'].includes(request.status);
+      return ownerId === userId && ACTIVE_REQUEST_STATUSES.includes(request.status as (typeof ACTIVE_REQUEST_STATUSES)[number]);
     });
   } else {
     if (filters.cargo_type) {
@@ -183,9 +197,104 @@ const applyClientSideFilters = (
   return sortRequestsClientSide(filtered, sortBy);
 };
 
+const fetchCargoRequestHydrationData = async (
+  requestRows: Record<string, unknown>[],
+  userId?: string
+): Promise<CargoRequestHydrationData> => {
+  const profilesById = new Map<string, HydratedProfile>();
+  const bidsByRequestId = new Map<string, Bid[]>();
+  const favoriteRequestIds = new Set<string>();
+
+  if (requestRows.length === 0) {
+    return { profilesById, bidsByRequestId, favoriteRequestIds };
+  }
+
+  const requestIds = Array.from(
+    new Set(
+      requestRows
+        .map(row => row.id)
+        .filter((value): value is string => typeof value === 'string' && value.length > 0)
+    )
+  );
+
+  const ownerIds = Array.from(
+    new Set(
+      requestRows
+        .map(row => {
+          if (typeof row.customer_id === 'string' && row.customer_id.length > 0) {
+            return row.customer_id;
+          }
+          if (typeof row.user_id === 'string' && row.user_id.length > 0) {
+            return row.user_id;
+          }
+          return null;
+        })
+        .filter((value): value is string => typeof value === 'string')
+    )
+  );
+
+  if (ownerIds.length > 0) {
+    try {
+      const { data: profileRows } = await supabase
+        .from('profiles')
+        .select('id, full_name, user_type, rating, avatar_url')
+        .in('id', ownerIds);
+
+      (profileRows || []).forEach(profile => {
+        if (typeof profile.id === 'string') {
+          profilesById.set(profile.id, {
+            full_name: profile.full_name,
+            user_type: profile.user_type,
+            rating: profile.rating,
+            avatar_url: profile.avatar_url,
+          });
+        }
+      });
+    } catch (error) {
+      console.warn('Failed to batch hydrate request owner profiles', error);
+    }
+  }
+
+  if (requestIds.length > 0) {
+    try {
+      const { data: bidRows } = await supabase.from('bids').select('*').in('request_id', requestIds);
+      (bidRows || []).forEach(row => {
+        if (typeof row.request_id !== 'string' || typeof row.id !== 'string') {
+          return;
+        }
+        const existing = bidsByRequestId.get(row.request_id) || [];
+        existing.push({ id: row.id, ...row });
+        bidsByRequestId.set(row.request_id, existing);
+      });
+    } catch (error) {
+      console.warn('Failed to batch hydrate request bids', error);
+    }
+  }
+
+  if (userId && requestIds.length > 0) {
+    try {
+      const { data: favoriteRows } = await supabase
+        .from('user_favorites')
+        .select('request_id')
+        .eq('user_id', userId)
+        .in('request_id', requestIds);
+
+      (favoriteRows || []).forEach(row => {
+        if (typeof row.request_id === 'string') {
+          favoriteRequestIds.add(row.request_id);
+        }
+      });
+    } catch (error) {
+      console.warn('Failed to batch hydrate request favorite status', error);
+    }
+  }
+
+  return { profilesById, bidsByRequestId, favoriteRequestIds };
+};
+
 const hydrateCargoRequest = async (
   requestData: Record<string, unknown>,
-  userId?: string
+  hydrationData: CargoRequestHydrationData
 ): Promise<CargoRequest | null> => {
   const requestId = typeof requestData.id === 'string' ? requestData.id : undefined;
   if (!requestId) {
@@ -206,48 +315,19 @@ const hydrateCargoRequest = async (
   };
 
   if (requestUserId) {
-    try {
-      const { data: userRow } = await supabase
-        .from('profiles')
-        .select('full_name, user_type, rating, avatar_url')
-        .eq('id', requestUserId)
-        .maybeSingle();
-
-      if (userRow) {
-        userData = {
-          full_name: userRow.full_name || 'Unknown User',
-          user_type: userRow.user_type || 'customer',
-          rating: typeof userRow.rating === 'number' ? userRow.rating : 0,
-          avatar_url: userRow.avatar_url || undefined,
-        };
-      }
-    } catch (error) {
-      console.warn('Failed to hydrate request owner profile', error);
+    const userRow = hydrationData.profilesById.get(requestUserId);
+    if (userRow) {
+      userData = {
+        full_name: userRow.full_name || 'Unknown User',
+        user_type: userRow.user_type || 'customer',
+        rating: typeof userRow.rating === 'number' ? userRow.rating : 0,
+        avatar_url: userRow.avatar_url || undefined,
+      };
     }
   }
 
-  let bids: Bid[] = [];
-  try {
-    const { data: bidRows } = await supabase.from('bids').select('*').eq('request_id', requestId);
-    bids = (bidRows || []).map(row => ({ id: row.id, ...row }));
-  } catch (error) {
-    console.warn('Failed to hydrate request bids', error);
-  }
-
-  let isFavorite = false;
-  if (userId) {
-    try {
-      const { data: favoriteRows } = await supabase
-        .from('user_favorites')
-        .select('id')
-        .eq('request_id', requestId)
-        .eq('user_id', userId)
-        .limit(1);
-      isFavorite = Boolean(favoriteRows && favoriteRows.length > 0);
-    } catch (error) {
-      console.warn('Failed to hydrate request favorite status', error);
-    }
-  }
+  const bids = hydrationData.bidsByRequestId.get(requestId) || [];
+  const isFavorite = hydrationData.favoriteRequestIds.has(requestId);
 
   const normalizedImages = normalizeCargoImageInputs(requestData.images, requestData.image_url);
   const resolvedPreviewImages = await resolveCargoImageUrls(normalizedImages, 1);
@@ -297,7 +377,9 @@ const fetchCargoRequestsPage = async (
     .range(offset, offset + PAGE_SIZE - 1);
 
   if (options.activeTab === 'my' && options.userId) {
-    requestQuery = requestQuery.eq('customer_id', options.userId).in('status', ['active', 'open']);
+    requestQuery = requestQuery
+      .eq('customer_id', options.userId)
+      .in('status', [...ACTIVE_REQUEST_STATUSES]);
   } else {
     if (options.countryCode) {
       requestQuery = requestQuery.eq('country_code', options.countryCode);
@@ -340,16 +422,17 @@ const fetchCargoRequestsPage = async (
     throw error;
   }
 
+  const rows = (requestRows || []) as Record<string, unknown>[];
+  const hydrationData = await fetchCargoRequestHydrationData(rows, options.userId);
+
   const hydrated = await Promise.all(
-    (requestRows || []).map(row =>
-      hydrateCargoRequest(row as Record<string, unknown>, options.userId)
-    )
+    rows.map(row => hydrateCargoRequest(row, hydrationData))
   );
 
   const data = hydrated.filter((request): request is CargoRequest => request !== null);
   const filteredData = applyClientSideFilters(data, options);
 
-  const hasMore = (requestRows || []).length === PAGE_SIZE;
+  const hasMore = rows.length === PAGE_SIZE;
   const nextOffset = hasMore ? offset + PAGE_SIZE : null;
 
   return { items: filteredData, nextOffset, hasMore };

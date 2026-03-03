@@ -214,7 +214,7 @@ export async function searchCargoRequests(
     const { data, error } = await supabase
       .from('cargo_requests')
       .select('*')
-      .in('status', ['open', 'active', 'bidding'])
+      .in('status', ['open', 'bidding'])
       .or(
         `title.ilike.%${normalizedQuery}%,description.ilike.%${normalizedQuery}%,from_address.ilike.%${normalizedQuery}%,to_address.ilike.%${normalizedQuery}%,cargo_type.ilike.%${normalizedQuery}%`
       )

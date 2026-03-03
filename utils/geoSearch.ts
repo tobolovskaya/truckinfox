@@ -86,7 +86,7 @@ export async function findNearbyCargoRequests(
     let query = supabase
       .from('cargo_requests')
       .select('*')
-      .in('status', ['open', 'active', 'bidding'])
+      .in('status', ['open', 'bidding'])
       .gte(latField, centerLat - latDelta)
       .lte(latField, centerLat + latDelta)
       .gte(lngField, centerLng - lngDelta)
