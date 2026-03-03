@@ -380,6 +380,7 @@ const styles = StyleSheet.create({
   },
   footerActionsCompact: {
     width: '100%',
+    justifyContent: 'flex-end',
   },
   metaText: {
     fontSize: fontSize.xs,
