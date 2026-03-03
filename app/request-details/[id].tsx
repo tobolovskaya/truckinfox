@@ -118,6 +118,7 @@ export default function RequestDetailsScreen() {
   const [deleting, setDeleting] = useState(false);
 
   const flatListRef = useRef(null);
+  const mapRef = useRef<typeof MapView | null>(null);
   const language = i18n?.language || 'en';
   const locale = language.startsWith('no') ? 'nb-NO' : 'en-US';
 
@@ -944,6 +945,7 @@ export default function RequestDetailsScreen() {
               </Text>
               <View style={styles.mapContainer}>
                 <MapView
+                  ref={mapRef as React.RefObject<typeof MapView>}
                   style={styles.map}
                   initialRegion={{
                     latitude: centerLat,
@@ -951,28 +953,55 @@ export default function RequestDetailsScreen() {
                     latitudeDelta: latDelta,
                     longitudeDelta: lngDelta,
                   }}
+                  onMapReady={() => {
+                    // @ts-expect-error - fitToCoordinates is available at runtime
+                    mapRef.current?.fitToCoordinates(
+                      [
+                        { latitude: fromLat, longitude: fromLng },
+                        { latitude: toLat, longitude: toLng },
+                      ],
+                      {
+                        edgePadding: { top: 60, right: 60, bottom: 60, left: 60 },
+                        animated: false,
+                      }
+                    );
+                  }}
+                  scrollEnabled={false}
+                  zoomEnabled={false}
+                  rotateEnabled={false}
                 >
+                  {/* FROM marker — green branded circle */}
                   <Marker
                     coordinate={{ latitude: fromLat, longitude: fromLng }}
                     title={t('pickup')}
                     description={request?.from_address || ''}
-                    pinColor={colors.success}
-                  />
+                  >
+                    <View style={styles.markerFrom}>
+                      <View style={styles.markerInner} />
+                    </View>
+                  </Marker>
 
+                  {/* TO marker — red branded circle */}
                   <Marker
                     coordinate={{ latitude: toLat, longitude: toLng }}
                     title={t('to')}
                     description={request?.to_address || ''}
-                    pinColor={colors.error}
-                  />
+                  >
+                    <View style={styles.markerTo}>
+                      <View style={styles.markerInner} />
+                    </View>
+                  </Marker>
 
+                  {/* Dashed route line */}
                   <Polyline
                     coordinates={[
                       { latitude: fromLat, longitude: fromLng },
                       { latitude: toLat, longitude: toLng },
                     ]}
                     strokeColor={colors.primary}
-                    strokeWidth={3}
+                    strokeWidth={2.5}
+                    lineDashPattern={[8, 6]}
+                    lineCap="round"
                   />
                 </MapView>
 
