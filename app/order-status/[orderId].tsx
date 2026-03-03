@@ -500,6 +500,44 @@ export default function OrderStatusScreen() {
     }
   };
 
+  const startTransport = async () => {
+    Alert.alert(t('startTransport'), t('startTransportMessage'), [
+      { text: t('cancel'), style: 'cancel' },
+      {
+        text: t('startTransport'),
+        onPress: processStartTransport,
+      },
+    ]);
+  };
+
+  const processStartTransport = async () => {
+    setConfirming(true);
+    try {
+      const { error } = await supabase
+        .from('orders')
+        .update({
+          status: 'in_transit',
+          started_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', orderIdString as string)
+        .eq('carrier_id', user?.uid || '');
+
+      if (error) {
+        throw error;
+      }
+
+      await fetchRelatedData();
+
+      Alert.alert(t('success'), t('transportStarted'));
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : t('error');
+      Alert.alert(t('error'), message);
+    } finally {
+      setConfirming(false);
+    }
+  };
+
   const getStatusColor = (status: string) => {
     const colors: { [key: string]: string } = {
       active: '#FFC107', // Warning yellow
@@ -552,6 +590,7 @@ export default function OrderStatusScreen() {
 
   const isCustomer = order?.customer_id === user?.uid;
   const isCarrier = order?.carrier_id === user?.uid;
+  const canStartTransport = isCarrier && order?.status === 'active';
   const canTrackDelivery = order?.status === 'in_transit';
   const canConfirmDelivery = isCustomer && order?.status === 'in_transit';
   const canSubmitProof = isCarrier && order?.status === 'in_transit';
@@ -706,6 +745,28 @@ export default function OrderStatusScreen() {
             <Text style={styles.participantName}>{order.carrier.full_name}</Text>
           </View>
         </View>
+
+        {/* Start Transport - For Carrier */}
+        {canStartTransport && (
+          <View style={styles.section}>
+            <View style={styles.confirmationHeader}>
+              <Ionicons name="play-circle-outline" size={24} color={theme.iconColors.primary} />
+              <Text style={styles.confirmationTitle}>{t('startTransport')}</Text>
+            </View>
+            <Text style={styles.confirmationDescription}>{t('startTransportDescription')}</Text>
+            <TouchableOpacity
+              style={[styles.confirmButton, confirming && styles.confirmButtonDisabled]}
+              onPress={startTransport}
+              disabled={confirming}
+            >
+              {confirming ? (
+                <ActivityIndicator size="small" color={theme.iconColors.white} />
+              ) : (
+                <Text style={styles.confirmButtonText}>{t('startTransport')}</Text>
+              )}
+            </TouchableOpacity>
+          </View>
+        )}
 
         {/* Delivery Tracking */}
         {canTrackDelivery && (

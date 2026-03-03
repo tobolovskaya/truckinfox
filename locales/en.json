@@ -748,4 +748,10 @@
   ,"onTimeNA": "On-time n/a"
   ,"onTimeRate": "{{value}}% on-time"
   ,"completedShort": "completed"
+  ,"insuranceIncludes": "Insurance includes"
+  ,"insuranceBasicCoverage": "Transport + loading damage"
+  ,"startTransport": "Start transport"
+  ,"startTransportDescription": "Mark pickup as completed and set this order to in transit."
+  ,"startTransportMessage": "Confirm that pickup is completed and transport has started?"
+  ,"transportStarted": "Transport started"
 }

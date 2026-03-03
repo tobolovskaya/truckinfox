@@ -1849,6 +1849,10 @@ export default function CreateRequestScreen() {
                     <Text style={styles.summaryPriceTotalLabel}>{t('totalEstimate')}</Text>
                     <Text style={styles.summaryPriceTotalValue}>{`${previewTotalCustomerPrice.toLocaleString('no-NO')} kr`}</Text>
                   </View>
+                  <View style={styles.summaryPriceRow}>
+                    <Text style={styles.summaryPriceLabel}>{t('insuranceIncludes')}</Text>
+                    <Text style={styles.summaryPriceValue}>{t('insuranceBasicCoverage')}</Text>
+                  </View>
                   <Text style={styles.summaryPriceHint}>
                     {t('insuranceCoverageHint')}
                   </Text>

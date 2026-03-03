@@ -600,11 +600,12 @@ export default function RequestDetailsScreen() {
 
       let completedByCarrier = new Map<string, number>();
       let reviewsByCarrier = new Map<string, number>();
+      let onTimeRateByCarrier = new Map<string, number>();
 
       if (carrierIds.length) {
         const { data: completedRows } = await supabase
           .from('orders')
-          .select('carrier_id')
+          .select('carrier_id, request_id, delivered_at')
           .in('carrier_id', carrierIds)
           .eq('status', 'delivered');
 
@@ -616,6 +617,58 @@ export default function RequestDetailsScreen() {
             acc.set(row.carrier_id, (acc.get(row.carrier_id) || 0) + 1);
             return acc;
           }, new Map<string, number>());
+
+          const deliveredRowsWithRequest = completedRows.filter(
+            (row): row is { carrier_id: string; request_id: string; delivered_at: string } =>
+              Boolean(row.carrier_id && row.request_id && row.delivered_at)
+          );
+
+          const deliveredRequestIds = Array.from(
+            new Set(deliveredRowsWithRequest.map(row => row.request_id))
+          );
+
+          if (deliveredRequestIds.length > 0) {
+            const { data: requestsForOnTime } = await supabase
+              .from('cargo_requests')
+              .select('id, delivery_date')
+              .in('id', deliveredRequestIds);
+
+            const promisedDateByRequest = new Map<string, string>();
+            for (const row of requestsForOnTime || []) {
+              if (row.id && row.delivery_date) {
+                promisedDateByRequest.set(row.id, row.delivery_date);
+              }
+            }
+
+            const onTimeStats = new Map<string, { onTime: number; total: number }>();
+
+            for (const row of deliveredRowsWithRequest) {
+              const promisedDate = promisedDateByRequest.get(row.request_id);
+              if (!promisedDate) {
+                continue;
+              }
+
+              const deliveredAt = new Date(row.delivered_at);
+              const promisedAt = new Date(`${promisedDate}T23:59:59.999Z`);
+
+              if (Number.isNaN(deliveredAt.getTime()) || Number.isNaN(promisedAt.getTime())) {
+                continue;
+              }
+
+              const current = onTimeStats.get(row.carrier_id) || { onTime: 0, total: 0 };
+              current.total += 1;
+              if (deliveredAt.getTime() <= promisedAt.getTime()) {
+                current.onTime += 1;
+              }
+              onTimeStats.set(row.carrier_id, current);
+            }
+
+            for (const [carrierId, stats] of onTimeStats.entries()) {
+              if (stats.total > 0) {
+                onTimeRateByCarrier.set(carrierId, (stats.onTime / stats.total) * 100);
+              }
+            }
+          }
         }
 
         const { data: reviewsRows } = await supabase
@@ -655,7 +708,7 @@ export default function RequestDetailsScreen() {
                 avatar_url: carrier.avatar_url || undefined,
                 completed_transports: completedByCarrier.get(row.carrier_id) || 0,
                 review_count: reviewsByCarrier.get(row.carrier_id) || 0,
-                on_time_rate: null,
+                on_time_rate: onTimeRateByCarrier.get(row.carrier_id) || null,
               }
               : undefined;
           })()

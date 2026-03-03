@@ -755,5 +755,11 @@
   "pickupConfirmed": "Henting bekreftet",
   "onTimeNA": "Punktlighet: ikke tilgjengelig",
   "onTimeRate": "{{value}}% punktlig",
-  "completedShort": "fullført"
+  "completedShort": "fullført",
+  "insuranceIncludes": "Forsikring inkluderer",
+  "insuranceBasicCoverage": "Transport + lasteskade",
+  "startTransport": "Start transport",
+  "startTransportDescription": "Marker henting som fullført og sett ordren til under transport.",
+  "startTransportMessage": "Bekreft at henting er fullført og transport er startet?",
+  "transportStarted": "Transport startet"
 }
