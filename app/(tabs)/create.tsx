@@ -13,7 +13,7 @@ import { KeyboardAwareFlatList } from 'react-native-keyboard-aware-scroll-view';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as ImagePicker from 'expo-image-picker';
-import * as FileSystem from 'expo-file-system';
+import * as FileSystem from 'expo-file-system/legacy';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTranslation } from 'react-i18next';
@@ -989,110 +989,101 @@ export default function CreateRequestScreen() {
         keyExtractor={item => item.key}
         renderItem={() => (
           <View>
-            {/* Title */}
+            {/* From Address */}
             <View style={[styles.fieldContainer, isSmallScreen && styles.fieldContainerCompact]}>
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing.xs }}>
-                <Text
-                  style={[styles.fieldLabel, { marginBottom: 0 }, isSmallScreen && styles.fieldLabelCompact]}
-                  accessibilityRole="header"
-                >
-                  Tittel
-                </Text>
-                <TouchableOpacity
-                  onPress={() => {
-                    const getCity = (a: string) => (a ? a.split(',')[0].trim() : '');
-                    const fromCity = getCity(formData.from_address);
-                    const toCity = getCity(formData.to_address);
-                    const rawCargoKey = formData.cargo_type ? t(formData.cargo_type) : t('cargo') || 'Last';
-                    const cargoName = String(rawCargoKey).charAt(0).toUpperCase() + String(rawCargoKey).slice(1);
-                    let newTitle = cargoName;
-                    if (fromCity && toCity) newTitle += ` fra ${fromCity} til ${toCity}`;
-                    else if (fromCity) newTitle += ` fra ${fromCity}`;
-                    else if (toCity) newTitle += ` til ${toCity}`;
-                    setFormData(prev => ({ ...prev, title: newTitle }));
-                    try { triggerHapticFeedback.light(); } catch { }
-                  }}
-                  style={{ flexDirection: 'row', alignItems: 'center' }}
-                  activeOpacity={0.7}
-                >
-                  <Ionicons name="color-wand-outline" size={16} color={colors.primary} />
-                  <Text style={{ marginLeft: 4, fontSize: 13, color: colors.primary, fontWeight: '600' }}>Auto-fyll</Text>
-                </TouchableOpacity>
-              </View>
-              <View style={styles.inputWrapper}>
-                <TextInput
-                  testID="cargo-title-input"
-                  accessibilityLabel="Tittel på lastforespørsel"
-                  accessibilityHint="Skriv inn en beskrivende tittel for lasten din"
-                  style={[
-                    styles.textInput,
-                    isSmallScreen && styles.textInputCompact,
-                    ...getInputValidationStyles('title', formData.title),
-                  ]}
-                  value={formData.title}
-                  onChangeText={value => {
-                    updateFormData('title', value);
-                    clearDistanceIfNeeded('title');
-                  }}
-                  onBlur={() => handleBlur('title')}
-                  placeholder=""
-                  autoComplete="off"
-                  returnKeyType="next"
-                />
-                {renderValidIcon('title', formData.title)}
-              </View>
-              {renderFieldError('title', formData.title)}
+              <AddressAutocomplete
+                value={formData.from_address}
+                label="Fra adresse"
+                placeholder="Skriv inn startsted..."
+                error={getFieldError('from_address', formData.from_address)}
+                onChangeText={text => {
+                  fromAddressTextRef.current = text;
+                  updateFormData('from_address', text);
+                  if (text !== formData.from_address) {
+                    clearDistanceIfNeeded('from_address');
+                  }
+                }}
+                onSelect={(address, lat, lng) => handleFromAddressSelect(address, lat, lng)}
+              />
             </View>
 
-            {/* Description */}
+            {/* To Address */}
             <View style={[styles.fieldContainer, isSmallScreen && styles.fieldContainerCompact]}>
-              <Text
-                style={[styles.fieldLabel, isSmallScreen && styles.fieldLabelCompact]}
-                accessibilityRole="header"
-              >
-                Beskrivelse
+              <AddressAutocomplete
+                value={formData.to_address}
+                label="Til adresse"
+                placeholder="Skriv inn destinasjon..."
+                error={getFieldError('to_address', formData.to_address)}
+                onChangeText={text => {
+                  toAddressTextRef.current = text;
+                  updateFormData('to_address', text);
+                  if (text !== formData.to_address) {
+                    clearDistanceIfNeeded('to_address');
+                  }
+                }}
+                onSelect={(address, lat, lng) => handleToAddressSelect(address, lat, lng)}
+              />
+            </View>
+
+            {/* Quick Templates */}
+            <View style={[styles.fieldContainer, isSmallScreen && styles.fieldContainerCompact]}>
+              <Text style={[styles.fieldLabel, isSmallScreen && styles.fieldLabelCompact]}>
+                {t('quickTemplates')}
               </Text>
-              <View style={styles.inputWrapper}>
-                <TextInput
-                  testID="cargo-description-input"
-                  accessibilityLabel="Beskrivelse av last"
-                  accessibilityHint="Skriv inn en detaljert beskrivelse av lasten"
-                  style={[
-                    styles.textInput,
-                    isSmallScreen && styles.textInputCompact,
-                    styles.textArea,
-                    isSmallScreen && styles.textAreaCompact,
-                    ...getInputValidationStyles('description', formData.description),
-                  ]}
-                  value={formData.description}
-                  onChangeText={value => {
-                    updateFormData('description', value);
-                    clearDistanceIfNeeded('description');
-                  }}
-                  onBlur={() => handleBlur('description')}
-                  multiline
-                  numberOfLines={4}
-                  textAlignVertical="top"
-                  placeholder=""
-                  autoComplete="off"
-                  returnKeyType="next"
-                />
-                {renderValidIcon('description', formData.description)}
+              <View
+                style={[styles.quickTemplateRow, isSmallScreen && styles.quickTemplateRowCompact]}
+              >
+                {QUICK_REQUEST_TEMPLATES.map(template => {
+                  const isSelected =
+                    formData.cargo_type === template.cargo_type &&
+                    formData.weight === template.weight &&
+                    formData.length === template.length &&
+                    formData.width === template.width &&
+                    formData.height === template.height;
+
+                  return (
+                    <TouchableOpacity
+                      key={template.id}
+                      style={[
+                        styles.quickTemplateChip,
+                        isSelected && styles.quickTemplateChipSelected,
+                      ]}
+                      onPress={() => applyQuickTemplate(template)}
+                      accessibilityRole="button"
+                      accessibilityLabel={t('useQuickTemplate', {
+                        template: t(template.labelKey),
+                      })}
+                      accessibilityHint={t('quickTemplateAccessibilityHint')}
+                      accessibilityState={{ selected: isSelected }}
+                    >
+                      <Text
+                        style={[
+                          styles.quickTemplateChipText,
+                          isSelected && styles.quickTemplateChipTextSelected,
+                        ]}
+                      >
+                        {t(template.labelKey)}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
               </View>
-              {renderFieldError('description', formData.description)}
+              <Text style={[styles.fieldHint, isSmallScreen && styles.fieldHintCompact]}>
+                {t('quickTemplatesHint')}
+              </Text>
             </View>
 
             {/* Cargo Type */}
             <View style={[styles.fieldContainer, isSmallScreen && styles.fieldContainerCompact]}>
               <Text style={[styles.fieldLabel, isSmallScreen && styles.fieldLabelCompact]}>
-                Lasttype
+                {t('cargoType')}
               </Text>
               <TouchableOpacity
                 style={[styles.dropdownButton, isSmallScreen && styles.dropdownButtonCompact]}
                 onPress={() => setShowCargoTypeMenu(true)}
                 accessibilityRole="button"
-                accessibilityLabel="Velg lasttype"
-                accessibilityHint="Åpner meny for å velge lasttype"
+                accessibilityLabel={t('selectCargoTypeA11yLabel')}
+                accessibilityHint={t('selectCargoTypeA11yHint')}
               >
                 <Text
                   style={[
@@ -1211,57 +1202,6 @@ export default function CreateRequestScreen() {
               </View>
             )}
 
-
-
-            {/* Quick Templates */}
-            <View style={[styles.fieldContainer, isSmallScreen && styles.fieldContainerCompact]}>
-              <Text style={[styles.fieldLabel, isSmallScreen && styles.fieldLabelCompact]}>
-                {t('quickTemplates')}
-              </Text>
-              <View
-                style={[styles.quickTemplateRow, isSmallScreen && styles.quickTemplateRowCompact]}
-              >
-                {QUICK_REQUEST_TEMPLATES.map(template => {
-                  const isSelected =
-                    formData.cargo_type === template.cargo_type &&
-                    formData.weight === template.weight &&
-                    formData.length === template.length &&
-                    formData.width === template.width &&
-                    formData.height === template.height;
-
-                  return (
-                    <TouchableOpacity
-                      key={template.id}
-                      style={[
-                        styles.quickTemplateChip,
-                        isSelected && styles.quickTemplateChipSelected,
-                      ]}
-                      onPress={() => applyQuickTemplate(template)}
-                      accessibilityRole="button"
-                      accessibilityLabel={t('useQuickTemplate', {
-                        template: t(template.labelKey),
-                      })}
-                      accessibilityHint={t('quickTemplateAccessibilityHint')}
-                      accessibilityState={{ selected: isSelected }}
-                    >
-                      <Text
-                        style={[
-                          styles.quickTemplateChipText,
-                          isSelected && styles.quickTemplateChipTextSelected,
-                        ]}
-                      >
-                        {t(template.labelKey)}
-                      </Text>
-                    </TouchableOpacity>
-                  );
-                })}
-              </View>
-              <Text style={[styles.fieldHint, isSmallScreen && styles.fieldHintCompact]}>
-                {t('quickTemplatesHint')}
-              </Text>
-            </View>
-
-
             {/* Dimensions */}
             <View style={[styles.fieldContainer, isSmallScreen && styles.fieldContainerCompact]}>
               <Text style={[styles.fieldLabel, isSmallScreen && styles.fieldLabelCompact]}>
@@ -1360,6 +1300,99 @@ export default function CreateRequestScreen() {
               {renderFieldError('weight', formData.weight)}
             </View>
 
+            {/* Title */}
+            <View style={[styles.fieldContainer, isSmallScreen && styles.fieldContainerCompact]}>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing.xs }}>
+                <Text
+                  style={[styles.fieldLabel, { marginBottom: 0 }, isSmallScreen && styles.fieldLabelCompact]}
+                  accessibilityRole="header"
+                >
+                  {t('title')}
+                </Text>
+                <TouchableOpacity
+                  onPress={() => {
+                    const getCity = (a: string) => (a ? a.split(',')[0].trim() : '');
+                    const fromCity = getCity(formData.from_address);
+                    const toCity = getCity(formData.to_address);
+                    const rawCargoKey = formData.cargo_type ? t(formData.cargo_type) : t('cargo') || 'Last';
+                    const cargoName = String(rawCargoKey).charAt(0).toUpperCase() + String(rawCargoKey).slice(1);
+                    let newTitle = cargoName;
+                    if (fromCity && toCity) newTitle += ` fra ${fromCity} til ${toCity}`;
+                    else if (fromCity) newTitle += ` fra ${fromCity}`;
+                    else if (toCity) newTitle += ` til ${toCity}`;
+                    setFormData(prev => ({ ...prev, title: newTitle }));
+                    try { triggerHapticFeedback.light(); } catch { }
+                  }}
+                  style={{ flexDirection: 'row', alignItems: 'center' }}
+                  activeOpacity={0.7}
+                >
+                  <Ionicons name="color-wand-outline" size={16} color={colors.primary} />
+                  <Text style={{ marginLeft: 4, fontSize: 13, color: colors.primary, fontWeight: '600' }}>Auto-fyll</Text>
+                </TouchableOpacity>
+              </View>
+              <View style={styles.inputWrapper}>
+                <TextInput
+                  testID="cargo-title-input"
+                  accessibilityLabel={t('createTitleA11yLabel')}
+                  accessibilityHint={t('createTitleA11yHint')}
+                  style={[
+                    styles.textInput,
+                    isSmallScreen && styles.textInputCompact,
+                    ...getInputValidationStyles('title', formData.title),
+                  ]}
+                  value={formData.title}
+                  onChangeText={value => {
+                    updateFormData('title', value);
+                    clearDistanceIfNeeded('title');
+                  }}
+                  onBlur={() => handleBlur('title')}
+                  placeholder=""
+                  autoComplete="off"
+                  returnKeyType="next"
+                />
+                {renderValidIcon('title', formData.title)}
+              </View>
+              {renderFieldError('title', formData.title)}
+            </View>
+
+            {/* Description */}
+            <View style={[styles.fieldContainer, isSmallScreen && styles.fieldContainerCompact]}>
+              <Text
+                style={[styles.fieldLabel, isSmallScreen && styles.fieldLabelCompact]}
+                accessibilityRole="header"
+              >
+                {t('description')}
+              </Text>
+              <View style={styles.inputWrapper}>
+                <TextInput
+                  testID="cargo-description-input"
+                  accessibilityLabel={t('createDescriptionA11yLabel')}
+                  accessibilityHint={t('createDescriptionA11yHint')}
+                  style={[
+                    styles.textInput,
+                    isSmallScreen && styles.textInputCompact,
+                    styles.textArea,
+                    isSmallScreen && styles.textAreaCompact,
+                    ...getInputValidationStyles('description', formData.description),
+                  ]}
+                  value={formData.description}
+                  onChangeText={value => {
+                    updateFormData('description', value);
+                    clearDistanceIfNeeded('description');
+                  }}
+                  onBlur={() => handleBlur('description')}
+                  multiline
+                  numberOfLines={4}
+                  textAlignVertical="top"
+                  placeholder=""
+                  autoComplete="off"
+                  returnKeyType="next"
+                />
+                {renderValidIcon('description', formData.description)}
+              </View>
+              {renderFieldError('description', formData.description)}
+            </View>
+
             {/* Photo Checklist */}
             <View style={[styles.fieldContainer, isSmallScreen && styles.fieldContainerCompact]}>
               <View
@@ -1408,8 +1441,11 @@ export default function CreateRequestScreen() {
                 style={[styles.imageUploadArea, isSmallScreen && styles.imageUploadAreaCompact]}
                 onPress={pickImages}
                 accessibilityRole="button"
-                accessibilityLabel={`Add images, ${images.length} of 5 selected`}
-                accessibilityHint="Select photos of your cargo"
+                accessibilityLabel={t('addImagesA11yLabel', {
+                  count: images.length,
+                  max: 5,
+                })}
+                accessibilityHint={t('addImagesA11yHint')}
               >
                 <View style={styles.imageUploadContent}>
                   <Ionicons name="image-outline" size={isSmallScreen ? 28 : 32} color="#9CA3AF" />
@@ -1439,8 +1475,8 @@ export default function CreateRequestScreen() {
                         style={styles.removeImageButton}
                         onPress={() => removeImage(index)}
                         accessibilityRole="button"
-                        accessibilityLabel={`Remove image ${index + 1}`}
-                        accessibilityHint="Delete this photo"
+                        accessibilityLabel={t('removeImageA11yLabel', { index: index + 1 })}
+                        accessibilityHint={t('removeImageA11yHint')}
                       >
                         <Ionicons
                           name="close-circle"
@@ -1467,42 +1503,6 @@ export default function CreateRequestScreen() {
                   ))}
                 </View>
               )}
-            </View>
-
-            {/* From Address */}
-            <View style={[styles.fieldContainer, isSmallScreen && styles.fieldContainerCompact]}>
-              <AddressAutocomplete
-                value={formData.from_address}
-                label="Fra adresse"
-                placeholder="Skriv inn startsted..."
-                error={getFieldError('from_address', formData.from_address)}
-                onChangeText={text => {
-                  fromAddressTextRef.current = text;
-                  updateFormData('from_address', text);
-                  if (text !== formData.from_address) {
-                    clearDistanceIfNeeded('from_address');
-                  }
-                }}
-                onSelect={(address, lat, lng) => handleFromAddressSelect(address, lat, lng)}
-              />
-            </View>
-
-            {/* To Address */}
-            <View style={[styles.fieldContainer, isSmallScreen && styles.fieldContainerCompact]}>
-              <AddressAutocomplete
-                value={formData.to_address}
-                label="Til adresse"
-                placeholder="Skriv inn destinasjon..."
-                error={getFieldError('to_address', formData.to_address)}
-                onChangeText={text => {
-                  toAddressTextRef.current = text;
-                  updateFormData('to_address', text);
-                  if (text !== formData.to_address) {
-                    clearDistanceIfNeeded('to_address');
-                  }
-                }}
-                onSelect={(address, lat, lng) => handleToAddressSelect(address, lat, lng)}
-              />
             </View>
 
             {/* Dates */}
@@ -1736,8 +1736,10 @@ export default function CreateRequestScreen() {
             key={type.id}
             testID={`cargo-type-${type.id}`}
             accessibilityRole="menuitem"
-            accessibilityLabel={`Velg ${t(type.labelKey)} som lasttype`}
-            accessibilityHint="Dobbelttrykk for å velge denne lasttypen"
+            accessibilityLabel={t('selectCargoTypeOptionA11yLabel', {
+              cargoType: t(type.labelKey),
+            })}
+            accessibilityHint={t('selectCargoTypeOptionA11yHint')}
             accessibilityState={{ selected: formData.cargo_type === type.id }}
             style={[styles.menuItem, formData.cargo_type === type.id && styles.menuItemSelected]}
             onPress={() => {
