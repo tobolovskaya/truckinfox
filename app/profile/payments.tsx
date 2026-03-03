@@ -14,6 +14,7 @@ import { spacing, fontSize, fontWeight, useAppThemeStyles } from '../../lib/shar
 import { useAuth } from '../../contexts/AuthContext';
 import { ScreenHeader } from '../../components/ScreenHeader';
 import { EmptyState } from '../../components/EmptyState';
+import EmptyPaymentsIllustration from '../../assets/empty-payments.svg';
 import { usePaymentHistory, PaymentRecord } from '../../hooks/usePaymentHistory';
 import { triggerHapticFeedback } from '../../utils/haptics';
 
@@ -217,6 +218,7 @@ export default function PaymentsScreen() {
                 ? t('noPaymentsWithFilter') || 'No payments with this status'
                 : t('noPaymentsYet') || 'Start by placing an order'
             }
+            illustration={EmptyPaymentsIllustration}
           />
         </View>
       ) : (

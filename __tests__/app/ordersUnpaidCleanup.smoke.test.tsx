@@ -55,7 +55,7 @@ jest.mock('../../components/EmptyState', () => ({
   },
 }));
 
-jest.mock('../../assets/empty-cargo.svg', () => () => null);
+jest.mock('../../assets/empty-orders.svg', () => () => null);
 
 jest.mock('../../lib/supabase', () => ({
   supabase: {
