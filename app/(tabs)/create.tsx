@@ -206,6 +206,31 @@ export default function CreateRequestScreen() {
     return () => clearTimeout(timeoutId);
   }, [formData, images]);
 
+  // Auto-generate title based on addresses and cargo type
+  useEffect(() => {
+    // Only auto-generate if user hasn't explicitly customized the title
+    if (!touchedFields.title || formData.title.trim() === '') {
+      const getCity = (address: string) => (address ? address.split(',')[0].trim() : '');
+      const fromCity = getCity(formData.from_address);
+      const toCity = getCity(formData.to_address);
+      const rawCargoKey = formData.cargo_type ? t(formData.cargo_type) : t('cargo') || 'Last';
+      const cargoName = String(rawCargoKey).charAt(0).toUpperCase() + String(rawCargoKey).slice(1);
+
+      let newTitle = cargoName;
+      if (fromCity && toCity) {
+        newTitle += ` fra ${fromCity} til ${toCity}`;
+      } else if (fromCity) {
+        newTitle += ` fra ${fromCity}`;
+      } else if (toCity) {
+        newTitle += ` til ${toCity}`;
+      }
+
+      if (newTitle !== formData.title && (fromCity || toCity || formData.cargo_type)) {
+        setFormData(prev => ({ ...prev, title: newTitle }));
+      }
+    }
+  }, [formData.from_address, formData.to_address, formData.cargo_type, touchedFields.title, t]);
+
   const validateField = (field: string, value: unknown, nextData: typeof formData = formData) => {
     switch (field) {
       case 'title':
@@ -944,12 +969,34 @@ export default function CreateRequestScreen() {
           <View>
             {/* Title */}
             <View style={[styles.fieldContainer, isSmallScreen && styles.fieldContainerCompact]}>
-              <Text
-                style={[styles.fieldLabel, isSmallScreen && styles.fieldLabelCompact]}
-                accessibilityRole="header"
-              >
-                Tittel
-              </Text>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing.xs }}>
+                <Text
+                  style={[styles.fieldLabel, { marginBottom: 0 }, isSmallScreen && styles.fieldLabelCompact]}
+                  accessibilityRole="header"
+                >
+                  Tittel
+                </Text>
+                <TouchableOpacity
+                  onPress={() => {
+                    const getCity = (a: string) => (a ? a.split(',')[0].trim() : '');
+                    const fromCity = getCity(formData.from_address);
+                    const toCity = getCity(formData.to_address);
+                    const rawCargoKey = formData.cargo_type ? t(formData.cargo_type) : t('cargo') || 'Last';
+                    const cargoName = String(rawCargoKey).charAt(0).toUpperCase() + String(rawCargoKey).slice(1);
+                    let newTitle = cargoName;
+                    if (fromCity && toCity) newTitle += ` fra ${fromCity} til ${toCity}`;
+                    else if (fromCity) newTitle += ` fra ${fromCity}`;
+                    else if (toCity) newTitle += ` til ${toCity}`;
+                    setFormData(prev => ({ ...prev, title: newTitle }));
+                    try { triggerHapticFeedback.light(); } catch { }
+                  }}
+                  style={{ flexDirection: 'row', alignItems: 'center' }}
+                  activeOpacity={0.7}
+                >
+                  <Ionicons name="color-wand-outline" size={16} color={colors.primary} />
+                  <Text style={{ marginLeft: 4, fontSize: 13, color: colors.primary, fontWeight: '600' }}>Auto-fyll</Text>
+                </TouchableOpacity>
+              </View>
               <View style={styles.inputWrapper}>
                 <TextInput
                   testID="cargo-title-input"
@@ -1676,21 +1723,26 @@ const styles = StyleSheet.create({
   },
   fieldLabel: {
     fontSize: fontSize.md,
-    fontWeight: '500',
-    color: '#1F2937',
+    fontWeight: '600',
+    color: '#111827',
     marginBottom: spacing.xs,
   },
   fieldLabelCompact: {
     fontSize: fontSize.sm,
   },
   textInput: {
-    borderWidth: 2,
-    borderColor: colors.primary,
-    borderRadius: borderRadius.md,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    borderRadius: 12,
     padding: spacing.md,
     fontSize: fontSize.md,
-    backgroundColor: colors.white,
+    backgroundColor: '#FFFFFF',
     color: '#1F2937',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 2,
   },
   textInputCompact: {
     padding: spacing.sm,
@@ -1709,12 +1761,17 @@ const styles = StyleSheet.create({
   },
   textInputNeutral: {
     borderWidth: 1,
-    borderColor: colors.border.default,
-    borderRadius: borderRadius.md,
+    borderColor: '#E5E7EB',
+    borderRadius: 12,
     padding: spacing.md,
     fontSize: fontSize.md,
-    backgroundColor: colors.white,
+    backgroundColor: '#FFFFFF',
     color: '#1F2937',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 2,
   },
   textArea: {
     minHeight: 100,
@@ -1745,10 +1802,15 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: colors.border.default,
-    borderRadius: borderRadius.sm,
-    padding: spacing.sm,
-    backgroundColor: colors.white,
+    borderColor: '#E5E7EB',
+    borderRadius: 12,
+    padding: spacing.md,
+    backgroundColor: '#FFFFFF',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 2,
   },
   dateInputCompact: {
     padding: spacing.xs,
@@ -1775,12 +1837,12 @@ const styles = StyleSheet.create({
   },
   imageUploadArea: {
     borderWidth: 2,
-    borderColor: colors.border.default,
+    borderColor: '#E5E7EB',
     borderStyle: 'dashed',
-    borderRadius: borderRadius.md,
+    borderRadius: 16,
     padding: spacing.xxxl,
     alignItems: 'center',
-    backgroundColor: colors.backgroundLight,
+    backgroundColor: '#F9FAFB',
   },
   imageUploadAreaCompact: {
     padding: spacing.xl,
@@ -1973,10 +2035,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     borderWidth: 1,
-    borderColor: colors.border.default,
-    borderRadius: borderRadius.sm,
-    padding: spacing.sm,
-    backgroundColor: colors.white,
+    borderColor: '#E5E7EB',
+    borderRadius: 12,
+    padding: spacing.md,
+    backgroundColor: '#FFFFFF',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 2,
   },
   dropdownButtonCompact: {
     padding: spacing.xs,
