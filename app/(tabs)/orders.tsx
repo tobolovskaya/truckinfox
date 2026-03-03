@@ -90,12 +90,12 @@ export default function OrdersScreen() {
   const locale = i18n.language.startsWith('no') ? 'nb-NO' : 'en-US';
 
   const formatNokAmount = useCallback(
-    (value: number) =>
-      new Intl.NumberFormat(locale, {
-        style: 'currency',
-        currency: 'NOK',
+    (value: number) => {
+      const formatted = new Intl.NumberFormat(locale, {
         maximumFractionDigits: 0,
-      }).format(Number(value || 0)),
+      }).format(Number(value || 0));
+      return `${formatted} kr`;
+    },
     [locale]
   );
 

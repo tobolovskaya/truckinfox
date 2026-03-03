@@ -188,7 +188,7 @@ export default function PaymentsScreen() {
         <View style={styles.statsSection}>
           <View style={styles.statCard}>
             <Text style={styles.statLabel}>{t('totalSpent') || 'Total Spent'}</Text>
-            <Text style={styles.statValue}>{formatCurrency(stats.totalAmount, 'NOK')}</Text>
+            <Text style={styles.statValue}>{formatCurrency(stats.totalAmount, 'NOK').replace('NOK', '').replace('kr', '').trim() + ' kr'}</Text>
           </View>
           <View style={styles.statCard}>
             <Text style={styles.statLabel}>{t('transactions') || 'Transactions'}</Text>

@@ -121,12 +121,13 @@ export default function RequestDetailsScreen() {
   const language = i18n?.language || 'en';
   const locale = language.startsWith('no') ? 'nb-NO' : 'en-US';
 
-  const formatNokAmount = (value: number) =>
-    new Intl.NumberFormat(locale, {
-      style: 'currency',
-      currency: 'NOK',
+  const formatNokAmount = (value: number) => {
+    const formatted = new Intl.NumberFormat(locale, {
       maximumFractionDigits: 0,
     }).format(Number(value || 0));
+    return `${formatted} kr`;
+  };
+
 
   const normalizedRequestStatus = (request?.status || 'pending').toLowerCase();
 
@@ -256,19 +257,19 @@ export default function RequestDetailsScreen() {
 
       const { data: carriersData } = carrierIds.length
         ? await supabase
-            .from('profiles')
-            .select('id, full_name, user_type, rating, phone, avatar_url')
-            .in('id', carrierIds)
+          .from('profiles')
+          .select('id, full_name, user_type, rating, phone, avatar_url')
+          .in('id', carrierIds)
         : {
-            data: [] as Array<{
-              id: string;
-              full_name: string | null;
-              user_type: string | null;
-              rating: number | null;
-              phone: string | null;
-              avatar_url: string | null;
-            }>,
-          };
+          data: [] as Array<{
+            id: string;
+            full_name: string | null;
+            user_type: string | null;
+            rating: number | null;
+            phone: string | null;
+            avatar_url: string | null;
+          }>,
+        };
 
       const carrierById = new Map((carriersData || []).map(carrier => [carrier.id, carrier]));
 
@@ -281,17 +282,17 @@ export default function RequestDetailsScreen() {
         carrier_id: row.carrier_id,
         users: row.carrier_id
           ? (() => {
-              const carrier = carrierById.get(row.carrier_id);
-              return carrier
-                ? {
-                    full_name: carrier.full_name || '',
-                    user_type: carrier.user_type || 'carrier',
-                    rating: Number(carrier.rating || 0),
-                    phone: carrier.phone || '',
-                    avatar_url: carrier.avatar_url || undefined,
-                  }
-                : undefined;
-            })()
+            const carrier = carrierById.get(row.carrier_id);
+            return carrier
+              ? {
+                full_name: carrier.full_name || '',
+                user_type: carrier.user_type || 'carrier',
+                rating: Number(carrier.rating || 0),
+                phone: carrier.phone || '',
+                avatar_url: carrier.avatar_url || undefined,
+              }
+              : undefined;
+          })()
           : undefined,
       })) as Bid[];
 
@@ -1124,7 +1125,7 @@ export default function RequestDetailsScreen() {
 
             <View style={styles.bidForm}>
               <View style={styles.inputGroup}>
-                <Text style={styles.inputLabel}>{t('bidAmount')} (NOK)</Text>
+                <Text style={styles.inputLabel}>{t('bidAmount')} (kr)</Text>
                 <TextInput
                   style={styles.input}
                   value={bidAmount}
@@ -1287,19 +1288,19 @@ export default function RequestDetailsScreen() {
         secondaryRightAction={
           isCustomer
             ? {
-                icon: 'create-outline',
-                onPress: handleEdit,
-                label: t('editRequest'),
-              }
+              icon: 'create-outline',
+              onPress: handleEdit,
+              label: t('editRequest'),
+            }
             : undefined
         }
         rightAction={
           isCustomer
             ? {
-                icon: 'trash-outline',
-                onPress: handleDelete,
-                label: t('deleteRequest'),
-              }
+              icon: 'trash-outline',
+              onPress: handleDelete,
+              label: t('deleteRequest'),
+            }
             : undefined
         }
       />

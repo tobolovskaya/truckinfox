@@ -130,12 +130,12 @@ export default function PaymentScreen() {
   const language = i18n?.language || 'en';
   const locale = language.startsWith('no') ? 'nb-NO' : 'en-US';
 
-  const formatNokAmount = (value: number) =>
-    new Intl.NumberFormat(locale, {
-      style: 'currency',
-      currency: 'NOK',
+  const formatNokAmount = (value: number) => {
+    const formatted = new Intl.NumberFormat(locale, {
       maximumFractionDigits: 0,
     }).format(Number(value || 0));
+    return `${formatted} kr`;
+  };
 
   const updateOrderPaymentStatus = async (status: string) => {
     if (!order?.id) {

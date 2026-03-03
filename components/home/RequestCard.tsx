@@ -62,7 +62,8 @@ export const RequestCard: React.FC<RequestCardProps> = ({
   cardStyle,
 }) => {
   const { t } = useTranslation();
-  const title = request.title || request.cargo_type || t('cargoRequest');
+  const rawTitle = request.title || request.cargo_type || t('cargoRequest');
+  const title = rawTitle.charAt(0).toUpperCase() + rawTitle.slice(1);
   const fromAddress = request.from_address || t('unknownPickup');
   const toAddress = request.to_address || t('unknownDelivery');
   const priceText =
@@ -133,7 +134,7 @@ export const RequestCard: React.FC<RequestCardProps> = ({
         <View style={styles.routeBlock}>
           <View style={styles.routeSection}>
             <View style={styles.routeLine}>
-              <Ionicons name="radio-button-on" size={14} color={colors.primary} />
+              <Ionicons name="radio-button-on" size={compact ? 11 : 14} color={colors.primary} />
               <Text style={[styles.routeText, compact && styles.routeTextCompact]} numberOfLines={1}>
                 {fromAddress}
               </Text>
@@ -141,41 +142,41 @@ export const RequestCard: React.FC<RequestCardProps> = ({
           </View>
           <View style={styles.routeSection}>
             <View style={styles.routeLine}>
-              <Ionicons name="location-outline" size={14} color={colors.text.secondary} />
+              <Ionicons name="location-outline" size={compact ? 11 : 14} color={colors.text.secondary} />
               <Text style={[styles.routeText, compact && styles.routeTextCompact]} numberOfLines={1}>
                 {toAddress}
               </Text>
             </View>
           </View>
         </View>
-      </View>
 
-      <View style={styles.footerRow}>
-        <Text style={styles.metaText}>{dateText}</Text>
-        {typeof request.distance === 'number' && request.distance > 0 && (
-          <View style={styles.distanceBadge}>
-            <Ionicons name="navigate-outline" size={12} color={colors.primary} />
-            <Text style={styles.distanceBadgeText}>{Math.round(request.distance)} km</Text>
-          </View>
-        )}
-        {showFavorite && onToggleFavorite && (
-          <TouchableOpacity
-            onPress={() => onToggleFavorite(request.id)}
-            accessibilityRole="button"
-            accessibilityLabel={
-              request.is_favorite ? t('removeFromFavorites') : t('addToFavorites')
-            }
-            accessibilityHint={request.is_favorite ? t('removeFavoriteHint') : t('addFavoriteHint')}
-            accessibilityState={{ selected: request.is_favorite }}
-            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-          >
-            <Ionicons
-              name={request.is_favorite ? 'heart' : 'heart-outline'}
-              size={20}
-              color={request.is_favorite ? colors.error : colors.text.secondary}
-            />
-          </TouchableOpacity>
-        )}
+        <View style={styles.footerRow}>
+          <Text style={styles.metaText}>{dateText}</Text>
+          {typeof request.distance === 'number' && request.distance > 0 && (
+            <View style={styles.distanceBadge}>
+              <Ionicons name="navigate-outline" size={12} color={colors.primary} />
+              <Text style={styles.distanceBadgeText}>{Math.round(request.distance)} km</Text>
+            </View>
+          )}
+          {showFavorite && onToggleFavorite && (
+            <TouchableOpacity
+              onPress={() => onToggleFavorite(request.id)}
+              accessibilityRole="button"
+              accessibilityLabel={
+                request.is_favorite ? t('removeFromFavorites') : t('addToFavorites')
+              }
+              accessibilityHint={request.is_favorite ? t('removeFavoriteHint') : t('addFavoriteHint')}
+              accessibilityState={{ selected: request.is_favorite }}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            >
+              <Ionicons
+                name={request.is_favorite ? 'heart' : 'heart-outline'}
+                size={20}
+                color={request.is_favorite ? colors.error : colors.text.secondary}
+              />
+            </TouchableOpacity>
+          )}
+        </View>
       </View>
     </TouchableOpacity>
   );
@@ -207,9 +208,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   contentWrap: {
-    paddingHorizontal: spacing.lg,
-    paddingBottom: spacing.lg,
-    paddingTop: spacing.md,
+    paddingHorizontal: spacing.md,
+    paddingBottom: spacing.sm,
+    paddingTop: spacing.sm,
   },
   headerRow: {
     flexDirection: 'row',
@@ -219,20 +220,22 @@ const styles = StyleSheet.create({
   },
   title: {
     flex: 1,
-    fontSize: fontSize.lg,
+    fontSize: fontSize.md,
     fontWeight: fontWeight.bold,
     color: colors.text.primary,
+    textTransform: 'capitalize' as const,
   },
   titleCompact: {
-    fontSize: fontSize.md,
+    fontSize: fontSize.sm,
   },
   price: {
-    fontSize: fontSize.md,
+    fontSize: fontSize.sm,
     fontWeight: fontWeight.bold,
     color: colors.primary,
+    flexShrink: 0,
   },
   priceCompact: {
-    fontSize: fontSize.sm,
+    fontSize: fontSize.xs,
   },
   badgeRow: {
     flexDirection: 'row',
@@ -266,19 +269,20 @@ const styles = StyleSheet.create({
   },
   routeText: {
     flex: 1,
-    flexWrap: 'wrap',
-    fontSize: fontSize.md,
+    fontSize: fontSize.sm,
     color: colors.text.primary,
-    fontWeight: fontWeight.semibold,
+    fontWeight: fontWeight.medium,
   },
   routeTextCompact: {
-    fontSize: fontSize.sm,
+    fontSize: fontSize.xs,
   },
   footerRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginTop: spacing.md,
+    marginTop: spacing.xs,
+    paddingHorizontal: spacing.md,
+    paddingBottom: spacing.sm,
   },
   metaText: {
     fontSize: fontSize.sm,

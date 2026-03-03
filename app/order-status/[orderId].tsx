@@ -98,12 +98,12 @@ export default function OrderStatusScreen() {
       .trim()
       .toLowerCase();
 
-  const formatNokAmount = (value: number) =>
-    new Intl.NumberFormat(locale, {
-      style: 'currency',
-      currency: 'NOK',
+  const formatNokAmount = (value: number) => {
+    const formatted = new Intl.NumberFormat(locale, {
       maximumFractionDigits: 0,
     }).format(Number(value || 0));
+    return `${formatted} kr`;
+  };
 
   const formatDateTime = (value: Date | string) => {
     const date = value instanceof Date ? value : new Date(value);

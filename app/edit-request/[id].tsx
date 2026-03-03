@@ -1095,7 +1095,7 @@ export default function EditRequestScreen() {
 
             {/* Price - ALWAYS VISIBLE */}
             <View style={styles.fieldContainer}>
-              <Text style={styles.fieldLabel}>Foreslått pris (NOK)</Text>
+              <Text style={styles.fieldLabel}>Foreslått pris (kr)</Text>
               <View style={styles.priceRangeEstimateCard}>
                 <View style={styles.priceRangeEstimateHeader}>
                   <Ionicons name="stats-chart-outline" size={16} color={colors.primary} />
@@ -1104,7 +1104,7 @@ export default function EditRequestScreen() {
                 {estimatedPriceRange.min !== null && estimatedPriceRange.max !== null ? (
                   <>
                     <Text style={styles.priceRangeEstimateValue}>
-                      {`${estimatedPriceRange.min.toLocaleString(locale)}–${estimatedPriceRange.max.toLocaleString(locale)} NOK`}
+                      {`${estimatedPriceRange.min.toLocaleString(locale)}–${estimatedPriceRange.max.toLocaleString(locale)} kr`}
                     </Text>
                     <Text style={styles.priceRangeEstimateMeta}>
                       {t('priceRangeEstimateMeta', {
