@@ -182,9 +182,11 @@ export const RequestCard: React.FC<RequestCardProps> = ({
 
         <View style={[styles.footerRow, compact && styles.footerRowCompact]}>
           <View style={styles.dateRow}>
-            <Text style={[styles.metaText, compact && styles.metaTextCompact]}>{dateText}</Text>
+            <Text style={[styles.metaText, compact && styles.metaTextCompact]} numberOfLines={1}>
+              {dateText}
+            </Text>
           </View>
-          <View style={styles.footerActions}>
+          <View style={[styles.footerActions, compact && styles.footerActionsCompact]}>
             {bidCount > 0 && (
               <View style={[styles.bidCountBadge, compact && styles.bidCountBadgeCompact]}>
                 <Ionicons name="chatbubble-ellipses-outline" size={11} color={colors.primary} />
@@ -194,8 +196,10 @@ export const RequestCard: React.FC<RequestCardProps> = ({
             {typeof routeDistanceKm === 'number' && (
               <View style={[styles.routeDistanceBadge, compact && styles.routeDistanceBadgeCompact]}>
                 <Ionicons name="trail-sign-outline" size={11} color={colors.primary} />
-                <Text style={styles.routeDistanceBadgeText}>
-                  {`~${Math.round(routeDistanceKm)} ${t('km')} ${t('offRoute')}`}
+                <Text style={styles.routeDistanceBadgeText} numberOfLines={1}>
+                  {compact
+                    ? `~${Math.round(routeDistanceKm)} ${t('km')}`
+                    : `~${Math.round(routeDistanceKm)} ${t('km')} ${t('offRoute')}`}
                 </Text>
               </View>
             )}
@@ -357,6 +361,8 @@ const styles = StyleSheet.create({
   },
   footerRowCompact: {
     marginTop: spacing.xxxs,
+    alignItems: 'flex-start',
+    flexDirection: 'column',
     gap: spacing.xxxs,
   },
   dateRow: {
@@ -364,11 +370,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: spacing.xxs,
     flexShrink: 1,
+    width: '100%',
   },
   footerActions: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.xs,
+    flexWrap: 'wrap',
+  },
+  footerActionsCompact: {
+    width: '100%',
   },
   metaText: {
     fontSize: fontSize.xs,
@@ -429,5 +440,6 @@ const styles = StyleSheet.create({
     fontSize: fontSize.xs,
     fontWeight: fontWeight.semibold,
     color: colors.primary,
+    maxWidth: 140,
   },
 });

@@ -478,7 +478,72 @@ export default function HomeScreen() {
     }
   };
 
-  const listRequests = routeModeEnabled ? routeResults : requests;
+  const filteredRouteResults = useMemo(() => {
+    const query = debouncedSearchQuery.trim().toLowerCase();
+
+    const byFilters = routeResults.filter(item => {
+      const matchesCargoType =
+        !selectedCargoType || (item.cargo_type || '').toLowerCase() === selectedCargoType.toLowerCase();
+
+      if (!query) {
+        return matchesCargoType;
+      }
+
+      const haystack = [item.title, item.description, item.from_address, item.to_address]
+        .filter(Boolean)
+        .join(' ')
+        .toLowerCase();
+
+      return matchesCargoType && haystack.includes(query);
+    });
+
+    const parsePrice = (value: unknown): number => {
+      if (typeof value === 'number' && Number.isFinite(value)) {
+        return value;
+      }
+      if (typeof value === 'string') {
+        const parsed = Number(value);
+        return Number.isFinite(parsed) ? parsed : 0;
+      }
+      return 0;
+    };
+
+    const parseDate = (value?: string): number => {
+      if (!value) {
+        return 0;
+      }
+      const timestamp = new Date(value).getTime();
+      return Number.isFinite(timestamp) ? timestamp : 0;
+    };
+
+    return [...byFilters].sort((left, right) => {
+      const leftDetour =
+        typeof left.route_distance_km === 'number' ? left.route_distance_km : Number.POSITIVE_INFINITY;
+      const rightDetour =
+        typeof right.route_distance_km === 'number'
+          ? right.route_distance_km
+          : Number.POSITIVE_INFINITY;
+
+      switch (sortBy) {
+        case 'priceLowToHigh':
+          return parsePrice(left.price) - parsePrice(right.price);
+        case 'priceHighToLow':
+          return parsePrice(right.price) - parsePrice(left.price);
+        case 'oldest':
+          return parseDate(left.created_at) - parseDate(right.created_at);
+        case 'newest':
+        case 'date':
+          return parseDate(right.created_at) - parseDate(left.created_at);
+        default:
+          if (leftDetour !== rightDetour) {
+            return leftDetour - rightDetour;
+          }
+          return parseDate(right.created_at) - parseDate(left.created_at);
+      }
+    });
+  }, [debouncedSearchQuery, routeResults, selectedCargoType, sortBy]);
+
+  const listRequests = routeModeEnabled ? filteredRouteResults : requests;
   const listLoading = routeModeEnabled ? routeLoading : loading;
   const listRefreshing = routeModeEnabled ? routeLoading : refreshing;
 
