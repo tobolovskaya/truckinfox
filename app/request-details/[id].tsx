@@ -497,6 +497,19 @@ export default function RequestDetailsScreen() {
     return value ? t('yes') : t('no');
   };
 
+  const getEtaRiskLabel = (onTimeRate?: number | null) => {
+    if (typeof onTimeRate !== 'number' || Number.isNaN(onTimeRate)) {
+      return t('riskUnknown');
+    }
+    if (onTimeRate >= 90) {
+      return t('riskLow');
+    }
+    if (onTimeRate >= 75) {
+      return t('riskMedium');
+    }
+    return t('riskHigh');
+  };
+
   useEffect(() => {
     fetchRequest();
     fetchBids();
@@ -1741,7 +1754,7 @@ export default function RequestDetailsScreen() {
                   </View>
                   <View style={styles.bidQualityChip}>
                     <Ionicons name="chatbubble-ellipses-outline" size={12} color={colors.text.secondary} />
-                    <Text style={styles.bidQualityText}>{bid.users?.review_count || 0} reviews</Text>
+                    <Text style={styles.bidQualityText}>{bid.users?.review_count || 0} {t('reviews')}</Text>
                   </View>
                   <View style={styles.bidQualityChip}>
                     <Ionicons name="time-outline" size={12} color={colors.text.secondary} />
@@ -1749,6 +1762,12 @@ export default function RequestDetailsScreen() {
                       {typeof bid.users?.on_time_rate === 'number'
                         ? t('onTimeRate', { value: Math.round(bid.users.on_time_rate) })
                         : t('onTimeNA')}
+                    </Text>
+                  </View>
+                  <View style={styles.bidQualityChip}>
+                    <Ionicons name="alert-circle-outline" size={12} color={colors.text.secondary} />
+                    <Text style={styles.bidQualityText}>
+                      {t('etaRiskLabel')}: {getEtaRiskLabel(bid.users?.on_time_rate)}
                     </Text>
                   </View>
                 </View>

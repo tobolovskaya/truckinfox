@@ -761,5 +761,10 @@
   "startTransport": "Start transport",
   "startTransportDescription": "Marker henting som fullført og sett ordren til under transport.",
   "startTransportMessage": "Bekreft at henting er fullført og transport er startet?",
-  "transportStarted": "Transport startet"
+  "transportStarted": "Transport startet",
+  "etaRiskLabel": "ETA-risiko",
+  "riskLow": "Lav",
+  "riskMedium": "Middels",
+  "riskHigh": "Høy",
+  "riskUnknown": "Ukjent"
 }

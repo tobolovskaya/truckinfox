@@ -754,4 +754,9 @@
   ,"startTransportDescription": "Mark pickup as completed and set this order to in transit."
   ,"startTransportMessage": "Confirm that pickup is completed and transport has started?"
   ,"transportStarted": "Transport started"
+  ,"etaRiskLabel": "ETA risk"
+  ,"riskLow": "Low"
+  ,"riskMedium": "Medium"
+  ,"riskHigh": "High"
+  ,"riskUnknown": "Unknown"
 }
