@@ -131,7 +131,10 @@ export const RequestCard: React.FC<RequestCardProps> = ({
             ]}
           >
             <Ionicons name={cargoIcon} size={compact ? 11 : 12} color={cargoColors.text} />
-            <Text style={[styles.typeOverlayText, { color: cargoColors.text }]} numberOfLines={1}>
+            <Text
+              style={[styles.typeOverlayText, compact && styles.typeOverlayTextCompact, { color: cargoColors.text }]}
+              numberOfLines={1}
+            >
               {cargoTypeLabel}
             </Text>
           </View>
@@ -148,13 +151,13 @@ export const RequestCard: React.FC<RequestCardProps> = ({
         </Text>
 
         <View style={[styles.routeBlock, compact && styles.routeBlockCompact]}>
-          <View style={styles.routeLine}>
+          <View style={[styles.routeLine, compact && styles.routeLineCompact]}>
             <Ionicons name="radio-button-on" size={compact ? 11 : 13} color={colors.primary} />
             <Text style={[styles.routeText, compact && styles.routeTextCompact]} numberOfLines={1}>
               {fromAddress}
             </Text>
           </View>
-          <View style={styles.routeLine}>
+          <View style={[styles.routeLine, compact && styles.routeLineCompact]}>
             <Ionicons
               name="location-outline"
               size={compact ? 11 : 13}
@@ -207,14 +210,14 @@ export const RequestCard: React.FC<RequestCardProps> = ({
 const styles = StyleSheet.create({
   card: {
     backgroundColor: colors.white,
-    borderRadius: 20,
+    borderRadius: borderRadius.xl,
     marginBottom: spacing.lg,
     borderWidth: 1,
     borderColor: colors.border.light,
     overflow: 'hidden',
   },
   cardCompact: {
-    borderRadius: 20,
+    borderRadius: borderRadius.lg,
     marginBottom: spacing.lg,
   },
   imageContainer: {
@@ -248,9 +251,9 @@ const styles = StyleSheet.create({
     gap: spacing.xs,
   },
   imageOverlayTopCompact: {
-    top: spacing.xs,
-    left: spacing.xs,
-    right: spacing.xs,
+    top: spacing.xxxs,
+    left: spacing.xxxs,
+    right: spacing.xxxs,
     gap: spacing.xxxs,
   },
   typeOverlayBadge: {
@@ -260,33 +263,41 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.full,
     paddingHorizontal: spacing.sm,
     paddingVertical: spacing.xxs,
-    maxWidth: '65%',
+    maxWidth: '66%',
   },
   typeOverlayBadgeCompact: {
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xxs,
+    paddingHorizontal: spacing.xs,
+    paddingVertical: spacing.xxxs,
+    maxWidth: '62%',
   },
   typeOverlayText: {
     fontSize: fontSize.xs,
     fontWeight: fontWeight.semibold,
+  },
+  typeOverlayTextCompact: {
+    fontSize: 11,
   },
   priceOverlayBadge: {
     backgroundColor: colors.white,
     borderRadius: borderRadius.full,
     paddingHorizontal: spacing.sm,
     paddingVertical: spacing.xxs,
+    maxWidth: '44%',
+    alignSelf: 'flex-end',
   },
   priceOverlayBadgeCompact: {
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xxs,
+    paddingHorizontal: spacing.xs,
+    paddingVertical: spacing.xxxs,
+    maxWidth: '40%',
   },
   priceOverlayText: {
     fontSize: fontSize.sm,
     fontWeight: fontWeight.bold,
     color: colors.primary,
+    includeFontPadding: false,
   },
   priceOverlayTextCompact: {
-    fontSize: fontSize.md,
+    fontSize: fontSize.sm,
   },
   contentWrap: {
     paddingHorizontal: spacing.md,
@@ -294,9 +305,10 @@ const styles = StyleSheet.create({
     gap: spacing.xs,
   },
   contentWrapCompact: {
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.lg,
-    gap: spacing.xs,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.sm,
+    gap: spacing.xxxs,
+    minHeight: 146,
   },
   title: {
     fontSize: fontSize.lg,
@@ -305,19 +317,22 @@ const styles = StyleSheet.create({
     textTransform: 'capitalize' as const,
   },
   titleCompact: {
-    fontSize: fontSize.lg,
+    fontSize: fontSize.xl,
     fontWeight: fontWeight.semibold,
   },
   routeBlock: {
     gap: spacing.xs,
   },
   routeBlockCompact: {
-    gap: spacing.xs,
+    gap: spacing.xxxs,
   },
   routeLine: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.xs,
+  },
+  routeLineCompact: {
+    minHeight: 24,
   },
   routeText: {
     flex: 1,
@@ -326,7 +341,7 @@ const styles = StyleSheet.create({
     fontWeight: fontWeight.medium,
   },
   routeTextCompact: {
-    fontSize: fontSize.md,
+    fontSize: fontSize.sm,
   },
   footerRow: {
     flexDirection: 'row',
@@ -336,8 +351,8 @@ const styles = StyleSheet.create({
     gap: spacing.xs,
   },
   footerRowCompact: {
-    marginTop: spacing.sm,
-    gap: spacing.xs,
+    marginTop: spacing.xxxs,
+    gap: spacing.xxxs,
   },
   dateRow: {
     flexDirection: 'row',
@@ -356,7 +371,7 @@ const styles = StyleSheet.create({
     flexShrink: 1,
   },
   metaTextCompact: {
-    fontSize: fontSize.sm,
+    fontSize: fontSize.md,
   },
   distanceBadge: {
     flexDirection: 'row',
