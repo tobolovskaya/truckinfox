@@ -70,6 +70,16 @@ export const RequestCard: React.FC<RequestCardProps> = ({
       : typeof request.price === 'number' && request.price > 0
         ? formatCurrency(request.price)
         : t('priceOnAgreement');
+  const compactPriceText =
+    request.price_type === 'negotiable'
+      ? t('negotiable')
+      : typeof request.price === 'number' && request.price > 0
+        ? `${Math.round(request.price)} kr`
+        : t('priceOnAgreement');
+  const priceTextNoWrap = React.useMemo(
+    () => (compact ? compactPriceText : priceText).replace(/\s+/g, '\u00A0'),
+    [compact, compactPriceText, priceText]
+  );
   const dateText = request.pickup_date ? formatDate(request.pickup_date) : t('dateNotSet');
   const cargoType = request.cargo_type || 'other';
   const cargoTypeLabel = React.useMemo(() => t(cargoType), [cargoType, t]);
@@ -139,8 +149,13 @@ export const RequestCard: React.FC<RequestCardProps> = ({
             </Text>
           </View>
           <View style={[styles.priceOverlayBadge, compact && styles.priceOverlayBadgeCompact]}>
-            <Text style={[styles.priceOverlayText, compact && styles.priceOverlayTextCompact]}>
-              {priceText}
+            <Text
+              style={[styles.priceOverlayText, compact && styles.priceOverlayTextCompact]}
+              numberOfLines={1}
+              adjustsFontSizeToFit
+              minimumFontScale={0.85}
+            >
+              {priceTextNoWrap}
             </Text>
           </View>
         </View>
@@ -254,7 +269,7 @@ const styles = StyleSheet.create({
     top: spacing.xxxs,
     left: spacing.xxxs,
     right: spacing.xxxs,
-    gap: spacing.xxxs,
+    gap: spacing.xxs,
   },
   typeOverlayBadge: {
     flexDirection: 'row',
@@ -264,11 +279,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.sm,
     paddingVertical: spacing.xxs,
     maxWidth: '66%',
+    flexShrink: 1,
   },
   typeOverlayBadgeCompact: {
-    paddingHorizontal: spacing.xs,
+    paddingHorizontal: spacing.xxxs,
     paddingVertical: spacing.xxxs,
-    maxWidth: '62%',
+    maxWidth: '50%',
   },
   typeOverlayText: {
     fontSize: fontSize.xs,
@@ -284,20 +300,26 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.xxs,
     maxWidth: '44%',
     alignSelf: 'flex-end',
+    flexShrink: 0,
+    justifyContent: 'center',
   },
   priceOverlayBadgeCompact: {
-    paddingHorizontal: spacing.xs,
+    paddingHorizontal: spacing.xxxs,
     paddingVertical: spacing.xxxs,
-    maxWidth: '40%',
+    maxWidth: '50%',
+    minWidth: 78,
   },
   priceOverlayText: {
     fontSize: fontSize.sm,
     fontWeight: fontWeight.bold,
     color: colors.primary,
     includeFontPadding: false,
+    flexShrink: 1,
   },
   priceOverlayTextCompact: {
     fontSize: fontSize.sm,
+    textAlign: 'center',
+    fontWeight: fontWeight.semibold,
   },
   contentWrap: {
     paddingHorizontal: spacing.md,
@@ -317,7 +339,7 @@ const styles = StyleSheet.create({
     textTransform: 'capitalize' as const,
   },
   titleCompact: {
-    fontSize: fontSize.xl,
+    fontSize: fontSize.lg,
     fontWeight: fontWeight.semibold,
   },
   routeBlock: {
@@ -371,7 +393,7 @@ const styles = StyleSheet.create({
     flexShrink: 1,
   },
   metaTextCompact: {
-    fontSize: fontSize.md,
+    fontSize: fontSize.sm,
   },
   distanceBadge: {
     flexDirection: 'row',
