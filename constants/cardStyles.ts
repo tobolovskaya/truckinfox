@@ -17,6 +17,8 @@ export const CARD_STYLES = {
 };
 
 export const REQUEST_CARD_IMAGE_HEIGHT = 120;
+export const REQUEST_CARD_SINGLE_COLUMN_BREAKPOINT = 520;
+export const REQUEST_CARD_FORCE_TWO_COLUMNS = true;
 
 // Badge/Capsule styles (unified)
 export const BADGE_STYLES = {

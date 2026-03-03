@@ -24,6 +24,10 @@ import { EmptyState } from '../../components/EmptyState';
 import { IOSRefreshControl } from '../../components/IOSRefreshControl';
 import { Onboarding } from '../../components/Onboarding';
 import EmptyHomeIllustration from '../../assets/empty-home.svg';
+import {
+  REQUEST_CARD_FORCE_TWO_COLUMNS,
+  REQUEST_CARD_SINGLE_COLUMN_BREAKPOINT,
+} from '../../constants/cardStyles';
 import { useTranslation } from 'react-i18next';
 import { useUnreadCount } from '../../hooks/useNotifications';
 import { useDebounce } from '../../hooks/useDebounce';
@@ -95,7 +99,11 @@ export default function HomeScreen() {
 
   const horizontalPadding = width < 360 ? spacing.md : spacing.lg;
   const gridGap = width < 360 ? spacing.sm : spacing.md;
-  const cardWidth = Math.floor((width - horizontalPadding * 2 - gridGap) / 2);
+  const isSingleColumnLayout =
+    !REQUEST_CARD_FORCE_TWO_COLUMNS && width < REQUEST_CARD_SINGLE_COLUMN_BREAKPOINT;
+  const cardWidth = isSingleColumnLayout
+    ? Math.floor(width - horizontalPadding * 2)
+    : Math.floor((width - horizontalPadding * 2 - gridGap) / 2);
   const skeletonVariantSeed = useMemo(() => Math.floor(Math.random() * 3), []);
   const skeletonItems = useMemo(
     () => Array.from({ length: 4 }, (_, index) => ({ id: `skeleton-${index}` })),
@@ -336,10 +344,11 @@ export default function HomeScreen() {
 
       {/* Requests List */}
       <FlatList
+        key={isSingleColumnLayout ? 'single-column' : 'two-column'}
         data={loading ? skeletonItems : requests}
         keyExtractor={(item, index) => ('id' in item ? item.id : `request-${index}`)}
-        numColumns={2}
-        columnWrapperStyle={{ gap: gridGap }}
+        numColumns={isSingleColumnLayout ? 1 : 2}
+        columnWrapperStyle={isSingleColumnLayout ? undefined : { gap: gridGap }}
         contentContainerStyle={{
           paddingHorizontal: horizontalPadding,
           paddingBottom: spacing.xl,

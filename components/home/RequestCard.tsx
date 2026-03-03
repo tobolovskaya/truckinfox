@@ -7,7 +7,6 @@ import {
   fontSize,
   fontWeight,
   borderRadius,
-  shadows,
 } from '../../lib/sharedStyles';
 import {
   getCargoTypeColors,
@@ -17,7 +16,6 @@ import {
 import { formatCurrency, formatDate } from '../../utils/formatting';
 import { useTranslation } from 'react-i18next';
 import { LazyImage } from '../LazyImage';
-import { LinearGradient } from 'expo-linear-gradient';
 
 export interface CargoRequest {
   id: string;
@@ -94,88 +92,112 @@ export const RequestCard: React.FC<RequestCardProps> = ({
       accessibilityHint={t('openRequestDetails')}
       accessible={true}
     >
-      <LinearGradient
-        colors={['#ffffff', '#fafafa']}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={StyleSheet.absoluteFill}
-      />
-      {previewImageUri ? (
-        <LazyImage
-          uri={previewImageUri}
-          style={styles.image}
-          resizeMode="cover"
-          showErrorText={false}
-          fallback={
-            <View style={[styles.imagePlaceholder, { backgroundColor: cargoColors.background }]}>
-              <Ionicons name={cargoIcon} size={40} color={cargoColors.text} />
-            </View>
-          }
-        />
-      ) : (
-        <View style={[styles.imagePlaceholder, { backgroundColor: cargoColors.background }]}>
-          <Ionicons name={cargoIcon} size={40} color={cargoColors.text} />
+      <View style={styles.imageContainer}>
+        {previewImageUri ? (
+          <LazyImage
+            uri={previewImageUri}
+            style={[styles.image, compact && styles.imageCompact]}
+            resizeMode="cover"
+            showErrorText={false}
+            fallback={
+              <View
+                style={[
+                  styles.imagePlaceholder,
+                  compact && styles.imagePlaceholderCompact,
+                  { backgroundColor: cargoColors.background },
+                ]}
+              >
+                <Ionicons name={cargoIcon} size={40} color={cargoColors.text} />
+              </View>
+            }
+          />
+        ) : (
+          <View
+            style={[
+              styles.imagePlaceholder,
+              compact && styles.imagePlaceholderCompact,
+              { backgroundColor: cargoColors.background },
+            ]}
+          >
+            <Ionicons name={cargoIcon} size={40} color={cargoColors.text} />
+          </View>
+        )}
+        <View style={[styles.imageOverlayTop, compact && styles.imageOverlayTopCompact]}>
+          <View
+            style={[
+              styles.typeOverlayBadge,
+              compact && styles.typeOverlayBadgeCompact,
+              { backgroundColor: cargoColors.background },
+            ]}
+          >
+            <Ionicons name={cargoIcon} size={compact ? 11 : 12} color={cargoColors.text} />
+            <Text style={[styles.typeOverlayText, { color: cargoColors.text }]} numberOfLines={1}>
+              {cargoTypeLabel}
+            </Text>
+          </View>
+          <View style={[styles.priceOverlayBadge, compact && styles.priceOverlayBadgeCompact]}>
+            <Text style={[styles.priceOverlayText, compact && styles.priceOverlayTextCompact]}>
+              {priceText}
+            </Text>
+          </View>
         </View>
-      )}
-      <View style={styles.contentWrap}>
-        <View style={styles.headerRow}>
-          <Text style={[styles.title, compact && styles.titleCompact]} numberOfLines={2}>
-            {title}
-          </Text>
-          <Text style={[styles.price, compact && styles.priceCompact]}>{priceText}</Text>
-        </View>
+      </View>
+      <View style={[styles.contentWrap, compact && styles.contentWrapCompact]}>
+        <Text style={[styles.title, compact && styles.titleCompact]} numberOfLines={1}>
+          {title}
+        </Text>
 
-        <View style={styles.badgeRow}>
-          <View style={[styles.badge, { backgroundColor: cargoColors.background }]}>
-            <Text style={[styles.badgeText, { color: cargoColors.text }]}>{cargoTypeLabel}</Text>
+        <View style={[styles.routeBlock, compact && styles.routeBlockCompact]}>
+          <View style={styles.routeLine}>
+            <Ionicons name="radio-button-on" size={compact ? 11 : 13} color={colors.primary} />
+            <Text style={[styles.routeText, compact && styles.routeTextCompact]} numberOfLines={1}>
+              {fromAddress}
+            </Text>
+          </View>
+          <View style={styles.routeLine}>
+            <Ionicons
+              name="location-outline"
+              size={compact ? 11 : 13}
+              color={colors.text.secondary}
+            />
+            <Text style={[styles.routeText, compact && styles.routeTextCompact]} numberOfLines={1}>
+              {toAddress}
+            </Text>
           </View>
         </View>
 
-        <View style={styles.routeBlock}>
-          <View style={styles.routeSection}>
-            <View style={styles.routeLine}>
-              <Ionicons name="radio-button-on" size={compact ? 11 : 14} color={colors.primary} />
-              <Text style={[styles.routeText, compact && styles.routeTextCompact]} numberOfLines={1}>
-                {fromAddress}
-              </Text>
-            </View>
+        <View style={[styles.footerRow, compact && styles.footerRowCompact]}>
+          <View style={styles.dateRow}>
+            <Text style={[styles.metaText, compact && styles.metaTextCompact]}>{dateText}</Text>
           </View>
-          <View style={styles.routeSection}>
-            <View style={styles.routeLine}>
-              <Ionicons name="location-outline" size={compact ? 11 : 14} color={colors.text.secondary} />
-              <Text style={[styles.routeText, compact && styles.routeTextCompact]} numberOfLines={1}>
-                {toAddress}
-              </Text>
-            </View>
+          <View style={styles.footerActions}>
+            {!compact && typeof request.distance === 'number' && request.distance > 0 && (
+              <View style={[styles.distanceBadge, compact && styles.distanceBadgeCompact]}>
+                <Ionicons name="navigate-outline" size={11} color={colors.primary} />
+                <Text style={styles.distanceBadgeText}>{Math.round(request.distance)} km</Text>
+              </View>
+            )}
+            {showFavorite && onToggleFavorite && (
+              <TouchableOpacity
+                onPress={() => onToggleFavorite(request.id)}
+                accessibilityRole="button"
+                accessibilityLabel={
+                  request.is_favorite ? t('removeFromFavorites') : t('addToFavorites')
+                }
+                accessibilityHint={
+                  request.is_favorite ? t('removeFavoriteHint') : t('addFavoriteHint')
+                }
+                accessibilityState={{ selected: request.is_favorite }}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              >
+                <Ionicons
+                  name={request.is_favorite ? 'heart' : 'heart-outline'}
+                  size={20}
+                  color={request.is_favorite ? colors.error : colors.text.secondary}
+                />
+              </TouchableOpacity>
+            )}
           </View>
-        </View>
-
-        <View style={styles.footerRow}>
-          <Text style={styles.metaText}>{dateText}</Text>
-          {typeof request.distance === 'number' && request.distance > 0 && (
-            <View style={styles.distanceBadge}>
-              <Ionicons name="navigate-outline" size={12} color={colors.primary} />
-              <Text style={styles.distanceBadgeText}>{Math.round(request.distance)} km</Text>
-            </View>
-          )}
-          {showFavorite && onToggleFavorite && (
-            <TouchableOpacity
-              onPress={() => onToggleFavorite(request.id)}
-              accessibilityRole="button"
-              accessibilityLabel={
-                request.is_favorite ? t('removeFromFavorites') : t('addToFavorites')
-              }
-              accessibilityHint={request.is_favorite ? t('removeFavoriteHint') : t('addFavoriteHint')}
-              accessibilityState={{ selected: request.is_favorite }}
-              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-            >
-              <Ionicons
-                name={request.is_favorite ? 'heart' : 'heart-outline'}
-                size={20}
-                color={request.is_favorite ? colors.error : colors.text.secondary}
-              />
-            </TouchableOpacity>
-          )}
         </View>
       </View>
     </TouchableOpacity>
@@ -185,21 +207,26 @@ export const RequestCard: React.FC<RequestCardProps> = ({
 const styles = StyleSheet.create({
   card: {
     backgroundColor: colors.white,
-    borderRadius: borderRadius.lg,
+    borderRadius: 20,
     marginBottom: spacing.lg,
-    shadowColor: colors.primary, // Premium shadow
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.1,
-    shadowRadius: 12,
-    elevation: 5,
-    overflow: 'hidden', // Contain gradient
+    borderWidth: 1,
+    borderColor: colors.border.light,
+    overflow: 'hidden',
   },
   cardCompact: {
+    borderRadius: 20,
+    marginBottom: spacing.lg,
+  },
+  imageContainer: {
+    position: 'relative',
   },
   image: {
     width: '100%',
     height: REQUEST_CARD_IMAGE_HEIGHT,
     backgroundColor: colors.border.light,
+  },
+  imageCompact: {
+    height: REQUEST_CARD_IMAGE_HEIGHT + 12,
   },
   imagePlaceholder: {
     width: '100%',
@@ -207,64 +234,89 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  imagePlaceholderCompact: {
+    height: REQUEST_CARD_IMAGE_HEIGHT + 12,
+  },
+  imageOverlayTop: {
+    position: 'absolute',
+    top: spacing.xs,
+    left: spacing.xs,
+    right: spacing.xs,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    gap: spacing.xs,
+  },
+  imageOverlayTopCompact: {
+    top: spacing.xs,
+    left: spacing.xs,
+    right: spacing.xs,
+    gap: spacing.xxxs,
+  },
+  typeOverlayBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xxs,
+    borderRadius: borderRadius.full,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xxs,
+    maxWidth: '65%',
+  },
+  typeOverlayBadgeCompact: {
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xxs,
+  },
+  typeOverlayText: {
+    fontSize: fontSize.xs,
+    fontWeight: fontWeight.semibold,
+  },
+  priceOverlayBadge: {
+    backgroundColor: colors.white,
+    borderRadius: borderRadius.full,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xxs,
+  },
+  priceOverlayBadgeCompact: {
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xxs,
+  },
+  priceOverlayText: {
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.bold,
+    color: colors.primary,
+  },
+  priceOverlayTextCompact: {
+    fontSize: fontSize.md,
+  },
   contentWrap: {
     paddingHorizontal: spacing.md,
-    paddingBottom: spacing.sm,
-    paddingTop: spacing.sm,
+    paddingVertical: spacing.sm,
+    gap: spacing.xs,
   },
-  headerRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    justifyContent: 'space-between',
-    gap: spacing.md,
+  contentWrapCompact: {
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.lg,
+    gap: spacing.xs,
   },
   title: {
-    flex: 1,
-    fontSize: fontSize.md,
+    fontSize: fontSize.lg,
     fontWeight: fontWeight.bold,
     color: colors.text.primary,
     textTransform: 'capitalize' as const,
   },
   titleCompact: {
-    fontSize: fontSize.sm,
-  },
-  price: {
-    fontSize: fontSize.sm,
-    fontWeight: fontWeight.bold,
-    color: colors.primary,
-    flexShrink: 0,
-  },
-  priceCompact: {
-    fontSize: fontSize.xs,
-  },
-  badgeRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    flexWrap: 'wrap',
-    gap: spacing.sm,
-    marginTop: spacing.sm,
-  },
-  badge: {
-    backgroundColor: colors.primaryLight,
-    borderRadius: borderRadius.md,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xxs,
-  },
-  badgeText: {
-    fontSize: fontSize.sm,
-    color: colors.primary,
+    fontSize: fontSize.lg,
     fontWeight: fontWeight.semibold,
   },
   routeBlock: {
-    marginTop: spacing.sm,
     gap: spacing.xs,
   },
-  routeSection: {
-    gap: spacing.xxs,
+  routeBlockCompact: {
+    gap: spacing.xs,
   },
   routeLine: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
+    alignItems: 'center',
     gap: spacing.xs,
   },
   routeText: {
@@ -274,29 +326,49 @@ const styles = StyleSheet.create({
     fontWeight: fontWeight.medium,
   },
   routeTextCompact: {
-    fontSize: fontSize.xs,
+    fontSize: fontSize.md,
   },
   footerRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginTop: spacing.xs,
-    paddingHorizontal: spacing.md,
-    paddingBottom: spacing.sm,
+    marginTop: spacing.xxs,
+    gap: spacing.xs,
+  },
+  footerRowCompact: {
+    marginTop: spacing.sm,
+    gap: spacing.xs,
+  },
+  dateRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xxs,
+    flexShrink: 1,
+  },
+  footerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
   },
   metaText: {
-    fontSize: fontSize.sm,
+    fontSize: fontSize.xs,
     color: colors.text.secondary,
     flexShrink: 1,
+  },
+  metaTextCompact: {
+    fontSize: fontSize.sm,
   },
   distanceBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 3,
+    gap: spacing.xxxs,
     backgroundColor: colors.primaryLight,
     borderRadius: borderRadius.full,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 3,
+    paddingHorizontal: spacing.xs,
+    paddingVertical: spacing.xxxs,
+  },
+  distanceBadgeCompact: {
+    paddingHorizontal: spacing.xxxs,
   },
   distanceBadgeText: {
     fontSize: fontSize.xs,
