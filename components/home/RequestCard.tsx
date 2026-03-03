@@ -116,32 +116,36 @@ export const RequestCard: React.FC<RequestCardProps> = ({
           <Ionicons name={cargoIcon} size={40} color={cargoColors.text} />
         </View>
       )}
-      <View style={styles.headerRow}>
-        <Text style={[styles.title, compact && styles.titleCompact]} numberOfLines={2}>
-          {title}
-        </Text>
-        <Text style={[styles.price, compact && styles.priceCompact]}>{priceText}</Text>
-      </View>
-
-      <View style={styles.badgeRow}>
-        <View style={[styles.badge, { backgroundColor: cargoColors.background }]}>
-          <Text style={[styles.badgeText, { color: cargoColors.text }]}>{cargoTypeLabel}</Text>
+      <View style={styles.contentWrap}>
+        <View style={styles.headerRow}>
+          <Text style={[styles.title, compact && styles.titleCompact]} numberOfLines={2}>
+            {title}
+          </Text>
+          <Text style={[styles.price, compact && styles.priceCompact]}>{priceText}</Text>
         </View>
-      </View>
 
-      <View style={styles.routeBlock}>
-        <View style={styles.routeSection}>
-          <View style={styles.routeLine}>
-            <Ionicons name="radio-button-on" size={12} color={colors.primary} />
-            <Text style={[styles.routeText, compact && styles.routeTextCompact]}>
-              {fromAddress}
-            </Text>
+        <View style={styles.badgeRow}>
+          <View style={[styles.badge, { backgroundColor: cargoColors.background }]}>
+            <Text style={[styles.badgeText, { color: cargoColors.text }]}>{cargoTypeLabel}</Text>
           </View>
         </View>
-        <View style={styles.routeSection}>
-          <View style={styles.routeLine}>
-            <Ionicons name="location-outline" size={12} color={colors.text.secondary} />
-            <Text style={[styles.routeText, compact && styles.routeTextCompact]}>{toAddress}</Text>
+
+        <View style={styles.routeBlock}>
+          <View style={styles.routeSection}>
+            <View style={styles.routeLine}>
+              <Ionicons name="radio-button-on" size={14} color={colors.primary} />
+              <Text style={[styles.routeText, compact && styles.routeTextCompact]} numberOfLines={1}>
+                {fromAddress}
+              </Text>
+            </View>
+          </View>
+          <View style={styles.routeSection}>
+            <View style={styles.routeLine}>
+              <Ionicons name="location-outline" size={14} color={colors.text.secondary} />
+              <Text style={[styles.routeText, compact && styles.routeTextCompact]} numberOfLines={1}>
+                {toAddress}
+              </Text>
+            </View>
           </View>
         </View>
       </View>
@@ -175,7 +179,6 @@ const styles = StyleSheet.create({
   card: {
     backgroundColor: colors.white,
     borderRadius: borderRadius.lg,
-    padding: spacing.lg,
     marginBottom: spacing.lg,
     shadowColor: colors.primary, // Premium shadow
     shadowOffset: { width: 0, height: 6 },
@@ -185,22 +188,22 @@ const styles = StyleSheet.create({
     overflow: 'hidden', // Contain gradient
   },
   cardCompact: {
-    padding: spacing.md,
   },
   image: {
     width: '100%',
     height: REQUEST_CARD_IMAGE_HEIGHT,
-    borderRadius: borderRadius.md,
-    marginBottom: spacing.md,
     backgroundColor: colors.border.light,
   },
   imagePlaceholder: {
     width: '100%',
     height: REQUEST_CARD_IMAGE_HEIGHT,
-    borderRadius: borderRadius.md,
-    marginBottom: spacing.md,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  contentWrap: {
+    paddingHorizontal: spacing.lg,
+    paddingBottom: spacing.lg,
+    paddingTop: spacing.md,
   },
   headerRow: {
     flexDirection: 'row',
