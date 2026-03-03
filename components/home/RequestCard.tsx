@@ -282,7 +282,7 @@ const styles = StyleSheet.create({
     flexShrink: 1,
   },
   typeOverlayBadgeCompact: {
-    paddingHorizontal: spacing.xxxs,
+    paddingHorizontal: spacing.xxs,
     paddingVertical: spacing.xxxs,
     width: 90,
     maxWidth: 90,
@@ -307,7 +307,7 @@ const styles = StyleSheet.create({
   },
   priceOverlayBadgeCompact: {
     paddingHorizontal: spacing.xxxs,
-    paddingVertical: spacing.xxxs,
+    paddingVertical: spacing.xxs,
     width: 90,
     maxWidth: 90,
     minWidth: 90,
@@ -343,7 +343,7 @@ const styles = StyleSheet.create({
   },
   titleCompact: {
     fontSize: fontSize.lg,
-    fontWeight: fontWeight.semibold,
+    fontWeight: fontWeight.medium,
   },
   routeBlock: {
     gap: spacing.xs,
@@ -367,6 +367,7 @@ const styles = StyleSheet.create({
   },
   routeTextCompact: {
     fontSize: fontSize.sm,
+    lineHeight: 18,
   },
   footerRow: {
     flexDirection: 'row',
@@ -397,6 +398,7 @@ const styles = StyleSheet.create({
   },
   metaTextCompact: {
     fontSize: fontSize.sm,
+    lineHeight: 18,
   },
   distanceBadge: {
     flexDirection: 'row',
