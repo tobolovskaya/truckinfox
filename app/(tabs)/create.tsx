@@ -1833,7 +1833,6 @@ const styles = StyleSheet.create({
   },
   dimensionInput: {
     flex: 1,
-    borderColor: colors.border.default,
   },
   imageUploadArea: {
     borderWidth: 2,

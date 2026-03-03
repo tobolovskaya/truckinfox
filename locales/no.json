@@ -662,34 +662,36 @@
   "followDriverLive": "Følg sjåførens posisjon i sanntid.",
   "openLiveMap": "Åpne live-kart",
   "openInNavigator": "Åpne i navigasjon",
-  "signatureUnavailable": "Signatur utilgjengelig"
-  ,"quickTemplates": "Hurtigmaler"
-  ,"quickTemplatesHint": "Trykk på en mal for å fylle inn typisk vekt og dimensjoner."
-  ,"quickTemplateAccessibilityHint": "Fyller inn typisk lasttype, vekt og dimensjoner"
-  ,"useQuickTemplate": "Bruk hurtigmal {{template}}"
-  ,"quickTemplatePassengerCar": "Personbil"
-  ,"quickTemplateTractor": "Traktor"
-  ,"quickTemplateEuropallet": "Europall"
-  ,"quickTemplateCamper": "Campingvogn"
-  ,"quickTemplateSofa": "Sofa"
-  ,"cargoTypeHintAutomotive": "Bil/motor: legg gjerne inn om kjøretøyet starter, ruller og har løse deler."
-  ,"cargoTypeHintMachinery": "Maskineri/traktor: oppgi om maskinen kan kjøres selv og om skuffe/utstyr følger med."
-  ,"cargoTypeHintConstruction": "Byggemateriale: oppgi antall paller/pakker og om levering krever kran eller bakløfter."
-  ,"cargoTypeHintBoats": "Båt: skriv total lengde inkl. henger/stativ og om mast eller løse deler er demontert."
-  ,"cargoTypeHintElectronics": "Elektronikk: oppgi om varene er palletert/emballert og om de er ekstra støtfølsomme."
-  ,"cargoTypeHintCampingvogn": "Campingvogn: oppgi totalvekt, bredde og om den er registrert/klar for tauing."
-  ,"cargoTypeHintFurniture": "Møbler: skriv om møbler kan stables og om bæring i trapper kreves ved henting/levering."
-  ,"cargoTypeHintOther": "Annet: bruk beskrivelsen til å forklare håndtering, løftebehov og spesielle hensyn."
-  ,"photoChecklistTitle": "Hva bør fotograferes"
-  ,"photoChecklistHint": "Gode bilder reduserer avslag fra transportører og gir raskere bud."
-  ,"photoChecklistItemOverall": "Hele lasten fra 2–3 vinkler"
-  ,"photoChecklistItemCorners": "Alle sider/hjørner og lastepunkter"
-  ,"photoChecklistItemDamage": "Nærbilder av eksisterende skader (hvis noen)"
-  ,"photoChecklistItemAccess": "Adkomst ved henting: dør, port, trapper, lav takhøyde"
-  ,"photoChecklistItemSizeReference": "Ett bilde med størrelsesreferanse (person, pall, målebånd)"
-  ,"photoChecklistItemLooseParts": "Løse deler/tilbehør som sendes med"
-  ,"photoReminderNoImages": "Du kan publisere uten bilder, men bilder reduserer vanligvis avslag fra transportører."
-  ,"priceRangeEstimateTitle": "Estimert prisintervall for ruten"
-  ,"priceRangeEstimateMeta": "Basert på {{cargoType}} og rute på {{distanceKm}} km"
-  ,"priceRangeEstimatePending": "Velg lasttype og begge adresser for å se estimert intervall."
+  "signatureUnavailable": "Signatur utilgjengelig",
+  "quickTemplates": "Hurtigmaler",
+  "quickTemplatesHint": "Trykk på en mal for å fylle inn typisk vekt og dimensjoner.",
+  "quickTemplateAccessibilityHint": "Fyller inn typisk lasttype, vekt og dimensjoner",
+  "useQuickTemplate": "Bruk hurtigmal {{template}}",
+  "quickTemplatePassengerCar": "Personbil",
+  "quickTemplateTractor": "Traktor",
+  "quickTemplateEuropallet": "Europall",
+  "quickTemplateCamper": "Campingvogn",
+  "quickTemplateSofa": "Sofa",
+  "cargoTypeHintAutomotive": "Bil/motor: legg gjerne inn om kjøretøyet starter, ruller og har løse deler.",
+  "cargoTypeHintMachinery": "Maskineri/traktor: oppgi om maskinen kan kjøres selv og om skuffe/utstyr følger med.",
+  "cargoTypeHintConstruction": "Byggemateriale: oppgi antall paller/pakker og om levering krever kran eller bakløfter.",
+  "cargoTypeHintBoats": "Båt: skriv total lengde inkl. henger/stativ og om mast eller løse deler er demontert.",
+  "cargoTypeHintElectronics": "Elektronikk: oppgi om varene er palletert/emballert og om de er ekstra støtfølsomme.",
+  "cargoTypeHintCampingvogn": "Campingvogn: oppgi totalvekt, bredde og om den er registrert/klar for tauing.",
+  "cargoTypeHintFurniture": "Møbler: skriv om møbler kan stables og om bæring i trapper kreves ved henting/levering.",
+  "cargoTypeHintOther": "Annet: bruk beskrivelsen til å forklare håndtering, løftebehov og spesielle hensyn.",
+  "photoChecklistTitle": "Hva bør fotograferes",
+  "photoChecklistHint": "Gode bilder reduserer avslag fra transportører og gir raskere bud.",
+  "photoChecklistItemOverall": "Hele lasten fra 2–3 vinkler",
+  "photoChecklistItemCorners": "Alle sider/hjørner og lastepunkter",
+  "photoChecklistItemDamage": "Nærbilder av eksisterende skader (hvis noen)",
+  "photoChecklistItemAccess": "Adkomst ved henting: dør, port, trapper, lav takhøyde",
+  "photoChecklistItemSizeReference": "Ett bilde med størrelsesreferanse (person, pall, målebånd)",
+  "photoChecklistItemLooseParts": "Løse deler/tilbehør som sendes med",
+  "photoReminderNoImages": "Du kan publisere uten bilder, men bilder reduserer vanligvis avslag fra transportører.",
+  "priceRangeEstimateTitle": "Estimert prisintervall for ruten",
+  "priceRangeEstimateMeta": "Basert på {{cargoType}} og rute på {{distanceKm}} km",
+  "priceRangeEstimatePending": "Velg lasttype og begge adresser for å se estimert intervall.",
+  "vehicleCondition": "Kjøretøyets tilstand",
+  "isDriveableRadioText": "Bilen er kjørbar / kan rulles"
 }

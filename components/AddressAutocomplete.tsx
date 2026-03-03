@@ -82,8 +82,8 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: fontSize.md,
-    fontWeight: fontWeight.medium,
-    color: colors.text.primary,
+    fontWeight: '600',
+    color: '#111827',
     marginBottom: spacing.xs,
   },
   autocompleteContainer: {
@@ -91,12 +91,17 @@ const styles = StyleSheet.create({
   },
   input: {
     borderWidth: 1,
-    borderColor: colors.border.default,
-    borderRadius: borderRadius.md,
+    borderColor: '#E5E7EB',
+    borderRadius: 12,
     padding: spacing.md,
     fontSize: fontSize.md,
-    backgroundColor: colors.white,
-    color: colors.text.primary,
+    backgroundColor: '#FFFFFF',
+    color: '#1F2937',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 2,
   },
   inputError: {
     borderColor: colors.error,
