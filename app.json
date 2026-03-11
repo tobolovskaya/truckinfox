@@ -9,6 +9,9 @@
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "primaryColor": "#FF7043",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
     "splash": {
       "image": "./assets/splash.png",
       "resizeMode": "contain",
@@ -57,6 +60,14 @@
     },
     "plugins": [
       "expo-router",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash.png",
+          "resizeMode": "contain",
+          "backgroundColor": "#FF7043"
+        }
+      ],
       "expo-apple-authentication",
       [
         "expo-location",

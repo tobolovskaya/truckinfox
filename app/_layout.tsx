@@ -3,12 +3,13 @@ import 'react-native-get-random-values';
 import React, { useCallback, useEffect } from 'react';
 import { LogBox, View } from 'react-native';
 import { Stack, useRouter } from 'expo-router';
+import * as SplashScreen from 'expo-splash-screen';
 import Constants from 'expo-constants';
 import type * as Notifications from 'expo-notifications';
 import { PaperProvider } from 'react-native-paper';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { AuthProvider } from '../contexts/AuthContext';
+import { AuthProvider, useAuth } from '../contexts/AuthContext';
 import { I18nProvider } from '../contexts/I18nContext';
 import { ToastProvider } from '../contexts/ToastContext';
 import { NotificationBannerProvider } from '../contexts/NotificationBannerContext';
@@ -18,6 +19,19 @@ import { theme } from '../theme/theme';
 import { initializeOfflineSync } from '../lib/offlineSync';
 import { initializeGlobalErrorTracking } from '../lib/errorTracking';
 import 'react-native-url-polyfill/auto';
+
+// Keep splash visible until auth state is resolved
+SplashScreen.preventAutoHideAsync().catch(() => {});
+
+function SplashHider() {
+  const { loading } = useAuth();
+  useEffect(() => {
+    if (!loading) {
+      SplashScreen.hideAsync().catch(() => {});
+    }
+  }, [loading]);
+  return null;
+}
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -111,6 +125,7 @@ export default function RootLayout() {
         <QueryClientProvider client={queryClient}>
           <I18nProvider>
             <AuthProvider>
+              <SplashHider />
               <ToastProvider>
                 <NotificationBannerProvider>
                   <PaperProvider theme={theme}>
