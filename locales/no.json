@@ -387,6 +387,7 @@
   "confirmNewPassword": "Bekreft nytt passord",
   "passwordChanged": "Passord endret",
   "passwordMismatch": "Passordene stemmer ikke overens",
+  "passwordTooShort": "Passordet må være minst 6 tegn",
   "twoFactorAuth": "To-faktor autentisering",
   "twoFactorSubtitle": "Legg til et ekstra sikkerhetslag",
   "enableTwoFactor": "Aktiver 2FA",

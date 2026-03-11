@@ -397,6 +397,7 @@
   "confirmNewPassword": "Confirm New Password",
   "passwordChanged": "Password changed successfully",
   "passwordMismatch": "Passwords do not match",
+  "passwordTooShort": "Password must be at least 6 characters",
   "twoFactorAuth": "Two-Factor Authentication",
   "twoFactorSubtitle": "Add an extra layer of security",
   "enableTwoFactor": "Enable 2FA",
