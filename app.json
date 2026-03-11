@@ -69,6 +69,7 @@
         }
       ],
       "expo-apple-authentication",
+      "expo-store-review",
       [
         "expo-location",
         {

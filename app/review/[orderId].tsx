@@ -12,6 +12,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import * as StoreReview from 'expo-store-review';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTranslation } from 'react-i18next';
 import { supabase } from '../../lib/supabase';
@@ -224,6 +225,13 @@ export default function ReviewScreen() {
         rating: rating,
         has_comment: !!comment.trim(),
       });
+
+      // Prompt satisfied users (4–5 stars) to rate the app in the store
+      if (rating >= 4) {
+        StoreReview.isAvailableAsync().then((available) => {
+          if (available) StoreReview.requestReview().catch(() => {});
+        });
+      }
 
       Alert.alert(t('success'), 'Review submitted successfully!', [
         {
