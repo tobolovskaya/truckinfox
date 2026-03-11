@@ -321,20 +321,37 @@ export default function RegisterScreen() {
             </View>
           </View>
 
-          <TouchableOpacity
-            style={styles.termsRow}
-            onPress={() => setTermsAccepted(!termsAccepted)}
-            accessibilityRole="checkbox"
-            accessibilityState={{ checked: termsAccepted }}
-            accessibilityLabel={t('iAgreeToThe')}
-          >
-            <View style={[styles.checkbox, termsAccepted && styles.checkboxChecked]}>
-              {termsAccepted ? <Ionicons name="checkmark" size={14} color={colors.white} /> : null}
-            </View>
+          <View style={styles.termsRow}>
+            <TouchableOpacity
+              onPress={() => setTermsAccepted(!termsAccepted)}
+              accessibilityRole="checkbox"
+              accessibilityState={{ checked: termsAccepted }}
+              accessibilityLabel={t('iAgreeToThe')}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            >
+              <View style={[styles.checkbox, termsAccepted && styles.checkboxChecked]}>
+                {termsAccepted ? <Ionicons name="checkmark" size={14} color={colors.white} /> : null}
+              </View>
+            </TouchableOpacity>
             <Text style={styles.termsText}>
-              {t('iAgreeToThe')} {t('termsOfService')} {t('and')} {t('privacyPolicy')}
+              {t('iAgreeToThe')}{' '}
+              <Text
+                style={styles.termsLink}
+                onPress={() => router.push('/legal/terms-of-service')}
+                accessibilityRole="link"
+              >
+                {t('termsOfService')}
+              </Text>
+              {' '}{t('and')}{' '}
+              <Text
+                style={styles.termsLink}
+                onPress={() => router.push('/legal/privacy-policy')}
+                accessibilityRole="link"
+              >
+                {t('privacyPolicy')}
+              </Text>
             </Text>
-          </TouchableOpacity>
+          </View>
 
           <TouchableOpacity
             style={[
@@ -496,6 +513,12 @@ const styles = StyleSheet.create({
     fontSize: fontSize.sm,
     color: colors.text.secondary,
     flexWrap: 'wrap',
+    marginLeft: spacing.sm,
+  },
+  termsLink: {
+    color: colors.primary,
+    fontWeight: fontWeight.semibold,
+    textDecorationLine: 'underline',
   },
   primaryButton: {
     backgroundColor: colors.primary,

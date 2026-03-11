@@ -858,5 +858,35 @@
   "deleteAccountWarning": "Dette vil slette kontoen din og alle tilknyttede data, inkludert ordrer, meldinger og anmeldelser. Handlingen kan ikke angres.",
   "deleteAccountConfirm": "Ja, slett kontoen min",
   "deleteAccountPassword": "Skriv inn passordet ditt for å bekrefte",
-  "accountDeleted": "Kontoen din er slettet."
+  "accountDeleted": "Kontoen din er slettet.",
+  "lastUpdated": "Sist oppdatert",
+  "privacyPolicyDate": "Mars 2026",
+  "termsOfServiceDate": "Mars 2026",
+  "legalContactUs": "Spørsmål? Kontakt oss på",
+  "privacyPolicyContent": [
+    { "heading": "1. Hvem vi er", "body": "TruckinFox AS (\"vi\") driver TruckinFox-mobilapplikasjonen, en markedsplass som kobler lastkunder med fraktbærere i Norge. Kontakt: support@truckinfox.no" },
+    { "heading": "2. Data vi samler inn", "body": "Vi samler inn informasjon du gir: navn, e-post, telefonnummer, firmanavn og organisasjonsnummer (transportører), profilbilde, lastforespørselsdetaljer, bilder og betalingsinformasjon via Vipps.\n\nVi samler også automatisk inn: enhetsidentifikatorer, IP-adresse, omtrentlig plassering (med din tillatelse), app-analyse og push-varseltoken." },
+    { "heading": "3. Slik bruker vi dataene dine", "body": "Vi bruker dataene dine til å:\n• Drifte og forbedre TruckinFox\n• Matche lastkunder med transportører\n• Behandle betalinger og administrere escrow\n• Sende transaksjonsvarslinger\n• Verifisere transportørbedrifter via Brønnøysundregistrene\n• Overholde norske og EU-juridiske forpliktelser\n• Oppdage svindel og sikre plattformsikkerhet" },
+    { "heading": "4. Rettslig grunnlag (GDPR)", "body": "Avtaleoppfyllelse: for å levere den tjenesten du ba om.\nBerettigede interesser: svindelforebygging og plattformsikkerhet.\nSamtykke: plasseringstilgang og markedsføring.\nRettslig forpliktelse: skatteregistre og hvitvaskingskontroller." },
+    { "heading": "5. Deling av data", "body": "Vi deler begrenset data med:\n• Andre brukere (navn, vurdering, bilde synlig for motparter)\n• Vipps AS (betalingsbehandling)\n• Supabase Inc (database/lagring, EU-region)\n• Brønnøysundregistrene (transportørverifisering, skrivebeskyttet)\n\nVi selger ikke dine personopplysninger." },
+    { "heading": "6. Oppbevaring av data", "body": "Vi oppbevarer kontodata mens kontoen er aktiv. Etter sletting fjernes personopplysninger innen 30 dager, unntatt der loven krever det (f.eks. regnskapsregistre i 5 år etter regnskapsloven)." },
+    { "heading": "7. Dine rettigheter", "body": "Under GDPR kan du: be om innsyn, retting eller sletting av data; begrense eller protestere mot behandling; be om dataportabilitet; og klage til Datatilsynet (datatilsynet.no).\n\nFor å slette kontoen: Innstillinger → Sikkerhet → Slett konto. For andre henvendelser: support@truckinfox.no." },
+    { "heading": "8. Sikkerhet", "body": "Vi bruker TLS-kryptering i transitt, AES-256 i ro, radnivå sikkerhetspolicyer på alle databasetabeller og støtter to-faktor-autentisering. Bruk et sterkt, unikt passord." },
+    { "heading": "9. Barn", "body": "TruckinFox er for brukere over 18 år. Vi samler ikke bevisst inn data fra barn under 16 år." },
+    { "heading": "10. Endringer", "body": "Vi kan oppdatere denne policyen og vil varsle deg om vesentlige endringer via app-varsel minst 14 dager før de trer i kraft." }
+  ],
+  "termsOfServiceContent": [
+    { "heading": "1. Aksept", "body": "Ved å opprette konto og bruke TruckinFox godtar du disse vilkårene. Hvis du ikke godtar, vennligst ikke bruk appen." },
+    { "heading": "2. Tjenesten", "body": "TruckinFox er en nettbasert markedsplass som kobler lastkunder med fraktbærere. Vi er ikke en transportør. Transportkontrakten er mellom kunden og transportøren; vi tilbyr plattformen, escrow og verktøyene." },
+    { "heading": "3. Kontoregistrering", "body": "Du må gi nøyaktig informasjon og være minst 18 år. Du er ansvarlig for å holde passordet ditt konfidensielt. Én person kan ikke ha flere kontoer." },
+    { "heading": "4. Transportørforpliktelser", "body": "Transportører må:\n• Ha gyldig norsk godstransportlisens der loven krever det\n• Ha tilstrekkelig lastforsikring\n• Beskrive kjøretøy og kapasitet nøyaktig\n• Fullføre aksepterte oppdrag profesjonelt og til rett tid\n• Verifisere bedriften via Brønnøysundregistrene innen 30 dager etter første aksepterte bud" },
+    { "heading": "5. Kundeforpliktelser", "body": "Kunder må:\n• Gi nøyaktige lastbeskrivelser, vekt og adresser\n• Sørge for at last er lovlig å transportere\n• Ikke sende forbudte eller farlige varer uten transportøravtale\n• Være tilgjengelig på avtalte hentings- og leveringstider" },
+    { "heading": "6. Bud og kontrakter", "body": "Et inngitt bud er et bindende tilbud. Når kunden aksepterer og betaling initieres, dannes en transportkontrakt direkte mellom kunden og transportøren. TruckinFox er ikke part i den kontrakten." },
+    { "heading": "7. Betalinger og escrow", "body": "Betalinger behandles via Vipps. Midler holdes i escrow inntil kunden bekrefter levering. TruckinFox tar en plattformavgift på 10% av transportørens bud. Ved tvister kan TruckinFox holde midler tilbake mens vi undersøker." },
+    { "heading": "8. Avbestillinger", "body": "Hvis en transportør avbestiller etter aksept, returneres innbetalte midler til kunden i sin helhet. Hvis en kunde avbestiller etter at lasten er hentet, må partene enes om kompensasjon." },
+    { "heading": "9. Forbudt atferd", "body": "Du kan ikke legge ut falske annonser, trakassere andre brukere, omgå plattformen for å unngå avgifter, bruke plattformen ulovlig eller forsøke å reverse-engineere appen. Brudd kan føre til umiddelbar kontosuspensjon." },
+    { "heading": "10. Ansvarsbegrensning", "body": "TruckinFox er en markedsplassformidler. I den grad norsk lov tillater det, er vårt ansvar begrenset til plattformavgiftene du betalte de foregående 12 månedene. Vi er ikke ansvarlige for lastskade eller forsinkelser." },
+    { "heading": "11. Lovvalg", "body": "Disse vilkårene er underlagt norsk lov. Tvister avgjøres ved Oslo tingrett, med mindre ufravikelig forbrukerlovgivning gir annet." },
+    { "heading": "12. Endringer", "body": "Vi kan oppdatere disse vilkårene og vil varsle deg minst 14 dager i forveien via app-varsel. Fortsatt bruk etter den dato innebærer aksept." }
+  ]
 }

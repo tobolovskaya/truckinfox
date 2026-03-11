@@ -8,11 +8,11 @@ import {
   TouchableOpacity,
   Alert,
   ActivityIndicator,
-  Linking,
   TextInput,
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 import { useAuth } from '../../contexts/AuthContext';
 import { useI18n } from '../../contexts/I18nContext';
 import { supabase } from '../../lib/supabase';
@@ -37,6 +37,7 @@ type PrivacySettings = {
 
 export default function SettingsScreen() {
   const { t } = useTranslation();
+  const router = useRouter();
   const { colors } = useAppThemeStyles();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const { currentLanguage, changeLanguage } = useI18n();
@@ -518,7 +519,7 @@ export default function SettingsScreen() {
           <View style={styles.settingsCard}>
             <TouchableOpacity
               style={styles.settingRow}
-              onPress={() => Linking.openURL('https://truckinfox.no/privacy')}
+              onPress={() => router.push('/legal/privacy-policy')}
             >
               <View style={styles.settingInfo}>
                 <Ionicons name="shield-checkmark-outline" size={24} color={colors.primary} />
@@ -531,7 +532,7 @@ export default function SettingsScreen() {
 
             <TouchableOpacity
               style={styles.settingRow}
-              onPress={() => Linking.openURL('https://truckinfox.no/terms')}
+              onPress={() => router.push('/legal/terms-of-service')}
             >
               <View style={styles.settingInfo}>
                 <Ionicons name="document-text-outline" size={24} color={colors.primary} />

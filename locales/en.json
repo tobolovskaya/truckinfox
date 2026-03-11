@@ -858,5 +858,35 @@
   "deleteAccountWarning": "This will permanently delete your account and all associated data including orders, messages, and reviews. This action cannot be undone.",
   "deleteAccountConfirm": "Yes, Delete My Account",
   "deleteAccountPassword": "Enter your password to confirm",
-  "accountDeleted": "Your account has been deleted."
+  "accountDeleted": "Your account has been deleted.",
+  "lastUpdated": "Last updated",
+  "privacyPolicyDate": "March 2026",
+  "termsOfServiceDate": "March 2026",
+  "legalContactUs": "Questions? Contact us at",
+  "privacyPolicyContent": [
+    { "heading": "1. Who We Are", "body": "TruckinFox AS (\"we\", \"us\") operates the TruckinFox mobile application, a marketplace connecting cargo owners with freight carriers in Norway. Contact: support@truckinfox.no" },
+    { "heading": "2. Data We Collect", "body": "We collect information you provide: name, email, phone number, company name and organisation number (carriers), profile photo, cargo request details, cargo photos, and payment information via Vipps.\n\nWe also collect automatically: device identifiers, IP address, approximate location (with your permission), app analytics, and push notification tokens." },
+    { "heading": "3. How We Use Your Data", "body": "We use your data to:\n• Operate and improve TruckinFox\n• Match cargo owners with carriers\n• Process payments and manage escrow\n• Send transactional notifications\n• Verify carrier businesses via Brønnøysundregistrene\n• Comply with Norwegian and EU legal obligations\n• Detect fraud and ensure platform safety" },
+    { "heading": "4. Legal Basis (GDPR)", "body": "Contract performance: to fulfil the service you requested.\nLegitimate interests: fraud prevention and platform security.\nConsent: location access and marketing.\nLegal obligation: tax records and anti-money laundering." },
+    { "heading": "5. Data Sharing", "body": "We share limited data with:\n• Other users (name, rating, photo visible to counterparties)\n• Vipps AS (payment processing)\n• Supabase Inc (database/storage, EU region)\n• Brønnøysundregistrene (carrier verification, read-only)\n\nWe do not sell your personal data." },
+    { "heading": "6. Data Retention", "body": "We retain account data while your account is active. After deletion, personal data is removed within 30 days, except where legally required (e.g. accounting records for 5 years under the Norwegian Bookkeeping Act)." },
+    { "heading": "7. Your Rights", "body": "Under GDPR you may: access, correct, or delete your data; restrict or object to processing; request data portability; and lodge a complaint with Datatilsynet (datatilsynet.no).\n\nTo delete your account use Settings → Security → Delete Account. For other requests contact support@truckinfox.no." },
+    { "heading": "8. Security", "body": "We use TLS encryption in transit, AES-256 at rest, row-level security on all database tables, and support multi-factor authentication. Please use a strong, unique password." },
+    { "heading": "9. Children", "body": "TruckinFox is for users aged 18 and over. We do not knowingly collect data from children under 16." },
+    { "heading": "10. Changes", "body": "We may update this policy and will notify you of material changes via in-app notification at least 14 days before they take effect." }
+  ],
+  "termsOfServiceContent": [
+    { "heading": "1. Acceptance", "body": "By creating an account and using TruckinFox you agree to these Terms. If you do not agree, please do not use the app." },
+    { "heading": "2. The Service", "body": "TruckinFox is an online marketplace connecting cargo owners (Customers) with freight carriers (Carriers). We are not a freight carrier. The transport contract is between the Customer and Carrier; we provide the platform, escrow, and tools." },
+    { "heading": "3. Account Registration", "body": "You must provide accurate information and be at least 18 years old. You are responsible for keeping your password confidential. One person may not hold multiple accounts." },
+    { "heading": "4. Carrier Obligations", "body": "Carriers must:\n• Hold a valid Norwegian goods transport licence where required\n• Maintain adequate cargo insurance\n• Accurately describe vehicles and capacity\n• Complete accepted jobs professionally and on time\n• Verify their business via Brønnøysundregistrene within 30 days of first accepted bid" },
+    { "heading": "5. Customer Obligations", "body": "Customers must:\n• Provide accurate cargo descriptions, weight, and addresses\n• Ensure cargo is legally permitted for transport\n• Not ship prohibited or hazardous materials without carrier agreement\n• Be available at agreed pickup and delivery times" },
+    { "heading": "6. Bids and Contracts", "body": "A submitted bid is a binding offer. When a Customer accepts and payment is initiated, a transport contract forms directly between the Customer and Carrier. TruckinFox is not a party to that contract." },
+    { "heading": "7. Payments and Escrow", "body": "Payments are processed via Vipps. Funds are held in escrow until the Customer confirms delivery. TruckinFox charges a 10% platform fee on the carrier's bid. In disputes, TruckinFox may hold funds pending investigation." },
+    { "heading": "8. Cancellations", "body": "If a Carrier cancels after accepting, escrowed funds are returned to the Customer in full. If a Customer cancels after cargo collection, the parties must agree on compensation." },
+    { "heading": "9. Prohibited Conduct", "body": "You may not post false listings, harass other users, circumvent the platform to avoid fees, use the platform unlawfully, or attempt to reverse-engineer the app. Violations may result in immediate account suspension." },
+    { "heading": "10. Limitation of Liability", "body": "TruckinFox is a marketplace intermediary. To the extent permitted by Norwegian law, our liability is limited to the platform fees you paid in the preceding 12 months. We are not liable for cargo damage or delays." },
+    { "heading": "11. Governing Law", "body": "These Terms are governed by Norwegian law. Disputes shall be resolved before Oslo District Court (Oslo tingrett), unless mandatory consumer protection laws provide otherwise." },
+    { "heading": "12. Changes", "body": "We may update these Terms and will notify you at least 14 days in advance via in-app notification. Continued use after that date constitutes acceptance." }
+  ]
 }
