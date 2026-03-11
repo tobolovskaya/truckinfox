@@ -892,5 +892,12 @@
   ],
   "updateRequired": "Update Required",
   "updateRequiredMessage": "This version of TruckinFox is no longer supported. Please update to continue using the app.",
-  "updateNow": "Update Now"
+  "updateNow": "Update Now",
+  "businessVerification": "Business Verification",
+  "verifyDescription": "Verify your business via Brønnøysundregistrene to display the \"Verified Carrier\" badge on your profile and bid cards.",
+  "orgNumberPlaceholder": "Organisation number (9 digits)",
+  "orgNumberInvalid": "Organisation number must be exactly 9 digits",
+  "verifyBusiness": "Verify Business",
+  "verified": "Verified!",
+  "verifiedMessage": "Your business ({{companyName}}) is now verified via Brønnøysundregistrene."
 }

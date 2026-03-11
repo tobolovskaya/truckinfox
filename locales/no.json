@@ -892,5 +892,12 @@
   ],
   "updateRequired": "Oppdatering kreves",
   "updateRequiredMessage": "Denne versjonen av TruckinFox støttes ikke lenger. Oppdater appen for å fortsette.",
-  "updateNow": "Oppdater nå"
+  "updateNow": "Oppdater nå",
+  "businessVerification": "Bedriftsverifisering",
+  "verifyDescription": "Verifiser bedriften din via Brønnøysundregistrene for å vise «Verifisert transportør»-merket på profilen din og i budkort.",
+  "orgNumberPlaceholder": "Organisasjonsnummer (9 siffer)",
+  "orgNumberInvalid": "Organisasjonsnummeret må være nøyaktig 9 siffer",
+  "verifyBusiness": "Verifiser bedrift",
+  "verified": "Verifisert!",
+  "verifiedMessage": "Bedriften din ({{companyName}}) er nå verifisert via Brønnøysundregistrene."
 }

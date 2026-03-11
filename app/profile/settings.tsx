@@ -196,7 +196,7 @@ export default function SettingsScreen() {
   const handleVerify = async () => {
     const normalised = orgNumber.replace(/\s/g, '');
     if (!/^\d{9}$/.test(normalised)) {
-      Alert.alert(t('error'), 'Organisasjonsnummeret må være 9 siffer');
+      Alert.alert(t('error'), t('orgNumberInvalid'));
       return;
     }
     try {
@@ -210,8 +210,8 @@ export default function SettingsScreen() {
       setIsVerified(true);
       triggerHapticFeedback.success();
       Alert.alert(
-        'Verifisert!',
-        `Bedriften din (${data.companyName || normalised}) er nå verifisert via Brønnøysundregistrene.`
+        t('verified'),
+        t('verifiedMessage', { companyName: data.companyName || normalised })
       );
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Noe gikk galt';
@@ -472,7 +472,7 @@ export default function SettingsScreen() {
         {/* Business Verification — carriers only */}
         {isCarrier && (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Bedriftsverifisering</Text>
+            <Text style={styles.sectionTitle}>{t('businessVerification')}</Text>
             <View style={styles.settingsCard}>
               {isVerified ? (
                 <View style={styles.settingRow}>
@@ -480,15 +480,12 @@ export default function SettingsScreen() {
                 </View>
               ) : (
                 <View style={styles.verifySection}>
-                  <Text style={styles.verifyDescription}>
-                    Verifiser bedriften din via Brønnøysundregistrene for å vise
-                    &ldquo;Verifisert transportør&rdquo;-merket på profilen din og i budkort.
-                  </Text>
+                  <Text style={styles.verifyDescription}>{t('verifyDescription')}</Text>
                   <TextInput
                     style={styles.orgInput}
                     value={orgNumber}
                     onChangeText={setOrgNumber}
-                    placeholder="Organisasjonsnummer (9 siffer)"
+                    placeholder={t('orgNumberPlaceholder')}
                     keyboardType="number-pad"
                     maxLength={11}
                     editable={!verifying}
@@ -503,7 +500,7 @@ export default function SettingsScreen() {
                     ) : (
                       <>
                         <Ionicons name="shield-checkmark-outline" size={18} color="#fff" />
-                        <Text style={styles.verifyButtonText}>Verifiser bedrift</Text>
+                        <Text style={styles.verifyButtonText}>{t('verifyBusiness')}</Text>
                       </>
                     )}
                   </TouchableOpacity>
