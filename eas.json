@@ -14,7 +14,9 @@
       },
       "env": {
         "EXPO_PUBLIC_SUPABASE_URL": "your-supabase-url",
-        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "your-supabase-anon-key"
+        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "your-supabase-anon-key",
+        "GOOGLE_MAPS_IOS_KEY": "your-google-maps-ios-key",
+        "GOOGLE_MAPS_ANDROID_KEY": "your-google-maps-android-key"
       }
     },
     "preview": {
@@ -29,7 +31,9 @@
       },
       "env": {
         "EXPO_PUBLIC_SUPABASE_URL": "your-supabase-url",
-        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "your-supabase-anon-key"
+        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "your-supabase-anon-key",
+        "GOOGLE_MAPS_IOS_KEY": "your-google-maps-ios-key",
+        "GOOGLE_MAPS_ANDROID_KEY": "your-google-maps-android-key"
       }
     },
     "production": {
@@ -43,7 +47,9 @@
       },
       "env": {
         "EXPO_PUBLIC_SUPABASE_URL": "your-supabase-url",
-        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "your-supabase-anon-key"
+        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "your-supabase-anon-key",
+        "GOOGLE_MAPS_IOS_KEY": "your-google-maps-ios-key",
+        "GOOGLE_MAPS_ANDROID_KEY": "your-google-maps-android-key"
       }
     }
   },

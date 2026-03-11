@@ -18,6 +18,9 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.truckinfox.app",
+      "config": {
+        "googleMapsApiKey": "$(GOOGLE_MAPS_IOS_KEY)"
+      },
       "infoPlist": {
         "NSLocationWhenInUseUsageDescription": "TruckinFox needs access to your location to show delivery routes and track cargo.",
         "NSLocationAlwaysAndWhenInUseUsageDescription": "TruckinFox needs access to your location to provide real-time tracking during deliveries.",
@@ -28,6 +31,11 @@
     },
     "android": {
       "package": "com.truckinfox.app",
+      "config": {
+        "googleMaps": {
+          "apiKey": "$(GOOGLE_MAPS_ANDROID_KEY)"
+        }
+      },
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#FF7043"
