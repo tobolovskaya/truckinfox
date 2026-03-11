@@ -7,6 +7,7 @@ import {
   ScrollView,
   Alert,
   ActivityIndicator,
+  TextInput,
   Platform,
 } from 'react-native';
 import { useRouter } from 'expo-router';
@@ -21,13 +22,16 @@ import {
   shadows,
 } from '../../lib/sharedStyles';
 import { useAuth } from '../../contexts/AuthContext';
+import { supabase } from '../../lib/supabase';
 import { ScreenHeader } from '../../components/ScreenHeader';
 
 export default function SecurityScreen() {
   const router = useRouter();
   const { t } = useTranslation();
-  const { user, signOut, signOutAllDevices } = useAuth();
+  const { user, signOut, signOutAllDevices, deleteAccount } = useAuth();
   const [loading, setLoading] = useState(false);
+  const [deleteStep, setDeleteStep] = useState<'idle' | 'confirm' | 'deleting'>('idle');
+  const [deletePassword, setDeletePassword] = useState('');
 
   const showComingSoon = () => {
     Alert.alert(t('comingSoon'), t('comingSoon'));
@@ -121,6 +125,62 @@ export default function SecurityScreen() {
       onPress: showComingSoon,
     },
   ];
+
+  const handleDeleteAccount = () => {
+    Alert.alert(
+      t('deleteAccountTitle'),
+      t('deleteAccountWarning'),
+      [
+        { text: t('cancel'), style: 'cancel' },
+        {
+          text: t('deleteAccountConfirm'),
+          style: 'destructive',
+          onPress: () => setDeleteStep('confirm'),
+        },
+      ]
+    );
+  };
+
+  const handleDeleteConfirmWithPassword = async () => {
+    if (!deletePassword.trim()) {
+      Alert.alert(t('error'), t('deleteAccountPassword'));
+      return;
+    }
+
+    try {
+      setDeleteStep('deleting');
+
+      // Re-authenticate to confirm identity
+      const email = user?.email;
+      if (!email) throw new Error('No email');
+
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email,
+        password: deletePassword,
+      });
+
+      if (signInError) {
+        setDeleteStep('confirm');
+        Alert.alert(t('error'), t('invalidCredentials'));
+        return;
+      }
+
+      const result = await deleteAccount();
+      if (result.success) {
+        Alert.alert(t('accountDeleted'), '', [
+          { text: 'OK', onPress: () => router.replace('/(auth)/login') },
+        ]);
+      } else {
+        setDeleteStep('idle');
+        Alert.alert(t('error'), result.error ?? t('somethingWentWrong'));
+      }
+    } catch {
+      setDeleteStep('idle');
+      Alert.alert(t('error'), t('somethingWentWrong'));
+    } finally {
+      setDeletePassword('');
+    }
+  };
 
   const signOutOptions: SecurityOption[] = [
     {
@@ -227,6 +287,66 @@ export default function SecurityScreen() {
         <View style={styles.warningCard}>
           <Ionicons name="information-circle" size={20} color={colors.status.warning} />
           <Text style={styles.warningText}>{t('securityWarning')}</Text>
+        </View>
+
+        {/* Delete Account */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>{t('deleteAccount')}</Text>
+          <View style={[styles.card, styles.dangerCard]}>
+            {deleteStep === 'idle' && (
+              <TouchableOpacity
+                style={[styles.optionItem, styles.optionItemLast]}
+                onPress={handleDeleteAccount}
+                disabled={loading}
+                accessibilityRole="button"
+                accessibilityLabel={t('deleteAccount')}
+              >
+                <View style={[styles.iconCircle, { backgroundColor: `${colors.error}15` }]}>
+                  <Ionicons name="trash-outline" size={24} color={colors.error} />
+                </View>
+                <View style={styles.optionContent}>
+                  <Text style={[styles.optionTitle, styles.dangerText]}>{t('deleteAccount')}</Text>
+                  <Text style={styles.optionSubtitle}>{t('deleteAccountWarning').slice(0, 60)}…</Text>
+                </View>
+                <Ionicons name="chevron-forward" size={20} color={colors.text.tertiary} />
+              </TouchableOpacity>
+            )}
+
+            {(deleteStep === 'confirm' || deleteStep === 'deleting') && (
+              <View style={styles.deleteConfirmPanel}>
+                <Text style={styles.deleteConfirmTitle}>{t('deleteAccountTitle')}</Text>
+                <Text style={styles.deleteConfirmWarning}>{t('deleteAccountWarning')}</Text>
+                <TextInput
+                  style={styles.passwordInput}
+                  placeholder={t('deleteAccountPassword')}
+                  placeholderTextColor={colors.text.tertiary}
+                  secureTextEntry
+                  value={deletePassword}
+                  onChangeText={setDeletePassword}
+                  editable={deleteStep !== 'deleting'}
+                  autoCapitalize="none"
+                />
+                {deleteStep === 'deleting' ? (
+                  <ActivityIndicator color={colors.error} style={{ marginTop: spacing.md }} />
+                ) : (
+                  <View style={styles.deleteActions}>
+                    <TouchableOpacity
+                      style={styles.cancelBtn}
+                      onPress={() => { setDeleteStep('idle'); setDeletePassword(''); }}
+                    >
+                      <Text style={styles.cancelBtnText}>{t('cancel')}</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={styles.deleteBtn}
+                      onPress={handleDeleteConfirmWithPassword}
+                    >
+                      <Text style={styles.deleteBtnText}>{t('deleteAccountConfirm')}</Text>
+                    </TouchableOpacity>
+                  </View>
+                )}
+              </View>
+            )}
+          </View>
         </View>
       </ScrollView>
     </View>
@@ -339,5 +459,67 @@ const styles = StyleSheet.create({
     color: colors.text.secondary,
     marginLeft: spacing.sm,
     lineHeight: 20,
+  },
+  dangerCard: {
+    borderWidth: 1,
+    borderColor: `${colors.error}30`,
+  },
+  dangerText: {
+    color: colors.error,
+  },
+  deleteConfirmPanel: {
+    padding: spacing.lg,
+  },
+  deleteConfirmTitle: {
+    fontSize: fontSize.md,
+    fontWeight: fontWeight.bold,
+    color: colors.error,
+    marginBottom: spacing.sm,
+  },
+  deleteConfirmWarning: {
+    fontSize: fontSize.sm,
+    color: colors.text.secondary,
+    lineHeight: 20,
+    marginBottom: spacing.md,
+  },
+  passwordInput: {
+    borderWidth: 1,
+    borderColor: `${colors.error}50`,
+    borderRadius: borderRadius.md,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    fontSize: fontSize.md,
+    color: colors.text.primary,
+    backgroundColor: `${colors.error}06`,
+  },
+  deleteActions: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+    marginTop: spacing.md,
+  },
+  cancelBtn: {
+    flex: 1,
+    paddingVertical: spacing.sm,
+    borderRadius: borderRadius.md,
+    borderWidth: 1,
+    borderColor: colors.border.light,
+    alignItems: 'center',
+  },
+  cancelBtnText: {
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.semibold,
+    color: colors.text.secondary,
+  },
+  deleteBtn: {
+    flex: 2,
+    paddingVertical: spacing.sm,
+    borderRadius: borderRadius.md,
+    backgroundColor: colors.error,
+    alignItems: 'center',
+  },
+  deleteBtnText: {
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.bold,
+    color: colors.white,
   },
 });

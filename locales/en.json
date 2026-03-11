@@ -852,5 +852,11 @@
   "vehicleHasDamage": "Visible damage",
   "vehicleHasDamageHint": "Scratches, dents or other body damage",
   "unread": "unread",
-  "markAllAsRead": "Mark all as read"
+  "markAllAsRead": "Mark all as read",
+  "deleteAccount": "Delete Account",
+  "deleteAccountTitle": "Delete Account Permanently",
+  "deleteAccountWarning": "This will permanently delete your account and all associated data including orders, messages, and reviews. This action cannot be undone.",
+  "deleteAccountConfirm": "Yes, Delete My Account",
+  "deleteAccountPassword": "Enter your password to confirm",
+  "accountDeleted": "Your account has been deleted."
 }

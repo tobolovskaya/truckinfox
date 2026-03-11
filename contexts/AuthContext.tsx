@@ -34,6 +34,7 @@ interface AuthContextType {
   signUp: (_userData: SignUpData) => Promise<AuthResult<AppUser>>;
   signOut: () => Promise<AuthResult>;
   signOutAllDevices: () => Promise<AuthResult>;
+  deleteAccount: () => Promise<AuthResult>;
 }
 
 type AppUser = SupabaseUser & {
@@ -444,6 +445,41 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const deleteAccount = async (): Promise<AuthResult> => {
+    try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const accessToken = sessionData.session?.access_token;
+      if (!accessToken) {
+        return { success: false, error: 'Not authenticated' };
+      }
+
+      const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL;
+      const res = await fetch(`${supabaseUrl}/functions/v1/delete-account`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      const body = (await res.json()) as { success?: boolean; error?: string };
+
+      if (!res.ok || !body.success) {
+        return { success: false, error: body.error ?? 'Failed to delete account' };
+      }
+
+      // Edge function has already deleted the auth user; sign out locally
+      await supabase.auth.signOut();
+      return { success: true };
+    } catch (error) {
+      console.error('Delete account failed:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'An unexpected error occurred',
+      };
+    }
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -453,6 +489,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         signUp,
         signOut,
         signOutAllDevices,
+        deleteAccount,
       }}
     >
       {children}
