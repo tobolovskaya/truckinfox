@@ -1,5 +1,22 @@
-import { StyleSheet, Platform } from 'react-native';
+import { StyleSheet, Platform, useWindowDimensions } from 'react-native';
 import { theme } from '../theme/theme';
+
+/** Minimum width (dp) to treat a device as a tablet/iPad layout */
+export const TABLET_BREAKPOINT = 768;
+/** Maximum content width on tablet screens */
+export const CONTENT_MAX_WIDTH = 720;
+
+/** Returns layout helpers that adapt between phone and tablet. */
+export function useTabletLayout() {
+  const { width } = useWindowDimensions();
+  const isTablet = width >= TABLET_BREAKPOINT;
+  const horizontalPadding = isTablet ? 32 : 16;
+  // Center content and cap width on tablets; full-width on phones
+  const contentStyle = isTablet
+    ? ({ maxWidth: CONTENT_MAX_WIDTH, width: '100%', alignSelf: 'center' } as const)
+    : ({} as const);
+  return { isTablet, horizontalPadding, contentStyle, screenWidth: width };
+}
 
 type ExtendedThemeColors = typeof theme.colors & {
   text?: {

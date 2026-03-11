@@ -1,11 +1,12 @@
 import React from 'react';
 import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { colors } from '../../lib/sharedStyles';
+import { colors, useTabletLayout, CONTENT_MAX_WIDTH } from '../../lib/sharedStyles';
 import { useTranslation } from 'react-i18next';
 
 export default function TabLayout() {
   const { t } = useTranslation();
+  const { isTablet } = useTabletLayout();
 
   return (
     <Tabs
@@ -17,17 +18,28 @@ export default function TabLayout() {
           backgroundColor: colors.white,
           borderTopColor: colors.border.light,
           borderTopWidth: 1,
-          height: 62,
-          paddingBottom: 6,
-          paddingTop: 6,
+          height: isTablet ? 72 : 62,
+          paddingBottom: isTablet ? 10 : 6,
+          paddingTop: isTablet ? 10 : 6,
+          // On tablets, float the tab bar as a centered pill
+          ...(isTablet && {
+            maxWidth: CONTENT_MAX_WIDTH,
+            alignSelf: 'center',
+            width: '100%',
+            borderTopWidth: 0,
+            borderWidth: 1,
+            borderColor: colors.border.light,
+            borderRadius: 16,
+            marginBottom: 8,
+          }),
         },
         tabBarIconStyle: {
           marginTop: -4,
         },
         tabBarLabelStyle: {
-          fontSize: 14,
+          fontSize: isTablet ? 15 : 14,
           fontWeight: '600',
-          marginBottom: 4,
+          marginBottom: isTablet ? 6 : 4,
         },
       }}
     >
