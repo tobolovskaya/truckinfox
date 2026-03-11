@@ -94,15 +94,18 @@ export default function TabLayout() {
           ),
         }}
       />
-      {/* Hide other screens from tab bar */}
-      <Tabs.Screen
-        name="notifications"
-        options={{
-          href: null,
-        }}
-      />
       <Tabs.Screen
         name="map"
+        options={{
+          title: t('map'),
+          tabBarIcon: ({ color, size }: { color: string; size: number }) => (
+            <Ionicons name="map-outline" size={size} color={color} />
+          ),
+        }}
+      />
+      {/* Notifications is accessible via the bell icon in the home header */}
+      <Tabs.Screen
+        name="notifications"
         options={{
           href: null,
         }}
