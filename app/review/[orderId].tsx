@@ -228,7 +228,7 @@ export default function ReviewScreen() {
 
       // Prompt satisfied users (4–5 stars) to rate the app in the store
       if (rating >= 4) {
-        StoreReview.isAvailableAsync().then((available) => {
+        StoreReview.isAvailableAsync().then((available: boolean) => {
           if (available) StoreReview.requestReview().catch(() => {});
         });
       }

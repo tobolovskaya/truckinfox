@@ -91,13 +91,14 @@ export default function RootLayout() {
   // Check minimum required app version from remote config
   useEffect(() => {
     const currentVersion = Constants.expoConfig?.version ?? '0.0.0';
-    supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (supabase as any)
       .from('app_config')
       .select('value')
       .eq('key', 'min_app_version')
       .single()
-      .then(({ data }) => {
-        const minVersion = (data?.value as string | undefined) ?? '0.0.0';
+      .then(({ data }: { data: { value?: string } | null }) => {
+        const minVersion = data?.value ?? '0.0.0';
         if (isVersionLessThan(currentVersion, minVersion)) {
           setForceUpdate(true);
         }

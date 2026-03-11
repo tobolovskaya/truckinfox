@@ -51,7 +51,7 @@ export default function TabLayout() {
         name="home"
         options={{
           title: t('home'),
-          tabBarIcon: ({ color, focused }) => (
+          tabBarIcon: ({ color, focused }: { color: string; focused: boolean }) => (
             <View style={focused ? styles.activeIconWrap : undefined}>
               <Ionicons
                 name={focused ? 'home' : 'home-outline'}
@@ -68,7 +68,7 @@ export default function TabLayout() {
         name="messages"
         options={{
           title: t('messages'),
-          tabBarIcon: ({ color, focused }) => (
+          tabBarIcon: ({ color, focused }: { color: string; focused: boolean }) => (
             <View style={focused ? styles.activeIconWrap : undefined}>
               <Ionicons
                 name={focused ? 'chatbubbles' : 'chatbubbles-outline'}
@@ -85,7 +85,7 @@ export default function TabLayout() {
         name="create"
         options={{
           title: '',
-          tabBarIcon: ({ focused }) => (
+          tabBarIcon: ({ focused }: { focused: boolean }) => (
             <View style={styles.fabContainer}>
               <View style={[styles.fab, focused && styles.fabActive]}>
                 <Ionicons name="add" size={30} color={colors.white} />
@@ -101,7 +101,7 @@ export default function TabLayout() {
         name="orders"
         options={{
           title: t('ordersTab'),
-          tabBarIcon: ({ color, focused }) => (
+          tabBarIcon: ({ color, focused }: { color: string; focused: boolean }) => (
             <View style={focused ? styles.activeIconWrap : undefined}>
               <Ionicons
                 name={focused ? 'briefcase' : 'briefcase-outline'}
@@ -118,7 +118,7 @@ export default function TabLayout() {
         name="profile"
         options={{
           title: t('profile'),
-          tabBarIcon: ({ color, focused }) => (
+          tabBarIcon: ({ color, focused }: { color: string; focused: boolean }) => (
             <View style={focused ? styles.activeIconWrap : undefined}>
               <Ionicons
                 name={focused ? 'person' : 'person-outline'}
