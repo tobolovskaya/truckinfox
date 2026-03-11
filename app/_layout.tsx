@@ -25,6 +25,17 @@ import 'react-native-url-polyfill/auto';
 // Keep splash visible until auth state is resolved
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
+// 2.3: Warn developers if the EAS project ID is still the placeholder
+if (__DEV__) {
+  const easProjectId = Constants.expoConfig?.extra?.eas?.projectId as string | undefined;
+  if (easProjectId === 'your-eas-project-id-replace-before-deployment' || !easProjectId) {
+    console.warn(
+      '[TruckinFox] EAS Project ID is not set. Replace "your-eas-project-id-replace-before-deployment" ' +
+      'in app.json with your real EAS project ID before submitting a build.'
+    );
+  }
+}
+
 /** Returns true if semver `a` is strictly less than `b` (major.minor.patch). */
 function isVersionLessThan(a: string, b: string): boolean {
   const parse = (v: string) => v.split('.').map((n) => parseInt(n, 10) || 0);
