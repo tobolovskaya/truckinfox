@@ -21,6 +21,9 @@
       "config": {
         "googleMapsApiKey": "$(GOOGLE_MAPS_IOS_KEY)"
       },
+      "entitlements": {
+        "com.apple.developer.applesignin": ["Default"]
+      },
       "infoPlist": {
         "NSLocationWhenInUseUsageDescription": "TruckinFox needs access to your location to show delivery routes and track cargo.",
         "NSLocationAlwaysAndWhenInUseUsageDescription": "TruckinFox needs access to your location to provide real-time tracking during deliveries.",
@@ -73,6 +76,7 @@
           "color": "#FF7043"
         }
       ],
+      "expo-apple-authentication",
       "expo-localization",
       "@react-native-community/datetimepicker",
       [
