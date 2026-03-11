@@ -38,6 +38,7 @@ import {
 import { colors, spacing, fontSize, borderRadius } from '../../lib/sharedStyles';
 import MapView, { Marker, Polyline } from 'react-native-maps';
 import { TOUCH_TARGET } from '../../constants/touchTargets';
+import { acceptBid as acceptBidEdgeFn } from '../../hooks/useBids';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -807,7 +808,6 @@ export default function RequestDetailsScreen() {
   };
 
   const processBidAcceptance = async (bid: Bid) => {
-    // Verify user is the request owner
     if (!request || request.user_id !== user?.uid) {
       Alert.alert('Feil', 'Du kan bare godta bud på dine egne forespørsler');
       triggerHapticFeedback.error();
@@ -818,106 +818,10 @@ export default function RequestDetailsScreen() {
     triggerHapticFeedback.medium();
 
     try {
-      const { data: selectedBid, error: selectedBidError } = await supabase
-        .from('bids')
-        .select('id, status')
-        .eq('id', bid.id)
-        .maybeSingle();
+      const { orderId, error } = await acceptBidEdgeFn(bid.id);
 
-      if (selectedBidError || !selectedBid) {
-        throw new Error('Bud ikke funnet');
-      }
-
-      const selectedBidStatus = String(selectedBid.status || '')
-        .trim()
-        .toLowerCase();
-
-      if (selectedBidStatus !== 'pending') {
-        throw new Error('Budet er ikke lenger tilgjengelig');
-      }
-
-      const { data: currentRequest, error: currentRequestError } = await supabase
-        .from('cargo_requests')
-        .select('status, accepted_bid_id')
-        .eq('id', id as string)
-        .maybeSingle();
-
-      if (currentRequestError || !currentRequest) {
-        throw new Error('Forespørsel ikke funnet');
-      }
-
-      const currentStatus = String(currentRequest.status || '')
-        .trim()
-        .toLowerCase();
-      const acceptedBidId =
-        typeof currentRequest.accepted_bid_id === 'string' ? currentRequest.accepted_bid_id : null;
-
-      if (currentStatus === 'accepted') {
-        if (acceptedBidId === bid.id) {
-          navigateToPayment(bid);
-          return;
-        }
-        throw new Error('Forespørselen har allerede et annet godtatt bud');
-      }
-
-      if (
-        ['in_transit', 'delivered', 'completed', 'cancelled', 'canceled'].includes(currentStatus)
-      ) {
-        throw new Error('Forespørselen er ikke lenger aktiv');
-      }
-
-      const nowIso = new Date().toISOString();
-
-      const { error: acceptedBidUpdateError } = await supabase
-        .from('bids')
-        .update({
-          status: 'accepted',
-          updated_at: nowIso,
-        })
-        .eq('id', bid.id)
-        .eq('status', 'pending');
-
-      if (acceptedBidUpdateError) {
-        throw acceptedBidUpdateError;
-      }
-
-      const { error: requestUpdateError } = await supabase
-        .from('cargo_requests')
-        .update({
-          status: 'accepted',
-          accepted_bid_id: bid.id,
-          updated_at: nowIso,
-        })
-        .eq('id', id as string);
-
-      if (requestUpdateError) {
-        throw requestUpdateError;
-      }
-
-      const { data: otherPendingBids, error: otherPendingBidsError } = await supabase
-        .from('bids')
-        .select('id')
-        .eq('request_id', id as string)
-        .eq('status', 'pending')
-        .neq('id', bid.id);
-
-      if (otherPendingBidsError) {
-        throw otherPendingBidsError;
-      }
-
-      const otherBidIds = (otherPendingBids || []).map(item => item.id);
-      if (otherBidIds.length > 0) {
-        const { error: rejectOthersError } = await supabase
-          .from('bids')
-          .update({
-            status: 'rejected',
-            updated_at: nowIso,
-          })
-          .in('id', otherBidIds);
-
-        if (rejectOthersError) {
-          throw rejectOthersError;
-        }
+      if (error || !orderId) {
+        throw error || new Error('Kunne ikke godta bud');
       }
 
       // Track bid accepted
@@ -928,43 +832,10 @@ export default function RequestDetailsScreen() {
         carrier_id: bid.carrier_id,
       });
 
-      // Create chat between customer and carrier
-      try {
-        if (request?.user_id && id) {
-          console.log('Creating chat with:', {
-            requestId: id,
-            customerId: request.user_id,
-            carrierId: bid.carrier_id,
-            currentUserId: user?.uid,
-          });
-
-          const sorted = [request.user_id, bid.carrier_id].sort();
-          const { error: chatUpsertError } = await supabase.from('chats').upsert(
-            {
-              request_id: id as string,
-              user_a_id: sorted[0],
-              user_b_id: sorted[1],
-              last_message: null,
-              last_message_at: null,
-              updated_at: new Date().toISOString(),
-            },
-            { onConflict: 'user_a_id,user_b_id,request_id' }
-          );
-
-          if (chatUpsertError) {
-            throw chatUpsertError;
-          }
-        }
-      } catch (chatError) {
-        console.error('⚠️ Error creating chat (non-critical):', chatError);
-        // Don't fail the bid acceptance if chat creation fails
-      }
-
-      // Refresh bids
+      // Refresh UI
       fetchBids();
       fetchRequest();
 
-      // Show success
       triggerHapticFeedback.success();
       setShowSuccessAnimation(true);
       setTimeout(() => {
@@ -972,79 +843,16 @@ export default function RequestDetailsScreen() {
         Alert.alert(t('bidAccepted'), t('bidAcceptedNextStep'), [
           {
             text: t('proceedToPayment'),
-            onPress: () => {
-              navigateToPayment(bid);
-            },
+            onPress: () => router.push(`/payment/${orderId}` as never),
           },
         ]);
       }, 800);
     } catch (error) {
-      console.error('Error accepting bid:', error);
       const errorMessage = error instanceof Error ? error.message : 'Kunne ikke godta bud';
       toast.error(errorMessage);
       triggerHapticFeedback.error();
     } finally {
       setAcceptingBid(null);
-    }
-  };
-
-  const navigateToPayment = async (bid: Bid) => {
-    try {
-      if (!user?.uid) {
-        throw new Error('User not authenticated');
-      }
-
-      if (!id || typeof id !== 'string') {
-        throw new Error('Invalid request ID');
-      }
-
-      // Reuse existing order for this accepted bid if it already exists
-      const { data: existingOrders, error: existingOrdersError } = await supabase
-        .from('orders')
-        .select('id')
-        .eq('bid_id', bid.id)
-        .limit(1);
-
-      if (existingOrdersError) {
-        throw existingOrdersError;
-      }
-
-      if (existingOrders && existingOrders.length > 0) {
-        router.push(`/payment/${existingOrders[0].id}` as never);
-        return;
-      }
-
-      const carrierAmount = bid.price;
-      const platformFee = Math.round(carrierAmount * 0.1);
-      const totalAmount = carrierAmount + platformFee;
-
-      const nowIso = new Date().toISOString();
-      const { data: orderRow, error: orderInsertError } = await supabase
-        .from('orders')
-        .insert({
-          request_id: id,
-          customer_id: user.uid,
-          carrier_id: bid.carrier_id,
-          bid_id: bid.id,
-          total_amount: totalAmount,
-          platform_fee: platformFee,
-          carrier_amount: carrierAmount,
-          payment_status: 'pending',
-          status: 'active',
-          created_at: nowIso,
-        })
-        .select('id')
-        .single();
-
-      if (orderInsertError || !orderRow) {
-        throw orderInsertError || new Error('Failed to create order');
-      }
-
-      router.push(`/payment/${orderRow.id}` as never);
-    } catch (error) {
-      console.error('Navigation to payment error:', error);
-      const errorMessage = error instanceof Error ? error.message : t('errorLoadingPayments');
-      toast.error(errorMessage);
     }
   };
 
