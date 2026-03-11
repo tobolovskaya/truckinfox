@@ -8,6 +8,7 @@ import {
   TouchableOpacity,
   Alert,
   ActivityIndicator,
+  Linking,
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
@@ -414,6 +415,37 @@ export default function SettingsScreen() {
                 }
               />
             </View>
+          </View>
+        </View>
+
+        {/* Legal Section */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>{t('legal') || 'Legal'}</Text>
+
+          <View style={styles.settingsCard}>
+            <TouchableOpacity
+              style={styles.settingRow}
+              onPress={() => Linking.openURL('https://truckinfox.no/privacy')}
+            >
+              <View style={styles.settingInfo}>
+                <Ionicons name="shield-checkmark-outline" size={24} color={colors.primary} />
+                <Text style={styles.settingLabel}>{t('privacyPolicy')}</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={20} color={colors.text.tertiary} />
+            </TouchableOpacity>
+
+            <View style={styles.smallDivider} />
+
+            <TouchableOpacity
+              style={styles.settingRow}
+              onPress={() => Linking.openURL('https://truckinfox.no/terms')}
+            >
+              <View style={styles.settingInfo}>
+                <Ionicons name="document-text-outline" size={24} color={colors.primary} />
+                <Text style={styles.settingLabel}>{t('termsOfService')}</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={20} color={colors.text.tertiary} />
+            </TouchableOpacity>
           </View>
         </View>
 

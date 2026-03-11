@@ -91,6 +91,7 @@
       "enabled": true,
       "fallbackToCacheTimeout": 0
     },
+    "privacyPolicyUrl": "https://truckinfox.no/privacy",
     "extra": {
       "router": {
         "origin": false
