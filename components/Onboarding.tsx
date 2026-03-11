@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, Modal, TouchableOpacity, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -21,6 +21,11 @@ interface OnboardingProps {
 export function Onboarding({ visible, onComplete, userType = 'customer' }: OnboardingProps) {
   const { t } = useTranslation();
   const [currentStep, setCurrentStep] = useState(0);
+
+  // Reset to first step every time the modal opens
+  useEffect(() => {
+    if (visible) setCurrentStep(0);
+  }, [visible]);
 
   const customerSteps: OnboardingStep[] = [
     {

@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
@@ -9,7 +9,7 @@ import {
   useWindowDimensions,
   View,
 } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
 import { spacing, fontSize, useAppThemeStyles } from '../../lib/sharedStyles';
@@ -238,37 +238,30 @@ export default function HomeScreen() {
     saveState();
   }, [activeTab, searchQuery, sortBy, selectedCargoType]);
 
-  useEffect(() => {
-    let isMounted = true;
+  // Re-check every time the screen comes into focus so the onboarding Modal is
+  // guaranteed to show even when the tab was pre-rendered before auth resolved.
+  useFocusEffect(
+    useCallback(() => {
+      let active = true;
 
-    const checkOnboarding = async () => {
-      if (!user?.uid) {
-        if (isMounted) {
-          setShowOnboarding(false);
+      const checkOnboarding = async () => {
+        if (!user?.uid) return; // not logged in yet — do nothing
+
+        try {
+          const onboardingKey = `${HOME_ONBOARDING_SEEN_KEY_PREFIX}:${user.uid}`;
+          const seen = await AsyncStorage.getItem(onboardingKey);
+          if (active) {
+            setShowOnboarding(seen !== '1');
+          }
+        } catch {
+          if (active) setShowOnboarding(true);
         }
-        return;
-      }
+      };
 
-      try {
-        const onboardingKey = `${HOME_ONBOARDING_SEEN_KEY_PREFIX}:${user.uid}`;
-        const seen = await AsyncStorage.getItem(onboardingKey);
-        if (isMounted) {
-          setShowOnboarding(seen !== '1');
-        }
-      } catch (error) {
-        console.warn('Failed to load onboarding state', error);
-        if (isMounted) {
-          setShowOnboarding(true);
-        }
-      }
-    };
-
-    checkOnboarding();
-
-    return () => {
-      isMounted = false;
-    };
-  }, [user?.uid]);
+      checkOnboarding();
+      return () => { active = false; };
+    }, [user?.uid])
+  );
 
   useEffect(() => {
     const hasQuery = searchQuery.trim().length > 0;
