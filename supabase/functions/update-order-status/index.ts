@@ -93,7 +93,7 @@ Deno.serve(async (req: Request) => {
       });
     }
 
-    // Determine caller role
+    // Determine caller identity against the order (primary authorization check)
     const isCustomer = order.customer_id === user.id;
     const isCarrier = order.carrier_id === user.id;
 
@@ -104,7 +104,13 @@ Deno.serve(async (req: Request) => {
       });
     }
 
-    const callerRole = isCustomer ? 'customer' : 'carrier';
+    // Prefer role from JWT app_metadata (set by custom_access_token_hook, tamper-proof).
+    // Fall back to inferring from order columns for sessions pre-dating the hook.
+    const jwtRole = user.app_metadata?.user_type as string | undefined;
+    const callerRole: 'customer' | 'carrier' =
+      (jwtRole === 'customer' || jwtRole === 'carrier')
+        ? jwtRole
+        : isCustomer ? 'customer' : 'carrier';
     const currentStatus = order.status as OrderStatus;
 
     // Validate transition

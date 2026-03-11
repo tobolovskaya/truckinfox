@@ -41,6 +41,9 @@ type AppUser = SupabaseUser & {
   displayName: string | null;
   phoneNumber: string | null;
   photoURL: string | null;
+  /** Role from JWT app_metadata (set by custom_access_token_hook). Falls back to
+   *  user_metadata for existing sessions issued before the hook was deployed. */
+  userType: 'customer' | 'carrier' | null;
 };
 
 // Input validation helpers
@@ -81,6 +84,16 @@ const validateSignUpData = (userData: SignUpData): string | null => {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+const resolveUserType = (user: SupabaseUser): 'customer' | 'carrier' | null => {
+  // Prefer app_metadata (stamped by custom_access_token_hook — admin-only, tamper-proof)
+  const fromAppMeta = user.app_metadata?.user_type;
+  if (fromAppMeta === 'customer' || fromAppMeta === 'carrier') return fromAppMeta;
+  // Fallback: user_metadata (set at signup, present on sessions pre-dating the hook)
+  const fromUserMeta = user.user_metadata?.user_type;
+  if (fromUserMeta === 'customer' || fromUserMeta === 'carrier') return fromUserMeta;
+  return null;
+};
+
 const mapSupabaseUser = (user: SupabaseUser): AppUser => ({
   ...user,
   uid: user.id,
@@ -92,6 +105,7 @@ const mapSupabaseUser = (user: SupabaseUser): AppUser => ({
     null,
   photoURL:
     (typeof user.user_metadata?.avatar_url === 'string' && user.user_metadata.avatar_url) || null,
+  userType: resolveUserType(user),
 });
 
 const parseRetryAfterSeconds = (message: string): number | undefined => {
