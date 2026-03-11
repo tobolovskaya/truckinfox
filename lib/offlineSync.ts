@@ -10,6 +10,7 @@
 
 import { supabase } from './supabase';
 import NetInfo from '@react-native-community/netinfo';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 type OfflinePayload = Record<string, unknown>;
 type QueryConstraint = {
@@ -39,12 +40,41 @@ export interface OfflineQueueItem {
   lastError?: string;
 }
 
+const OFFLINE_QUEUE_STORAGE_KEY = '@truckinfox/offline_queue';
+
 /**
  * Queue for operations performed while offline
  * Will be synced when connection restored
  */
 const offlineQueue: Map<string, OfflineQueueItem> = new Map();
 let offlineSyncCleanup: (() => void) | null = null;
+
+const saveQueueToStorage = async (): Promise<void> => {
+  try {
+    const items = Array.from(offlineQueue.values());
+    await AsyncStorage.setItem(OFFLINE_QUEUE_STORAGE_KEY, JSON.stringify(items));
+  } catch (error) {
+    console.warn('Failed to persist offline queue:', error);
+  }
+};
+
+const loadQueueFromStorage = async (): Promise<void> => {
+  try {
+    const raw = await AsyncStorage.getItem(OFFLINE_QUEUE_STORAGE_KEY);
+    if (!raw) {
+      return;
+    }
+    const items: OfflineQueueItem[] = JSON.parse(raw);
+    for (const item of items) {
+      offlineQueue.set(item.id, item);
+    }
+    if (offlineQueue.size > 0) {
+      console.log(`📂 Restored ${offlineQueue.size} offline operations from storage`);
+    }
+  } catch (error) {
+    console.warn('Failed to load offline queue from storage:', error);
+  }
+};
 
 /**
  * Add operation to offline queue
@@ -73,6 +103,7 @@ export const queueOfflineOperation = (
   };
 
   offlineQueue.set(itemId, queueItem);
+  saveQueueToStorage();
 
   console.log(`📤 Offline operation queued: ${operation} in ${collectionName}`, {
     documentId,
@@ -137,6 +168,7 @@ export const syncOfflineQueue = async (): Promise<{
       }
 
       offlineQueue.delete(item.id);
+      saveQueueToStorage();
       results.synced++;
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
@@ -154,6 +186,7 @@ export const syncOfflineQueue = async (): Promise<{
           offlineQueue.delete(item.id);
           console.warn(`❌ Offline operation removed after 3 retries: ${item.id}`);
         }
+        saveQueueToStorage();
       }
     }
   }
@@ -176,6 +209,7 @@ export const getPendingOfflineOperations = (): OfflineQueueItem[] => {
 export const clearOfflineQueue = (): void => {
   const count = offlineQueue.size;
   offlineQueue.clear();
+  saveQueueToStorage();
   console.log(`🗑️ Cleared ${count} offline operations`);
 };
 
@@ -268,6 +302,11 @@ export const initializeOfflineSync = (): (() => void) => {
     offlineSyncCleanup();
     offlineSyncCleanup = null;
   }
+
+  // Restore persisted queue from previous session
+  loadQueueFromStorage().catch(error => {
+    console.error('Failed to restore offline queue:', error);
+  });
 
   // Native online/offline listener
   const unsubscribe = NetInfo.addEventListener(state => {
