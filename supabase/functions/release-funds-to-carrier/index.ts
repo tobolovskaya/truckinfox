@@ -49,7 +49,7 @@ Deno.serve(async (req: Request) => {
     // Fetch the order and validate it belongs to the requesting customer
     const { data: order, error: orderError } = await supabaseAdmin
       .from('orders')
-      .select('id, customer_id, carrier_id, status, payment_status, escrow_status, amount')
+      .select('id, customer_id, carrier_id, status, payment_status, carrier_amount')
       .eq('id', orderId)
       .single();
 
@@ -80,7 +80,7 @@ Deno.serve(async (req: Request) => {
     }
 
     // Prevent double release
-    if (order.escrow_status === 'released') {
+    if (order.payment_status === 'released') {
       return new Response(
         JSON.stringify({ message: 'Funds already released', orderId }),
         {
@@ -90,11 +90,10 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    // Update order: release escrow, mark payment as released, complete order
+    // Mark payment as released and complete order
     const { error: updateError } = await supabaseAdmin
       .from('orders')
       .update({
-        escrow_status: 'released',
         payment_status: 'released',
         status: 'completed',
         updated_at: new Date().toISOString(),
@@ -110,7 +109,7 @@ Deno.serve(async (req: Request) => {
       user_id: order.carrier_id,
       type: 'payment_success',
       title: 'Payment Released',
-      body: `Payment of ${order.amount} NOK has been released to your account.`,
+      body: `Payment of ${order.carrier_amount} NOK has been released to your account.`,
       related_id: orderId,
       related_type: 'order',
       read: false,

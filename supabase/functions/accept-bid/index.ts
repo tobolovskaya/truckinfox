@@ -49,7 +49,7 @@ Deno.serve(async (req: Request) => {
     // Fetch the bid
     const { data: bid, error: bidError } = await supabaseAdmin
       .from('bids')
-      .select('id, cargo_request_id, carrier_id, amount, status')
+      .select('id, request_id, carrier_id, price, status')
       .eq('id', bidId)
       .single();
 
@@ -74,7 +74,7 @@ Deno.serve(async (req: Request) => {
     const { data: cargoRequest, error: requestError } = await supabaseAdmin
       .from('cargo_requests')
       .select('id, customer_id, status')
-      .eq('id', bid.cargo_request_id)
+      .eq('id', bid.request_id)
       .single();
 
     if (requestError || !cargoRequest) {
@@ -108,7 +108,7 @@ Deno.serve(async (req: Request) => {
     const { error: rejectError } = await supabaseAdmin
       .from('bids')
       .update({ status: 'rejected', updated_at: now })
-      .eq('cargo_request_id', bid.cargo_request_id)
+      .eq('request_id', bid.request_id)
       .eq('status', 'pending')
       .neq('id', bidId);
 
@@ -130,27 +130,28 @@ Deno.serve(async (req: Request) => {
     const { error: requestUpdateError } = await supabaseAdmin
       .from('cargo_requests')
       .update({ status: 'assigned', updated_at: now })
-      .eq('id', bid.cargo_request_id);
+      .eq('id', bid.request_id);
 
     if (requestUpdateError) {
       throw new Error(`Failed to update cargo request: ${requestUpdateError.message}`);
     }
 
-    // Calculate platform fee (10%)
-    const platformFee = Math.round(bid.amount * 0.1 * 100) / 100;
+    // Calculate platform fee (10%) and carrier payout
+    const platformFee = Math.round(bid.price * 0.1 * 100) / 100;
+    const carrierAmount = Math.round((bid.price - platformFee) * 100) / 100;
 
     // Create the order record
     const { data: order, error: orderError } = await supabaseAdmin
       .from('orders')
       .insert({
-        cargo_request_id: bid.cargo_request_id,
+        request_id: bid.request_id,
         customer_id: cargoRequest.customer_id,
         carrier_id: bid.carrier_id,
         bid_id: bidId,
-        status: 'pending_payment',
+        status: 'pending',
         payment_status: 'pending',
-        escrow_status: 'pending',
-        amount: bid.amount,
+        total_amount: bid.price,
+        carrier_amount: carrierAmount,
         platform_fee: platformFee,
         created_at: now,
         updated_at: now,
@@ -167,7 +168,7 @@ Deno.serve(async (req: Request) => {
       user_id: bid.carrier_id,
       type: 'bid_accepted',
       title: 'Bid Accepted',
-      body: `Your bid of ${bid.amount} NOK has been accepted!`,
+      body: `Your bid of ${bid.price} NOK has been accepted!`,
       related_id: order.id,
       related_type: 'order',
       read: false,
