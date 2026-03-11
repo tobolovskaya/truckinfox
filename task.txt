@@ -1,5 +1,0 @@
-Результати аудиту TruckinFox
-ЛЕГАСІ КОД для видалення
-lib/firestore-helpers.ts — все ще використовується в useCurrentUser
-lib/safeFirestoreOps.ts — DEPRECATED
-hooks/useFirestoreDocument.ts + useFirestoreCollection.ts — Firebase legacy
