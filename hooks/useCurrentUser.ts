@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
-import { getDocument } from '../lib/firestore-helpers';
+import { supabase } from '../lib/supabase';
 
 interface CurrentUser {
   full_name: string;
@@ -21,9 +21,14 @@ export function useCurrentUser(userId?: string) {
       }
 
       setLoading(true);
-      const data = await getDocument<CurrentUser>('users', userId);
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('full_name, avatar_url, user_type, phone, country_code')
+        .eq('id', userId)
+        .maybeSingle();
 
-      setCurrentUser(data);
+      if (error) throw error;
+      setCurrentUser(data as CurrentUser | null);
     } catch (error) {
       console.error('Error fetching current user:', error);
       setCurrentUser(null);

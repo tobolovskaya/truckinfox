@@ -1,9 +1,5 @@
 Результати аудиту TruckinFox
-НЕЗАКІНЧЕНІ ФІЧІ (таблиці є, UI немає)
-Фіча	БД таблиця	Статус
-Typing indicators в чаті	typing_indicators	❌ UI не реалізовано
-Read receipts	messages.read_at	❌ UI не реалізовано
-Real-time tracking на карті	tracking	❌ Немає екрану
-Delivery proof	deliveries	❌ Немає UI
-Управління вантажівками	trucks	❌ Немає CRUD екранів
-Dispute resolution	—	❌ Взагалі немає
+ЛЕГАСІ КОД для видалення
+lib/firestore-helpers.ts — все ще використовується в useCurrentUser
+lib/safeFirestoreOps.ts — DEPRECATED
+hooks/useFirestoreDocument.ts + useFirestoreCollection.ts — Firebase legacy

@@ -1,10 +1,19 @@
 import { renderHook, waitFor } from '@testing-library/react-native';
 import { act } from 'react-test-renderer';
 import { useCurrentUser } from '../../hooks/useCurrentUser';
-import { getDocument } from '../../lib/firestore-helpers';
 
-jest.mock('../../lib/firestore-helpers', () => ({
-  getDocument: jest.fn(),
+const mockMaybeSingle = jest.fn();
+
+jest.mock('../../lib/supabase', () => ({
+  supabase: {
+    from: jest.fn().mockReturnValue({
+      select: jest.fn().mockReturnValue({
+        eq: jest.fn().mockReturnValue({
+          maybeSingle: mockMaybeSingle,
+        }),
+      }),
+    }),
+  },
 }));
 
 describe('useCurrentUser', () => {
@@ -26,11 +35,11 @@ describe('useCurrentUser', () => {
       expect(result.current.loading).toBe(false);
     });
 
-    expect(getDocument).not.toHaveBeenCalled();
+    expect(mockMaybeSingle).not.toHaveBeenCalled();
   });
 
   it('should fetch user profile when userId is provided', async () => {
-    (getDocument as jest.Mock).mockResolvedValue(mockUserProfile);
+    mockMaybeSingle.mockResolvedValue({ data: mockUserProfile, error: null });
 
     const { result } = renderHook(() => useCurrentUser('user123'));
 
@@ -39,15 +48,15 @@ describe('useCurrentUser', () => {
       expect(result.current.loading).toBe(false);
     });
 
-    expect(getDocument).toHaveBeenCalledWith('users', 'user123');
+    expect(mockMaybeSingle).toHaveBeenCalled();
   });
 
   it('should handle loading state', async () => {
-    let resolveDocument: ((_value: typeof mockUserProfile) => void) | undefined;
-    const pendingDocument = new Promise<typeof mockUserProfile>(resolve => {
+    let resolveDocument: ((_value: { data: typeof mockUserProfile; error: null }) => void) | undefined;
+    const pendingDocument = new Promise<{ data: typeof mockUserProfile; error: null }>(resolve => {
       resolveDocument = resolve;
     });
-    (getDocument as jest.Mock).mockReturnValue(pendingDocument);
+    mockMaybeSingle.mockReturnValue(pendingDocument);
 
     const { result } = renderHook(() => useCurrentUser('user123'));
 
@@ -56,7 +65,7 @@ describe('useCurrentUser', () => {
     });
 
     await act(async () => {
-      resolveDocument?.(mockUserProfile);
+      resolveDocument?.({ data: mockUserProfile, error: null });
       await pendingDocument;
     });
 
@@ -67,7 +76,7 @@ describe('useCurrentUser', () => {
 
   it('should handle profile fetch errors gracefully', async () => {
     const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => undefined);
-    (getDocument as jest.Mock).mockRejectedValue(new Error('Firestore error'));
+    mockMaybeSingle.mockRejectedValue(new Error('Supabase error'));
 
     const { result } = renderHook(() => useCurrentUser('user123'));
 
