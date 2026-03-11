@@ -1,0 +1,154 @@
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
+
+type OrderStatus =
+  | 'pending_payment'
+  | 'paid'
+  | 'in_progress'
+  | 'delivered'
+  | 'completed'
+  | 'disputed'
+  | 'refunded'
+  | 'cancelled';
+
+/**
+ * Allowed status transitions per role.
+ * Only the listed caller role may move from `from` → `to`.
+ */
+const ALLOWED_TRANSITIONS: {
+  from: OrderStatus;
+  to: OrderStatus;
+  role: 'customer' | 'carrier' | 'both';
+}[] = [
+  // Customer cancels before payment
+  { from: 'pending_payment', to: 'cancelled', role: 'customer' },
+  // Carrier starts transit after payment
+  { from: 'paid', to: 'in_progress', role: 'carrier' },
+  // Carrier marks delivery done
+  { from: 'in_progress', to: 'delivered', role: 'carrier' },
+  // Either party can open a dispute while active
+  { from: 'paid', to: 'disputed', role: 'both' },
+  { from: 'in_progress', to: 'disputed', role: 'both' },
+  { from: 'delivered', to: 'disputed', role: 'both' },
+];
+
+Deno.serve(async (req: Request) => {
+  if (req.method === 'OPTIONS') {
+    return new Response('ok', { headers: corsHeaders });
+  }
+
+  try {
+    const supabaseAdmin = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
+      { auth: { autoRefreshToken: false, persistSession: false } }
+    );
+
+    // Authenticate caller
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    const {
+      data: { user },
+      error: authError,
+    } = await supabaseAdmin.auth.getUser(authHeader.replace('Bearer ', ''));
+
+    if (authError || !user) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    const body = await req.json();
+    const { orderId, newStatus } = body as { orderId?: string; newStatus?: OrderStatus };
+
+    if (!orderId || !newStatus) {
+      return new Response(JSON.stringify({ error: 'orderId and newStatus are required' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // Fetch the order
+    const { data: order, error: orderError } = await supabaseAdmin
+      .from('orders')
+      .select('id, customer_id, carrier_id, status')
+      .eq('id', orderId)
+      .single();
+
+    if (orderError || !order) {
+      return new Response(JSON.stringify({ error: 'Order not found' }), {
+        status: 404,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // Determine caller role
+    const isCustomer = order.customer_id === user.id;
+    const isCarrier = order.carrier_id === user.id;
+
+    if (!isCustomer && !isCarrier) {
+      return new Response(JSON.stringify({ error: 'Forbidden' }), {
+        status: 403,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    const callerRole = isCustomer ? 'customer' : 'carrier';
+    const currentStatus = order.status as OrderStatus;
+
+    // Validate transition
+    const allowed = ALLOWED_TRANSITIONS.find(
+      (t) =>
+        t.from === currentStatus &&
+        t.to === newStatus &&
+        (t.role === 'both' || t.role === callerRole)
+    );
+
+    if (!allowed) {
+      return new Response(
+        JSON.stringify({
+          error: `Transition '${currentStatus}' → '${newStatus}' is not allowed for role '${callerRole}'`,
+        }),
+        {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        }
+      );
+    }
+
+    // Apply update
+    const { error: updateError } = await supabaseAdmin
+      .from('orders')
+      .update({ status: newStatus, updated_at: new Date().toISOString() })
+      .eq('id', orderId);
+
+    if (updateError) {
+      throw new Error(`Failed to update order: ${updateError.message}`);
+    }
+
+    return new Response(
+      JSON.stringify({ success: true, orderId, status: newStatus }),
+      {
+        status: 200,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      }
+    );
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Internal server error';
+    return new Response(JSON.stringify({ error: message }), {
+      status: 500,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+  }
+});

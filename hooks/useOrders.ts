@@ -141,15 +141,16 @@ export function useOrder(orderId: string | undefined) {
   return { order, loading, error, refetch: loadOrder };
 }
 
-/** Update an order's status */
+/** Update an order's status via Edge Function (enforces role-based transition rules). */
 export async function updateOrderStatus(
   orderId: string,
   newStatus: Order['status']
 ): Promise<{ error: Error | null }> {
-  const { error } = await supabase
-    .from('orders')
-    .update({ status: newStatus, updated_at: new Date().toISOString() })
-    .eq('id', orderId);
+  const { data, error } = await supabase.functions.invoke('update-order-status', {
+    body: { orderId, newStatus },
+  });
 
-  return { error: error ? new Error(error.message) : null };
+  if (error) return { error: new Error(error.message) };
+  if (data?.error) return { error: new Error(data.error) };
+  return { error: null };
 }
