@@ -28,7 +28,6 @@ import {
 import { formatDistanceToNow } from 'date-fns';
 import { enUS, nb } from 'date-fns/locale';
 import { ScreenHeader } from '../../components/ScreenHeader';
-import { useUnreadCount } from '../../hooks/useNotifications';
 
 type FirestoreTimestamp = {
   toDate?: () => Date;
@@ -89,7 +88,6 @@ export default function MessagesScreen() {
   const router = useRouter();
   const { colors } = useAppThemeStyles();
   const styles = useMemo(() => createStyles(colors), [colors]);
-  const { unreadCount } = useUnreadCount();
   const dateLocale = useMemo(() => (i18n.language.startsWith('no') ? nb : enUS), [i18n.language]);
 
   const [conversations, setConversations] = useState<Conversation[]>([]);
@@ -365,12 +363,6 @@ export default function MessagesScreen() {
           showBackButton={false}
           showBrandMark
           brandMarkMaxTitleLength={14}
-          rightAction={{
-            icon: 'notifications-outline',
-            onPress: () => router.push('/(tabs)/notifications'),
-            label: t('notifications'),
-            badge: unreadCount,
-          }}
         />
         <SkeletonLoader variant="list" count={8} />
       </SafeAreaView>
@@ -384,12 +376,6 @@ export default function MessagesScreen() {
         showBackButton={false}
         showBrandMark
         brandMarkMaxTitleLength={14}
-        rightAction={{
-          icon: 'notifications-outline',
-          onPress: () => router.push('/(tabs)/notifications'),
-          label: t('notifications'),
-          badge: unreadCount,
-        }}
       />
 
       {conversations.length > 0 && (

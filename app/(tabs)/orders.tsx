@@ -16,7 +16,6 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { ScreenHeader } from '../../components/ScreenHeader';
 import { EmptyState } from '../../components/EmptyState';
 import EmptyOrdersIllustration from '../../assets/empty-orders.svg';
-import { useUnreadCount } from '../../hooks/useNotifications';
 
 interface Order {
   id: string;
@@ -79,7 +78,6 @@ export default function OrdersScreen() {
   const router = useRouter();
   const { colors } = useAppThemeStyles();
   const styles = useMemo(() => createStyles(colors), [colors]);
-  const { unreadCount } = useUnreadCount();
   const { t, i18n } = useTranslation();
   const { user } = useAuth();
 
@@ -284,12 +282,6 @@ export default function OrdersScreen() {
         showBackButton={false}
         showBrandMark={true}
         brandMarkMaxTitleLength={18}
-        rightAction={{
-          icon: 'notifications-outline',
-          onPress: () => router.push('/(tabs)/notifications'),
-          label: t('notifications'),
-          badge: unreadCount,
-        }}
       />
       {loading ? (
         <View style={styles.loadingContainer}>

@@ -3,10 +3,12 @@ import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, useTabletLayout, CONTENT_MAX_WIDTH } from '../../lib/sharedStyles';
 import { useTranslation } from 'react-i18next';
+import { useUnreadCount } from '../../hooks/useNotifications';
 
 export default function TabLayout() {
   const { t } = useTranslation();
   const { isTablet } = useTabletLayout();
+  const { unreadCount } = useUnreadCount();
 
   return (
     <Tabs
@@ -103,11 +105,15 @@ export default function TabLayout() {
           ),
         }}
       />
-      {/* Notifications is accessible via the bell icon in the home header */}
       <Tabs.Screen
         name="notifications"
         options={{
-          href: null,
+          title: t('notifications'),
+          tabBarIcon: ({ color, size }: { color: string; size: number }) => (
+            <Ionicons name="notifications-outline" size={size} color={color} />
+          ),
+          tabBarBadge: unreadCount > 0 ? unreadCount : undefined,
+          tabBarBadgeStyle: { fontSize: 10, minWidth: 16, height: 16, lineHeight: 16 },
         }}
       />
     </Tabs>

@@ -8,7 +8,6 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useCurrentUser } from '../../hooks/useCurrentUser';
 import Avatar from '../../components/Avatar';
 import { ScreenHeader } from '../../components/ScreenHeader';
-import { useUnreadCount } from '../../hooks/useNotifications';
 
 type IoniconName = React.ComponentProps<typeof Ionicons>['name'];
 
@@ -17,7 +16,6 @@ export default function ProfileScreen() {
   const { user, signOut } = useAuth();
   const { currentUser } = useCurrentUser(user?.uid);
   const { t } = useTranslation();
-  const { unreadCount } = useUnreadCount();
   const isCarrier = currentUser?.user_type === 'carrier';
 
   const handleSignOut = async () => {
@@ -93,12 +91,6 @@ export default function ProfileScreen() {
         showBackButton={false}
         showBrandMark
         brandMarkMaxTitleLength={16}
-        rightAction={{
-          icon: 'notifications-outline',
-          onPress: () => router.push('/(tabs)/notifications'),
-          label: t('notifications'),
-          badge: unreadCount,
-        }}
       />
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>

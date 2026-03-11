@@ -18,7 +18,6 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTranslation } from 'react-i18next';
 import { useToast } from '../../contexts/ToastContext';
-import { useNotifications } from '../../hooks/useNotifications';
 import { supabase } from '../../lib/supabase';
 import { trackCargoCreated } from '../../utils/analytics';
 import { sanitizeInput, sanitizeNumber } from '../../utils/sanitization';
@@ -107,7 +106,6 @@ export default function CreateRequestScreen() {
   const isSmallScreen = width < 360;
   const insets = useSafeAreaInsets();
   const formBottomInset = Math.max(insets.bottom, spacing.sm) + spacing.xl;
-  const { unreadCount } = useNotifications();
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -1024,12 +1022,6 @@ export default function CreateRequestScreen() {
         title={t('createCargoRequest') || 'Opprett lastforespørsel'}
         showBackButton={false}
         showBrandMark={true}
-        rightAction={{
-          icon: 'notifications-outline',
-          onPress: () => router.push('/(tabs)/notifications'),
-          label: t('notifications'),
-          badge: unreadCount,
-        }}
       />
 
       <KeyboardAwareFlatList
