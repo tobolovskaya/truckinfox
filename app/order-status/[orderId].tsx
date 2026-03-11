@@ -32,6 +32,7 @@ import * as ImagePicker from 'expo-image-picker';
 import SignaturePad from '../../components/SignaturePad';
 import { LazyImage } from '../../components/LazyImage';
 import { ScreenHeader } from '../../components/ScreenHeader';
+import { SkeletonLoader } from '../../components/SkeletonLoader';
 
 interface Order {
   id: string;
@@ -608,10 +609,12 @@ export default function OrderStatusScreen() {
   if (loading) {
     return (
       <SafeAreaView style={styles.container} edges={['bottom']}>
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={theme.iconColors.primary} />
-          <Text style={styles.loadingText}>{t('loading')}</Text>
-        </View>
+        <ScreenHeader title={t('orderStatus')} onBackPress={() => router.back()} />
+        <ScrollView style={styles.scrollView} contentContainerStyle={styles.skeletonContent}>
+          <SkeletonLoader variant="stats" count={1} />
+          <SkeletonLoader variant="text" count={2} />
+          <SkeletonLoader variant="list" count={3} />
+        </ScrollView>
       </SafeAreaView>
     );
   }
@@ -1018,6 +1021,10 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  skeletonContent: {
+    padding: spacing.md,
+    gap: spacing.md,
   },
   loadingText: {
     fontSize: fontSize.md,

@@ -14,6 +14,7 @@ import { supabase } from '../../lib/supabase';
 import { spacing, fontSize, fontWeight, useAppThemeStyles } from '../../lib/sharedStyles';
 import { LinearGradient } from 'expo-linear-gradient';
 import { ScreenHeader } from '../../components/ScreenHeader';
+import { SkeletonLoader } from '../../components/SkeletonLoader';
 import { EmptyState } from '../../components/EmptyState';
 import EmptyOrdersIllustration from '../../assets/empty-orders.svg';
 
@@ -284,8 +285,8 @@ export default function OrdersScreen() {
         brandMarkMaxTitleLength={18}
       />
       {loading ? (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={colors.primary} />
+        <View style={styles.skeletonContainer}>
+          <SkeletonLoader variant="card" count={3} />
         </View>
       ) : orders.length === 0 ? (
         <EmptyState
@@ -327,6 +328,10 @@ const createStyles = (colors: ReturnType<typeof useAppThemeStyles>['colors']) =>
       flex: 1,
       justifyContent: 'center',
       alignItems: 'center',
+    },
+    skeletonContainer: {
+      flex: 1,
+      padding: spacing.md,
     },
     listContainer: {
       padding: spacing.md,

@@ -8,13 +8,14 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useCurrentUser } from '../../hooks/useCurrentUser';
 import Avatar from '../../components/Avatar';
 import { ScreenHeader } from '../../components/ScreenHeader';
+import { SkeletonLoader } from '../../components/SkeletonLoader';
 
 type IoniconName = React.ComponentProps<typeof Ionicons>['name'];
 
 export default function ProfileScreen() {
   const router = useRouter();
   const { user, signOut } = useAuth();
-  const { currentUser } = useCurrentUser(user?.uid);
+  const { currentUser, loading } = useCurrentUser(user?.uid);
   const { t } = useTranslation();
   const isCarrier = currentUser?.user_type === 'carrier';
 
@@ -84,6 +85,23 @@ export default function ProfileScreen() {
     },
   ];
 
+  if (loading) {
+    return (
+      <View style={styles.container}>
+        <ScreenHeader
+          title={t('profile')}
+          showBackButton={false}
+          showBrandMark
+          brandMarkMaxTitleLength={16}
+        />
+        <View style={styles.skeletonContainer}>
+          <SkeletonLoader variant="stats" count={1} />
+          <SkeletonLoader variant="list" count={5} />
+        </View>
+      </View>
+    );
+  }
+
   return (
     <View style={styles.container}>
       <ScreenHeader
@@ -149,6 +167,11 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
+  },
+  skeletonContainer: {
+    flex: 1,
+    padding: spacing.md,
+    gap: spacing.md,
   },
   profileCard: {
     backgroundColor: colors.white,

@@ -13,6 +13,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { useAppThemeStyles, spacing, fontSize, fontWeight } from '../../lib/sharedStyles';
 import { ScreenHeader } from '../../components/ScreenHeader';
+import { SkeletonLoader } from '../../components/SkeletonLoader';
 import { EmptyState } from '../../components/EmptyState';
 import EmptyNotificationsIllustration from '../../assets/empty-notifications.svg';
 import { useNotifications } from '../../hooks/useNotifications';
@@ -118,8 +119,8 @@ export default function NotificationsScreen() {
           title={t('notifications') || 'Notifications'}
           onBackPress={() => router.back()}
         />
-        <View style={styles.centerContainer}>
-          <ActivityIndicator size="large" color={colors.primary} />
+        <View style={styles.skeletonContainer}>
+          <SkeletonLoader variant="list" count={7} />
         </View>
       </View>
     );
@@ -173,6 +174,10 @@ const createStyles = (colors: ReturnType<typeof useAppThemeStyles>['colors']) =>
       flex: 1,
       justifyContent: 'center',
       alignItems: 'center',
+    },
+    skeletonContainer: {
+      flex: 1,
+      padding: spacing.md,
     },
     listContent: {
       paddingBottom: spacing.xl,

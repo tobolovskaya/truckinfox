@@ -17,6 +17,7 @@ import { supabase } from '../../lib/supabase';
 import { trackPaymentInitiated, trackPaymentCompleted } from '../../utils/analytics';
 import { ScreenHeader } from '../../components/ScreenHeader';
 import { ScreenSection } from '../../components/ScreenSection';
+import { SkeletonLoader } from '../../components/SkeletonLoader';
 import { theme } from '../../theme/theme';
 import {
   colors,
@@ -604,10 +605,12 @@ export default function PaymentScreen() {
   if (loading) {
     return (
       <SafeAreaView style={styles.container}>
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={theme.iconColors.primary} />
-          <Text style={styles.loadingText}>{t('loading')}</Text>
-        </View>
+        <ScreenHeader title={t('payment')} onBackPress={() => router.back()} />
+        <ScrollView contentContainerStyle={styles.skeletonContent}>
+          <SkeletonLoader variant="stats" count={1} />
+          <SkeletonLoader variant="text" count={2} />
+          <SkeletonLoader variant="card" count={1} />
+        </ScrollView>
       </SafeAreaView>
     );
   }
@@ -700,6 +703,10 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  skeletonContent: {
+    padding: spacing.md,
+    gap: spacing.md,
   },
   loadingText: {
     fontSize: fontSize.md,

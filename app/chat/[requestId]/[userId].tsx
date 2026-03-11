@@ -27,6 +27,7 @@ import * as DocumentPicker from 'expo-document-picker';
 import { generateChatId } from '../../../utils/chatManagement';
 import { theme } from '../../../theme/theme';
 import { ScreenHeader } from '../../../components/ScreenHeader';
+import { SkeletonLoader } from '../../../components/SkeletonLoader';
 import {
   spacing,
   fontSize,
@@ -835,9 +836,7 @@ export default function ChatScreen() {
           onContentSizeChange={() => scrollViewRef.current?.scrollToEnd({ animated: true })}
         >
           {loading ? (
-            <View style={styles.loadingContainer}>
-              <Text style={styles.loadingText}>{t('loading')}</Text>
-            </View>
+            <SkeletonLoader variant="message" count={5} />
           ) : Object.keys(groupedMessages).length === 0 ? (
             <View style={styles.emptyContainer}>
               <Ionicons name="chatbubble-outline" size={48} color={theme.iconColors.gray.primary} />

@@ -14,6 +14,7 @@ import { useTranslation } from 'react-i18next';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
 import { ScreenHeader } from '../../components/ScreenHeader';
+import { SkeletonLoader } from '../../components/SkeletonLoader';
 import {
   colors,
   spacing,
@@ -113,8 +114,8 @@ export default function TrucksIndexScreen() {
       />
 
       {loading ? (
-        <View style={styles.center}>
-          <ActivityIndicator color={colors.primary} />
+        <View style={styles.skeletonContainer}>
+          <SkeletonLoader variant="list" count={4} />
         </View>
       ) : trucks.length === 0 ? (
         <View style={styles.center}>
@@ -155,6 +156,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: spacing.xxxl,
     gap: spacing.md,
+  },
+  skeletonContainer: {
+    flex: 1,
+    padding: spacing.md,
   },
   emptyTitle: {
     fontSize: fontSize.xl,
