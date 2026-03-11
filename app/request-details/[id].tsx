@@ -28,6 +28,7 @@ import { normalizeCargoImageInputs, resolveCargoImageUrls } from '../../utils/ca
 import { SuccessAnimation } from '../../components/SuccessAnimation';
 import { LazyImage } from '../../components/LazyImage';
 import Avatar from '../../components/Avatar';
+import { VerifiedBadge } from '../../components/VerifiedBadge';
 import { SkeletonLoader } from '../../components/SkeletonLoader';
 import { ScreenHeader } from '../../components/ScreenHeader';
 import {
@@ -91,6 +92,7 @@ interface Bid {
     completed_transports?: number;
     on_time_rate?: number | null;
     review_count?: number;
+    is_verified?: boolean;
   };
 }
 
@@ -1528,7 +1530,10 @@ export default function RequestDetailsScreen() {
                 <View style={styles.bidHeader}>
                   <Avatar photoURL={bid.users?.avatar_url} size={40} />
                   <View style={styles.bidUserInfo}>
-                    <Text style={styles.bidUserName}>{bid.users?.full_name}</Text>
+                    <View style={styles.bidNameRow}>
+                      <Text style={styles.bidUserName}>{bid.users?.full_name}</Text>
+                      {bid.users?.is_verified && <VerifiedBadge variant="inline" />}
+                    </View>
                     <View style={styles.ratingRow}>
                       <Ionicons name="star" size={14} color="#FFA726" />
                       <Text style={styles.bidRating}>
@@ -2143,6 +2148,12 @@ const styles = StyleSheet.create({
   },
   bidUserInfo: {
     flex: 1,
+  },
+  bidNameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    flexWrap: 'wrap',
   },
   bidUserName: {
     fontSize: fontSize.md,

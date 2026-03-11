@@ -16,6 +16,7 @@ export interface Bid {
     full_name: string;
     rating: number;
     rating_count: number;
+    is_verified: boolean;
   };
 }
 
@@ -122,7 +123,7 @@ export function useBidsForRequest(requestId: string | undefined) {
     const { data, error: fetchError } = await supabase
       .from('bids')
       .select(
-        '*, carrier:profiles!carrier_id(id, full_name, rating, rating_count)'
+        '*, carrier:profiles!carrier_id(id, full_name, rating, rating_count, is_verified)'
       )
       .eq('cargo_request_id', requestId)
       .order('created_at', { ascending: false });

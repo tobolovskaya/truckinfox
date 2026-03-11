@@ -5,6 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { ScreenHeader } from '../../components/ScreenHeader';
+import { VerifiedBadge } from '../../components/VerifiedBadge';
 import { SkeletonLoader } from '../../components/SkeletonLoader';
 import { supabase } from '../../lib/supabase';
 import { theme } from '../../theme/theme';
@@ -26,6 +27,7 @@ interface UserProfile {
   total_reviews: number;
   created_at: string;
   avatar_url?: string;
+  is_verified: boolean;
 }
 
 const isBusinessUserType = (userType?: string) => userType === 'carrier' || userType === 'business';
@@ -73,7 +75,7 @@ export default function UserProfileScreen() {
 
       const { data, error } = await supabase
         .from('profiles')
-        .select('id, full_name, user_type, company_name, rating, created_at, avatar_url')
+        .select('id, full_name, user_type, company_name, rating, created_at, avatar_url, is_verified')
         .eq('id', userId)
         .single();
 
@@ -90,6 +92,7 @@ export default function UserProfileScreen() {
         total_reviews: 0,
         created_at: data.created_at || new Date().toISOString(),
         avatar_url: data.avatar_url || undefined,
+        is_verified: data.is_verified === true,
       });
     } catch (error) {
       console.error('Error fetching profile:', error);
@@ -251,13 +254,16 @@ export default function UserProfileScreen() {
                 />
               </View>
             )}
-            <View style={styles.verifiedBadge}>
-              <Ionicons name="checkmark" size={16} color={theme.iconColors.white} />
-            </View>
+            {profile.is_verified && (
+              <View style={styles.verifiedBadge}>
+                <Ionicons name="checkmark" size={16} color={theme.iconColors.white} />
+              </View>
+            )}
           </View>
 
           <Text style={styles.userName}>{profile.full_name}</Text>
           {profile.company_name && <Text style={styles.companyName}>{profile.company_name}</Text>}
+          {profile.is_verified && <VerifiedBadge variant="banner" />}
           <Text style={styles.userType}>
             {isBusinessUserType(profile.user_type) ? t('business') : t('private')}
           </Text>

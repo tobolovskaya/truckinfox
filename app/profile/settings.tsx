@@ -9,6 +9,7 @@ import {
   Alert,
   ActivityIndicator,
   Linking,
+  TextInput,
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
@@ -16,6 +17,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useI18n } from '../../contexts/I18nContext';
 import { supabase } from '../../lib/supabase';
 import { ScreenHeader } from '../../components/ScreenHeader';
+import { VerifiedBadge } from '../../components/VerifiedBadge';
 import { spacing, fontSize, fontWeight, useAppThemeStyles } from '../../lib/sharedStyles';
 import { triggerHapticFeedback } from '../../utils/haptics';
 
@@ -54,6 +56,12 @@ export default function SettingsScreen() {
     allow_location_tracking: true,
   });
 
+  // Carrier verification
+  const isCarrier = user?.userType === 'carrier';
+  const [isVerified, setIsVerified] = useState(false);
+  const [orgNumber, setOrgNumber] = useState('');
+  const [verifying, setVerifying] = useState(false);
+
   useEffect(() => {
     const loadSettings = async () => {
       if (!user?.uid) {
@@ -69,6 +77,19 @@ export default function SettingsScreen() {
 
         if (error) {
           throw error;
+        }
+
+        // Load verification status for carriers
+        if (user.userType === 'carrier') {
+          const { data: profileData } = await supabase
+            .from('profiles')
+            .select('is_verified, brreg_org_number')
+            .eq('id', user.uid)
+            .single();
+          if (profileData) {
+            setIsVerified(profileData.is_verified === true);
+            setOrgNumber(profileData.brreg_org_number ?? '');
+          }
         }
 
         const metadata = authUser?.user_metadata as Record<string, unknown> | undefined;
@@ -168,6 +189,34 @@ export default function SettingsScreen() {
     const updated = { ...privacySettings, [key]: !privacySettings[key] };
     setPrivacySettings(updated);
     updateSettings(undefined, updated);
+  };
+
+  const handleVerify = async () => {
+    const normalised = orgNumber.replace(/\s/g, '');
+    if (!/^\d{9}$/.test(normalised)) {
+      Alert.alert(t('error'), 'Organisasjonsnummeret må være 9 siffer');
+      return;
+    }
+    try {
+      setVerifying(true);
+      triggerHapticFeedback.light();
+      const { data, error } = await supabase.functions.invoke('verify-carrier', {
+        body: { orgNumber: normalised },
+      });
+      if (error) throw new Error(error.message);
+      if (data?.error) throw new Error(data.error);
+      setIsVerified(true);
+      triggerHapticFeedback.success();
+      Alert.alert(
+        'Verifisert!',
+        `Bedriften din (${data.companyName || normalised}) er nå verifisert via Brønnøysundregistrene.`
+      );
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Noe gikk galt';
+      Alert.alert(t('error'), msg);
+    } finally {
+      setVerifying(false);
+    }
   };
 
   if (loading) {
@@ -418,6 +467,50 @@ export default function SettingsScreen() {
           </View>
         </View>
 
+        {/* Business Verification — carriers only */}
+        {isCarrier && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Bedriftsverifisering</Text>
+            <View style={styles.settingsCard}>
+              {isVerified ? (
+                <View style={styles.settingRow}>
+                  <VerifiedBadge variant="banner" />
+                </View>
+              ) : (
+                <View style={styles.verifySection}>
+                  <Text style={styles.verifyDescription}>
+                    Verifiser bedriften din via Brønnøysundregistrene for å vise
+                    &ldquo;Verifisert transportør&rdquo;-merket på profilen din og i budkort.
+                  </Text>
+                  <TextInput
+                    style={styles.orgInput}
+                    value={orgNumber}
+                    onChangeText={setOrgNumber}
+                    placeholder="Organisasjonsnummer (9 siffer)"
+                    keyboardType="number-pad"
+                    maxLength={11}
+                    editable={!verifying}
+                  />
+                  <TouchableOpacity
+                    style={[styles.verifyButton, verifying && styles.verifyButtonDisabled]}
+                    onPress={handleVerify}
+                    disabled={verifying}
+                  >
+                    {verifying ? (
+                      <ActivityIndicator color="#fff" size="small" />
+                    ) : (
+                      <>
+                        <Ionicons name="shield-checkmark-outline" size={18} color="#fff" />
+                        <Text style={styles.verifyButtonText}>Verifiser bedrift</Text>
+                      </>
+                    )}
+                  </TouchableOpacity>
+                </View>
+              )}
+            </View>
+          </View>
+        )}
+
         {/* Legal Section */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>{t('legal') || 'Legal'}</Text>
@@ -588,5 +681,43 @@ const createStyles = (colors: ReturnType<typeof useAppThemeStyles>['colors']) =>
     savingText: {
       fontSize: fontSize.sm,
       color: colors.text.secondary,
+    },
+    verifySection: {
+      padding: spacing.md,
+      gap: spacing.sm,
+    },
+    verifyDescription: {
+      fontSize: fontSize.sm,
+      color: colors.text.secondary,
+      lineHeight: 20,
+    },
+    orgInput: {
+      borderWidth: 1,
+      borderColor: colors.border.default,
+      borderRadius: spacing.sm,
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.sm,
+      fontSize: fontSize.md,
+      color: colors.text.primary,
+      backgroundColor: colors.surface,
+      marginTop: spacing.xs,
+    },
+    verifyButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: spacing.xs,
+      backgroundColor: colors.primary,
+      borderRadius: spacing.sm,
+      paddingVertical: spacing.md,
+      marginTop: spacing.xs,
+    },
+    verifyButtonDisabled: {
+      opacity: 0.6,
+    },
+    verifyButtonText: {
+      fontSize: fontSize.md,
+      fontWeight: fontWeight.semibold,
+      color: '#fff',
     },
   });
