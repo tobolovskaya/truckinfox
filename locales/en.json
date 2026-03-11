@@ -396,6 +396,7 @@
   "newPassword": "New Password",
   "confirmNewPassword": "Confirm New Password",
   "passwordChanged": "Password changed successfully",
+  "passwordMismatch": "Passwords do not match",
   "twoFactorAuth": "Two-Factor Authentication",
   "twoFactorSubtitle": "Add an extra layer of security",
   "enableTwoFactor": "Enable 2FA",

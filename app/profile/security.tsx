@@ -25,17 +25,31 @@ import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '../../lib/supabase';
 import { ScreenHeader } from '../../components/ScreenHeader';
 
+type IoniconName = ComponentProps<typeof Ionicons>['name'];
+type SecurityOption = {
+  id: string;
+  icon: IoniconName;
+  title: string;
+  subtitle: string;
+  iconColor: string;
+  onPress: () => void;
+};
+
 export default function SecurityScreen() {
   const router = useRouter();
   const { t } = useTranslation();
   const { user, signOut, signOutAllDevices, deleteAccount } = useAuth();
   const [loading, setLoading] = useState(false);
+
+  // Password change state
+  const [pwStep, setPwStep] = useState<'idle' | 'open' | 'saving'>('idle');
+  const [currentPw, setCurrentPw] = useState('');
+  const [newPw, setNewPw] = useState('');
+  const [confirmPw, setConfirmPw] = useState('');
+
+  // Delete account state
   const [deleteStep, setDeleteStep] = useState<'idle' | 'confirm' | 'deleting'>('idle');
   const [deletePassword, setDeletePassword] = useState('');
-
-  const showComingSoon = () => {
-    Alert.alert(t('comingSoon'), t('comingSoon'));
-  };
 
   const handleSignOut = async () => {
     Alert.alert(t('signOut'), t('confirmSignOut'), [
@@ -89,56 +103,69 @@ export default function SecurityScreen() {
     ]);
   };
 
-  type IoniconName = ComponentProps<typeof Ionicons>['name'];
-  type SecurityOption = {
-    id: string;
-    icon: IoniconName;
-    title: string;
-    subtitle: string;
-    iconColor: string;
-    onPress: () => void;
+  const resetPwForm = () => {
+    setPwStep('idle');
+    setCurrentPw('');
+    setNewPw('');
+    setConfirmPw('');
   };
 
-  const securityOptions: SecurityOption[] = [
-    {
-      id: 'change-password',
-      icon: 'key-outline',
-      title: t('changePassword'),
-      subtitle: t('changePasswordSubtitle'),
-      iconColor: colors.primary,
-      onPress: showComingSoon,
-    },
-    {
-      id: 'two-factor',
-      icon: 'shield-checkmark-outline',
-      title: t('twoFactorAuth'),
-      subtitle: t('twoFactorSubtitle'),
-      iconColor: colors.success,
-      onPress: showComingSoon,
-    },
-    {
-      id: 'active-sessions',
-      icon: 'phone-portrait-outline',
-      title: t('activeSessions'),
-      subtitle: t('activeSessionsSubtitle'),
-      iconColor: colors.info,
-      onPress: showComingSoon,
-    },
-  ];
+  const handleChangePassword = async () => {
+    if (!currentPw.trim() || !newPw.trim()) {
+      Alert.alert(t('error'), t('enterPassword'));
+      return;
+    }
+    if (newPw !== confirmPw) {
+      Alert.alert(t('error'), t('passwordMismatch'));
+      return;
+    }
+    if (newPw.length < 6) {
+      Alert.alert(t('error'), t('passwordTooShort') || 'Password must be at least 6 characters');
+      return;
+    }
+
+    try {
+      setPwStep('saving');
+
+      // Re-authenticate to verify current password
+      const email = user?.email;
+      if (!email) throw new Error('No email');
+
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email,
+        password: currentPw,
+      });
+
+      if (signInError) {
+        setPwStep('open');
+        Alert.alert(t('error'), t('invalidCredentials'));
+        return;
+      }
+
+      // Update password
+      const { error: updateError } = await supabase.auth.updateUser({ password: newPw });
+      if (updateError) throw updateError;
+
+      resetPwForm();
+      Alert.alert(t('passwordChanged'), '');
+    } catch (err) {
+      setPwStep('open');
+      Alert.alert(
+        t('error'),
+        err instanceof Error ? err.message : t('somethingWentWrong')
+      );
+    }
+  };
 
   const handleDeleteAccount = () => {
-    Alert.alert(
-      t('deleteAccountTitle'),
-      t('deleteAccountWarning'),
-      [
-        { text: t('cancel'), style: 'cancel' },
-        {
-          text: t('deleteAccountConfirm'),
-          style: 'destructive',
-          onPress: () => setDeleteStep('confirm'),
-        },
-      ]
-    );
+    Alert.alert(t('deleteAccountTitle'), t('deleteAccountWarning'), [
+      { text: t('cancel'), style: 'cancel' },
+      {
+        text: t('deleteAccountConfirm'),
+        style: 'destructive',
+        onPress: () => setDeleteStep('confirm'),
+      },
+    ]);
   };
 
   const handleDeleteConfirmWithPassword = async () => {
@@ -150,7 +177,6 @@ export default function SecurityScreen() {
     try {
       setDeleteStep('deleting');
 
-      // Re-authenticate to confirm identity
       const email = user?.email;
       if (!email) throw new Error('No email');
 
@@ -182,6 +208,25 @@ export default function SecurityScreen() {
     }
   };
 
+  const otherSecurityOptions: SecurityOption[] = [
+    {
+      id: 'two-factor',
+      icon: 'shield-checkmark-outline',
+      title: t('twoFactorAuth'),
+      subtitle: t('twoFactorSubtitle'),
+      iconColor: colors.success,
+      onPress: () => Alert.alert(t('comingSoon'), t('comingSoon')),
+    },
+    {
+      id: 'active-sessions',
+      icon: 'phone-portrait-outline',
+      title: t('activeSessions'),
+      subtitle: t('activeSessionsSubtitle'),
+      iconColor: colors.info,
+      onPress: () => Alert.alert(t('comingSoon'), t('comingSoon')),
+    },
+  ];
+
   const signOutOptions: SecurityOption[] = [
     {
       id: 'sign-out',
@@ -209,6 +254,7 @@ export default function SecurityScreen() {
         style={styles.content}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
+        keyboardShouldPersistTaps="handled"
       >
         {/* User Info */}
         <View style={styles.userCard}>
@@ -225,12 +271,87 @@ export default function SecurityScreen() {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>{t('securitySettings')}</Text>
           <View style={styles.card}>
-            {securityOptions.map((option, index) => (
+            {/* Change Password — expandable inline */}
+            <TouchableOpacity
+              style={styles.optionItem}
+              onPress={() => setPwStep(s => (s === 'idle' ? 'open' : 'idle'))}
+              disabled={loading}
+              accessibilityRole="button"
+              accessibilityLabel={t('changePassword')}
+              accessibilityState={{ expanded: pwStep !== 'idle' }}
+            >
+              <View style={[styles.iconCircle, { backgroundColor: `${colors.primary}15` }]}>
+                <Ionicons name="key-outline" size={24} color={colors.primary} />
+              </View>
+              <View style={styles.optionContent}>
+                <Text style={styles.optionTitle}>{t('changePassword')}</Text>
+                <Text style={styles.optionSubtitle}>{t('changePasswordSubtitle')}</Text>
+              </View>
+              <Ionicons
+                name={pwStep !== 'idle' ? 'chevron-up' : 'chevron-forward'}
+                size={20}
+                color={colors.text.tertiary}
+              />
+            </TouchableOpacity>
+
+            {/* Inline password form */}
+            {pwStep !== 'idle' && (
+              <View style={styles.pwFormPanel}>
+                <TextInput
+                  style={styles.pwInput}
+                  placeholder={t('currentPassword')}
+                  placeholderTextColor={colors.text.tertiary}
+                  secureTextEntry
+                  value={currentPw}
+                  onChangeText={setCurrentPw}
+                  editable={pwStep !== 'saving'}
+                  autoCapitalize="none"
+                  textContentType="password"
+                />
+                <TextInput
+                  style={styles.pwInput}
+                  placeholder={t('newPassword')}
+                  placeholderTextColor={colors.text.tertiary}
+                  secureTextEntry
+                  value={newPw}
+                  onChangeText={setNewPw}
+                  editable={pwStep !== 'saving'}
+                  autoCapitalize="none"
+                  textContentType="newPassword"
+                />
+                <TextInput
+                  style={styles.pwInput}
+                  placeholder={t('confirmNewPassword')}
+                  placeholderTextColor={colors.text.tertiary}
+                  secureTextEntry
+                  value={confirmPw}
+                  onChangeText={setConfirmPw}
+                  editable={pwStep !== 'saving'}
+                  autoCapitalize="none"
+                  textContentType="newPassword"
+                />
+                {pwStep === 'saving' ? (
+                  <ActivityIndicator color={colors.primary} style={styles.pwSpinner} />
+                ) : (
+                  <View style={styles.pwActions}>
+                    <TouchableOpacity style={styles.cancelBtn} onPress={resetPwForm}>
+                      <Text style={styles.cancelBtnText}>{t('cancel')}</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity style={styles.pwSaveBtn} onPress={handleChangePassword}>
+                      <Text style={styles.pwSaveBtnText}>{t('changePassword')}</Text>
+                    </TouchableOpacity>
+                  </View>
+                )}
+              </View>
+            )}
+
+            {/* Remaining security options */}
+            {otherSecurityOptions.map((option, index) => (
               <TouchableOpacity
                 key={option.id}
                 style={[
                   styles.optionItem,
-                  index === securityOptions.length - 1 && styles.optionItemLast,
+                  index === otherSecurityOptions.length - 1 && styles.optionItemLast,
                 ]}
                 onPress={option.onPress}
                 disabled={loading}
@@ -443,6 +564,45 @@ const styles = StyleSheet.create({
     fontSize: fontSize.sm,
     color: colors.text.secondary,
   },
+  // Password change form
+  pwFormPanel: {
+    paddingHorizontal: spacing.lg,
+    paddingBottom: spacing.lg,
+    gap: spacing.sm,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border.light,
+  },
+  pwInput: {
+    borderWidth: 1,
+    borderColor: colors.border.default,
+    borderRadius: borderRadius.md,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    fontSize: fontSize.md,
+    color: colors.text.primary,
+    backgroundColor: colors.background,
+  },
+  pwSpinner: {
+    marginTop: spacing.sm,
+  },
+  pwActions: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+    marginTop: spacing.xs,
+  },
+  pwSaveBtn: {
+    flex: 2,
+    paddingVertical: spacing.sm,
+    borderRadius: borderRadius.md,
+    backgroundColor: colors.primary,
+    alignItems: 'center',
+  },
+  pwSaveBtnText: {
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.bold,
+    color: colors.white,
+  },
+  // Warning card
   warningCard: {
     flexDirection: 'row',
     alignItems: 'flex-start',
@@ -452,6 +612,7 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.md,
     borderLeftWidth: 3,
     borderLeftColor: colors.status.warning,
+    marginBottom: spacing.lg,
   },
   warningText: {
     flex: 1,
@@ -460,6 +621,7 @@ const styles = StyleSheet.create({
     marginLeft: spacing.sm,
     lineHeight: 20,
   },
+  // Delete account
   dangerCard: {
     borderWidth: 1,
     borderColor: `${colors.error}30`,
