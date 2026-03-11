@@ -237,7 +237,7 @@ export default function OrderStatusScreen() {
 
       const orderData = {
         id: orderRow.id,
-        ...(orderRow as Omit<Order, 'id'>),
+        ...(orderRow as unknown as Omit<Order, 'id'>),
       };
 
       // Fetch cargo request

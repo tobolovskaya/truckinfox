@@ -54,8 +54,8 @@ export const safeSetDoc = async (
     };
 
     const { error } = merge
-      ? await supabase.from(tableName).upsert(payload)
-      : await supabase.from(tableName).insert(payload);
+      ? await (supabase as any).from(tableName).upsert(payload)
+      : await (supabase as any).from(tableName).insert(payload);
 
     if (error) {
       throw error;
@@ -89,7 +89,7 @@ export const safeUpdateDoc = async (
 ): Promise<{ success: boolean; fromCache?: boolean; error?: string }> => {
   try {
     const tableName = mapCollectionName(collectionName);
-    const { error } = await supabase
+    const { error } = await (supabase as any)
       .from(tableName)
       .update({
         ...data,
@@ -128,7 +128,7 @@ export const safeDeleteDoc = async (
 ): Promise<{ success: boolean; fromCache?: boolean; error?: string }> => {
   try {
     const tableName = mapCollectionName(collectionName);
-    const { error } = await supabase.from(tableName).delete().eq('id', documentId);
+    const { error } = await (supabase as any).from(tableName).delete().eq('id', documentId);
 
     if (error) {
       throw error;
@@ -163,7 +163,7 @@ export const safeGetDoc = async (
 }> => {
   try {
     const tableName = mapCollectionName(collectionName);
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from(tableName)
       .select('*')
       .eq('id', documentId)
@@ -202,7 +202,7 @@ export const safeQuery = async (
 ): Promise<{ documents: FirestorePayload[]; fromCache: boolean; error?: string }> => {
   try {
     const tableName = mapCollectionName(collectionName);
-    let dbQuery = supabase.from(tableName).select('*');
+    let dbQuery = (supabase as any).from(tableName).select('*');
 
     for (const constraint of constraints) {
       if (constraint.type === 'eq') {
@@ -226,7 +226,7 @@ export const safeQuery = async (
       throw error;
     }
 
-    const documents = (data || []).map(row => ({
+    const documents = (data || []).map((row: any) => ({
       id: String((row as Record<string, unknown>).id),
       ...(row as Record<string, unknown>),
     }));
@@ -259,7 +259,7 @@ export const safeAddDoc = async (
       updated_at: new Date().toISOString(),
     };
 
-    const { data: inserted, error } = await supabase
+    const { data: inserted, error } = await (supabase as any)
       .from(tableName)
       .insert(payload)
       .select('id')
@@ -308,7 +308,7 @@ export const safeBatchWrite = async (
       switch (op.type) {
         case 'set':
           {
-            const { error } = await supabase.from(tableName).upsert({
+            const { error } = await (supabase as any).from(tableName).upsert({
               ...(op.data || {}),
               id: op.id,
               updated_at: new Date().toISOString(),
@@ -321,7 +321,7 @@ export const safeBatchWrite = async (
           break;
         case 'update':
           {
-            const { error } = await supabase
+            const { error } = await (supabase as any)
               .from(tableName)
               .update({
                 ...(op.data || {}),
@@ -336,7 +336,7 @@ export const safeBatchWrite = async (
           break;
         case 'delete':
           {
-            const { error } = await supabase.from(tableName).delete().eq('id', op.id);
+            const { error } = await (supabase as any).from(tableName).delete().eq('id', op.id);
             if (error) {
               throw error;
             }

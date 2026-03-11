@@ -1,0 +1,7 @@
+Результати аудиту TruckinFox
+КРИТИЧНІ ПРОБЛЕМИ
+1. types/supabase.ts — порожній файл
+
+Немає генерованих типів з Supabase схеми
+Весь код використовує as unknown as CargoRequest (небезпечно)
+Фікс: supabase gen types typescript > types/supabase.ts

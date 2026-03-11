@@ -532,25 +532,18 @@ export default function RequestDetailsScreen() {
         return;
       }
 
-      const data = { id: requestRow.id, ...requestRow } as CargoRequest;
-      const ownerId =
-        typeof requestRow.customer_id === 'string'
-          ? requestRow.customer_id
-          : typeof requestRow.user_id === 'string'
-            ? requestRow.user_id
-            : '';
+      const data = { ...requestRow } as unknown as CargoRequest;
+      const ownerId = requestRow.customer_id || '';
       data.user_id = ownerId;
       data.customer_id = ownerId;
       data.weight =
-        typeof requestRow.weight === 'number'
-          ? requestRow.weight
-          : typeof requestRow.weight_kg === 'number'
-            ? requestRow.weight_kg
-            : typeof requestRow.weight_kg === 'string'
-              ? Number(requestRow.weight_kg)
-              : 0;
+        typeof requestRow.weight_kg === 'number'
+          ? requestRow.weight_kg
+          : typeof requestRow.weight_kg === 'string'
+            ? Number(requestRow.weight_kg)
+            : 0;
 
-      const normalizedImages = normalizeCargoImageInputs(requestRow.images, requestRow.image_url);
+      const normalizedImages = normalizeCargoImageInputs(requestRow.images);
       data.images = await resolveCargoImageUrls(normalizedImages);
 
       // Fetch customer info
@@ -757,7 +750,7 @@ export default function RequestDetailsScreen() {
       }
 
       const { error: insertBidError } = await supabase.from('bids').insert({
-        request_id: id,
+        request_id: id as string,
         carrier_id: user.uid,
         price: amount,
         note: null,
@@ -948,7 +941,7 @@ export default function RequestDetailsScreen() {
           const sorted = [request.user_id, bid.carrier_id].sort();
           const { error: chatUpsertError } = await supabase.from('chats').upsert(
             {
-              request_id: id,
+              request_id: id as string,
               user_a_id: sorted[0],
               user_b_id: sorted[1],
               last_message: null,

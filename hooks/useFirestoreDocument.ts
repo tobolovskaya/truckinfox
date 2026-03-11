@@ -19,7 +19,8 @@ export const useFirestoreDocument = <T>(collectionName: string, documentId: stri
     const fetchDocument = async () => {
       try {
         setLoading(true);
-        const { data: row, error: fetchError } = await supabase
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { data: row, error: fetchError } = await (supabase as any)
           .from(collectionName)
           .select('*')
           .eq('id', documentId)

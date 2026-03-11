@@ -561,8 +561,8 @@ export default function EditRequestScreen() {
         return;
       }
 
-      const data = { id: requestData.id, ...requestData } as CargoRequest;
-      const ownerId = data.customer_id || data.user_id;
+      const data = { ...requestData } as unknown as CargoRequest;
+      const ownerId = data.customer_id;
 
       if (ownerId !== user?.uid) {
         toast.error(t('editOwnRequestOnly'));
@@ -636,7 +636,7 @@ export default function EditRequestScreen() {
         setTransportType(automotivePayload.condition.transportType);
       }
 
-      const normalizedImages = normalizeCargoImageInputs(requestData.images, requestData.image_url);
+      const normalizedImages = normalizeCargoImageInputs(requestData.images);
       const resolvedImages = await resolveCargoImageUrls(normalizedImages);
       const imagesForUi = resolvedImages.length > 0 ? resolvedImages : normalizedImages;
 

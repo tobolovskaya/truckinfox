@@ -5,30 +5,18 @@ import { supabase } from '../lib/supabase';
 import { i18n } from '../lib/i18n';
 import { normalizeSearchQuery } from '../utils/search';
 import { normalizeCargoImageInputs, resolveCargoImageUrls } from '../utils/cargoImages';
+import type { Database } from '../types/supabase';
 
-export interface CargoRequest {
-  id: string;
-  title: string;
-  description: string;
-  cargo_type: string;
+type CargoRequestRow = Database['public']['Tables']['cargo_requests']['Row'];
+
+export interface CargoRequest extends Omit<CargoRequestRow, 'images' | 'price' | 'price_type' | 'description'> {
   weight: number;
-  dimensions?: string;
-  from_address: string;
-  to_address: string;
-  from_lat?: number | null;
-  from_lng?: number | null;
-  to_lat?: number | null;
-  to_lng?: number | null;
-  pickup_date: string;
-  delivery_date?: string;
+  user_id: string;
+  distance?: number;
+  description: string;
   price: number;
   price_type: string;
-  status: string;
-  created_at: string;
-  user_id: string;
-  customer_id?: string;
-  weight_kg?: number;
-  distance?: number;
+  images?: string[];
   users: {
     full_name: string;
     user_type: string;
@@ -39,7 +27,6 @@ export interface CargoRequest {
   is_favorite?: boolean;
   bid_count?: number;
   user_favorites?: { id: string; user_id: string }[];
-  images?: string[];
 }
 
 export interface Bid {
@@ -287,7 +274,7 @@ const hydrateCargoRequest = async (
   const resolvedPreviewImages = await resolveCargoImageUrls(normalizedImages, 1);
 
   return {
-    ...(requestData as unknown as CargoRequest),
+    ...requestData,
     id: requestId,
     weight: (() => {
       const normalizedWeight =

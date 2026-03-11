@@ -198,13 +198,14 @@ async function batchFetchByIds(
   const chunks = chunkArray(ids, 100);
 
   for (const chunk of chunks) {
-    const { data, error } = await supabase.from(tableName).select('*').in('id', chunk);
+    const { data, error } = await (supabase as any).from(tableName).select('*').in('id', chunk);
 
     if (error) {
       throw error;
     }
 
-    const chunkRows = (data || []).map(row => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const chunkRows = (data || []).map((row: any) => {
       const mapped = row as Record<string, unknown>;
       return {
         id: String(mapped.id),

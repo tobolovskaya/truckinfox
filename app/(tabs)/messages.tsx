@@ -151,7 +151,7 @@ export default function MessagesScreen() {
 
       const usersMap = new Map<
         string,
-        { full_name?: string; user_type?: string; avatar_url?: string }
+        { full_name?: string; user_type?: string; avatar_url?: string | null }
       >();
       const requestsMap = new Map<string, { title?: string }>();
 
@@ -213,7 +213,7 @@ export default function MessagesScreen() {
             other_user_id: otherUserId,
             other_user_name: otherUser.full_name || 'Unknown User',
             other_user_type: otherUser.user_type || 'customer',
-            other_user_avatar: otherUser.avatar_url,
+            other_user_avatar: otherUser.avatar_url ?? undefined,
             request_id: msg.request_id,
             request_title: request.title || 'Cargo Request',
             last_message: msg.content || '',

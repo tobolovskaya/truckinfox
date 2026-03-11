@@ -46,7 +46,7 @@ export const fetchDocuments = async (
 ) => {
   try {
     const q = buildQuery(collectionName, constraints);
-    let dbQuery = supabase.from(q.tableName).select('*');
+    let dbQuery = (supabase as any).from(q.tableName).select('*');
 
     for (const constraint of q.constraints) {
       if (constraint.type === 'eq') {
@@ -70,7 +70,7 @@ export const fetchDocuments = async (
       throw error;
     }
 
-    return (data || []).map(row => ({
+    return (data || []).map((row: any) => ({
       id: String((row as Record<string, unknown>).id),
       ...(row as Record<string, unknown>),
     }));
@@ -89,7 +89,7 @@ export const getDocument = async <T = DocumentData>(
 ): Promise<T | null> => {
   try {
     const tableName = resolveTableName(collectionName);
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from(tableName)
       .select('*')
       .eq('id', documentId)
@@ -115,7 +115,7 @@ export const getDocument = async <T = DocumentData>(
  */
 export const fetchCargoRequests = async (status?: string, userId?: string) => {
   try {
-    let dbQuery = supabase
+    let dbQuery = (supabase as any)
       .from('cargo_requests')
       .select('*')
       .order('created_at', { ascending: false })
@@ -135,7 +135,7 @@ export const fetchCargoRequests = async (status?: string, userId?: string) => {
       throw error;
     }
 
-    return (data || []).map(row => ({
+    return (data || []).map((row: any) => ({
       id: String((row as Record<string, unknown>).id),
       ...(row as Record<string, unknown>),
     }));
@@ -150,7 +150,7 @@ export const fetchCargoRequests = async (status?: string, userId?: string) => {
  */
 export const fetchBidsForRequest = async (requestId: string) => {
   try {
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from('bids')
       .select('*')
       .eq('request_id', requestId)
@@ -160,7 +160,7 @@ export const fetchBidsForRequest = async (requestId: string) => {
       throw error;
     }
 
-    return (data || []).map(row => ({
+    return (data || []).map((row: any) => ({
       id: String((row as Record<string, unknown>).id),
       ...(row as Record<string, unknown>),
     }));
@@ -175,7 +175,7 @@ export const fetchBidsForRequest = async (requestId: string) => {
  */
 export const fetchChatMessages = async (chatId: string, limitCount = 50) => {
   try {
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from('messages')
       .select('*')
       .eq('chat_id', chatId)
@@ -186,7 +186,7 @@ export const fetchChatMessages = async (chatId: string, limitCount = 50) => {
       throw error;
     }
 
-    return (data || []).map(row => ({
+    return (data || []).map((row: any) => ({
       id: String((row as Record<string, unknown>).id),
       ...(row as Record<string, unknown>),
     }));
@@ -201,7 +201,7 @@ export const fetchChatMessages = async (chatId: string, limitCount = 50) => {
  */
 export const fetchUserNotifications = async (userId: string, unreadOnly = false) => {
   try {
-    let dbQuery = supabase
+    let dbQuery = (supabase as any)
       .from('notifications')
       .select('*')
       .eq('user_id', userId)
@@ -218,7 +218,7 @@ export const fetchUserNotifications = async (userId: string, unreadOnly = false)
       throw error;
     }
 
-    return (data || []).map(row => ({
+    return (data || []).map((row: any) => ({
       id: String((row as Record<string, unknown>).id),
       ...(row as Record<string, unknown>),
     }));

@@ -334,7 +334,7 @@ export default function ChatScreen() {
           const chatId = generateChatId(requestId, user.uid, userId);
           trackChatOpened({
             request_id: requestId,
-            other_user_type: userData.user_type || 'customer',
+            other_user_type: (userData.user_type as 'customer' | 'carrier') || 'customer',
             chat_id: chatId,
           });
         }

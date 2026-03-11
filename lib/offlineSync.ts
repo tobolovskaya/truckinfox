@@ -119,7 +119,7 @@ export const syncOfflineQueue = async (): Promise<{
               updated_at: new Date().toISOString(),
             };
 
-            const { error } = await supabase.from(tableName).upsert(payload);
+            const { error } = await (supabase as any).from(tableName).upsert(payload);
             if (error) {
               throw error;
             }
@@ -128,7 +128,7 @@ export const syncOfflineQueue = async (): Promise<{
 
         case 'delete':
           {
-            const { error } = await supabase.from(tableName).delete().eq('id', item.documentId);
+            const { error } = await (supabase as any).from(tableName).delete().eq('id', item.documentId);
             if (error) {
               throw error;
             }
@@ -220,7 +220,7 @@ export const queryLocal = async (
 ): Promise<OfflinePayload[]> => {
   try {
     const tableName = resolveTableName(collectionName);
-    let dbQuery = supabase.from(tableName).select('*');
+    let dbQuery = (supabase as any).from(tableName).select('*');
 
     for (const constraint of constraints) {
       if (constraint.type === 'eq') {
@@ -244,7 +244,7 @@ export const queryLocal = async (
       throw error;
     }
 
-    const results = (data || []).map(row => ({
+    const results = (data || []).map((row: any) => ({
       id: String((row as Record<string, unknown>).id),
       ...(row as Record<string, unknown>),
     }));

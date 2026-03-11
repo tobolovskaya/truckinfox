@@ -170,7 +170,7 @@ export default function ReviewScreen() {
 
       // Create the review
       const { error: insertError } = await supabase.from('reviews').insert({
-        order_id: orderId,
+        order_id: orderId as string,
         reviewer_id: user.uid,
         reviewed_id: reviewedId,
         rating,

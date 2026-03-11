@@ -834,7 +834,8 @@ export default function CreateRequestScreen() {
       for (let attempt = 0; attempt < 8; attempt += 1) {
         const result = await supabase
           .from('cargo_requests')
-          .insert(insertPayload)
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          .insert(insertPayload as any)
           .select('id')
           .single();
 

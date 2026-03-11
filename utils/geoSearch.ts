@@ -122,7 +122,6 @@ export async function findNearbyCargoRequests(
         }
 
         return {
-          id: row.id,
           ...row,
           weight: (() => {
             const normalizedWeight =
@@ -130,11 +129,7 @@ export async function findNearbyCargoRequests(
                 ? row.weight_kg
                 : typeof row.weight_kg === 'string'
                   ? Number(row.weight_kg)
-                  : typeof row.weight === 'number'
-                    ? row.weight
-                    : typeof row.weight === 'string'
-                      ? Number(row.weight)
-                      : undefined;
+                  : undefined;
             return Number.isFinite(normalizedWeight) ? normalizedWeight : undefined;
           })(),
           distance_to_search_center: distanceInKm,

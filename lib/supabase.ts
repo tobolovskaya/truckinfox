@@ -1,5 +1,6 @@
 import 'react-native-url-polyfill/auto';
 import { createClient } from '@supabase/supabase-js';
+import type { Database } from '../types/supabase';
 
 const rawSupabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL?.trim();
 const rawSupabaseAnonKey =
@@ -54,7 +55,7 @@ if (!isSupabaseConfigured) {
   );
 }
 
-export const supabase = createClient(
+export const supabase = createClient<Database>(
   normalizedSupabaseUrl as string,
   rawSupabaseAnonKey as string,
   {

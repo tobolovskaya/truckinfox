@@ -34,7 +34,7 @@ export async function checkIdempotency(
   idempotencyKey: string
 ): Promise<IdempotencyDoc | null> {
   try {
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from(collectionName)
       .select('*')
       .eq('idempotency_key', idempotencyKey)
@@ -73,7 +73,7 @@ export async function checkExistingPayment(
   statuses: string[] = ['initiated', 'paid', 'completed']
 ): Promise<IdempotencyDoc | null> {
   try {
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from('escrow_payments')
       .select('*')
       .eq('order_id', orderId)

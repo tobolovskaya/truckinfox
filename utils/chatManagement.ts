@@ -160,7 +160,7 @@ export async function getChat(chatId: string): Promise<Chat | null> {
 
     return {
       id: data.id,
-      request_id: data.request_id,
+      request_id: data.request_id ?? '',
       participants: [data.user_a_id, data.user_b_id],
       customer_id: data.user_a_id,
       carrier_id: data.user_b_id,

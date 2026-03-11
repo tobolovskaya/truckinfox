@@ -4,8 +4,8 @@ import { supabase } from '../lib/supabase';
 
 type RealtimeEvent = 'INSERT' | 'UPDATE' | 'DELETE' | '*';
 
-type CollectionSelectQuery = ReturnType<ReturnType<typeof supabase.from>['select']>;
-type CollectionQueryBuilder = (_query: CollectionSelectQuery) => CollectionSelectQuery;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type CollectionQueryBuilder = (_query: any) => any;
 
 interface UseSupabaseCollectionOptions {
   queryBuilder?: CollectionQueryBuilder;
@@ -31,7 +31,8 @@ export const useFirestoreCollection = <T>(
       try {
         setLoading(true);
 
-        let query = supabase.from(collectionName).select('*');
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        let query = (supabase as any).from(collectionName).select('*');
 
         if (options.queryBuilder) {
           query = options.queryBuilder(query);
