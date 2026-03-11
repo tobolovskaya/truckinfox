@@ -734,6 +734,70 @@ export type Database = {
           },
         ]
       }
+      disputes: {
+        Row: {
+          created_at: string
+          description: string
+          filed_by: string
+          id: string
+          order_id: string
+          reason: 'damage' | 'not_delivered' | 'wrong_item' | 'payment' | 'other'
+          resolution: string | null
+          resolved_at: string | null
+          resolved_by: string | null
+          status: 'open' | 'under_review' | 'resolved' | 'closed'
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description: string
+          filed_by: string
+          id?: string
+          order_id: string
+          reason: 'damage' | 'not_delivered' | 'wrong_item' | 'payment' | 'other'
+          resolution?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          status?: 'open' | 'under_review' | 'resolved' | 'closed'
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          filed_by?: string
+          id?: string
+          order_id?: string
+          reason?: 'damage' | 'not_delivered' | 'wrong_item' | 'payment' | 'other'
+          resolution?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          status?: 'open' | 'under_review' | 'resolved' | 'closed'
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "disputes_filed_by_fkey"
+            columns: ["filed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "disputes_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "disputes_resolved_by_fkey"
+            columns: ["resolved_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       orders: {
         Row: {
           bid_id: string | null

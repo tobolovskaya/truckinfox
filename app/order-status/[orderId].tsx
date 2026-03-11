@@ -590,6 +590,10 @@ export default function OrderStatusScreen() {
 
   const isCustomer = order?.customer_id === user?.uid;
   const isCarrier = order?.carrier_id === user?.uid;
+  const canFileDispute =
+    (isCustomer || isCarrier) &&
+    order?.status != null &&
+    !['cancelled', 'canceled'].includes(order.status);
   const canStartTransport = isCarrier && order?.status === 'active';
   const canTrackDelivery = order?.status === 'in_transit';
   const canConfirmDelivery = isCustomer && order?.status === 'in_transit';
@@ -966,6 +970,30 @@ export default function OrderStatusScreen() {
                 </Text>
               </View>
             )}
+          </View>
+        )}
+
+        {/* File Dispute */}
+        {canFileDispute && (
+          <View style={styles.section}>
+            <View style={[styles.confirmationHeader]}>
+              <Ionicons name="flag-outline" size={24} color={colors.status.error} />
+              <Text style={[styles.confirmationTitle, { color: colors.status.error }]}>
+                {t('disputeSection')}
+              </Text>
+            </View>
+            <Text style={styles.confirmationDescription}>{t('disputeSectionDescription')}</Text>
+            <TouchableOpacity
+              style={[styles.confirmButton, { backgroundColor: colors.status.error }]}
+              onPress={() =>
+                router.push({
+                  pathname: '/dispute/[orderId]',
+                  params: { orderId: orderId as string },
+                })
+              }
+            >
+              <Text style={styles.confirmButtonText}>{t('fileDispute')}</Text>
+            </TouchableOpacity>
           </View>
         )}
       </ScrollView>

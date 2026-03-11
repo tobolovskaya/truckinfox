@@ -1,7 +1,9 @@
 Результати аудиту TruckinFox
-БЕЗПЕКА ⚠️
-Проблема	Файл	Ризик
-RLS політики неповні	supabase/schema.sql	Неавторизований доступ
-Відсутній MFA	contexts/AuthContext.tsx	Credential stuffing
-Перевірка телефону тільки Norwegian (+47)	utils/validation.ts	Міжнародні перевізники не можуть реєструватись
-Відсутня email verification UI	app/(auth)/	Заплутаний UX
+НЕЗАКІНЧЕНІ ФІЧІ (таблиці є, UI немає)
+Фіча	БД таблиця	Статус
+Typing indicators в чаті	typing_indicators	❌ UI не реалізовано
+Read receipts	messages.read_at	❌ UI не реалізовано
+Real-time tracking на карті	tracking	❌ Немає екрану
+Delivery proof	deliveries	❌ Немає UI
+Управління вантажівками	trucks	❌ Немає CRUD екранів
+Dispute resolution	—	❌ Взагалі немає

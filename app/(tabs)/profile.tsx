@@ -5,6 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { colors, spacing, fontSize, fontWeight } from '../../lib/sharedStyles';
 import { useAuth } from '../../contexts/AuthContext';
+import { useCurrentUser } from '../../hooks/useCurrentUser';
 import Avatar from '../../components/Avatar';
 import { ScreenHeader } from '../../components/ScreenHeader';
 import { useUnreadCount } from '../../hooks/useNotifications';
@@ -14,8 +15,10 @@ type IoniconName = React.ComponentProps<typeof Ionicons>['name'];
 export default function ProfileScreen() {
   const router = useRouter();
   const { user, signOut } = useAuth();
+  const { currentUser } = useCurrentUser(user?.uid);
   const { t } = useTranslation();
   const { unreadCount } = useUnreadCount();
+  const isCarrier = currentUser?.user_type === 'carrier';
 
   const handleSignOut = async () => {
     Alert.alert(t('signOut'), t('confirmSignOut'), [
@@ -47,6 +50,16 @@ export default function ProfileScreen() {
       label: t('editProfile'),
       onPress: () => router.push('/profile/edit'),
     },
+    ...(isCarrier
+      ? [
+          {
+            id: 'trucks',
+            icon: 'car-outline' as IoniconName,
+            label: t('myTrucks'),
+            onPress: () => router.push('/trucks'),
+          },
+        ]
+      : []),
     {
       id: 'security',
       icon: 'shield-checkmark-outline',
