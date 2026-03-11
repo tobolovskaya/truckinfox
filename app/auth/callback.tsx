@@ -8,21 +8,37 @@ export default function AuthCallback() {
   const router = useRouter();
 
   useEffect(() => {
-    // Listen for the auth state to resolve after OAuth redirect
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (session || event === 'SIGNED_OUT') {
-        subscription.unsubscribe();
+    let settled = false;
+
+    const settle = (session: import('@supabase/supabase-js').Session | null) => {
+      if (settled) return;
+      settled = true;
+      subscription.unsubscribe();
+      clearTimeout(fallback);
+      if (session) {
         router.replace('/(tabs)/home');
+      } else {
+        router.replace('/auth/login' as never);
+      }
+    };
+
+    // Listen for auth state resolution after OAuth redirect
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+        settle(session);
+      } else if (event === 'SIGNED_OUT') {
+        settle(null);
       }
     });
 
-    // Fallback timeout in case auth state never fires (10s)
-    const fallback = setTimeout(() => {
-      subscription.unsubscribe();
-      router.replace('/(tabs)/home');
+    // Fallback: if auth state never fires, check session explicitly
+    const fallback = setTimeout(async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      settle(session);
     }, 10000);
 
     return () => {
+      settled = true;
       subscription.unsubscribe();
       clearTimeout(fallback);
     };
