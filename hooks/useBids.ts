@@ -52,38 +52,24 @@ export async function withdrawBid(bidId: string): Promise<{ error: Error | null 
   return { error: error ? new Error(error.message) : null };
 }
 
-/** Accept a bid: mark it accepted, reject all others, update cargo status */
+/**
+ * Accept a bid atomically via Edge Function.
+ * The server-side function rejects all other pending bids, accepts this one,
+ * updates the cargo request status, and creates the order — all in one operation.
+ * Returns the created orderId on success.
+ */
 export async function acceptBid(
-  bidId: string,
-  cargoRequestId: string
-): Promise<{ error: Error | null }> {
-  // Reject all other pending bids for this request
-  const { error: rejectError } = await supabase
-    .from('bids')
-    .update({ status: 'rejected' })
-    .eq('cargo_request_id', cargoRequestId)
-    .eq('status', 'pending')
-    .neq('id', bidId);
+  bidId: string
+): Promise<{ orderId: string | null; error: Error | null }> {
+  const { data, error } = await supabase.functions.invoke('accept-bid', {
+    body: { bidId },
+  });
 
-  if (rejectError) return { error: new Error(rejectError.message) };
+  if (error) return { orderId: null, error: new Error(error.message) };
 
-  // Accept the chosen bid
-  const { error: acceptError } = await supabase
-    .from('bids')
-    .update({ status: 'accepted' })
-    .eq('id', bidId);
+  if (data?.error) return { orderId: null, error: new Error(data.error) };
 
-  if (acceptError) return { error: new Error(acceptError.message) };
-
-  // Update cargo request status to 'assigned'
-  const { error: requestError } = await supabase
-    .from('cargo_requests')
-    .update({ status: 'assigned' })
-    .eq('id', cargoRequestId);
-
-  if (requestError) return { error: new Error(requestError.message) };
-
-  return { error: null };
+  return { orderId: (data?.orderId as string) ?? null, error: null };
 }
 
 /** Hook: carrier's own bid history */
