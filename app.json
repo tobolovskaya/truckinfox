@@ -29,19 +29,20 @@
         "NSLocationAlwaysAndWhenInUseUsageDescription": "TruckinFox needs access to your location to provide real-time tracking during deliveries.",
         "NSCameraUsageDescription": "TruckinFox needs access to your camera to take photos of cargo and delivery confirmation.",
         "NSPhotoLibraryUsageDescription": "TruckinFox needs access to your photo library to upload cargo images.",
-        "NSMicrophoneUsageDescription": "TruckinFox needs access to your microphone for video calls."
+        "NSPhotoLibraryAddUsageDescription": "TruckinFox needs permission to save cargo photos to your library.",
+        "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
       "package": "com.truckinfox.app",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#FF7043"
+      },
       "config": {
         "googleMaps": {
           "apiKey": "$(GOOGLE_MAPS_ANDROID_KEY)"
         }
-      },
-      "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#FF7043"
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
@@ -50,13 +51,13 @@
         "ACCESS_FINE_LOCATION",
         "ACCESS_BACKGROUND_LOCATION",
         "CAMERA",
-        "READ_EXTERNAL_STORAGE",
-        "WRITE_EXTERNAL_STORAGE",
-        "RECORD_AUDIO"
+        "READ_MEDIA_IMAGES",
+        "READ_MEDIA_VIDEO"
       ]
     },
     "plugins": [
       "expo-router",
+      "expo-apple-authentication",
       [
         "expo-location",
         {
@@ -76,7 +77,6 @@
           "color": "#FF7043"
         }
       ],
-      "expo-apple-authentication",
       "expo-localization",
       "@react-native-community/datetimepicker",
       [
@@ -91,14 +91,14 @@
       "enabled": true,
       "fallbackToCacheTimeout": 0
     },
-    "privacyPolicyUrl": "https://truckinfox.no/privacy",
     "extra": {
       "router": {
         "origin": false
       },
       "eas": {
         "projectId": "your-eas-project-id-replace-before-deployment"
-      }
+      },
+      "privacyPolicyUrl": "https://truckinfox.no/privacy"
     }
   }
 }
