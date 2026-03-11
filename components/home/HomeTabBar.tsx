@@ -19,57 +19,64 @@ export const HomeTabBar: React.FC<HomeTabBarProps> = ({
   const hasMyRequestsBadge = myRequestsCount > 0;
 
   return (
-    <View style={styles.tabRow}>
-      <TouchableOpacity
-        style={[styles.tabButton, activeTab === 'all' && styles.tabButtonActive]}
-        onPress={() => onTabChange('all')}
-        accessibilityRole="button"
-        accessibilityLabel={t('allRequests')}
-      >
-        <Text style={[styles.tabButtonText, activeTab === 'all' && styles.tabButtonTextActive]}>
-          {t('allRequests')}
-        </Text>
-      </TouchableOpacity>
-      <TouchableOpacity
-        style={[styles.tabButton, activeTab === 'my' && styles.tabButtonActive]}
-        onPress={() => onTabChange('my')}
-        accessibilityRole="button"
-        accessibilityLabel={t('myRequests')}
-      >
-        <View style={styles.tabLabelRow}>
-          <Text style={[styles.tabButtonText, activeTab === 'my' && styles.tabButtonTextActive]}>
-            {t('myRequests')}
+    <View style={styles.container}>
+      <View style={styles.tabRow}>
+        <TouchableOpacity
+          style={[styles.tabButton, activeTab === 'all' && styles.tabButtonActive]}
+          onPress={() => onTabChange('all')}
+          accessibilityRole="tab"
+          accessibilityState={{ selected: activeTab === 'all' }}
+          accessibilityLabel={t('allRequests')}
+        >
+          <Text style={[styles.tabButtonText, activeTab === 'all' && styles.tabButtonTextActive]}>
+            {t('allRequests')}
           </Text>
-          {hasMyRequestsBadge ? (
-            <View style={[styles.badge, activeTab === 'my' && styles.badgeActive]}>
-              <Text style={[styles.badgeText, activeTab === 'my' && styles.badgeTextActive]}>
-                {myRequestsCount > 99 ? '99+' : myRequestsCount}
-              </Text>
-            </View>
-          ) : null}
-        </View>
-      </TouchableOpacity>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.tabButton, activeTab === 'my' && styles.tabButtonActive]}
+          onPress={() => onTabChange('my')}
+          accessibilityRole="tab"
+          accessibilityState={{ selected: activeTab === 'my' }}
+          accessibilityLabel={t('myRequests')}
+        >
+          <View style={styles.tabLabelRow}>
+            <Text style={[styles.tabButtonText, activeTab === 'my' && styles.tabButtonTextActive]}>
+              {t('myRequests')}
+            </Text>
+            {hasMyRequestsBadge && (
+              <View style={[styles.badge, activeTab === 'my' && styles.badgeActive]}>
+                <Text style={[styles.badgeText, activeTab === 'my' && styles.badgeTextActive]}>
+                  {myRequestsCount > 99 ? '99+' : myRequestsCount}
+                </Text>
+              </View>
+            )}
+          </View>
+        </TouchableOpacity>
+      </View>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
+  container: {
+    marginBottom: spacing.md,
+  },
   tabRow: {
     flexDirection: 'row',
-    gap: spacing.sm,
-    marginBottom: spacing.md,
+    backgroundColor: '#F3F4F6',
+    borderRadius: 12,
+    padding: 3,
+    gap: 3,
   },
   tabButton: {
     flex: 1,
-    minHeight: TOUCH_TARGET.MIN,
-    paddingVertical: spacing.sm,
+    minHeight: TOUCH_TARGET.MIN - 4,
+    paddingVertical: 10,
     paddingHorizontal: spacing.md,
-    borderRadius: 8,
+    borderRadius: 10,
     alignItems: 'center',
     justifyContent: 'center',
-    borderBottomWidth: 2,
-    borderBottomColor: colors.border.light,
-    backgroundColor: colors.background,
   },
   tabLabelRow: {
     flexDirection: 'row',
@@ -77,36 +84,40 @@ const styles = StyleSheet.create({
     gap: spacing.xs,
   },
   tabButtonActive: {
-    borderBottomColor: colors.primary,
     backgroundColor: colors.white,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.08,
+    shadowRadius: 3,
+    elevation: 2,
   },
   tabButtonText: {
-    fontSize: fontSize.md,
+    fontSize: fontSize.sm,
     fontWeight: fontWeight.medium,
-    color: colors.text.secondary,
+    color: '#6B7280',
   },
   tabButtonTextActive: {
     color: colors.primary,
     fontWeight: fontWeight.semibold,
   },
   badge: {
-    minWidth: 22,
-    height: 22,
-    paddingHorizontal: spacing.xs,
-    borderRadius: 11,
-    backgroundColor: colors.primaryLight,
+    minWidth: 20,
+    height: 20,
+    paddingHorizontal: spacing.xxxs,
+    borderRadius: 10,
+    backgroundColor: '#E5E7EB',
     alignItems: 'center',
     justifyContent: 'center',
   },
   badgeActive: {
-    backgroundColor: colors.primary,
+    backgroundColor: colors.primaryLight,
   },
   badgeText: {
-    fontSize: fontSize.sm,
+    fontSize: 11,
     fontWeight: fontWeight.semibold,
-    color: colors.primary,
+    color: '#6B7280',
   },
   badgeTextActive: {
-    color: colors.white,
+    color: colors.primary,
   },
 });
