@@ -13,6 +13,7 @@ import {
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import Constants from 'expo-constants';
 import { useAuth } from '../../contexts/AuthContext';
 import { useI18n } from '../../contexts/I18nContext';
 import { supabase } from '../../lib/supabase';
@@ -550,13 +551,13 @@ export default function SettingsScreen() {
           <View style={styles.settingsCard}>
             <TouchableOpacity
               style={styles.settingRow}
-              onPress={() => Alert.alert(t('info') || 'Info', 'Version 1.0.0')}
+              onPress={() => Alert.alert(t('info') || 'Info', `Version ${Constants.expoConfig?.version ?? '1.0.0'}`)}
             >
               <View style={styles.settingInfo}>
                 <Ionicons name="information-circle-outline" size={24} color={colors.primary} />
                 <View style={styles.settingTextContainer}>
                   <Text style={styles.settingLabel}>{t('version')}</Text>
-                  <Text style={styles.settingValue}>1.0.0</Text>
+                  <Text style={styles.settingValue}>{Constants.expoConfig?.version ?? '1.0.0'}</Text>
                 </View>
               </View>
               <Ionicons name="chevron-forward" size={20} color={colors.text.tertiary} />
