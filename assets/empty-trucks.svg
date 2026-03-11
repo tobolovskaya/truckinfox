@@ -1,0 +1,41 @@
+<svg width="320" height="240" viewBox="0 0 320 240" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="320" height="240" rx="24" fill="#F5F7FA"/>
+  <!-- Ground shadow -->
+  <ellipse cx="160" cy="198" rx="102" ry="12" fill="#E6EBF2"/>
+
+  <!-- Trailer / empty flatbed -->
+  <rect x="116" y="108" width="156" height="64" rx="8" fill="#FFFFFF" stroke="#D7DEE8" stroke-width="3"/>
+  <!-- Flatbed floor line -->
+  <rect x="116" y="152" width="156" height="20" rx="4" fill="#EEF2F7"/>
+  <!-- Platform slats -->
+  <line x1="148" y1="116" x2="148" y2="150" stroke="#E6EBF2" stroke-width="2"/>
+  <line x1="180" y1="116" x2="180" y2="150" stroke="#E6EBF2" stroke-width="2"/>
+  <line x1="212" y1="116" x2="212" y2="150" stroke="#E6EBF2" stroke-width="2"/>
+  <line x1="244" y1="116" x2="244" y2="150" stroke="#E6EBF2" stroke-width="2"/>
+  <!-- Dashed "empty" hint on flatbed -->
+  <rect x="140" y="118" width="96" height="30" rx="6" stroke="#D7DEE8" stroke-width="2" stroke-dasharray="5 4" fill="none"/>
+  <!-- Plus icon inside dashed rect -->
+  <line x1="188" y1="126" x2="188" y2="140" stroke="#D7DEE8" stroke-width="3" stroke-linecap="round"/>
+  <line x1="181" y1="133" x2="195" y2="133" stroke="#D7DEE8" stroke-width="3" stroke-linecap="round"/>
+
+  <!-- Cab body -->
+  <rect x="44" y="96" width="76" height="76" rx="10" fill="#2C3E50"/>
+  <!-- Cab windshield -->
+  <rect x="56" y="106" width="52" height="34" rx="6" fill="#A8D5F2"/>
+  <!-- Cab front detail (grille) -->
+  <rect x="46" y="148" width="22" height="8" rx="3" fill="#3D566E"/>
+  <!-- Headlights -->
+  <rect x="46" y="158" width="14" height="8" rx="2" fill="#FFE082"/>
+
+  <!-- Wheels -->
+  <circle cx="78" cy="186" r="16" fill="#2C3E50"/>
+  <circle cx="78" cy="186" r="7" fill="#BFC9D8"/>
+  <circle cx="176" cy="186" r="16" fill="#2C3E50"/>
+  <circle cx="176" cy="186" r="7" fill="#BFC9D8"/>
+  <circle cx="214" cy="186" r="16" fill="#2C3E50"/>
+  <circle cx="214" cy="186" r="7" fill="#BFC9D8"/>
+
+  <!-- Orange accent stripe on cab -->
+  <rect x="44" y="132" width="76" height="8" fill="#FF8A65"/>
+</svg>

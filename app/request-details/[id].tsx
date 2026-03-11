@@ -30,6 +30,8 @@ import { LazyImage } from '../../components/LazyImage';
 import Avatar from '../../components/Avatar';
 import { VerifiedBadge } from '../../components/VerifiedBadge';
 import { SkeletonLoader } from '../../components/SkeletonLoader';
+import { EmptyState } from '../../components/EmptyState';
+import EmptyBidsIllustration from '../../assets/empty-bids.svg';
 import { ScreenHeader } from '../../components/ScreenHeader';
 import {
   trackBidSubmitted,
@@ -1520,7 +1522,22 @@ export default function RequestDetailsScreen() {
         );
 
       case 'bids':
-        if (bids.length === 0) return null;
+        if (bids.length === 0) {
+          // Only show the empty state to the customer (owner of the request).
+          // The carrier sees the bid form instead; nothing here for them.
+          if (!isCustomer) return null;
+          return (
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>{t('bids') || 'Bud'}</Text>
+              <EmptyState
+                icon="cash-outline"
+                title={t('noBidsYet')}
+                description={t('noBidsDescription')}
+                illustration={EmptyBidsIllustration}
+              />
+            </View>
+          );
+        }
         return (
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Bud ({bids.length})</Text>

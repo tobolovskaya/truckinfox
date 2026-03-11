@@ -290,6 +290,7 @@
   "requestDetails": "Request Details",
   "customer": "Customer",
   "noBidsYet": "No bids yet",
+  "noBidsDescription": "Be the first carrier to submit a bid on this request",
   "from": "From",
   "to": "To",
   "viewDetails": "View Details",

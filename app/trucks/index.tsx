@@ -5,7 +5,6 @@ import {
   StyleSheet,
   FlatList,
   TouchableOpacity,
-  ActivityIndicator,
   Alert,
 } from 'react-native';
 import { useRouter } from 'expo-router';
@@ -15,6 +14,8 @@ import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
 import { ScreenHeader } from '../../components/ScreenHeader';
 import { SkeletonLoader } from '../../components/SkeletonLoader';
+import { EmptyState } from '../../components/EmptyState';
+import EmptyTrucksIllustration from '../../assets/empty-trucks.svg';
 import {
   colors,
   spacing,
@@ -118,18 +119,20 @@ export default function TrucksIndexScreen() {
           <SkeletonLoader variant="list" count={4} />
         </View>
       ) : trucks.length === 0 ? (
-        <View style={styles.center}>
-          <Ionicons name="car-outline" size={64} color={colors.text.tertiary} />
-          <Text style={styles.emptyTitle}>{t('noTrucksYet')}</Text>
-          <Text style={styles.emptySubtitle}>{t('addYourFirstTruck')}</Text>
-          <TouchableOpacity
-            style={styles.addButton}
-            onPress={() => router.push('/trucks/new')}
-          >
-            <Ionicons name="add" size={20} color={colors.white} />
-            <Text style={styles.addButtonText}>{t('addTruck')}</Text>
-          </TouchableOpacity>
-        </View>
+        <EmptyState
+          icon="car-outline"
+          title={t('noTrucksYet')}
+          description={t('addYourFirstTruck')}
+          illustration={EmptyTrucksIllustration}
+          actions={[
+            {
+              label: t('addTruck'),
+              icon: 'add-outline',
+              variant: 'primary',
+              onPress: () => router.push('/trucks/new'),
+            },
+          ]}
+        />
       ) : (
         <FlatList
           data={trucks}
@@ -160,32 +163,6 @@ const styles = StyleSheet.create({
   skeletonContainer: {
     flex: 1,
     padding: spacing.md,
-  },
-  emptyTitle: {
-    fontSize: fontSize.xl,
-    fontWeight: fontWeight.semibold,
-    color: colors.text.primary,
-    textAlign: 'center',
-  },
-  emptySubtitle: {
-    fontSize: fontSize.md,
-    color: colors.text.secondary,
-    textAlign: 'center',
-  },
-  addButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.primary,
-    borderRadius: borderRadius.sm,
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.xl,
-    gap: spacing.xs,
-    marginTop: spacing.md,
-  },
-  addButtonText: {
-    color: colors.white,
-    fontSize: fontSize.md,
-    fontWeight: fontWeight.semibold,
   },
   list: {
     padding: spacing.md,
