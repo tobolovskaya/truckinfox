@@ -65,13 +65,24 @@ export default function RootLayout() {
   const [forceUpdate, setForceUpdate] = useState(false);
 
   const handleNotificationNavigation = useCallback(
-    (data: { type?: string; order_id?: string; request_id?: string }) => {
-      const { type, order_id, request_id } = data;
+    (data: {
+      type?: string;
+      order_id?: string;
+      request_id?: string;
+      sender_id?: string;
+    }) => {
+      const { type, order_id, request_id, sender_id } = data;
 
       if (type === 'bid_accepted' && order_id) {
         router.push(`/order-status/${order_id}`);
       } else if (type === 'new_bid' && request_id) {
         router.push(`/request-details/${request_id}`);
+      } else if (type === 'new_message' && request_id && sender_id) {
+        router.push(`/chat/${request_id}/${sender_id}`);
+      } else if (type === 'payment_success' && order_id) {
+        router.push(`/order-status/${order_id}`);
+      } else if (type === 'order_status_change' && order_id) {
+        router.push(`/order-status/${order_id}`);
       }
     },
     [router]
@@ -121,6 +132,7 @@ export default function RootLayout() {
           type?: string;
           order_id?: string;
           request_id?: string;
+          sender_id?: string;
         };
 
         handleNotificationNavigation(data);
@@ -135,6 +147,7 @@ export default function RootLayout() {
           type?: string;
           order_id?: string;
           request_id?: string;
+          sender_id?: string;
         };
 
         handleNotificationNavigation(data);
