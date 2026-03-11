@@ -1,125 +1,173 @@
 import React from 'react';
-import { View, StyleSheet } from 'react-native';
-import { Tabs, useRouter } from 'expo-router';
+import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { colors, useTabletLayout, CONTENT_MAX_WIDTH } from '../../lib/sharedStyles';
+import { View, StyleSheet, Platform } from 'react-native';
+import { colors } from '../../lib/sharedStyles';
 import { useTranslation } from 'react-i18next';
-import { CreateFAB } from '../../components/CreateFAB';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-// Tab bar heights (must match tabBarStyle below)
-const TAB_BAR_HEIGHT_PHONE = 62;
-const TAB_BAR_HEIGHT_TABLET = 72;
+const TAB_BAR_HEIGHT = Platform.OS === 'ios' ? 82 : 68;
 
 export default function TabLayout() {
   const { t } = useTranslation();
-  const { isTablet } = useTabletLayout();
-  const router = useRouter();
-  const insets = useSafeAreaInsets();
-
-  const tabBarHeight = isTablet ? TAB_BAR_HEIGHT_TABLET : TAB_BAR_HEIGHT_PHONE;
-  // Total height including safe area bottom inset
-  const tabBarTotalHeight = tabBarHeight + insets.bottom;
 
   return (
-    <>
-      <Tabs
-        screenOptions={{
-          headerShown: false,
-          tabBarActiveTintColor: colors.primary,
-          tabBarInactiveTintColor: colors.text.tertiary,
-          tabBarStyle: {
-            backgroundColor: colors.white,
-            borderTopColor: colors.border.light,
-            borderTopWidth: 1,
-            height: tabBarHeight,
-            paddingBottom: isTablet ? 10 : 6,
-            paddingTop: isTablet ? 10 : 6,
-            ...(isTablet && {
-              maxWidth: CONTENT_MAX_WIDTH,
-              alignSelf: 'center',
-              width: '100%',
-              borderTopWidth: 0,
-              borderWidth: 1,
-              borderColor: colors.border.light,
-              borderRadius: 16,
-              marginBottom: 8,
-            }),
-          },
-          tabBarIconStyle: { marginTop: -4 },
-          tabBarLabelStyle: {
-            fontSize: isTablet ? 15 : 14,
-            fontWeight: '600',
-            marginBottom: isTablet ? 6 : 4,
-          },
-        }}
-      >
-        <Tabs.Screen name="index" options={{ href: null }} />
-        <Tabs.Screen
-          name="home"
-          options={{
-            title: t('home'),
-            tabBarIcon: ({ color, size }: { color: string; size: number }) => (
-              <Ionicons name="home" size={size} color={color} />
-            ),
-          }}
-        />
-        <Tabs.Screen
-          name="messages"
-          options={{
-            title: t('messages'),
-            tabBarIcon: ({ color, size }: { color: string; size: number }) => (
-              <Ionicons name="chatbubbles" size={size} color={color} />
-            ),
-          }}
-        />
-        {/* Center FAB slot — invisible placeholder keeps spacing symmetric */}
-        <Tabs.Screen
-          name="create"
-          options={{
-            title: '',
-            tabBarIcon: () => <View />,
-            tabBarLabel: () => null,
-            tabBarButton: () => (
-              // Empty slot so the tab bar keeps a centered gap for the FAB
-              <View style={styles.fabSlot} pointerEvents="none" />
-            ),
-          }}
-        />
-        <Tabs.Screen
-          name="orders"
-          options={{
-            title: t('ordersTab'),
-            tabBarIcon: ({ color, size }: { color: string; size: number }) => (
-              <Ionicons name="list" size={size} color={color} />
-            ),
-          }}
-        />
-        <Tabs.Screen
-          name="profile"
-          options={{
-            title: t('profile'),
-            tabBarIcon: ({ color, size }: { color: string; size: number }) => (
-              <Ionicons name="person" size={size} color={color} />
-            ),
-          }}
-        />
-        {/* Map and Notifications are accessible via Home header buttons */}
-        <Tabs.Screen name="map" options={{ href: null }} />
-        <Tabs.Screen name="notifications" options={{ href: null }} />
-      </Tabs>
-
-      {/* FAB rendered outside Tabs so it floats above the tab bar */}
-      <CreateFAB
-        tabBarHeight={tabBarTotalHeight}
-        onPress={() => router.push('/(tabs)/create')}
+    <Tabs
+      screenOptions={{
+        headerShown: false,
+        tabBarActiveTintColor: colors.primary,
+        tabBarInactiveTintColor: '#9CA3AF',
+        tabBarStyle: {
+          backgroundColor: colors.white,
+          borderTopColor: '#F3F4F6',
+          borderTopWidth: 1,
+          height: TAB_BAR_HEIGHT,
+          paddingBottom: Platform.OS === 'ios' ? 20 : 8,
+          paddingTop: 8,
+          ...Platform.select({
+            ios: {
+              shadowColor: '#000',
+              shadowOffset: { width: 0, height: -2 },
+              shadowOpacity: 0.06,
+              shadowRadius: 8,
+            },
+            android: { elevation: 8 },
+          }),
+        },
+        tabBarLabelStyle: {
+          fontSize: 11,
+          fontWeight: '600',
+          letterSpacing: 0.1,
+          marginTop: 2,
+        },
+      }}
+    >
+      <Tabs.Screen
+        name="index"
+        options={{ href: null }}
       />
-    </>
+
+      {/* Home */}
+      <Tabs.Screen
+        name="home"
+        options={{
+          title: t('home'),
+          tabBarIcon: ({ color, focused }) => (
+            <View style={focused ? styles.activeIconWrap : undefined}>
+              <Ionicons
+                name={focused ? 'home' : 'home-outline'}
+                size={24}
+                color={color}
+              />
+            </View>
+          ),
+        }}
+      />
+
+      {/* Messages */}
+      <Tabs.Screen
+        name="messages"
+        options={{
+          title: t('messages'),
+          tabBarIcon: ({ color, focused }) => (
+            <View style={focused ? styles.activeIconWrap : undefined}>
+              <Ionicons
+                name={focused ? 'chatbubbles' : 'chatbubbles-outline'}
+                size={24}
+                color={color}
+              />
+            </View>
+          ),
+        }}
+      />
+
+      {/* CREATE — centered FAB */}
+      <Tabs.Screen
+        name="create"
+        options={{
+          title: '',
+          tabBarIcon: ({ focused }) => (
+            <View style={styles.fabContainer}>
+              <View style={[styles.fab, focused && styles.fabActive]}>
+                <Ionicons name="add" size={30} color={colors.white} />
+              </View>
+            </View>
+          ),
+          tabBarLabel: () => null,
+        }}
+      />
+
+      {/* Orders */}
+      <Tabs.Screen
+        name="orders"
+        options={{
+          title: t('ordersTab'),
+          tabBarIcon: ({ color, focused }) => (
+            <View style={focused ? styles.activeIconWrap : undefined}>
+              <Ionicons
+                name={focused ? 'briefcase' : 'briefcase-outline'}
+                size={24}
+                color={color}
+              />
+            </View>
+          ),
+        }}
+      />
+
+      {/* Profile */}
+      <Tabs.Screen
+        name="profile"
+        options={{
+          title: t('profile'),
+          tabBarIcon: ({ color, focused }) => (
+            <View style={focused ? styles.activeIconWrap : undefined}>
+              <Ionicons
+                name={focused ? 'person' : 'person-outline'}
+                size={24}
+                color={color}
+              />
+            </View>
+          ),
+        }}
+      />
+
+      {/* Hidden screens — accessible via header buttons */}
+      <Tabs.Screen name="notifications" options={{ href: null }} />
+      <Tabs.Screen name="map" options={{ href: null }} />
+    </Tabs>
   );
 }
 
 const styles = StyleSheet.create({
-  fabSlot: {
-    flex: 1,
+  activeIconWrap: {
+    backgroundColor: '#FFF0EB',
+    borderRadius: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+  },
+  fabContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: -20,
+  },
+  fab: {
+    width: 58,
+    height: 58,
+    borderRadius: 29,
+    backgroundColor: colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+    ...Platform.select({
+      ios: {
+        shadowColor: colors.primary,
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.45,
+        shadowRadius: 10,
+      },
+      android: { elevation: 8 },
+    }),
+  },
+  fabActive: {
+    backgroundColor: '#E64A19',
+    transform: [{ scale: 0.95 }],
   },
 });
