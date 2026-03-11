@@ -777,5 +777,15 @@
   "riskLow": "Lav",
   "riskMedium": "Middels",
   "riskHigh": "Høy",
-  "riskUnknown": "Ukjent"
+  "riskUnknown": "Ukjent",
+  "checkYourEmail": "Sjekk e-posten din",
+  "confirmationSentTo": "Vi har sendt en bekreftelseslenke til",
+  "clickLinkToConfirm": "Klikk på lenken i e-posten for å aktivere kontoen din.",
+  "resendEmail": "Send bekreftelses-e-post på nytt",
+  "emailResent": "Bekreftelses-e-post sendt på nytt",
+  "goToLogin": "Gå til innlogging",
+  "enterCodeFromAuthApp": "Skriv inn den 6-sifrede koden fra autentiseringsappen din.",
+  "enterSixDigitCode": "Skriv inn en gyldig 6-sifret kode",
+  "invalidMfaCode": "Ugyldig kode. Prøv igjen.",
+  "verify": "Bekreft"
 }

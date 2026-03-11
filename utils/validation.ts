@@ -16,11 +16,11 @@ export const validatePassword = (password: string): boolean => {
 };
 
 /**
- * Validate phone number (Norwegian format)
+ * Validate phone number (international E.164 format)
  */
 export const validatePhoneNumber = (phone: string): boolean => {
-  // Norwegian phone numbers: +47 followed by 8 digits
-  const phoneRegex = /^(\+47)?[0-9]{8}$/;
+  // E.164 international format: + followed by country code and 6-14 digits
+  const phoneRegex = /^\+[1-9]\d{6,14}$/;
   return phoneRegex.test(phone.replace(/\s/g, ''));
 };
 

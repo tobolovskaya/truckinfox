@@ -6,6 +6,8 @@ export default function AuthLayout() {
       <Stack.Screen name="login" />
       <Stack.Screen name="register" />
       <Stack.Screen name="forgot-password" />
+      <Stack.Screen name="email-confirmation" />
+      <Stack.Screen name="mfa-challenge" />
     </Stack>
   );
 }

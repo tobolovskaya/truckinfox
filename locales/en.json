@@ -673,101 +673,111 @@
   "followDriverLive": "Follow the driver location in real time.",
   "openLiveMap": "Open live map",
   "signatureUnavailable": "Signature unavailable",
-  "openInNavigator": "Open in navigator"
-  ,"quickTemplates": "Quick templates"
-  ,"fillDescription": "Fill description"
-  ,"quickTemplatesHint": "Tap a template to fill in typical weight and dimensions."
-  ,"quickTemplateAccessibilityHint": "Fills in typical cargo type, weight, and dimensions"
-  ,"useQuickTemplate": "Use quick template {{template}}"
-  ,"quickTemplatePassengerCar": "Passenger car"
-  ,"quickTemplatePassengerCarDescription": "Passenger car for transport. The vehicle can be loaded and secured on a car trailer."
-  ,"quickTemplateTractor": "Tractor"
-  ,"quickTemplateTractorDescription": "Tractor for transport. Include if it starts, drives, and whether attachments are included."
-  ,"quickTemplateEuropallet": "Euro pallet"
-  ,"quickTemplateEuropalletDescription": "Euro pallet cargo ready for transport. Please keep pallet count and stacking details in description."
-  ,"quickTemplateCamper": "Camper trailer"
-  ,"quickTemplateCamperDescription": "Camper trailer for transport. Include registration status and if it is ready for towing."
-  ,"quickTemplateSofa": "Sofa"
-  ,"quickTemplateSofaDescription": "Sofa for transport. Include if carrying stairs or tight access conditions apply."
-  ,"cargoTypeHintAutomotive": "Automotive: include whether the vehicle starts, rolls, and has loose parts."
-  ,"cargoTypeHintMachinery": "Machinery/tractor: specify if it can drive itself and whether bucket/attachments are included."
-  ,"cargoTypeHintConstruction": "Construction materials: include number of pallets/packages and whether crane or tail lift is needed."
-  ,"cargoTypeHintBoats": "Boat: provide total length incl. trailer/stand and whether mast or loose parts are dismantled."
-  ,"cargoTypeHintElectronics": "Electronics: specify if goods are palletized/packed and if they are extra shock-sensitive."
-  ,"cargoTypeHintCampingvogn": "Camper trailer: provide total weight, width, and whether it is registered/ready for towing."
-  ,"cargoTypeHintFurniture": "Furniture: indicate whether items can be stacked and if stair carrying is required at pickup/delivery."
-  ,"cargoTypeHintOther": "Other: use the description to explain handling, lifting needs, and special considerations."
-  ,"photoChecklistTitle": "What to photograph"
-  ,"photoChecklistHint": "Good photos reduce carrier refusals and speed up bids."
-  ,"photoChecklistItemOverall": "Full cargo from 2–3 angles"
-  ,"photoChecklistItemCorners": "All sides/corners and loading points"
-  ,"photoChecklistItemDamage": "Close-ups of existing damage (if any)"
-  ,"photoChecklistItemAccess": "Pickup access: door, gate, stairs, low ceiling"
-  ,"photoChecklistItemSizeReference": "One photo with size reference (person, pallet, tape)"
-  ,"photoChecklistItemLooseParts": "Loose parts/accessories that are shipped together"
-  ,"photoReminderNoImages": "You can publish without photos, but photos usually reduce carrier refusals."
-  ,"priceRangeEstimateTitle": "Estimated route price range"
-  ,"priceRangeEstimateMeta": "Based on {{cargoType}} and {{distanceKm}} km route"
-  ,"priceRangeEstimatePending": "Select cargo type and both addresses to see an estimated range."
-  ,"deliveryDateMustBeAfterPickup": "Delivery date must be the same as or after pickup date"
-  ,"selectPickupDate": "Select pickup date"
-  ,"selectPickupDateHint": "Choose when the cargo should be picked up"
-  ,"selectDeliveryDate": "Select delivery date"
-  ,"selectDeliveryDateHint": "Choose when the cargo should be delivered"
-  ,"selectPriceType": "Select price type"
-  ,"selectPriceTypeHint": "Opens menu to choose price type"
-  ,"suggestedPriceNok": "Suggested price (NOK)"
-  ,"priceNegotiableHint": "Price can be negotiated with the carrier"
-  ,"publishCargo": "Publish cargo"
-  ,"publishingCargo": "Publishing cargo request"
-  ,"failedToTakePhoto": "Failed to take photo"
-  ,"galleryPermissionRequired": "You must grant gallery permission to select photos"
-  ,"deliveryConfirmedWithPayout": "Delivery confirmed! {{message}}\n\nYou can now leave a review for the carrier."
-  ,"deliveryConfirmedPayoutPending": "Delivery confirmed! Note: Fund release will be processed shortly.\n\nYou can now leave a review for the carrier."
-  ,"vippsPhoneRequired": "User phone number is required for Vipps payment. Please update your profile."
-  ,"paymentInitiationMissingUrl": "Payment initiation did not return payment URL"
-  ,"selectCargoTypeA11yLabel": "Select cargo type"
-  ,"selectCargoTypeA11yHint": "Opens menu to choose cargo type"
-  ,"selectCargoTypeOptionA11yLabel": "Select {{cargoType}} as cargo type"
-  ,"selectCargoTypeOptionA11yHint": "Double tap to choose this cargo type"
-  ,"createTitleA11yLabel": "Cargo request title"
-  ,"createTitleA11yHint": "Enter a descriptive title for your cargo"
-  ,"createDescriptionA11yLabel": "Cargo description"
-  ,"createDescriptionA11yHint": "Enter a detailed description of your cargo"
-  ,"addImagesA11yLabel": "Add images, {{count}} of {{max}} selected"
-  ,"addImagesA11yHint": "Select photos of your cargo"
-  ,"removeImageA11yLabel": "Remove image {{index}}"
-  ,"removeImageA11yHint": "Delete this photo"
-  ,"vehicleDetails": "Vehicle details"
-  ,"transportType": "Transport type"
-  ,"transportTypeHint": "Choose trailer type for this car"
-  ,"openTrailer": "Open trailer"
-  ,"enclosedTrailer": "Enclosed trailer"
-  ,"vinOptional": "VIN (optional)"
-  ,"keysIncluded": "Keys included"
-  ,"wheelLock": "Wheel lock"
-  ,"groundClearanceCm": "Ground clearance (cm)"
-  ,"groundClearance": "Ground clearance"
-  ,"needsWinch": "Needs winch"
-  ,"estimatedCustomerTotal": "Estimated customer total"
-  ,"carrierBid": "Carrier bid"
-  ,"platformFee10": "Platform fee (10%)"
-  ,"totalEstimate": "Total estimate"
-  ,"insuranceCoverageHint": "Insurance coverage details are confirmed after bid acceptance."
-  ,"deliveryChecklist": "Delivery checklist"
-  ,"pickupConfirmed": "Pickup confirmed"
-  ,"onTimeNA": "On-time n/a"
-  ,"onTimeRate": "{{value}}% on-time"
-  ,"completedShort": "completed"
-  ,"insuranceIncludes": "Insurance includes"
-  ,"insuranceBasicCoverage": "Transport + loading damage"
-  ,"startTransport": "Start transport"
-  ,"startTransportDescription": "Mark pickup as completed and set this order to in transit."
-  ,"startTransportMessage": "Confirm that pickup is completed and transport has started?"
-  ,"transportStarted": "Transport started"
-  ,"etaRiskLabel": "ETA risk"
-  ,"riskLow": "Low"
-  ,"riskMedium": "Medium"
-  ,"riskHigh": "High"
-  ,"riskUnknown": "Unknown"
+  "openInNavigator": "Open in navigator",
+  "quickTemplates": "Quick templates",
+  "fillDescription": "Fill description",
+  "quickTemplatesHint": "Tap a template to fill in typical weight and dimensions.",
+  "quickTemplateAccessibilityHint": "Fills in typical cargo type, weight, and dimensions",
+  "useQuickTemplate": "Use quick template {{template}}",
+  "quickTemplatePassengerCar": "Passenger car",
+  "quickTemplatePassengerCarDescription": "Passenger car for transport. The vehicle can be loaded and secured on a car trailer.",
+  "quickTemplateTractor": "Tractor",
+  "quickTemplateTractorDescription": "Tractor for transport. Include if it starts, drives, and whether attachments are included.",
+  "quickTemplateEuropallet": "Euro pallet",
+  "quickTemplateEuropalletDescription": "Euro pallet cargo ready for transport. Please keep pallet count and stacking details in description.",
+  "quickTemplateCamper": "Camper trailer",
+  "quickTemplateCamperDescription": "Camper trailer for transport. Include registration status and if it is ready for towing.",
+  "quickTemplateSofa": "Sofa",
+  "quickTemplateSofaDescription": "Sofa for transport. Include if carrying stairs or tight access conditions apply.",
+  "cargoTypeHintAutomotive": "Automotive: include whether the vehicle starts, rolls, and has loose parts.",
+  "cargoTypeHintMachinery": "Machinery/tractor: specify if it can drive itself and whether bucket/attachments are included.",
+  "cargoTypeHintConstruction": "Construction materials: include number of pallets/packages and whether crane or tail lift is needed.",
+  "cargoTypeHintBoats": "Boat: provide total length incl. trailer/stand and whether mast or loose parts are dismantled.",
+  "cargoTypeHintElectronics": "Electronics: specify if goods are palletized/packed and if they are extra shock-sensitive.",
+  "cargoTypeHintCampingvogn": "Camper trailer: provide total weight, width, and whether it is registered/ready for towing.",
+  "cargoTypeHintFurniture": "Furniture: indicate whether items can be stacked and if stair carrying is required at pickup/delivery.",
+  "cargoTypeHintOther": "Other: use the description to explain handling, lifting needs, and special considerations.",
+  "photoChecklistTitle": "What to photograph",
+  "photoChecklistHint": "Good photos reduce carrier refusals and speed up bids.",
+  "photoChecklistItemOverall": "Full cargo from 2–3 angles",
+  "photoChecklistItemCorners": "All sides/corners and loading points",
+  "photoChecklistItemDamage": "Close-ups of existing damage (if any)",
+  "photoChecklistItemAccess": "Pickup access: door, gate, stairs, low ceiling",
+  "photoChecklistItemSizeReference": "One photo with size reference (person, pallet, tape)",
+  "photoChecklistItemLooseParts": "Loose parts/accessories that are shipped together",
+  "photoReminderNoImages": "You can publish without photos, but photos usually reduce carrier refusals.",
+  "priceRangeEstimateTitle": "Estimated route price range",
+  "priceRangeEstimateMeta": "Based on {{cargoType}} and {{distanceKm}} km route",
+  "priceRangeEstimatePending": "Select cargo type and both addresses to see an estimated range.",
+  "deliveryDateMustBeAfterPickup": "Delivery date must be the same as or after pickup date",
+  "selectPickupDate": "Select pickup date",
+  "selectPickupDateHint": "Choose when the cargo should be picked up",
+  "selectDeliveryDate": "Select delivery date",
+  "selectDeliveryDateHint": "Choose when the cargo should be delivered",
+  "selectPriceType": "Select price type",
+  "selectPriceTypeHint": "Opens menu to choose price type",
+  "suggestedPriceNok": "Suggested price (NOK)",
+  "priceNegotiableHint": "Price can be negotiated with the carrier",
+  "publishCargo": "Publish cargo",
+  "publishingCargo": "Publishing cargo request",
+  "failedToTakePhoto": "Failed to take photo",
+  "galleryPermissionRequired": "You must grant gallery permission to select photos",
+  "deliveryConfirmedWithPayout": "Delivery confirmed! {{message}}\n\nYou can now leave a review for the carrier.",
+  "deliveryConfirmedPayoutPending": "Delivery confirmed! Note: Fund release will be processed shortly.\n\nYou can now leave a review for the carrier.",
+  "vippsPhoneRequired": "User phone number is required for Vipps payment. Please update your profile.",
+  "paymentInitiationMissingUrl": "Payment initiation did not return payment URL",
+  "selectCargoTypeA11yLabel": "Select cargo type",
+  "selectCargoTypeA11yHint": "Opens menu to choose cargo type",
+  "selectCargoTypeOptionA11yLabel": "Select {{cargoType}} as cargo type",
+  "selectCargoTypeOptionA11yHint": "Double tap to choose this cargo type",
+  "createTitleA11yLabel": "Cargo request title",
+  "createTitleA11yHint": "Enter a descriptive title for your cargo",
+  "createDescriptionA11yLabel": "Cargo description",
+  "createDescriptionA11yHint": "Enter a detailed description of your cargo",
+  "addImagesA11yLabel": "Add images, {{count}} of {{max}} selected",
+  "addImagesA11yHint": "Select photos of your cargo",
+  "removeImageA11yLabel": "Remove image {{index}}",
+  "removeImageA11yHint": "Delete this photo",
+  "vehicleDetails": "Vehicle details",
+  "transportType": "Transport type",
+  "transportTypeHint": "Choose trailer type for this car",
+  "openTrailer": "Open trailer",
+  "enclosedTrailer": "Enclosed trailer",
+  "vinOptional": "VIN (optional)",
+  "keysIncluded": "Keys included",
+  "wheelLock": "Wheel lock",
+  "groundClearanceCm": "Ground clearance (cm)",
+  "groundClearance": "Ground clearance",
+  "needsWinch": "Needs winch",
+  "estimatedCustomerTotal": "Estimated customer total",
+  "carrierBid": "Carrier bid",
+  "platformFee10": "Platform fee (10%)",
+  "totalEstimate": "Total estimate",
+  "insuranceCoverageHint": "Insurance coverage details are confirmed after bid acceptance.",
+  "deliveryChecklist": "Delivery checklist",
+  "pickupConfirmed": "Pickup confirmed",
+  "onTimeNA": "On-time n/a",
+  "onTimeRate": "{{value}}% on-time",
+  "completedShort": "completed",
+  "insuranceIncludes": "Insurance includes",
+  "insuranceBasicCoverage": "Transport + loading damage",
+  "startTransport": "Start transport",
+  "startTransportDescription": "Mark pickup as completed and set this order to in transit.",
+  "startTransportMessage": "Confirm that pickup is completed and transport has started?",
+  "transportStarted": "Transport started",
+  "etaRiskLabel": "ETA risk",
+  "riskLow": "Low",
+  "riskMedium": "Medium",
+  "riskHigh": "High",
+  "riskUnknown": "Unknown",
+  "checkYourEmail": "Check Your Email",
+  "confirmationSentTo": "We've sent a confirmation link to",
+  "clickLinkToConfirm": "Click the link in the email to activate your account.",
+  "resendEmail": "Resend confirmation email",
+  "emailResent": "Confirmation email resent",
+  "goToLogin": "Go to Login",
+  "enterCodeFromAuthApp": "Enter the 6-digit code from your authenticator app.",
+  "enterSixDigitCode": "Please enter a valid 6-digit code",
+  "invalidMfaCode": "Invalid code. Please try again.",
+  "verify": "Verify"
 }

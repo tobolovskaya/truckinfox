@@ -102,6 +102,11 @@ export default function LoginScreen() {
               onPress: () => router.push('/(auth)/register'),
             },
           ]);
+        } else if (result.errorCode === 'mfa_required' && result.mfaFactorId) {
+          router.push({
+            pathname: '/(auth)/mfa-challenge',
+            params: { factorId: result.mfaFactorId },
+          });
         } else if (result.errorCode === 'email_not_confirmed') {
           Alert.alert(
             t('loginError'),

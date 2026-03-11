@@ -741,6 +741,11 @@ CREATE POLICY "Users can update their own profile"
   ON public.profiles FOR UPDATE
   USING (auth.uid() = id);
 
+CREATE POLICY "Admins have full access to profiles"
+  ON public.profiles FOR ALL
+  USING (public.is_admin())
+  WITH CHECK (public.is_admin());
+
 -- ---------------------------------------------------------------------------
 -- trucks: лише власник читає/змінює; адмін — повний доступ
 -- ---------------------------------------------------------------------------
@@ -779,6 +784,15 @@ CREATE POLICY "Customers can create cargo requests"
 CREATE POLICY "Customers can update their cargo requests"
   ON public.cargo_requests FOR UPDATE
   USING (auth.uid() = customer_id);
+
+CREATE POLICY "Customers can delete their open cargo requests"
+  ON public.cargo_requests FOR DELETE
+  USING (auth.uid() = customer_id AND status IN ('open', 'bidding'));
+
+CREATE POLICY "Admins have full access to cargo requests"
+  ON public.cargo_requests FOR ALL
+  USING (public.is_admin())
+  WITH CHECK (public.is_admin());
 
 -- ---------------------------------------------------------------------------
 -- bids: перевізник бачить свої ставки; замовник бачить ставки на свої запити
@@ -824,6 +838,15 @@ CREATE POLICY "Customers can view tracking for their active requests"
       SELECT 1 FROM public.cargo_requests cr
       WHERE cr.id = request_id AND cr.customer_id = auth.uid()
         AND cr.status = 'in_transit'
+    )
+  );
+
+CREATE POLICY "Carriers can delete their own tracking records"
+  ON public.tracking FOR DELETE
+  USING (
+    EXISTS (
+      SELECT 1 FROM public.trucks t
+      WHERE t.id = truck_id AND t.carrier_id = auth.uid()
     )
   );
 
@@ -907,6 +930,11 @@ CREATE POLICY "Customers can create orders"
 CREATE POLICY "Order participants can update orders"
   ON public.orders FOR UPDATE
   USING (auth.uid() = customer_id OR auth.uid() = carrier_id);
+
+CREATE POLICY "Admins have full access to orders"
+  ON public.orders FOR ALL
+  USING (public.is_admin())
+  WITH CHECK (public.is_admin());
 
 CREATE POLICY "Users can view own payments"
   ON public.payments FOR SELECT

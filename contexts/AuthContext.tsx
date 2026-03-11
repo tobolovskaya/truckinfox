@@ -19,6 +19,7 @@ export interface AuthResult<T = void> {
   error?: string;
   errorCode?: string;
   retryAfterSeconds?: number;
+  mfaFactorId?: string;
 }
 
 type PostgrestLikeError = {
@@ -67,7 +68,7 @@ const validateSignUpData = (userData: SignUpData): string | null => {
     return 'Full name must be at least 2 characters';
   }
 
-  if (!userData.phone || userData.phone.trim().length < 8) {
+  if (!userData.phone || userData.phone.trim().length < 7) {
     return 'Valid phone number is required';
   }
 
@@ -254,6 +255,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           success: false,
           error: 'Не вдалося увійти. Спробуйте ще раз.',
         };
+      }
+
+      // Check if MFA challenge is required (user has TOTP enrolled)
+      const { data: aalData } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+      if (aalData?.nextLevel === 'aal2' && aalData.nextLevel !== aalData.currentLevel) {
+        const { data: factorsData } = await supabase.auth.mfa.listFactors();
+        const totpFactor = factorsData?.totp?.[0];
+        if (totpFactor) {
+          return {
+            success: false,
+            errorCode: 'mfa_required',
+            mfaFactorId: totpFactor.id,
+          };
+        }
       }
 
       return {

@@ -88,18 +88,10 @@ export default function RegisterScreen() {
 
       if (!result.success) {
         if (result.errorCode === 'email_confirmation_required') {
-          Alert.alert(
-            t('success'),
-            result.error ||
-              'Konto opprettet. Sjekk e-posten din og bekreft kontoen før innlogging.',
-            [
-              {
-                text: 'Til innlogging',
-                onPress: () => router.push('/(auth)/login'),
-              },
-              { text: 'OK', style: 'cancel' },
-            ]
-          );
+          router.replace({
+            pathname: '/(auth)/email-confirmation',
+            params: { email: email.trim().toLowerCase() },
+          });
           return;
         }
 
@@ -245,7 +237,7 @@ export default function RegisterScreen() {
               style={styles.input}
               value={phone}
               onChangeText={setPhone}
-              placeholder="+47 123 45 678"
+              placeholder="+1 234 567 8900"
               placeholderTextColor={colors.text.tertiary}
               keyboardType="phone-pad"
             />
