@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleProp, StyleSheet, Text, TouchableOpacity, View, ViewStyle } from 'react-native';
+import { StyleProp, StyleSheet, Text, TouchableOpacity, View, ViewStyle, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import {
   colors,
@@ -128,7 +128,9 @@ export const RequestCard: React.FC<RequestCardProps> = ({
                   { backgroundColor: cargoColors.background },
                 ]}
               >
-                <Ionicons name={cargoIcon} size={40} color={cargoColors.text} />
+                <View style={[styles.placeholderIconWrap, { backgroundColor: cargoColors.text + '18' }]}>
+                  <Ionicons name={cargoIcon} size={compact ? 28 : 36} color={cargoColors.text} />
+                </View>
               </View>
             }
           />
@@ -140,9 +142,12 @@ export const RequestCard: React.FC<RequestCardProps> = ({
               { backgroundColor: cargoColors.background },
             ]}
           >
-            <Ionicons name={cargoIcon} size={40} color={cargoColors.text} />
+            <View style={[styles.placeholderIconWrap, { backgroundColor: cargoColors.text + '18' }]}>
+              <Ionicons name={cargoIcon} size={compact ? 28 : 36} color={cargoColors.text} />
+            </View>
           </View>
         )}
+        {/* Price badge — top-left pill */}
         <View style={[styles.priceOverlayFloating, compact && styles.priceOverlayFloatingCompact]}>
           <View style={[styles.priceOverlayBadgeFloating, compact && styles.priceOverlayBadgeFloatingCompact]}>
             <Text
@@ -242,8 +247,17 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.xl,
     marginBottom: spacing.lg,
     borderWidth: 1,
-    borderColor: colors.border.light,
+    borderColor: '#F0F0F0',
     overflow: 'hidden',
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.07,
+        shadowRadius: 8,
+      },
+      android: { elevation: 3 },
+    }),
   },
   cardCompact: {
     borderRadius: borderRadius.lg,
@@ -269,6 +283,13 @@ const styles = StyleSheet.create({
   imagePlaceholderCompact: {
     height: REQUEST_CARD_IMAGE_HEIGHT + 12,
   },
+  placeholderIconWrap: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   priceOverlayFloating: {
     position: 'absolute',
     left: spacing.xs,
@@ -279,31 +300,29 @@ const styles = StyleSheet.create({
     top: spacing.xxxs,
   },
   priceOverlayBadgeFloating: {
-    backgroundColor: colors.overlay,
+    backgroundColor: 'rgba(0,0,0,0.52)',
     borderRadius: borderRadius.full,
-    paddingHorizontal: spacing.lg,
-    paddingTop: 0,
-    paddingBottom: spacing.xs,
+    paddingHorizontal: spacing.md,
+    paddingVertical: 5,
     maxWidth: '88%',
     alignSelf: 'flex-start',
   },
   priceOverlayBadgeFloatingCompact: {
-    paddingHorizontal: spacing.md,
-    paddingTop: 0,
-    paddingBottom: spacing.xs,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 4,
     maxWidth: '82%',
   },
   priceOverlayTextFloating: {
-    fontSize: fontSize.xxl,
-    lineHeight: 26,
+    fontSize: fontSize.md,
+    lineHeight: 20,
     textAlign: 'center',
     fontWeight: fontWeight.bold,
     color: colors.white,
     includeFontPadding: false,
   },
   priceOverlayTextFloatingCompact: {
-    fontSize: fontSize.lg,
-    lineHeight: 20,
+    fontSize: fontSize.sm,
+    lineHeight: 18,
     fontWeight: fontWeight.bold,
   },
   contentWrap: {
