@@ -3,12 +3,10 @@ import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, useTabletLayout, CONTENT_MAX_WIDTH } from '../../lib/sharedStyles';
 import { useTranslation } from 'react-i18next';
-import { useUnreadCount } from '../../hooks/useNotifications';
 
 export default function TabLayout() {
   const { t } = useTranslation();
   const { isTablet } = useTabletLayout();
-  const { unreadCount } = useUnreadCount();
 
   return (
     <Tabs
@@ -23,7 +21,6 @@ export default function TabLayout() {
           height: isTablet ? 72 : 62,
           paddingBottom: isTablet ? 10 : 6,
           paddingTop: isTablet ? 10 : 6,
-          // On tablets, float the tab bar as a centered pill
           ...(isTablet && {
             maxWidth: CONTENT_MAX_WIDTH,
             alignSelf: 'center',
@@ -35,9 +32,7 @@ export default function TabLayout() {
             marginBottom: 8,
           }),
         },
-        tabBarIconStyle: {
-          marginTop: -4,
-        },
+        tabBarIconStyle: { marginTop: -4 },
         tabBarLabelStyle: {
           fontSize: isTablet ? 15 : 14,
           fontWeight: '600',
@@ -45,12 +40,7 @@ export default function TabLayout() {
         },
       }}
     >
-      <Tabs.Screen
-        name="index"
-        options={{
-          href: null, // Hide index from tabs
-        }}
-      />
+      <Tabs.Screen name="index" options={{ href: null }} />
       <Tabs.Screen
         name="home"
         options={{
@@ -96,26 +86,9 @@ export default function TabLayout() {
           ),
         }}
       />
-      <Tabs.Screen
-        name="map"
-        options={{
-          title: t('map'),
-          tabBarIcon: ({ color, size }: { color: string; size: number }) => (
-            <Ionicons name="map-outline" size={size} color={color} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="notifications"
-        options={{
-          title: t('notifications'),
-          tabBarIcon: ({ color, size }: { color: string; size: number }) => (
-            <Ionicons name="notifications-outline" size={size} color={color} />
-          ),
-          tabBarBadge: unreadCount > 0 ? unreadCount : undefined,
-          tabBarBadgeStyle: { fontSize: 10, minWidth: 16, height: 16, lineHeight: 16 },
-        }}
-      />
+      {/* Map and Notifications are accessible via Home header buttons */}
+      <Tabs.Screen name="map" options={{ href: null }} />
+      <Tabs.Screen name="notifications" options={{ href: null }} />
     </Tabs>
   );
 }

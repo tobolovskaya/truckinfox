@@ -20,9 +20,14 @@ export const HomeHeader: React.FC<HomeHeaderProps> = ({ avatarUrl, displayName, 
     <ScreenHeader
       title=""
       showBackButton={false}
+      secondaryRightAction={{
+        icon: 'map-outline',
+        onPress: () => router.push('/(tabs)/map'),
+        label: t('map'),
+      }}
       rightAction={{
         icon: 'notifications-outline',
-        onPress: () => router.push('/notifications'),
+        onPress: () => router.push('/(tabs)/notifications'),
         label: t('notifications'),
         badge: unreadCount,
       }}
