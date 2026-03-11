@@ -303,21 +303,41 @@ export const initializeOfflineSync = (): (() => void) => {
     offlineSyncCleanup = null;
   }
 
-  // Restore persisted queue from previous session
-  loadQueueFromStorage().catch(error => {
-    console.error('Failed to restore offline queue:', error);
-  });
+  // Restore persisted queue from previous session, then do a one-time
+  // startup sync if there are pending items and we are already online.
+  loadQueueFromStorage()
+    .then(async () => {
+      if (offlineQueue.size === 0) return;
+      const state = await NetInfo.fetch();
+      if (state.isConnected) {
+        console.log('🌐 Online at startup - syncing persisted queue...');
+        syncOfflineQueue().catch(error => {
+          console.error('Failed to sync offline queue on startup:', error);
+        });
+      }
+    })
+    .catch(error => {
+      console.error('Failed to restore offline queue:', error);
+    });
 
-  // Native online/offline listener
+  // Track connectivity transitions: only sync when coming BACK online
+  // (not on every initial subscription event, which fires immediately on Android).
+  let lastIsConnected: boolean | null = null;
+
   const unsubscribe = NetInfo.addEventListener(state => {
-    if (state.isConnected) {
-      console.log('🌐 Online detected - syncing offline queue...');
+    const isNowConnected = state.isConnected === true;
+
+    if (isNowConnected && lastIsConnected === false) {
+      // Transitioned from offline → online
+      console.log('🌐 Back online - syncing offline queue...');
       syncOfflineQueue().catch(error => {
         console.error('Failed to sync offline queue:', error);
       });
-    } else {
+    } else if (!isNowConnected && lastIsConnected !== false) {
       console.log('📴 Offline detected - offline cache active');
     }
+
+    lastIsConnected = isNowConnected;
   });
 
   offlineSyncCleanup = () => {

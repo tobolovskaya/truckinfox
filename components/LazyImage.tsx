@@ -141,6 +141,27 @@ export const LazyImage: React.FC<LazyImageProps> = ({
     return `${value}${separator}_img_retry=${Date.now()}`;
   };
 
+  /**
+   * Returns true when the URL is a Supabase signed URL whose JWT `exp` claim
+   * is already in the past. Cache-busting such a URL is pointless — we need a
+   * fresh signed URL instead.
+   */
+  const isSignedUrlExpired = (url: string): boolean => {
+    try {
+      const tokenParam = new URL(url).searchParams.get('token');
+      if (!tokenParam) return false;
+      const parts = tokenParam.split('.');
+      if (parts.length !== 3) return false;
+      // Base64url → Base64 → JSON
+      const payload = JSON.parse(
+        atob(parts[1].replace(/-/g, '+').replace(/_/g, '/'))
+      ) as { exp?: number };
+      return typeof payload.exp === 'number' && payload.exp * 1000 < Date.now();
+    } catch {
+      return false;
+    }
+  };
+
   const tryRefreshSignedUrl = async (sourceUri: string): Promise<string | null> => {
     const storageLocation = extractStorageLocation(sourceUri);
     if (!storageLocation) {
@@ -226,7 +247,9 @@ export const LazyImage: React.FC<LazyImageProps> = ({
       transientRetryAttemptedRef.current = true;
       const candidateUri = (resolvedUriRef.current || normalizedInputUri).trim();
 
-      if (candidateUri.length > 0) {
+      // Skip cache-bust retry for expired signed URLs — adding ?_img_retry to
+      // an expired JWT token does nothing. Fall through to signed URL refresh.
+      if (candidateUri.length > 0 && !isSignedUrlExpired(candidateUri)) {
         setResolvedUri(withCacheBusting(candidateUri));
         setError(false);
         setLoading(true);
