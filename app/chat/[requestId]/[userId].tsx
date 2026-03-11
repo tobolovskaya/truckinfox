@@ -156,7 +156,6 @@ export default function ChatScreen() {
 
   useEffect(() => {
     if (!requestId || !userId || !user?.uid) {
-      console.log('Missing required parameters for chat');
       setLoading(false);
       return;
     }
@@ -307,7 +306,6 @@ export default function ChatScreen() {
   const fetchChatData = async () => {
     try {
       if (!userId) {
-        console.log('Missing userId for fetchChatData');
         return;
       }
 
@@ -347,7 +345,6 @@ export default function ChatScreen() {
   const fetchMessages = async (resolvedChatId: string) => {
     try {
       if (!user?.uid || !userId || !requestId) {
-        console.log('Missing required IDs for fetching messages');
         setLoading(false);
         return;
       }
@@ -441,7 +438,7 @@ export default function ChatScreen() {
         content: sanitizedMessage,
         sender_id: user.uid,
         receiver_id: userId,
-        sender_type: 'customer',
+        sender_type: (user.user_metadata?.user_type as 'customer' | 'carrier') || 'customer',
         created_at: new Date().toISOString(),
         delivered_at: new Date().toISOString(),
       });
@@ -647,8 +644,6 @@ export default function ChatScreen() {
   };
 
   useEffect(() => {
-    console.log('Messages updated:', messages.length);
-
     const MAX_ANIMATIONS = 100; // Limit to prevent memory leaks
     const currentMessageIds = new Set(messages.map(m => m.id));
 

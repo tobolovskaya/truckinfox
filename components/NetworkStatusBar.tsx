@@ -4,8 +4,10 @@ import { Ionicons } from '@expo/vector-icons';
 import { colors, spacing, fontSize, fontWeight } from '../lib/sharedStyles';
 import { useNetworkStatus } from '../hooks/useNetworkStatus';
 import { useSyncStatus } from '../hooks/useSyncStatus';
+import { useTranslation } from 'react-i18next';
 
 export const NetworkStatusBar = () => {
+  const { t } = useTranslation();
   const { isConnected, isInternetReachable } = useNetworkStatus();
   const { isSyncing, pendingCount } = useSyncStatus();
 
@@ -16,8 +18,8 @@ export const NetworkStatusBar = () => {
         <Ionicons name={isSyncing ? 'refresh' : 'cloud-offline'} size={16} color="white" />
         <Text style={styles.syncText}>
           {isSyncing
-            ? `Syncing ${pendingCount} operation${pendingCount !== 1 ? 's' : ''}...`
-            : `${pendingCount} pending update${pendingCount !== 1 ? 's' : ''}`}
+            ? t('networkSyncing', { count: pendingCount })
+            : t('networkPendingUpdates', { count: pendingCount })}
         </Text>
       </View>
     );
@@ -29,9 +31,9 @@ export const NetworkStatusBar = () => {
       <View style={styles.offlineBanner}>
         <Ionicons name="cloud-offline-outline" size={16} color="white" />
         <Text style={styles.offlineText}>
-          {!isConnected ? 'No internet connection' : 'Limited connectivity'}
+          {!isConnected ? t('networkNoInternet') : t('networkLimitedConnectivity')}
         </Text>
-        <Text style={styles.offlineSubtext}>Data will sync when online</Text>
+        <Text style={styles.offlineSubtext}>{t('networkSyncWhenOnline')}</Text>
       </View>
     );
   }

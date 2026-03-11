@@ -10,7 +10,13 @@
  */
 
 import * as Notifications from 'expo-notifications';
+import Constants from 'expo-constants';
 import { supabase } from '../lib/supabase';
+
+const EAS_PROJECT_ID =
+  (Constants.expoConfig?.extra?.eas?.projectId as string | undefined) ||
+  Constants.easConfig?.projectId ||
+  '';
 
 // Configure notification behavior
 Notifications.setNotificationHandler({
@@ -68,7 +74,7 @@ export async function getFCMTokenAndSave(userId: string): Promise<string | null>
 
     // Get Expo Push Token
     const tokenData = await Notifications.getExpoPushTokenAsync({
-      projectId: 'your-expo-project-id', // Replace with your actual project ID
+      projectId: EAS_PROJECT_ID,
     });
 
     const token = tokenData.data;
@@ -120,7 +126,7 @@ export function subscribeToTokenRefresh(userId: string): () => void {
 
     try {
       const tokenData = await Notifications.getExpoPushTokenAsync({
-        projectId: 'your-expo-project-id', // Replace with your actual project ID
+        projectId: EAS_PROJECT_ID,
       });
 
       const token = tokenData.data;

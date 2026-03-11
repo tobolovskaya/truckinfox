@@ -66,10 +66,17 @@
         }
       ],
       "expo-localization",
-      "@react-native-community/datetimepicker"
+      "@react-native-community/datetimepicker",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "TruckinFox needs access to your photo library to upload cargo images.",
+          "cameraPermission": "TruckinFox needs access to your camera to take photos of cargo."
+        }
+      ]
     ],
     "updates": {
-      "enabled": false,
+      "enabled": true,
       "fallbackToCacheTimeout": 0
     },
     "extra": {

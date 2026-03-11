@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, Modal } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import SignatureCanvas from 'react-native-signature-canvas';
 import { colors, spacing, fontSize, fontWeight, borderRadius } from '../lib/sharedStyles';
+import { useTranslation } from 'react-i18next';
 
 interface SignaturePadProps {
   visible: boolean;
@@ -15,8 +16,9 @@ export default function SignaturePad({
   visible,
   onClose,
   onSave,
-  title = 'Sign Here',
+  title,
 }: SignaturePadProps) {
+  const { t } = useTranslation();
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const signatureRef = useRef<any>(null);
 
@@ -41,7 +43,7 @@ export default function SignaturePad({
           <TouchableOpacity onPress={onClose} style={styles.closeButton}>
             <Ionicons name="close" size={28} color={colors.text.primary} />
           </TouchableOpacity>
-          <Text style={styles.title}>{title}</Text>
+          <Text style={styles.title}>{title || t('signaturePadTitle')}</Text>
           <View style={styles.placeholder} />
         </View>
 
@@ -77,19 +79,19 @@ export default function SignaturePad({
         {/* Instructions */}
         <View style={styles.instructions}>
           <Ionicons name="information-circle-outline" size={20} color={colors.text.secondary} />
-          <Text style={styles.instructionsText}>Sign with your finger or stylus above</Text>
+          <Text style={styles.instructionsText}>{t('signaturePadInstructions')}</Text>
         </View>
 
         {/* Action Buttons */}
         <View style={styles.actions}>
           <TouchableOpacity style={[styles.button, styles.clearButton]} onPress={handleClear}>
             <Ionicons name="refresh-outline" size={20} color={colors.text.primary} />
-            <Text style={styles.clearButtonText}>Clear</Text>
+            <Text style={styles.clearButtonText}>{t('signaturePadClear')}</Text>
           </TouchableOpacity>
 
           <TouchableOpacity style={[styles.button, styles.confirmButton]} onPress={handleConfirm}>
             <Ionicons name="checkmark-outline" size={20} color={colors.white} />
-            <Text style={styles.confirmButtonText}>Confirm</Text>
+            <Text style={styles.confirmButtonText}>{t('signaturePadConfirm')}</Text>
           </TouchableOpacity>
         </View>
       </View>

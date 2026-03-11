@@ -129,6 +129,14 @@ export function normalizeSearchQuery(query: string): string {
 }
 
 /**
+ * Escape special characters for use in ilike patterns
+ * Escapes % and _ so they are treated as literals, not wildcards
+ */
+function escapeIlike(value: string): string {
+  return value.replace(/\\/g, '\\\\').replace(/%/g, '\\%').replace(/_/g, '\\_');
+}
+
+/**
  * Search profiles by name using Supabase
  *
  * This provides server-side search using `ilike` filters.
@@ -157,7 +165,7 @@ export async function searchUsers(
     return [];
   }
 
-  const normalizedQuery = normalizeSearchQuery(searchQuery);
+  const normalizedQuery = escapeIlike(normalizeSearchQuery(searchQuery));
 
   try {
     const { data, error } = await supabase
@@ -208,7 +216,7 @@ export async function searchCargoRequests(
     return [];
   }
 
-  const normalizedQuery = normalizeSearchQuery(searchQuery);
+  const normalizedQuery = escapeIlike(normalizeSearchQuery(searchQuery));
 
   try {
     const { data, error } = await supabase

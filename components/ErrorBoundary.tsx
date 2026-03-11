@@ -3,6 +3,7 @@ import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, spacing, fontSize, fontWeight, borderRadius } from '../lib/sharedStyles';
 import { logEvent } from '../lib/analytics';
+import i18next from 'i18next';
 
 interface Props {
   children: React.ReactNode;
@@ -45,13 +46,13 @@ export class ErrorBoundary extends React.Component<Props, State> {
               <Ionicons name="alert-circle-outline" size={80} color={colors.error} />
             </View>
 
-            <Text style={styles.title}>Noe gikk galt</Text>
+            <Text style={styles.title}>{i18next.t('errorBoundaryTitle')}</Text>
 
-            <Text style={styles.message}>En uventet feil oppstod. Vennligst prøv igjen.</Text>
+            <Text style={styles.message}>{i18next.t('errorBoundaryMessage')}</Text>
 
             {__DEV__ && this.state.error && (
               <View style={styles.errorDetails}>
-                <Text style={styles.errorDetailsTitle}>Feildetaljer (kun i utviklingsmodus):</Text>
+                <Text style={styles.errorDetailsTitle}>{i18next.t('errorBoundaryDetails')}</Text>
                 <Text style={styles.errorDetailsText}>{this.state.error.toString()}</Text>
                 {this.state.error.stack && (
                   <Text style={styles.errorStack} numberOfLines={10}>
@@ -63,7 +64,7 @@ export class ErrorBoundary extends React.Component<Props, State> {
 
             <TouchableOpacity style={styles.button} onPress={this.handleReset}>
               <Ionicons name="refresh-outline" size={20} color={colors.white} />
-              <Text style={styles.buttonText}>Prøv igjen</Text>
+              <Text style={styles.buttonText}>{i18next.t('errorBoundaryRetry')}</Text>
             </TouchableOpacity>
           </View>
         </View>

@@ -835,5 +835,20 @@
   "disputeReasonRequired": "Velg en årsak for tvisten",
   "disputeDescriptionMinLength": "Gi en beskrivelse på minst 20 tegn",
   "submitDispute": "Send tvist",
-  "disputeFiled": "Tvisten din er sendt inn. Teamet vårt vil gjennomgå den og komme tilbake til deg."
+  "disputeFiled": "Tvisten din er sendt inn. Teamet vårt vil gjennomgå den og komme tilbake til deg.",
+  "errorBoundaryTitle": "Noe gikk galt",
+  "errorBoundaryMessage": "En uventet feil oppstod. Vennligst prøv igjen.",
+  "errorBoundaryDetails": "Feildetaljer (kun i utviklingsmodus):",
+  "errorBoundaryRetry": "Prøv igjen",
+  "networkSyncing": "Synkroniserer {{count}} operasjon(er)...",
+  "networkPendingUpdates": "{{count}} ventende oppdatering(er)",
+  "networkNoInternet": "Ingen internettforbindelse",
+  "networkLimitedConnectivity": "Begrenset tilkobling",
+  "networkSyncWhenOnline": "Data synkroniseres når du er tilkoblet",
+  "signaturePadTitle": "Signer her",
+  "signaturePadInstructions": "Signer med fingeren eller en pekepenn ovenfor",
+  "signaturePadClear": "Tøm",
+  "signaturePadConfirm": "Bekreft",
+  "unread": "uleste",
+  "markAllAsRead": "Merk alle som lest"
 }

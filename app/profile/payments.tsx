@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   RefreshControl,
   ActivityIndicator,
+  Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
@@ -134,7 +135,10 @@ export default function PaymentsScreen() {
       </View>
 
       {item.invoice_url && (
-        <TouchableOpacity style={styles.invoiceButton}>
+        <TouchableOpacity
+          style={styles.invoiceButton}
+          onPress={() => Alert.alert(t('viewInvoice') || 'View Invoice', 'Faktura kommer snart')}
+        >
           <Ionicons name="document-outline" size={16} color={colors.primary} />
           <Text style={styles.invoiceButtonText}>{t('viewInvoice') || 'View Invoice'}</Text>
         </TouchableOpacity>

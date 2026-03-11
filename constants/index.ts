@@ -9,14 +9,6 @@ export const APP_VERSION = '1.0.0';
 export const BRREG_API_URL =
   process.env.BRREG_API_URL || 'https://data.brreg.no/enhetsregisteret/api';
 
-// Vipps configuration
-export const VIPPS_CONFIG = {
-  clientId: process.env.VIPPS_CLIENT_ID || '',
-  clientSecret: process.env.VIPPS_CLIENT_SECRET || '',
-  subscriptionKey: process.env.VIPPS_SUBSCRIPTION_KEY || '',
-  merchantSerialNumber: process.env.VIPPS_MERCHANT_SERIAL_NUMBER || '',
-};
-
 // Firebase collections
 export const COLLECTIONS = {
   USERS: 'users',
@@ -104,7 +96,6 @@ export default {
   APP_NAME,
   APP_VERSION,
   BRREG_API_URL,
-  VIPPS_CONFIG,
   COLLECTIONS,
   CARGO_STATUS,
   BID_STATUS,
