@@ -889,5 +889,8 @@
     { "heading": "10. Limitation of Liability", "body": "TruckinFox is a marketplace intermediary. To the extent permitted by Norwegian law, our liability is limited to the platform fees you paid in the preceding 12 months. We are not liable for cargo damage or delays." },
     { "heading": "11. Governing Law", "body": "These Terms are governed by Norwegian law. Disputes shall be resolved before Oslo District Court (Oslo tingrett), unless mandatory consumer protection laws provide otherwise." },
     { "heading": "12. Changes", "body": "We may update these Terms and will notify you at least 14 days in advance via in-app notification. Continued use after that date constitutes acceptance." }
-  ]
+  ],
+  "updateRequired": "Update Required",
+  "updateRequiredMessage": "This version of TruckinFox is no longer supported. Please update to continue using the app.",
+  "updateNow": "Update Now"
 }

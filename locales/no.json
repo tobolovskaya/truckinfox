@@ -889,5 +889,8 @@
     { "heading": "10. Ansvarsbegrensning", "body": "TruckinFox er en markedsplassformidler. I den grad norsk lov tillater det, er vårt ansvar begrenset til plattformavgiftene du betalte de foregående 12 månedene. Vi er ikke ansvarlige for lastskade eller forsinkelser." },
     { "heading": "11. Lovvalg", "body": "Disse vilkårene er underlagt norsk lov. Tvister avgjøres ved Oslo tingrett, med mindre ufravikelig forbrukerlovgivning gir annet." },
     { "heading": "12. Endringer", "body": "Vi kan oppdatere disse vilkårene og vil varsle deg minst 14 dager i forveien via app-varsel. Fortsatt bruk etter den dato innebærer aksept." }
-  ]
+  ],
+  "updateRequired": "Oppdatering kreves",
+  "updateRequiredMessage": "Denne versjonen av TruckinFox støttes ikke lenger. Oppdater appen for å fortsette.",
+  "updateNow": "Oppdater nå"
 }

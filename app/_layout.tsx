@@ -1,6 +1,6 @@
 import 'react-native-reanimated';
 import 'react-native-get-random-values';
-import React, { useCallback, useEffect } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { LogBox, View } from 'react-native';
 import { Stack, useRouter } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
@@ -15,6 +15,8 @@ import { ToastProvider } from '../contexts/ToastContext';
 import { NotificationBannerProvider } from '../contexts/NotificationBannerContext';
 import { ErrorBoundary } from '../components/ErrorBoundary';
 import { NetworkStatusBar } from '../components/NetworkStatusBar';
+import { ForceUpdateModal } from '../components/ForceUpdateModal';
+import { supabase } from '../lib/supabase';
 import { theme } from '../theme/theme';
 import { initializeOfflineSync } from '../lib/offlineSync';
 import { initializeGlobalErrorTracking } from '../lib/errorTracking';
@@ -22,6 +24,16 @@ import 'react-native-url-polyfill/auto';
 
 // Keep splash visible until auth state is resolved
 SplashScreen.preventAutoHideAsync().catch(() => {});
+
+/** Returns true if semver `a` is strictly less than `b` (major.minor.patch). */
+function isVersionLessThan(a: string, b: string): boolean {
+  const parse = (v: string) => v.split('.').map((n) => parseInt(n, 10) || 0);
+  const [aMaj, aMin, aPat] = parse(a);
+  const [bMaj, bMin, bPat] = parse(b);
+  if (aMaj !== bMaj) return aMaj < bMaj;
+  if (aMin !== bMin) return aMin < bMin;
+  return aPat < bPat;
+}
 
 function SplashHider() {
   const { loading } = useAuth();
@@ -50,6 +62,7 @@ LogBox.ignoreLogs([
 
 export default function RootLayout() {
   const router = useRouter();
+  const [forceUpdate, setForceUpdate] = useState(false);
 
   const handleNotificationNavigation = useCallback(
     (data: { type?: string; order_id?: string; request_id?: string }) => {
@@ -63,6 +76,22 @@ export default function RootLayout() {
     },
     [router]
   );
+
+  // Check minimum required app version from remote config
+  useEffect(() => {
+    const currentVersion = Constants.expoConfig?.version ?? '0.0.0';
+    supabase
+      .from('app_config')
+      .select('value')
+      .eq('key', 'min_app_version')
+      .single()
+      .then(({ data }) => {
+        const minVersion = (data?.value as string | undefined) ?? '0.0.0';
+        if (isVersionLessThan(currentVersion, minVersion)) {
+          setForceUpdate(true);
+        }
+      });
+  }, []);
 
   // Initialize offline-first sync on app startup
   useEffect(() => {
@@ -132,6 +161,7 @@ export default function RootLayout() {
                     <View style={{ flex: 1 }}>
                       <NetworkStatusBar />
                       <Stack screenOptions={{ headerShown: false }} />
+                      <ForceUpdateModal visible={forceUpdate} />
                     </View>
                   </PaperProvider>
                 </NotificationBannerProvider>
