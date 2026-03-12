@@ -923,5 +923,6 @@
   "acceptCounterConfirm": "Godta dette motbudet og oppdater budprisen din?",
   "declineCounter": "Avvis motbud",
   "declineCounterConfirm": "Avvis dette motbudet? Din opprinnelige budpris beholdes.",
-  "counterOfferReceived": "Motbud mottatt"
+  "counterOfferReceived": "Motbud mottatt",
+  "noOrdersInTab": "Ingen ordrer i denne kategorien"
 }

@@ -923,5 +923,6 @@
   "acceptCounterConfirm": "Accept this counter offer and update your bid price?",
   "declineCounter": "Decline Counter Offer",
   "declineCounterConfirm": "Decline this counter offer? Your original bid price will remain.",
-  "counterOfferReceived": "Counter offer received"
+  "counterOfferReceived": "Counter offer received",
+  "noOrdersInTab": "No orders in this category"
 }

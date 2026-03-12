@@ -4,9 +4,8 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  FlatList,
-  ActivityIndicator,
 } from 'react-native';
+import { FlashList } from '@shopify/flash-list';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../contexts/AuthContext';
@@ -18,61 +17,33 @@ import { SkeletonLoader } from '../../components/SkeletonLoader';
 import { EmptyState } from '../../components/EmptyState';
 import EmptyOrdersIllustration from '../../assets/empty-orders.svg';
 
+type TabKey = 'active' | 'completed' | 'cancelled';
+
+const TAB_STATUSES: Record<TabKey, string[]> = {
+  active: ['pending_payment', 'paid', 'active', 'in_progress', 'in_transit', 'delivered'],
+  completed: ['completed'],
+  cancelled: ['cancelled', 'canceled', 'refunded', 'disputed'],
+};
+
 interface Order {
   id: string;
-  request_id?: string;
-  bid_id?: string;
+  request_id?: string | null;
+  bid_id?: string | null;
   customer_id: string;
   carrier_id: string;
   total_amount: number;
   status: string;
   payment_status: string;
-  created_at?:
-  | string
-  | number
-  | Date
-  | {
-    seconds?: number;
-    nanoseconds?: number;
-    toDate?: () => Date;
-  }
-  | null;
+  created_at?: string | null;
   cargo_title?: string;
-  cargo_type?: string;
   cargo_from_address?: string;
   cargo_to_address?: string;
 }
 
-const toSafeDate = (value: Order['created_at']): Date => {
-  if (!value) {
-    return new Date(0);
-  }
-
-  if (value instanceof Date) {
-    return value;
-  }
-
-  if (typeof value === 'string' || typeof value === 'number') {
-    const parsed = new Date(value);
-    return Number.isNaN(parsed.getTime()) ? new Date(0) : parsed;
-  }
-
-  if (typeof value === 'object') {
-    if (typeof value.toDate === 'function') {
-      const parsed = value.toDate();
-      return Number.isNaN(parsed.getTime()) ? new Date(0) : parsed;
-    }
-
-    if (typeof value.seconds === 'number') {
-      return new Date(value.seconds * 1000);
-    }
-  }
-
-  return new Date(0);
-};
-
-const formatOrderDate = (value: Order['created_at'], locale: string): string => {
-  return toSafeDate(value).toLocaleDateString(locale);
+const formatOrderDate = (value: string | null | undefined, locale: string): string => {
+  if (!value) return '';
+  const d = new Date(value);
+  return Number.isNaN(d.getTime()) ? '' : d.toLocaleDateString(locale);
 };
 
 export default function OrdersScreen() {
@@ -85,16 +56,13 @@ export default function OrdersScreen() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [activeTab, setActiveTab] = useState<TabKey>('active');
 
   const locale = i18n.language.startsWith('no') ? 'nb-NO' : 'en-US';
 
   const formatNokAmount = useCallback(
-    (value: number) => {
-      const formatted = new Intl.NumberFormat(locale, {
-        maximumFractionDigits: 0,
-      }).format(Number(value || 0));
-      return `${formatted} kr`;
-    },
+    (value: number) =>
+      `${new Intl.NumberFormat(locale, { maximumFractionDigits: 0 }).format(Number(value || 0))} kr`,
     [locale]
   );
 
@@ -103,121 +71,106 @@ export default function OrdersScreen() {
       setLoading(false);
       return;
     }
-
     try {
       const { data, error } = await supabase
         .from('orders')
-        .select(
-          'id, request_id, bid_id, customer_id, carrier_id, total_amount, status, payment_status, created_at'
-        )
+        .select('id, request_id, bid_id, customer_id, carrier_id, total_amount, status, payment_status, created_at')
         .or(`customer_id.eq.${user.uid},carrier_id.eq.${user.uid}`)
         .order('created_at', { ascending: false });
 
-      if (error) {
-        throw error;
-      }
+      if (error) throw error;
 
-      const ordersData = ((data || []) as Order[]).map(item => ({
-        ...item,
-        cargo_title: item.cargo_title || '',
-      }));
+      const ordersData: Order[] = (data || []).map(item => ({ ...item, cargo_title: '' }));
 
       const requestIds = Array.from(
-        new Set(
-          ordersData.map(item => item.request_id).filter((value): value is string => Boolean(value))
-        )
+        new Set(ordersData.map(o => o.request_id).filter((v): v is string => Boolean(v)))
       );
 
       if (requestIds.length > 0) {
-        const { data: requestsData, error: requestsError } = await supabase
+        const { data: requestsData } = await supabase
           .from('cargo_requests')
           .select('id, title, from_address, to_address')
           .in('id', requestIds);
 
-        if (!requestsError && requestsData) {
-          const requestMap = new Map(
-            requestsData.map(requestItem => [
-              requestItem.id,
-              {
-                title: requestItem.title || '',
-                from_address: requestItem.from_address || '',
-                to_address: requestItem.to_address || '',
-              },
-            ])
-          );
-
-          for (const orderItem of ordersData) {
-            if (!orderItem.request_id) {
-              continue;
-            }
-            const request = requestMap.get(orderItem.request_id);
-            if (!request) {
-              continue;
-            }
-            orderItem.cargo_title = orderItem.cargo_title || request.title;
-            orderItem.cargo_from_address = request.from_address;
-            orderItem.cargo_to_address = request.to_address;
+        if (requestsData) {
+          const requestMap = new Map(requestsData.map(r => [r.id, r]));
+          for (const order of ordersData) {
+            if (!order.request_id) continue;
+            const req = requestMap.get(order.request_id);
+            if (!req) continue;
+            order.cargo_title = req.title || '';
+            order.cargo_from_address = req.from_address || '';
+            order.cargo_to_address = req.to_address || '';
           }
         }
       }
 
-      const visibleOrders = ordersData.filter(orderItem => {
-        const isOrphan = !orderItem.request_id;
-        const paymentStatus = String(orderItem.payment_status || '')
-          .trim()
-          .toLowerCase();
-        const isUnpaid = ['pending', 'initiated', 'failed'].includes(paymentStatus);
-        return !(isOrphan && isUnpaid);
-      });
-
-      setOrders(visibleOrders);
-    } catch (error) {
-      console.error('Error fetching orders:', error);
+      // Hide orphan orders with unpaid status (provisional, never confirmed)
+      setOrders(
+        ordersData.filter(o => {
+          if (!o.request_id) {
+            const ps = String(o.payment_status || '').trim().toLowerCase();
+            return !['pending', 'initiated', 'failed'].includes(ps);
+          }
+          return true;
+        })
+      );
+    } catch (err) {
+      console.error('Error fetching orders:', err);
     } finally {
       setLoading(false);
     }
   }, [user?.uid]);
 
   useEffect(() => {
-    if (user?.uid) {
-      fetchOrders();
-    }
+    if (user?.uid) fetchOrders();
   }, [fetchOrders, user?.uid]);
 
   const handleRefresh = async () => {
     setRefreshing(true);
-    try {
-      await fetchOrders();
-    } finally {
-      setRefreshing(false);
-    }
+    try { await fetchOrders(); } finally { setRefreshing(false); }
+  };
+
+  const tabCounts = useMemo(
+    () => ({
+      active: orders.filter(o => TAB_STATUSES.active.includes(o.status.toLowerCase())).length,
+      completed: orders.filter(o => TAB_STATUSES.completed.includes(o.status.toLowerCase())).length,
+      cancelled: orders.filter(o => TAB_STATUSES.cancelled.includes(o.status.toLowerCase())).length,
+    }),
+    [orders]
+  );
+
+  const filteredOrders = useMemo(
+    () => orders.filter(o => TAB_STATUSES[activeTab].includes(o.status.toLowerCase())),
+    [orders, activeTab]
+  );
+
+  const getStatusColor = (status: string) => {
+    const s = status.toLowerCase();
+    if (['completed'].includes(s)) return colors.success || '#10B981';
+    if (['cancelled', 'canceled', 'refunded', 'disputed'].includes(s)) return colors.status?.error || '#EF4444';
+    if (['delivered'].includes(s)) return '#8B5CF6';
+    if (['in_progress', 'in_transit'].includes(s)) return colors.primary || '#3B82F6';
+    if (['paid'].includes(s)) return '#10B981';
+    return colors.status?.warning || '#F59E0B';
   };
 
   const getStatusLabel = (status: string) => {
-    const normalizedStatus = String(status || '')
-      .trim()
-      .toLowerCase();
-    const map: { [key: string]: string } = {
+    const map: Record<string, string> = {
+      pending_payment: 'pendingPayment',
+      paid: 'paid',
       active: 'active',
-      delivered: 'completed',
+      in_progress: 'in_progress',
+      in_transit: 'in_transit',
+      delivered: 'delivered',
       completed: 'completed',
       cancelled: 'cancelled',
       canceled: 'cancelled',
-      in_progress: 'in_progress',
-      in_transit: 'in_transit',
+      refunded: 'refunded',
+      disputed: 'disputed',
     };
-    return t(map[normalizedStatus] || normalizedStatus);
-  };
-
-  const getPaymentStatusColor = (status: string) => {
-    switch (status) {
-      case 'completed':
-        return colors.success || '#10B981';
-      case 'pending':
-        return colors.status.warning || '#F59E0B';
-      default:
-        return colors.text.secondary;
-    }
+    const key = map[status.toLowerCase()];
+    return key ? t(key) : status;
   };
 
   const renderOrderItem = ({ item }: { item: Order }) => (
@@ -240,17 +193,12 @@ export default function OrdersScreen() {
             <Text style={styles.orderTitle} numberOfLines={1}>
               {item.cargo_title || t('order')} (#{item.id.slice(0, 8)})
             </Text>
-            <View
-              style={[
-                styles.statusBadge,
-                { backgroundColor: getPaymentStatusColor(item.payment_status) },
-              ]}
-            >
-              <Text style={styles.statusBadgeText}>{t(item.payment_status)}</Text>
+            <View style={[styles.statusBadge, { backgroundColor: getStatusColor(item.status) }]}>
+              <Text style={styles.statusBadgeText}>{getStatusLabel(item.status)}</Text>
             </View>
           </View>
 
-          {!item.cargo_title && (item.cargo_from_address || item.cargo_to_address) && (
+          {(item.cargo_from_address || item.cargo_to_address) && (
             <Text style={styles.orderSubtitle} numberOfLines={1}>
               {item.cargo_from_address || t('addressNotAvailable')} →{' '}
               {item.cargo_to_address || t('addressNotAvailable')}
@@ -263,10 +211,6 @@ export default function OrdersScreen() {
               <Text style={styles.value}>{formatNokAmount(item.total_amount)}</Text>
             </View>
             <View style={styles.detailRow}>
-              <Text style={styles.label}>{t('status')}:</Text>
-              <Text style={styles.value}>{getStatusLabel(item.status)}</Text>
-            </View>
-            <View style={styles.detailRow}>
               <Text style={styles.label}>{t('date')}:</Text>
               <Text style={styles.value}>{formatOrderDate(item.created_at, locale)}</Text>
             </View>
@@ -276,6 +220,12 @@ export default function OrdersScreen() {
     </View>
   );
 
+  const TABS: { key: TabKey; label: string }[] = [
+    { key: 'active', label: t('active') },
+    { key: 'completed', label: t('completed') },
+    { key: 'cancelled', label: t('cancelled') },
+  ];
+
   return (
     <View style={styles.container}>
       <ScreenHeader
@@ -284,34 +234,66 @@ export default function OrdersScreen() {
         showBrandMark={true}
         brandMarkMaxTitleLength={18}
       />
+
+      {/* Tab bar */}
+      <View style={styles.tabBar}>
+        {TABS.map(tab => (
+          <TouchableOpacity
+            key={tab.key}
+            style={[styles.tab, activeTab === tab.key && styles.tabActive]}
+            onPress={() => setActiveTab(tab.key)}
+            accessibilityRole="tab"
+            accessibilityState={{ selected: activeTab === tab.key }}
+          >
+            <Text style={[styles.tabText, activeTab === tab.key && styles.tabTextActive]}>
+              {tab.label}
+            </Text>
+            {tabCounts[tab.key] > 0 && (
+              <View style={[styles.tabBadge, activeTab === tab.key && styles.tabBadgeActive]}>
+                <Text style={[styles.tabBadgeText, activeTab === tab.key && styles.tabBadgeTextActive]}>
+                  {tabCounts[tab.key]}
+                </Text>
+              </View>
+            )}
+          </TouchableOpacity>
+        ))}
+      </View>
+
       {loading ? (
         <View style={styles.skeletonContainer}>
           <SkeletonLoader variant="card" count={3} />
         </View>
-      ) : orders.length === 0 ? (
+      ) : filteredOrders.length === 0 ? (
         <EmptyState
           icon="list-outline"
           title={t('noOrdersFound') || 'No orders yet'}
-          description={t('createRequestToSeeOrders') || 'Create a request to start getting orders'}
-          illustration={EmptyOrdersIllustration}
-          actions={[
-            {
-              label: t('createRequest') || t('createCargoRequest') || 'Create request',
-              icon: 'add-outline',
-              variant: 'primary',
-              onPress: () => router.push('/(tabs)/create'),
-            },
-          ]}
+          description={
+            activeTab === 'active'
+              ? t('createRequestToSeeOrders') || 'Create a request to start getting orders'
+              : t('noOrdersInTab') || 'No orders in this category'
+          }
+          illustration={activeTab === 'active' ? EmptyOrdersIllustration : undefined}
+          actions={
+            activeTab === 'active'
+              ? [
+                  {
+                    label: t('createRequest') || 'Create request',
+                    icon: 'add-outline',
+                    variant: 'primary',
+                    onPress: () => router.push('/(tabs)/create'),
+                  },
+                ]
+              : undefined
+          }
         />
       ) : (
-        <FlatList
-          data={orders}
+        <FlashList
+          data={filteredOrders}
           keyExtractor={item => item.id}
           renderItem={renderOrderItem}
           contentContainerStyle={styles.listContainer}
           refreshing={refreshing}
           onRefresh={handleRefresh}
-          scrollEnabled={true}
         />
       )}
     </View>
@@ -324,20 +306,67 @@ const createStyles = (colors: ReturnType<typeof useAppThemeStyles>['colors']) =>
       flex: 1,
       backgroundColor: colors.background,
     },
-    loadingContainer: {
-      flex: 1,
-      justifyContent: 'center',
-      alignItems: 'center',
-    },
     skeletonContainer: {
       flex: 1,
       padding: spacing.md,
     },
+    tabBar: {
+      flexDirection: 'row',
+      paddingHorizontal: spacing.md,
+      paddingTop: spacing.sm,
+      paddingBottom: 0,
+      backgroundColor: colors.background,
+      borderBottomWidth: 1,
+      borderBottomColor: 'rgba(0,0,0,0.06)',
+      gap: spacing.xs,
+    },
+    tab: {
+      flex: 1,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingVertical: spacing.sm,
+      gap: 4,
+      borderBottomWidth: 2,
+      borderBottomColor: 'transparent',
+    },
+    tabActive: {
+      borderBottomColor: colors.primary,
+    },
+    tabText: {
+      fontSize: fontSize.sm,
+      fontWeight: fontWeight.medium,
+      color: colors.text.secondary,
+    },
+    tabTextActive: {
+      color: colors.primary,
+      fontWeight: fontWeight.semibold,
+    },
+    tabBadge: {
+      backgroundColor: 'rgba(0,0,0,0.08)',
+      borderRadius: 10,
+      minWidth: 18,
+      height: 18,
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingHorizontal: 5,
+    },
+    tabBadgeActive: {
+      backgroundColor: colors.primary,
+    },
+    tabBadgeText: {
+      fontSize: 10,
+      fontWeight: fontWeight.semibold,
+      color: colors.text.secondary,
+    },
+    tabBadgeTextActive: {
+      color: '#fff',
+    },
     listContainer: {
       padding: spacing.md,
-      gap: spacing.md,
     },
     cardContainer: {
+      marginBottom: spacing.md,
       shadowColor: colors.primary,
       shadowOffset: { width: 0, height: 4 },
       shadowOpacity: 0.12,
@@ -379,7 +408,7 @@ const createStyles = (colors: ReturnType<typeof useAppThemeStyles>['colors']) =>
     statusBadgeText: {
       fontSize: fontSize.sm,
       fontWeight: fontWeight.semibold,
-      color: colors.white,
+      color: '#fff',
     },
     orderDetails: {
       gap: spacing.xs,
