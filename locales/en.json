@@ -924,5 +924,11 @@
   "declineCounter": "Decline Counter Offer",
   "declineCounterConfirm": "Decline this counter offer? Your original bid price will remain.",
   "counterOfferReceived": "Counter offer received",
-  "noOrdersInTab": "No orders in this category"
+  "noOrdersInTab": "No orders in this category",
+  "notifAutoConfirmTitle": "Delivery Auto-Confirmed",
+  "notifAutoConfirmBody": "Your delivery was automatically confirmed after 3 days. Contact support if you have concerns.",
+  "notifPaymentReleasedTitle": "Payment Released",
+  "notifPaymentReleasedBody": "Payment of {{amount}} NOK released after 3-day auto-confirmation.",
+  "notifBidExpiredTitle": "Bid Expired",
+  "notifBidExpiredBody": "Your bid was not accepted within 48 hours and has expired."
 }

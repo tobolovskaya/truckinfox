@@ -924,5 +924,11 @@
   "declineCounter": "Avvis motbud",
   "declineCounterConfirm": "Avvis dette motbudet? Din opprinnelige budpris beholdes.",
   "counterOfferReceived": "Motbud mottatt",
-  "noOrdersInTab": "Ingen ordrer i denne kategorien"
+  "noOrdersInTab": "Ingen ordrer i denne kategorien",
+  "notifAutoConfirmTitle": "Levering automatisk bekreftet",
+  "notifAutoConfirmBody": "Leveringen din ble automatisk bekreftet etter 3 dager. Kontakt support hvis du har spørsmål.",
+  "notifPaymentReleasedTitle": "Betaling frigjort",
+  "notifPaymentReleasedBody": "Betaling på {{amount}} NOK frigjort etter 3-dagers autobekreftelse.",
+  "notifBidExpiredTitle": "Bud utløpt",
+  "notifBidExpiredBody": "Budet ditt ble ikke akseptert innen 48 timer og har utløpt."
 }

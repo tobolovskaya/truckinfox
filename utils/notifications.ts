@@ -30,6 +30,8 @@ export interface Notification {
   customer_name?: string;
   order_status?: string;
   amount?: number;
+  title_key?: string;
+  body_key?: string;
 }
 
 type NotificationRow = {
@@ -68,6 +70,8 @@ function mapNotificationRow(row: NotificationRow): Notification {
     customer_name: typeof data.customer_name === 'string' ? data.customer_name : undefined,
     order_status: typeof data.order_status === 'string' ? data.order_status : undefined,
     amount: typeof data.amount === 'number' ? data.amount : undefined,
+    title_key: typeof data.title_key === 'string' ? data.title_key : undefined,
+    body_key: typeof data.body_key === 'string' ? data.body_key : undefined,
   };
 }
 

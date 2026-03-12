@@ -84,10 +84,12 @@ export default function NotificationsScreen() {
           </View>
           <View style={styles.notificationContent}>
             <Text style={[styles.notificationTitle, !item.read && styles.unreadTitle]}>
-              {item.title}
+              {item.title_key ? t(item.title_key) : item.title}
             </Text>
             <Text style={styles.notificationBody} numberOfLines={2}>
-              {item.body}
+              {item.body_key
+                ? t(item.body_key, item.amount !== undefined ? { amount: item.amount } : undefined)
+                : item.body}
             </Text>
             <Text style={styles.notificationTime}>{formatRelativeTime(item.created_at)}</Text>
           </View>
