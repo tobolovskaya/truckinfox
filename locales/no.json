@@ -899,6 +899,8 @@
   "orgNumberPlaceholder": "Organisasjonsnummer (9 siffer)",
   "orgNumberInvalid": "Organisasjonsnummeret må være nøyaktig 9 siffer",
   "verifyBusiness": "Verifiser bedrift",
+  "verifyBannerTitle": "Fullfør transportørverifisering",
+  "verifyBannerDesc": "Verifiserte transportører får flere bestillinger og bygger kundetillit.",
   "verified": "Verifisert!",
   "verifiedMessage": "Bedriften din ({{companyName}}) er nå verifisert via Brønnøysundregistrene.",
   "bidsComparison": "Sammenlign bud",

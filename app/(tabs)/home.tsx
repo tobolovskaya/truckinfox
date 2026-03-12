@@ -658,6 +658,23 @@ export default function HomeScreen() {
       </View>
 
 
+      {/* Carrier verification prompt */}
+      {currentUser?.user_type === 'carrier' && !currentUser?.is_verified && (
+        <TouchableOpacity
+          style={styles.verifyBanner}
+          onPress={() => router.push('/profile/settings')}
+          accessibilityRole="button"
+          accessibilityLabel={t('verifyBannerTitle')}
+        >
+          <Ionicons name="shield-outline" size={20} color="#D97706" />
+          <View style={styles.verifyBannerText}>
+            <Text style={styles.verifyBannerTitle}>{t('verifyBannerTitle')}</Text>
+            <Text style={styles.verifyBannerDesc}>{t('verifyBannerDesc')}</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={16} color="#D97706" />
+        </TouchableOpacity>
+      )}
+
       {/* Requests List */}
       <FlatList
         key={isSingleColumnLayout ? 'single-column' : 'two-column'}
@@ -918,5 +935,28 @@ const createStyles = (colors: ReturnType<typeof useAppThemeStyles>['colors']) =>
     quickFilterChipTextActive: {
       color: colors.primary,
       fontWeight: '700' as const,
+    },
+    verifyBanner: {
+      flexDirection: 'row' as const,
+      alignItems: 'center' as const,
+      backgroundColor: '#FFFBEB',
+      borderBottomWidth: 1,
+      borderBottomColor: '#FDE68A',
+      paddingHorizontal: spacing.lg,
+      paddingVertical: spacing.sm,
+      gap: spacing.sm,
+    },
+    verifyBannerText: {
+      flex: 1,
+    },
+    verifyBannerTitle: {
+      fontSize: fontSize.sm,
+      fontWeight: '600' as const,
+      color: '#92400E',
+    },
+    verifyBannerDesc: {
+      fontSize: fontSize.xs,
+      color: '#B45309',
+      marginTop: 1,
     },
   });
