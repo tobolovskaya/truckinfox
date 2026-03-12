@@ -4,10 +4,12 @@ import { useAuth } from '../contexts/AuthContext';
 
 export interface Bid {
   id: string;
-  cargo_request_id: string;
+  request_id: string;
   carrier_id: string;
-  amount: number;
-  message: string;
+  price: number;
+  note: string | null;
+  currency: string;
+  estimated_days: number | null;
   status: 'pending' | 'accepted' | 'rejected' | 'withdrawn';
   created_at: string;
   updated_at: string;
@@ -15,7 +17,6 @@ export interface Bid {
     id: string;
     full_name: string;
     rating: number;
-    rating_count: number;
     is_verified: boolean;
   };
 }
@@ -30,10 +31,10 @@ export async function placeBid(
   const { data, error } = await supabase
     .from('bids')
     .insert({
-      cargo_request_id: cargoRequestId,
+      request_id: cargoRequestId,
       carrier_id: carrierId,
-      amount,
-      message,
+      price: amount,
+      note: message,
       status: 'pending',
     })
     .select()
@@ -123,9 +124,9 @@ export function useBidsForRequest(requestId: string | undefined) {
     const { data, error: fetchError } = await supabase
       .from('bids')
       .select(
-        '*, carrier:profiles!carrier_id(id, full_name, rating, rating_count, is_verified)'
+        '*, carrier:profiles!carrier_id(id, full_name, rating, is_verified)'
       )
-      .eq('cargo_request_id', requestId)
+      .eq('request_id', requestId)
       .order('created_at', { ascending: false });
 
     if (fetchError) {
@@ -149,7 +150,7 @@ export function useBidsForRequest(requestId: string | undefined) {
           event: '*',
           schema: 'public',
           table: 'bids',
-          filter: `cargo_request_id=eq.${requestId}`,
+          filter: `request_id=eq.${requestId}`,
         },
         () => { loadBids(); }
       )

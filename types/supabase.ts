@@ -1,3 +1,4 @@
+Initialising login role...
 export type Json =
   | string
   | number
@@ -11,6 +12,31 @@ export type Database = {
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "14.1"
+  }
+  graphql_public: {
+    Tables: {
+      [_ in never]: never
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      graphql: {
+        Args: {
+          extensions?: Json
+          operationName?: string
+          query?: string
+          variables?: Json
+        }
+        Returns: Json
+      }
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
   }
   public: {
     Tables: {
@@ -58,6 +84,21 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      app_config: {
+        Row: {
+          key: string
+          value: Json
+        }
+        Insert: {
+          key: string
+          value: Json
+        }
+        Update: {
+          key?: string
+          value?: Json
+        }
+        Relationships: []
       }
       audit_log: {
         Row: {
@@ -459,6 +500,84 @@ export type Database = {
           },
         ]
       }
+      disputes: {
+        Row: {
+          created_at: string
+          description: string
+          filed_by: string
+          id: string
+          order_id: string
+          reason: string
+          resolution: string | null
+          resolved_at: string | null
+          resolved_by: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description: string
+          filed_by: string
+          id?: string
+          order_id: string
+          reason: string
+          resolution?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          filed_by?: string
+          id?: string
+          order_id?: string
+          reason?: string
+          resolution?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "disputes_filed_by_fkey"
+            columns: ["filed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "disputes_filed_by_fkey"
+            columns: ["filed_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "disputes_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "disputes_resolved_by_fkey"
+            columns: ["resolved_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "disputes_resolved_by_fkey"
+            columns: ["resolved_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       escrow_payments: {
         Row: {
           bid_id: string | null
@@ -734,70 +853,6 @@ export type Database = {
           },
         ]
       }
-      disputes: {
-        Row: {
-          created_at: string
-          description: string
-          filed_by: string
-          id: string
-          order_id: string
-          reason: 'damage' | 'not_delivered' | 'wrong_item' | 'payment' | 'other'
-          resolution: string | null
-          resolved_at: string | null
-          resolved_by: string | null
-          status: 'open' | 'under_review' | 'resolved' | 'closed'
-          updated_at: string
-        }
-        Insert: {
-          created_at?: string
-          description: string
-          filed_by: string
-          id?: string
-          order_id: string
-          reason: 'damage' | 'not_delivered' | 'wrong_item' | 'payment' | 'other'
-          resolution?: string | null
-          resolved_at?: string | null
-          resolved_by?: string | null
-          status?: 'open' | 'under_review' | 'resolved' | 'closed'
-          updated_at?: string
-        }
-        Update: {
-          created_at?: string
-          description?: string
-          filed_by?: string
-          id?: string
-          order_id?: string
-          reason?: 'damage' | 'not_delivered' | 'wrong_item' | 'payment' | 'other'
-          resolution?: string | null
-          resolved_at?: string | null
-          resolved_by?: string | null
-          status?: 'open' | 'under_review' | 'resolved' | 'closed'
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "disputes_filed_by_fkey"
-            columns: ["filed_by"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "disputes_order_id_fkey"
-            columns: ["order_id"]
-            isOneToOne: false
-            referencedRelation: "orders"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "disputes_resolved_by_fkey"
-            columns: ["resolved_by"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       orders: {
         Row: {
           bid_id: string | null
@@ -987,12 +1042,14 @@ export type Database = {
       profiles: {
         Row: {
           avatar_url: string | null
+          brreg_org_number: string | null
           company_name: string | null
           country_code: string
           created_at: string
           full_name: string
           id: string
           is_admin: boolean
+          is_verified: boolean
           language: string
           org_number: string | null
           phone: string | null
@@ -1000,15 +1057,18 @@ export type Database = {
           rating: number | null
           updated_at: string
           user_type: string
+          verified_at: string | null
         }
         Insert: {
           avatar_url?: string | null
+          brreg_org_number?: string | null
           company_name?: string | null
           country_code?: string
           created_at?: string
           full_name: string
           id: string
           is_admin?: boolean
+          is_verified?: boolean
           language?: string
           org_number?: string | null
           phone?: string | null
@@ -1016,15 +1076,18 @@ export type Database = {
           rating?: number | null
           updated_at?: string
           user_type?: string
+          verified_at?: string | null
         }
         Update: {
           avatar_url?: string | null
+          brreg_org_number?: string | null
           company_name?: string | null
           country_code?: string
           created_at?: string
           full_name?: string
           id?: string
           is_admin?: boolean
+          is_verified?: boolean
           language?: string
           org_number?: string | null
           phone?: string | null
@@ -1032,6 +1095,7 @@ export type Database = {
           rating?: number | null
           updated_at?: string
           user_type?: string
+          verified_at?: string | null
         }
         Relationships: []
       }
@@ -1873,6 +1937,7 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      custom_access_token_hook: { Args: { event: Json }; Returns: Json }
       disablelongtransactions: { Args: never; Returns: string }
       dropgeometrycolumn:
         | {
@@ -2819,6 +2884,9 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
+  graphql_public: {
+    Enums: {},
+  },
   public: {
     Enums: {},
   },
