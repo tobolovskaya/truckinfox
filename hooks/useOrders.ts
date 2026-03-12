@@ -4,15 +4,16 @@ import { useAuth } from '../contexts/AuthContext';
 
 export interface Order {
   id: string;
-  cargo_request_id: string;
+  request_id: string | null;
   customer_id: string;
   carrier_id: string;
-  bid_id: string;
-  status: 'pending_payment' | 'paid' | 'in_progress' | 'completed' | 'disputed' | 'refunded' | 'cancelled';
+  bid_id: string | null;
+  status: 'pending_payment' | 'paid' | 'in_progress' | 'delivered' | 'completed' | 'disputed' | 'refunded' | 'cancelled';
   payment_status: string;
-  amount: number;
+  total_amount: number;
+  carrier_amount: number;
   platform_fee: number;
-  escrow_status: string;
+  currency: string;
   created_at: string;
   updated_at: string;
   cargo_request?: {

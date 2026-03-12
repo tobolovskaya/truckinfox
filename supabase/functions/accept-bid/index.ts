@@ -154,7 +154,7 @@ Deno.serve(async (req: Request) => {
       const { data: updated, error: orderError } = await supabaseAdmin
         .from('orders')
         .update({
-          status: 'pending',
+          status: 'pending_payment',
           payment_status: 'pending',
           total_amount: bid.price,
           carrier_amount: carrierAmount,
@@ -177,7 +177,7 @@ Deno.serve(async (req: Request) => {
           customer_id: cargoRequest.customer_id,
           carrier_id: bid.carrier_id,
           bid_id: bidId,
-          status: 'pending',
+          status: 'pending_payment',
           payment_status: 'pending',
           total_amount: bid.price,
           carrier_amount: carrierAmount,
