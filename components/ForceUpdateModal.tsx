@@ -9,9 +9,13 @@ import {
   Linking,
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
+import Constants from 'expo-constants';
 import { colors, spacing, fontSize, fontWeight, borderRadius } from '../lib/sharedStyles';
 
-const APP_STORE_URL = 'https://apps.apple.com/app/truckinfox/id000000000';
+const appStoreId: string = Constants.expoConfig?.extra?.appStoreId ?? '';
+const APP_STORE_URL = appStoreId
+  ? `https://apps.apple.com/app/id${appStoreId}`
+  : 'https://apps.apple.com/';
 const PLAY_STORE_URL = 'https://play.google.com/store/apps/details?id=com.truckinfox.app';
 
 interface ForceUpdateModalProps {

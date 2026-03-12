@@ -138,7 +138,8 @@
       "eas": {
         "projectId": "your-eas-project-id-replace-before-deployment"
       },
-      "privacyPolicyUrl": "https://truckinfox.no/privacy"
+      "privacyPolicyUrl": "https://truckinfox.no/privacy",
+      "appStoreId": "REPLACE_WITH_APPLE_APP_STORE_ID"
     }
   }
 }
