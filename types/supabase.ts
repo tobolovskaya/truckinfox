@@ -160,6 +160,7 @@ export type Database = {
           created_at: string
           currency: string
           estimated_days: number | null
+          expires_at: string
           id: string
           note: string | null
           price: number
@@ -172,6 +173,7 @@ export type Database = {
           created_at?: string
           currency?: string
           estimated_days?: number | null
+          expires_at?: string
           id?: string
           note?: string | null
           price: number
@@ -184,6 +186,7 @@ export type Database = {
           created_at?: string
           currency?: string
           estimated_days?: number | null
+          expires_at?: string
           id?: string
           note?: string | null
           price?: number
@@ -1920,6 +1923,12 @@ export type Database = {
             }
             Returns: string
           }
+      auto_confirm_deliveries: {
+        Args: never
+        Returns: {
+          confirmed_id: string
+        }[]
+      }
       capture_storage_zero_byte_snapshot: {
         Args: { _notes?: string }
         Returns: {
@@ -1971,6 +1980,12 @@ export type Database = {
         | { Args: { table_name: string }; Returns: string }
       enablelongtransactions: { Args: never; Returns: string }
       equals: { Args: { geom1: unknown; geom2: unknown }; Returns: boolean }
+      expire_stale_bids: {
+        Args: never
+        Returns: {
+          expired_id: string
+        }[]
+      }
       fn_insert_log: {
         Args: {
           p_action: string

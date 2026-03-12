@@ -10,7 +10,8 @@ export interface Bid {
   note: string | null;
   currency: string;
   estimated_days: number | null;
-  status: 'pending' | 'accepted' | 'rejected' | 'withdrawn';
+  status: 'pending' | 'accepted' | 'rejected' | 'withdrawn' | 'expired';
+  expires_at: string;
   created_at: string;
   updated_at: string;
   carrier?: {

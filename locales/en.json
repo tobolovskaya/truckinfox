@@ -900,5 +900,14 @@
   "orgNumberInvalid": "Organisation number must be exactly 9 digits",
   "verifyBusiness": "Verify Business",
   "verified": "Verified!",
-  "verifiedMessage": "Your business ({{companyName}}) is now verified via Brønnøysundregistrene."
+  "verifiedMessage": "Your business ({{companyName}}) is now verified via Brønnøysundregistrene.",
+  "bidsComparison": "Compare Bids",
+  "bestValue": "Best Value",
+  "verifiedCarrier": "Verified",
+  "estimatedDays": "Est. days",
+  "expiresIn": "Expires {{time}}",
+  "bidExpired": "Expired",
+  "carrierNote": "Note",
+  "sortByPrice": "Lowest price",
+  "sortByRating": "Top rated"
 }

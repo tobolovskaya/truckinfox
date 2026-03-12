@@ -900,5 +900,14 @@
   "orgNumberInvalid": "Organisasjonsnummeret må være nøyaktig 9 siffer",
   "verifyBusiness": "Verifiser bedrift",
   "verified": "Verifisert!",
-  "verifiedMessage": "Bedriften din ({{companyName}}) er nå verifisert via Brønnøysundregistrene."
+  "verifiedMessage": "Bedriften din ({{companyName}}) er nå verifisert via Brønnøysundregistrene.",
+  "bidsComparison": "Sammenlign bud",
+  "bestValue": "Beste pris",
+  "verifiedCarrier": "Verifisert",
+  "estimatedDays": "Est. dager",
+  "expiresIn": "Utløper {{time}}",
+  "bidExpired": "Utløpt",
+  "carrierNote": "Merknad",
+  "sortByPrice": "Laveste pris",
+  "sortByRating": "Beste vurdering"
 }
