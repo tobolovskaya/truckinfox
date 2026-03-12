@@ -4,25 +4,29 @@ import { supabase } from '../lib/supabase';
 
 export interface TrackingPoint {
   id: string;
-  order_id: string;
+  truck_id: string;
+  request_id: string | null;
   latitude: number;
   longitude: number;
-  accuracy: number | null;
-  heading: number | null;
-  speed: number | null;
+  accuracy_m: number | null;
+  altitude_m: number | null;
+  heading_deg: number | null;
+  speed_kmh: number | null;
+  country_code: string;
   recorded_at: string;
+  created_at: string;
 }
 
 const TRACKING_INTERVAL_MS = 5000; // 5 seconds
 const BATCH_SIZE = 10;
 
 /** Hook for carrier: start/stop GPS tracking and batch-insert location points */
-export function useCarrierTracking(orderId: string | undefined) {
+export function useCarrierTracking(orderId: string | undefined, truckId: string | undefined) {
   const [isTracking, setIsTracking] = useState(false);
   const [error, setError] = useState<Error | null>(null);
   const [hasPermission, setHasPermission] = useState<boolean | null>(null);
   const locationSubscription = useRef<Location.LocationSubscription | null>(null);
-  const pendingPoints = useRef<Omit<TrackingPoint, 'id'>[]>([]);
+  const pendingPoints = useRef<Omit<TrackingPoint, 'id' | 'created_at'>[]>([]);
   const flushTimer = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const requestPermission = useCallback(async (): Promise<boolean> => {
@@ -38,8 +42,9 @@ export function useCarrierTracking(orderId: string | undefined) {
 
     const batch = pendingPoints.current.splice(0, BATCH_SIZE);
     const { error: insertError } = await supabase
-      .from('delivery_tracking')
-      .insert(batch);
+      .from('tracking')
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .insert(batch as any);
 
     if (insertError) {
       console.error('Failed to flush tracking points:', insertError.message);
@@ -49,7 +54,7 @@ export function useCarrierTracking(orderId: string | undefined) {
   }, [orderId]);
 
   const startTracking = useCallback(async () => {
-    if (!orderId) return;
+    if (!orderId || !truckId) return;
 
     const permitted = hasPermission ?? await requestPermission();
     if (!permitted) return;
@@ -61,13 +66,16 @@ export function useCarrierTracking(orderId: string | undefined) {
         distanceInterval: 10,
       },
       location => {
-        const point: Omit<TrackingPoint, 'id'> = {
-          order_id: orderId,
+        const point: Omit<TrackingPoint, 'id' | 'created_at'> = {
+          truck_id: truckId,
+          request_id: orderId,
           latitude: location.coords.latitude,
           longitude: location.coords.longitude,
-          accuracy: location.coords.accuracy,
-          heading: location.coords.heading,
-          speed: location.coords.speed,
+          accuracy_m: location.coords.accuracy,
+          altitude_m: location.coords.altitude,
+          heading_deg: location.coords.heading,
+          speed_kmh: location.coords.speed != null ? location.coords.speed * 3.6 : null,
+          country_code: '',
           recorded_at: new Date(location.timestamp).toISOString(),
         };
         pendingPoints.current.push(point);
@@ -77,7 +85,7 @@ export function useCarrierTracking(orderId: string | undefined) {
     flushTimer.current = setInterval(flushPoints, TRACKING_INTERVAL_MS * 2);
     setIsTracking(true);
     setError(null);
-  }, [orderId, hasPermission, requestPermission, flushPoints]);
+  }, [orderId, truckId, hasPermission, requestPermission, flushPoints]);
 
   const stopTracking = useCallback(async () => {
     if (locationSubscription.current) {
@@ -116,13 +124,13 @@ export function useCustomerTracking(orderId: string | undefined) {
 
     // Load recent points
     supabase
-      .from('delivery_tracking')
+      .from('tracking')
       .select('*')
-      .eq('order_id', orderId)
+      .eq('request_id', orderId)
       .order('recorded_at', { ascending: false })
       .limit(50)
       .then(({ data }) => {
-        const points = ((data || []) as TrackingPoint[]).reverse();
+        const points = ((data || []) as unknown as TrackingPoint[]).reverse();
         setTrackingPoints(points);
         if (points.length > 0) setLatestPoint(points[points.length - 1]);
         setLoading(false);
@@ -136,8 +144,8 @@ export function useCustomerTracking(orderId: string | undefined) {
         {
           event: 'INSERT',
           schema: 'public',
-          table: 'delivery_tracking',
-          filter: `order_id=eq.${orderId}`,
+          table: 'tracking',
+          filter: `request_id=eq.${orderId}`,
         },
         payload => {
           const point = payload.new as TrackingPoint;
