@@ -2,7 +2,10 @@ import { useEffect } from 'react';
 import { useRouter, useSegments } from 'expo-router';
 import { View, ActivityIndicator } from 'react-native';
 import { useAuth } from '../contexts/AuthContext';
-import { colors } from '../lib/sharedStyles';
+
+// Match the splash screen background so there is no jarring white flash
+// between the native splash and the React Native content.
+const SPLASH_BG = '#FF7043';
 
 export default function IndexScreen() {
   const { user, loading } = useAuth();
@@ -16,15 +19,12 @@ export default function IndexScreen() {
     const inTabGroup = segments[0] === '(tabs)';
 
     if (!user && !inAuthGroup) {
-      // User is not signed in and not in auth group, redirect to login
       router.replace('/(auth)/login');
     } else if (user && !inTabGroup) {
-      // User is signed in and not in tab group, redirect to home
       router.replace('/(tabs)/home');
     }
   }, [user, loading, segments, router]);
 
-  // Show loading indicator while checking auth state
   if (loading) {
     return (
       <View
@@ -32,10 +32,10 @@ export default function IndexScreen() {
           flex: 1,
           justifyContent: 'center',
           alignItems: 'center',
-          backgroundColor: colors.background,
+          backgroundColor: SPLASH_BG,
         }}
       >
-        <ActivityIndicator size="large" color={colors.primary} />
+        <ActivityIndicator size="large" color="#FFFFFF" />
       </View>
     );
   }

@@ -216,6 +216,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     let isMounted = true;
 
+    // Safety net: if auth hasn't resolved within 8 s (e.g. AsyncStorage
+    // stall or Supabase cold-start), force loading=false so the app never
+    // gets permanently stuck on the splash/loading screen.
+    const authTimeout = setTimeout(() => {
+      if (isMounted) {
+        console.warn('[AuthContext] Auth loading timeout — forcing loading=false');
+        setLoading(false);
+      }
+    }, 8000);
+
     const initializeSession = async () => {
       const { data, error } = await supabase.auth.getSession();
       if (error) {
@@ -239,6 +249,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     return () => {
       isMounted = false;
+      clearTimeout(authTimeout);
       subscription.unsubscribe();
     };
   }, []);
