@@ -119,8 +119,8 @@ export default function SecurityScreen() {
       Alert.alert(t('error'), t('passwordMismatch'));
       return;
     }
-    if (newPw.length < 6) {
-      Alert.alert(t('error'), t('passwordTooShort') || 'Password must be at least 6 characters');
+    if (newPw.length < 8) {
+      Alert.alert(t('error'), t('passwordTooShort'));
       return;
     }
 
