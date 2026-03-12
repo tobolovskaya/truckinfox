@@ -11,6 +11,7 @@ CREATE UNIQUE INDEX IF NOT EXISTS profiles_brreg_org_number_key
 
 -- Carriers can submit their own org number for verification
 -- but cannot flip is_verified themselves (that is done by the Edge Function via service role)
+DROP POLICY IF EXISTS "carriers_update_own_brreg_org_number" ON profiles;
 CREATE POLICY "carriers_update_own_brreg_org_number"
   ON profiles
   FOR UPDATE
