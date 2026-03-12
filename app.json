@@ -6,7 +6,7 @@
     "scheme": "truckinfox",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "userInterfaceStyle": "light",
+    "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "primaryColor": "#FF7043",
     "runtimeVersion": {
@@ -34,6 +34,7 @@
         "NSPhotoLibraryUsageDescription": "TruckinFox needs access to your photo library to upload cargo images.",
         "NSPhotoLibraryAddUsageDescription": "TruckinFox needs permission to save cargo photos to your library.",
         "ITSAppUsesNonExemptEncryption": false,
+        "LSApplicationQueriesSchemes": ["vipps", "vipps-mt"],
         "NSPrivacyAccessedAPITypes": [
           {
             "NSPrivacyAccessedAPIType": "NSPrivacyAccessedAPICategoryUserDefaults",
@@ -65,6 +66,16 @@
           "apiKey": "$(GOOGLE_MAPS_ANDROID_KEY)"
         }
       },
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "autoVerify": true,
+          "data": [
+            { "scheme": "truckinfox" }
+          ],
+          "category": ["BROWSABLE", "DEFAULT"]
+        }
+      ],
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
       "permissions": [

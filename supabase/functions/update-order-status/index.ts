@@ -143,6 +143,58 @@ Deno.serve(async (req: Request) => {
       throw new Error(`Failed to update order: ${updateError.message}`);
     }
 
+    // --- Send notification to the other party ---
+    type NotificationRow = {
+      user_id: string;
+      type: string;
+      title: string;
+      body: string;
+      data: Record<string, string>;
+    };
+
+    let notification: NotificationRow | null = null;
+    const transition = `${currentStatus}->${newStatus}`;
+
+    if (transition === 'paid->in_progress') {
+      notification = {
+        user_id: order.customer_id,
+        type: 'order_status_change',
+        title: 'Order Update',
+        body: 'The carrier has started the delivery.',
+        data: { order_id: orderId, status: newStatus },
+      };
+    } else if (transition === 'in_progress->delivered') {
+      notification = {
+        user_id: order.customer_id,
+        type: 'order_status_change',
+        title: 'Order Update',
+        body: 'Your cargo has been delivered. Please confirm receipt.',
+        data: { order_id: orderId, status: newStatus },
+      };
+    } else if (newStatus === 'disputed') {
+      // Notify the other party, not the one who opened the dispute
+      const notifyUserId = isCustomer ? order.carrier_id : order.customer_id;
+      notification = {
+        user_id: notifyUserId,
+        type: 'order_status_change',
+        title: 'Order Update',
+        body: 'A dispute has been opened for this order.',
+        data: { order_id: orderId, status: newStatus },
+      };
+    } else if (transition === 'pending_payment->cancelled') {
+      notification = {
+        user_id: order.carrier_id,
+        type: 'order_status_change',
+        title: 'Order Update',
+        body: 'The order has been cancelled by the customer.',
+        data: { order_id: orderId, status: newStatus },
+      };
+    }
+
+    if (notification) {
+      await supabaseAdmin.from('notifications').insert(notification);
+    }
+
     return new Response(
       JSON.stringify({ success: true, orderId, status: newStatus }),
       {

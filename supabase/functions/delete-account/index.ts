@@ -1,4 +1,3 @@
-import { serve } from 'https://deno.land/std@0.177.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 const corsHeaders = {
@@ -12,7 +11,7 @@ const json = (body: unknown, status = 200) =>
     headers: { ...corsHeaders, 'Content-Type': 'application/json' },
   });
 
-serve(async (req) => {
+Deno.serve(async (req: Request) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
   }
@@ -39,10 +38,9 @@ serve(async (req) => {
     const admin = createClient(supabaseUrl, serviceRoleKey);
 
     // --- 1. Delete storage files ---
-    const storageBuckets = ['avatars', 'cargo', 'trucks', 'chat-media'];
+    const storageBuckets = ['avatars', 'cargo', 'truck_images', 'chat_media'];
     for (const bucket of storageBuckets) {
       try {
-        // List all files under the user's folder
         const { data: files } = await admin.storage.from(bucket).list(userId, {
           limit: 1000,
           offset: 0,
@@ -57,26 +55,35 @@ serve(async (req) => {
     }
 
     // --- 2. Delete database rows (ordered to respect FK constraints) ---
-    // Leaf tables first, then parent tables
-    const deletions: Array<{ table: string; column: string }> = [
+    // Leaf tables first
+    const simpleDeleteions: Array<{ table: string; column: string }> = [
       { table: 'typing_indicators', column: 'user_id' },
       { table: 'activity_log', column: 'user_id' },
       { table: 'user_favorites', column: 'user_id' },
       { table: 'notifications', column: 'user_id' },
       { table: 'reviews', column: 'reviewer_id' },
       { table: 'reviews', column: 'reviewee_id' },
-      { table: 'delivery_tracking', column: 'carrier_id' },
       { table: 'messages', column: 'sender_id' },
-      { table: 'chat_participants', column: 'user_id' },
     ];
 
-    for (const { table, column } of deletions) {
+    for (const { table, column } of simpleDeleteions) {
       await admin.from(table).delete().eq(column, userId);
     }
 
-    // Delete chats where user is owner (cascade will clean participants/messages)
-    await admin.from('chats').delete().eq('customer_id', userId);
-    await admin.from('chats').delete().eq('carrier_id', userId);
+    // Delete chats by actual column names
+    await admin.from('chats').delete().eq('user_a_id', userId);
+    await admin.from('chats').delete().eq('user_b_id', userId);
+
+    // Delete delivery_tracking via user's truck IDs
+    const { data: userTrucksForTracking } = await admin
+      .from('trucks')
+      .select('id')
+      .eq('carrier_id', userId);
+
+    if (userTrucksForTracking && userTrucksForTracking.length > 0) {
+      const truckIds = userTrucksForTracking.map((t: { id: string }) => t.id);
+      await admin.from('delivery_tracking').delete().in('truck_id', truckIds);
+    }
 
     // Delete escrow payments linked to user's orders
     const { data: userOrders } = await admin
