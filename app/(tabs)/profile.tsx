@@ -122,6 +122,30 @@ export default function ProfileScreen() {
           />
           <Text style={styles.userName}>{user?.displayName || t('customer')}</Text>
           <Text style={styles.userEmail}>{user?.email}</Text>
+
+          {/* Carrier verification status */}
+          {isCarrier && (
+            currentUser?.is_verified ? (
+              <View style={styles.verifiedBadge}>
+                <Ionicons name="checkmark-circle" size={16} color="#10B981" />
+                <Text style={styles.verifiedBadgeText}>
+                  {currentUser.company_name
+                    ? `${t('verifiedCarrier')} · ${currentUser.company_name}`
+                    : t('verifiedCarrier')}
+                </Text>
+              </View>
+            ) : (
+              <TouchableOpacity
+                style={styles.verifyBanner}
+                onPress={() => router.push('/profile/settings')}
+                accessibilityRole="button"
+              >
+                <Ionicons name="shield-outline" size={16} color="#D97706" />
+                <Text style={styles.verifyBannerText}>{t('verifyBusiness')}</Text>
+                <Ionicons name="chevron-forward" size={14} color="#D97706" />
+              </TouchableOpacity>
+            )
+          )}
         </View>
 
         {/* Menu Items */}
@@ -228,5 +252,37 @@ const styles = StyleSheet.create({
     fontSize: fontSize.xs,
     color: colors.text.tertiary,
     paddingBottom: spacing.xl,
+  },
+  verifiedBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    marginTop: spacing.sm,
+    backgroundColor: '#ECFDF5',
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+    borderRadius: 20,
+  },
+  verifiedBadgeText: {
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.semibold,
+    color: '#065F46',
+  },
+  verifyBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    marginTop: spacing.sm,
+    backgroundColor: '#FFFBEB',
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#FDE68A',
+  },
+  verifyBannerText: {
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.semibold,
+    color: '#D97706',
   },
 });

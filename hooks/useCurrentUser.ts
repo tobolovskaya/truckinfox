@@ -7,6 +7,8 @@ interface CurrentUser {
   user_type?: string;
   phone?: string;
   country_code?: string;
+  is_verified?: boolean;
+  company_name?: string | null;
 }
 
 export function useCurrentUser(userId?: string) {
@@ -23,7 +25,7 @@ export function useCurrentUser(userId?: string) {
       setLoading(true);
       const { data, error } = await supabase
         .from('profiles')
-        .select('full_name, avatar_url, user_type, phone, country_code')
+        .select('full_name, avatar_url, user_type, phone, country_code, is_verified, company_name')
         .eq('id', userId)
         .maybeSingle();
 
