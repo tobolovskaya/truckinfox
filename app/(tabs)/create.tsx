@@ -26,7 +26,6 @@ import { useRouter } from 'expo-router';
 import { triggerHapticFeedback } from '../../utils/haptics';
 import { SuccessAnimation } from '../../components/SuccessAnimation';
 import { StandardBottomSheet } from '../../components/StandardBottomSheet';
-import { useDebouncedCallback } from 'use-debounce';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { AddressAutocomplete } from '../../components/AddressAutocomplete';
@@ -36,18 +35,14 @@ import { LazyImage } from '../../components/LazyImage';
 import { ScreenHeader } from '../../components/ScreenHeader';
 import { estimateCargoPriceRange } from '../../utils/priceEstimation';
 import { validateBeforeCreation } from '../../utils/requestValidation';
+import { VehicleConditionForm } from '../../components/VehicleConditionForm';
+import { useCargoFormValidation } from '../../hooks/useCargoFormValidation';
 import {
   CARGO_TYPE_PRESETS,
   CARGO_TYPES,
   PRICE_TYPES,
   QUICK_REQUEST_TEMPLATES,
 } from '../../utils/cargoFormConstants';
-
-const CARGO_LIMITS = {
-  weight: { min: 1, max: 25000 },
-  dimension: { min: 1, max: 1200 },
-  volume: { max: 40 },
-} as const;
 
 const DRAFT_KEY = 'cargo-request-draft';
 const DRAFT_EXPIRY_HOURS = 24;
@@ -130,9 +125,19 @@ export default function CreateRequestScreen() {
   const [loading, setLoading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<Record<string, number>>({});
   const [showSuccessAnimation, setShowSuccessAnimation] = useState(false);
-  const [touchedFields, setTouchedFields] = useState<Record<string, boolean>>({});
-  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
-  const [liveValidation, setLiveValidation] = useState(false);
+  const {
+    touchedFields, setTouchedFields,
+    setFieldErrors,
+    liveValidation, setLiveValidation,
+    validateField,
+    validateForm,
+    debouncedValidateField,
+    handleBlur,
+    getInputValidationStyles,
+    getFieldError,
+    renderFieldError,
+    renderValidIcon,
+  } = useCargoFormValidation(formData);
   const [showPickupDate, setShowPickupDate] = useState(false);
   const [showDeliveryDate, setShowDeliveryDate] = useState(false);
   const [showCargoTypeMenu, setShowCargoTypeMenu] = useState(false);
@@ -283,130 +288,10 @@ export default function CreateRequestScreen() {
     return descriptionParts.join('\n');
   };
 
-  const validateField = (field: string, value: unknown, nextData: typeof formData = formData) => {
-    switch (field) {
-      case 'title':
-        if (!value || value.toString().trim() === '') return t('titleRequired');
-        if (value.toString().trim().length < 3) return t('titleMinLength');
-        return '';
-
-      case 'description':
-        if (!value || value.toString().trim() === '') return t('descriptionRequired');
-        if (value.toString().trim().length < 10) return t('descriptionMinLength');
-        return '';
-
-      case 'cargo_type':
-        if (!value) return t('cargoTypeRequired');
-        return '';
-
-      case 'weight': {
-        if (!value || value.toString().trim() === '') return t('weightRequired');
-        const weight = Number(value);
-        if (isNaN(weight)) return t('weightMustBeNumber');
-        if (weight <= 0) return t('weightMustBePositive');
-        if (weight < CARGO_LIMITS.weight.min || weight > CARGO_LIMITS.weight.max) {
-          return `Vekt må være mellom ${CARGO_LIMITS.weight.min} og ${CARGO_LIMITS.weight.max} kg`;
-        }
-        return '';
-      }
-
-      case 'length':
-      case 'width':
-      case 'height': {
-        if (value && value.toString().trim()) {
-          const dim = Number(value);
-          if (isNaN(dim) || dim < CARGO_LIMITS.dimension.min || dim > CARGO_LIMITS.dimension.max) {
-            return `Dimensjon må være mellom ${CARGO_LIMITS.dimension.min} og ${CARGO_LIMITS.dimension.max} cm`;
-          }
-        }
-        return '';
-      }
-
-      case 'from_address':
-        if (!value || !value.toString().trim()) return t('fromAddressRequired');
-        if (value.toString().trim().length < 3) return t('fromAddressMinLength');
-        return '';
-
-      case 'to_address':
-        if (!value || !value.toString().trim()) return t('toAddressRequired');
-        if (value.toString().trim().length < 3) return t('toAddressMinLength');
-        return '';
-
-      case 'price_type':
-        if (!value) return t('priceTypeRequired');
-        return '';
-
-      case 'price':
-        if (nextData.price_type === 'fixed') {
-          if (!value || value.toString().trim() === '') return t('priceRequired');
-          const price = Number(value);
-          if (isNaN(price)) return t('priceMustBeNumber');
-          if (price <= 0) return t('priceMustBePositive');
-          if (price > 1000000) return t('priceMaxExceeded');
-        }
-        return '';
-
-      default:
-        return '';
-    }
-  };
-
   const clearDistanceIfNeeded = (field: keyof typeof formData) => {
     if (field === 'from_address' || field === 'to_address') {
       updateFormData('distance_km', null);
     }
-  };
-
-  const debouncedValidateField = useDebouncedCallback(
-    (field: string, value: unknown, nextData: typeof formData) => {
-      const error = validateField(field, value, nextData);
-      setFieldErrors(prev => ({ ...prev, [field]: error }));
-    },
-    300
-  );
-
-  const getValidationState = (field: string, value: unknown) => {
-    const showValidation = liveValidation || Boolean(touchedFields[field]);
-    const error = fieldErrors[field];
-    const hasValue = value !== null && value !== undefined && String(value).trim() !== '';
-    const isValid = showValidation && !error && hasValue;
-
-    return { showValidation, error, isValid };
-  };
-
-  const getInputValidationStyles = (field: string, value: unknown) => {
-    const { showValidation, error, isValid } = getValidationState(field, value);
-    return [showValidation && error && styles.textInputError, isValid && styles.textInputValid];
-  };
-
-  const getFieldError = (field: string, value: unknown) => {
-    const { showValidation, error } = getValidationState(field, value);
-    return showValidation ? error : undefined;
-  };
-
-  const renderFieldError = (field: string, value: unknown) => {
-    const { showValidation, error } = getValidationState(field, value);
-    if (!showValidation || !error) {
-      return null;
-    }
-
-    return (
-      <View style={styles.errorContainer}>
-        <Ionicons name="alert-circle" size={16} color={colors.error} />
-        <Text style={styles.errorText}>{error}</Text>
-      </View>
-    );
-  };
-
-  const renderValidIcon = (field: string, value: unknown) => {
-    const { isValid } = getValidationState(field, value);
-    if (!isValid) {
-      return null;
-    }
-
-    return (
-      <Ionicons name="checkmark-circle" size={18} color={colors.success} style={styles.validIcon} />
-    );
   };
 
   const updateFormData = (field: string, value: unknown) => {
@@ -493,98 +378,6 @@ export default function CreateRequestScreen() {
     if (liveValidation || touchedFields.height) {
       debouncedValidateField('height', nextData.height, nextData);
     }
-  };
-
-  const handleBlur = (field: string) => {
-    setTouchedFields(prev => ({ ...prev, [field]: true }));
-    const error = validateField(field, formData[field as keyof typeof formData]);
-    setFieldErrors(prev => ({ ...prev, [field]: error }));
-  };
-
-  const validateDimensions = (): boolean => {
-    const weight = Number(formData.weight);
-
-    if (weight < CARGO_LIMITS.weight.min || weight > CARGO_LIMITS.weight.max) {
-      toast.error(
-        `Vekt må være mellom ${CARGO_LIMITS.weight.min} og ${CARGO_LIMITS.weight.max} kg`
-      );
-      triggerHapticFeedback.error();
-      return false;
-    }
-
-    if (formData.length && formData.width && formData.height) {
-      const length = Number(formData.length);
-      const width = Number(formData.width);
-      const height = Number(formData.height);
-
-      for (const dim of [length, width, height]) {
-        if (isNaN(dim) || dim < CARGO_LIMITS.dimension.min || dim > CARGO_LIMITS.dimension.max) {
-          toast.error(
-            `Dimensjoner må være mellom ${CARGO_LIMITS.dimension.min} og ${CARGO_LIMITS.dimension.max} cm`
-          );
-          triggerHapticFeedback.error();
-          return false;
-        }
-      }
-
-      const volume = (length * width * height) / 1000000;
-      if (volume > CARGO_LIMITS.volume.max) {
-        toast.error(
-          `Lastevolum (${volume.toFixed(2)} m³) overstiger maksimum (${CARGO_LIMITS.volume.max} m³)`
-        );
-        triggerHapticFeedback.error();
-        return false;
-      }
-    }
-
-    return true;
-  };
-
-  const validateForm = () => {
-    const fieldsToValidate = [
-      'title',
-      'description',
-      'cargo_type',
-      'weight',
-      'from_address',
-      'to_address',
-      'price_type',
-      'price',
-    ];
-    const newErrors: { [key: string]: string } = {};
-    const newTouched: { [key: string]: boolean } = {};
-
-    fieldsToValidate.forEach(field => {
-      newTouched[field] = true;
-      const error = validateField(field, formData[field as keyof typeof formData]);
-      if (error) {
-        newErrors[field] = error;
-      }
-    });
-
-    setTouchedFields(newTouched);
-    setFieldErrors(newErrors);
-
-    const firstError = Object.values(newErrors).find(error => error);
-    if (firstError) {
-      toast.error(firstError);
-      triggerHapticFeedback.error();
-      return false;
-    }
-
-    if (!validateDimensions()) {
-      return false;
-    }
-
-    const pickupDate = normalizeDateOnly(formData.pickup_date);
-    const deliveryDate = normalizeDateOnly(formData.delivery_date);
-    if (deliveryDate.getTime() < pickupDate.getTime()) {
-      toast.error(t('deliveryDateMustBeAfterPickup'));
-      triggerHapticFeedback.error();
-      return false;
-    }
-
-    return true;
   };
 
   const checkForDuplicates = async (): Promise<boolean> => {
@@ -1155,227 +948,27 @@ export default function CreateRequestScreen() {
 
             {/* Automotive Vehicle Condition */}
             {formData.cargo_type === 'automotive' && (
-              <View style={[styles.fieldContainer, isSmallScreen && styles.fieldContainerCompact]}>
-                <Text style={[styles.fieldLabel, isSmallScreen && styles.fieldLabelCompact]}>
-                  {t('vehicleCondition')}
-                </Text>
-                <View style={styles.vehicleConditionCard}>
-                  {/* Q1: Is it driveable? */}
-                  <View style={styles.vehicleConditionRow}>
-                    <View style={styles.vehicleConditionTextWrap}>
-                      <Text style={styles.vehicleConditionQuestion}>{t('vehicleIsDriveable')}</Text>
-                      <Text style={styles.vehicleConditionHint}>{t('vehicleIsDriveableHint')}</Text>
-                    </View>
-                    <View style={styles.vehicleConditionToggleRow}>
-                      <TouchableOpacity
-                        style={[styles.conditionPill, isDriveable && styles.conditionPillActive]}
-                        onPress={() => setIsDriveable(true)}
-                        activeOpacity={0.8}
-                      >
-                        <Text style={[styles.conditionPillText, isDriveable && styles.conditionPillTextActive]}>
-                          {t('yes')}
-                        </Text>
-                      </TouchableOpacity>
-                      <TouchableOpacity
-                        style={[styles.conditionPill, !isDriveable && styles.conditionPillActiveNo]}
-                        onPress={() => setIsDriveable(false)}
-                        activeOpacity={0.8}
-                      >
-                        <Text style={[styles.conditionPillText, !isDriveable && styles.conditionPillTextActive]}>
-                          {t('no')}
-                        </Text>
-                      </TouchableOpacity>
-                    </View>
-                  </View>
-
-                  <View style={styles.vehicleConditionDivider} />
-
-                  {/* Q2: Does it start? */}
-                  <View style={styles.vehicleConditionRow}>
-                    <View style={styles.vehicleConditionTextWrap}>
-                      <Text style={styles.vehicleConditionQuestion}>{t('vehicleStarts')}</Text>
-                      <Text style={styles.vehicleConditionHint}>{t('vehicleStartsHint')}</Text>
-                    </View>
-                    <View style={styles.vehicleConditionToggleRow}>
-                      <TouchableOpacity
-                        style={[styles.conditionPill, vehicleStarts && styles.conditionPillActive]}
-                        onPress={() => setVehicleStarts(true)}
-                        activeOpacity={0.8}
-                      >
-                        <Text style={[styles.conditionPillText, vehicleStarts && styles.conditionPillTextActive]}>
-                          {t('yes')}
-                        </Text>
-                      </TouchableOpacity>
-                      <TouchableOpacity
-                        style={[styles.conditionPill, !vehicleStarts && styles.conditionPillActiveNo]}
-                        onPress={() => setVehicleStarts(false)}
-                        activeOpacity={0.8}
-                      >
-                        <Text style={[styles.conditionPillText, !vehicleStarts && styles.conditionPillTextActive]}>
-                          {t('no')}
-                        </Text>
-                      </TouchableOpacity>
-                    </View>
-                  </View>
-
-                  <View style={styles.vehicleConditionDivider} />
-
-                  {/* Q3: Has visible damage? */}
-                  <View style={styles.vehicleConditionRow}>
-                    <View style={styles.vehicleConditionTextWrap}>
-                      <Text style={styles.vehicleConditionQuestion}>{t('vehicleHasDamage')}</Text>
-                      <Text style={styles.vehicleConditionHint}>{t('vehicleHasDamageHint')}</Text>
-                    </View>
-                    <View style={styles.vehicleConditionToggleRow}>
-                      <TouchableOpacity
-                        style={[styles.conditionPill, vehicleHasDamage && styles.conditionPillActiveNo]}
-                        onPress={() => setVehicleHasDamage(true)}
-                        activeOpacity={0.8}
-                      >
-                        <Text style={[styles.conditionPillText, vehicleHasDamage && styles.conditionPillTextActive]}>
-                          {t('yes')}
-                        </Text>
-                      </TouchableOpacity>
-                      <TouchableOpacity
-                        style={[styles.conditionPill, !vehicleHasDamage && styles.conditionPillActive]}
-                        onPress={() => setVehicleHasDamage(false)}
-                        activeOpacity={0.8}
-                      >
-                        <Text style={[styles.conditionPillText, !vehicleHasDamage && styles.conditionPillTextActive]}>
-                          {t('no')}
-                        </Text>
-                      </TouchableOpacity>
-                    </View>
-                  </View>
-
-                  <View style={styles.vehicleConditionDivider} />
-
-                  <View style={styles.vehicleConditionRowStacked}>
-                    <Text style={styles.vehicleConditionQuestion}>{t('transportType')}</Text>
-                    <Text style={styles.vehicleConditionHint}>{t('transportTypeHint')}</Text>
-                    <View style={styles.transportTypeRow}>
-                      <TouchableOpacity
-                        style={[styles.transportTypePill, transportType === 'open' && styles.conditionPillActive]}
-                        onPress={() => setTransportType('open')}
-                        activeOpacity={0.8}
-                      >
-                        <Text style={[styles.conditionPillText, transportType === 'open' && styles.conditionPillTextActive]}>
-                          {t('openTrailer')}
-                        </Text>
-                      </TouchableOpacity>
-                      <TouchableOpacity
-                        style={[styles.transportTypePill, transportType === 'enclosed' && styles.conditionPillActive]}
-                        onPress={() => setTransportType('enclosed')}
-                        activeOpacity={0.8}
-                      >
-                        <Text style={[styles.conditionPillText, transportType === 'enclosed' && styles.conditionPillTextActive]}>
-                          {t('enclosedTrailer')}
-                        </Text>
-                      </TouchableOpacity>
-                    </View>
-                  </View>
-
-                  <View style={styles.vehicleConditionDivider} />
-
-                  <View style={styles.vehicleConditionRowStacked}>
-                    <Text style={styles.vehicleConditionQuestion}>{t('vinOptional')}</Text>
-                    <TextInput
-                      style={styles.vehicleMetaInput}
-                      value={vehicleVin}
-                      onChangeText={setVehicleVin}
-                      autoCapitalize="characters"
-                      placeholder="e.g. YV1TS..."
-                      placeholderTextColor="#9CA3AF"
-                    />
-                  </View>
-
-                  <View style={styles.vehicleConditionDivider} />
-
-                  <View style={styles.vehicleConditionRowStacked}>
-                    <Text style={styles.vehicleConditionQuestion}>{t('groundClearanceCm')}</Text>
-                    <TextInput
-                      style={styles.vehicleMetaInput}
-                      value={vehicleGroundClearanceCm}
-                      onChangeText={setVehicleGroundClearanceCm}
-                      keyboardType="numeric"
-                      placeholder="e.g. 14"
-                      placeholderTextColor="#9CA3AF"
-                    />
-                  </View>
-
-                  <View style={styles.vehicleConditionDivider} />
-
-                  <View style={styles.vehicleConditionRow}>
-                    <View style={styles.vehicleConditionTextWrap}>
-                      <Text style={styles.vehicleConditionQuestion}>{t('keysIncluded')}</Text>
-                    </View>
-                    <View style={styles.vehicleConditionToggleRow}>
-                      <TouchableOpacity
-                        style={[styles.conditionPill, vehicleHasKeys && styles.conditionPillActive]}
-                        onPress={() => setVehicleHasKeys(true)}
-                        activeOpacity={0.8}
-                      >
-                        <Text style={[styles.conditionPillText, vehicleHasKeys && styles.conditionPillTextActive]}>{t('yes')}</Text>
-                      </TouchableOpacity>
-                      <TouchableOpacity
-                        style={[styles.conditionPill, !vehicleHasKeys && styles.conditionPillActiveNo]}
-                        onPress={() => setVehicleHasKeys(false)}
-                        activeOpacity={0.8}
-                      >
-                        <Text style={[styles.conditionPillText, !vehicleHasKeys && styles.conditionPillTextActive]}>{t('no')}</Text>
-                      </TouchableOpacity>
-                    </View>
-                  </View>
-
-                  <View style={styles.vehicleConditionDivider} />
-
-                  <View style={styles.vehicleConditionRow}>
-                    <View style={styles.vehicleConditionTextWrap}>
-                      <Text style={styles.vehicleConditionQuestion}>{t('wheelLock')}</Text>
-                    </View>
-                    <View style={styles.vehicleConditionToggleRow}>
-                      <TouchableOpacity
-                        style={[styles.conditionPill, vehicleHasWheelLock && styles.conditionPillActiveNo]}
-                        onPress={() => setVehicleHasWheelLock(true)}
-                        activeOpacity={0.8}
-                      >
-                        <Text style={[styles.conditionPillText, vehicleHasWheelLock && styles.conditionPillTextActive]}>{t('yes')}</Text>
-                      </TouchableOpacity>
-                      <TouchableOpacity
-                        style={[styles.conditionPill, !vehicleHasWheelLock && styles.conditionPillActive]}
-                        onPress={() => setVehicleHasWheelLock(false)}
-                        activeOpacity={0.8}
-                      >
-                        <Text style={[styles.conditionPillText, !vehicleHasWheelLock && styles.conditionPillTextActive]}>{t('no')}</Text>
-                      </TouchableOpacity>
-                    </View>
-                  </View>
-
-                  <View style={styles.vehicleConditionDivider} />
-
-                  <View style={styles.vehicleConditionRow}>
-                    <View style={styles.vehicleConditionTextWrap}>
-                      <Text style={styles.vehicleConditionQuestion}>{t('needsWinch')}</Text>
-                    </View>
-                    <View style={styles.vehicleConditionToggleRow}>
-                      <TouchableOpacity
-                        style={[styles.conditionPill, vehicleNeedsWinch && styles.conditionPillActiveNo]}
-                        onPress={() => setVehicleNeedsWinch(true)}
-                        activeOpacity={0.8}
-                      >
-                        <Text style={[styles.conditionPillText, vehicleNeedsWinch && styles.conditionPillTextActive]}>{t('yes')}</Text>
-                      </TouchableOpacity>
-                      <TouchableOpacity
-                        style={[styles.conditionPill, !vehicleNeedsWinch && styles.conditionPillActive]}
-                        onPress={() => setVehicleNeedsWinch(false)}
-                        activeOpacity={0.8}
-                      >
-                        <Text style={[styles.conditionPillText, !vehicleNeedsWinch && styles.conditionPillTextActive]}>{t('no')}</Text>
-                      </TouchableOpacity>
-                    </View>
-                  </View>
-                </View>
-              </View>
+              <VehicleConditionForm
+                isSmallScreen={isSmallScreen}
+                isDriveable={isDriveable}
+                onSetIsDriveable={setIsDriveable}
+                vehicleStarts={vehicleStarts}
+                onSetVehicleStarts={setVehicleStarts}
+                vehicleHasDamage={vehicleHasDamage}
+                onSetVehicleHasDamage={setVehicleHasDamage}
+                vehicleVin={vehicleVin}
+                onSetVehicleVin={setVehicleVin}
+                vehicleHasKeys={vehicleHasKeys}
+                onSetVehicleHasKeys={setVehicleHasKeys}
+                vehicleHasWheelLock={vehicleHasWheelLock}
+                onSetVehicleHasWheelLock={setVehicleHasWheelLock}
+                vehicleGroundClearanceCm={vehicleGroundClearanceCm}
+                onSetVehicleGroundClearanceCm={setVehicleGroundClearanceCm}
+                vehicleNeedsWinch={vehicleNeedsWinch}
+                onSetVehicleNeedsWinch={setVehicleNeedsWinch}
+                transportType={transportType}
+                onSetTransportType={setTransportType}
+              />
             )}
 
             {/* Dimensions */}
@@ -2065,14 +1658,6 @@ const styles = StyleSheet.create({
   inputWrapper: {
     position: 'relative',
   },
-  textInputError: {
-    borderColor: colors.error,
-    borderWidth: 2,
-  },
-  textInputValid: {
-    borderColor: colors.success,
-    borderWidth: 1,
-  },
   textInputNeutral: {
     borderWidth: 1,
     borderColor: '#E5E7EB',
@@ -2328,21 +1913,6 @@ const styles = StyleSheet.create({
   buttonTextCompact: {
     fontSize: fontSize.sm,
   },
-  errorText: {
-    fontSize: fontSize.sm,
-    color: colors.error,
-  },
-  errorContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs,
-    marginTop: spacing.xs,
-  },
-  validIcon: {
-    position: 'absolute',
-    right: spacing.md,
-    top: spacing.md,
-  },
   dropdownButton: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -2459,101 +2029,10 @@ const styles = StyleSheet.create({
     color: colors.success,
     fontWeight: '600',
   },
-  vehicleConditionCard: {
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-    borderRadius: 16,
-    backgroundColor: '#FFFFFF',
-    overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.06,
     shadowRadius: 4,
     elevation: 2,
     marginTop: spacing.xs,
-  },
-  vehicleConditionRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: spacing.md,
-    gap: spacing.sm,
-  },
-  vehicleConditionTextWrap: {
-    flex: 1,
-  },
-  vehicleConditionQuestion: {
-    fontSize: fontSize.md,
-    fontWeight: '600',
-    color: '#111827',
-  },
-  vehicleConditionHint: {
-    fontSize: fontSize.sm,
-    color: '#6B7280',
-    marginTop: 2,
-  },
-  vehicleConditionToggleRow: {
-    flexDirection: 'row',
-    gap: spacing.xs,
-  },
-  vehicleConditionRowStacked: {
-    padding: spacing.md,
-    gap: spacing.xs,
-  },
-  vehicleMetaInput: {
-    borderWidth: 1,
-    borderColor: colors.border.default,
-    borderRadius: borderRadius.md,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    fontSize: fontSize.md,
-    color: colors.text.primary,
-    backgroundColor: colors.white,
-  },
-  transportTypeRow: {
-    flexDirection: 'row',
-    gap: spacing.xs,
-  },
-  transportTypePill: {
-    flex: 1,
-    borderWidth: 1.5,
-    borderColor: '#E5E7EB',
-    borderRadius: borderRadius.full,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs,
-    backgroundColor: '#F9FAFB',
-    alignItems: 'center',
-  },
-  vehicleConditionDivider: {
-    height: 1,
-    backgroundColor: '#F3F4F6',
-    marginHorizontal: spacing.md,
-  },
-  conditionPill: {
-    borderWidth: 1.5,
-    borderColor: '#E5E7EB',
-    borderRadius: borderRadius.full,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs,
-    backgroundColor: '#F9FAFB',
-    minWidth: 48,
-    alignItems: 'center',
-  },
-  conditionPillActive: {
-    borderColor: colors.primary,
-    backgroundColor: colors.primaryLight,
-  },
-  conditionPillActiveNo: {
-    borderColor: '#EF4444',
-    backgroundColor: '#FEF2F2',
-  },
-  conditionPillText: {
-    fontSize: fontSize.sm,
-    fontWeight: '600',
-    color: '#6B7280',
-  },
-  conditionPillTextActive: {
-    color: '#111827',
   },
   summaryPriceCard: {
     borderWidth: 1,
