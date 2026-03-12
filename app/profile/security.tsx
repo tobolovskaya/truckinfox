@@ -210,14 +210,6 @@ export default function SecurityScreen() {
 
   const otherSecurityOptions: SecurityOption[] = [
     {
-      id: 'two-factor',
-      icon: 'shield-checkmark-outline',
-      title: t('twoFactorAuth'),
-      subtitle: t('twoFactorSubtitle'),
-      iconColor: colors.success,
-      onPress: () => Alert.alert(t('comingSoon'), t('comingSoon')),
-    },
-    {
       id: 'active-sessions',
       icon: 'phone-portrait-outline',
       title: t('activeSessions'),
