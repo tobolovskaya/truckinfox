@@ -140,27 +140,58 @@ Deno.serve(async (req: Request) => {
     const platformFee = Math.round(bid.price * 0.1 * 100) / 100;
     const carrierAmount = Math.round((bid.price - platformFee) * 100) / 100;
 
-    // Create the order record
-    const { data: order, error: orderError } = await supabaseAdmin
+    // The DB trigger may have already created a provisional order on bid INSERT.
+    // Update it if it exists; otherwise insert fresh to avoid duplicate rows.
+    const { data: existingOrder } = await supabaseAdmin
       .from('orders')
-      .insert({
-        request_id: bid.request_id,
-        customer_id: cargoRequest.customer_id,
-        carrier_id: bid.carrier_id,
-        bid_id: bidId,
-        status: 'pending',
-        payment_status: 'pending',
-        total_amount: bid.price,
-        carrier_amount: carrierAmount,
-        platform_fee: platformFee,
-        created_at: now,
-        updated_at: now,
-      })
       .select('id')
-      .single();
+      .eq('bid_id', bidId)
+      .maybeSingle();
 
-    if (orderError) {
-      throw new Error(`Failed to create order: ${orderError.message}`);
+    let order: { id: string };
+
+    if (existingOrder) {
+      const { data: updated, error: orderError } = await supabaseAdmin
+        .from('orders')
+        .update({
+          status: 'pending',
+          payment_status: 'pending',
+          total_amount: bid.price,
+          carrier_amount: carrierAmount,
+          platform_fee: platformFee,
+          updated_at: now,
+        })
+        .eq('id', existingOrder.id)
+        .select('id')
+        .single();
+
+      if (orderError) {
+        throw new Error(`Failed to update order: ${orderError.message}`);
+      }
+      order = updated;
+    } else {
+      const { data: created, error: orderError } = await supabaseAdmin
+        .from('orders')
+        .insert({
+          request_id: bid.request_id,
+          customer_id: cargoRequest.customer_id,
+          carrier_id: bid.carrier_id,
+          bid_id: bidId,
+          status: 'pending',
+          payment_status: 'pending',
+          total_amount: bid.price,
+          carrier_amount: carrierAmount,
+          platform_fee: platformFee,
+          created_at: now,
+          updated_at: now,
+        })
+        .select('id')
+        .single();
+
+      if (orderError) {
+        throw new Error(`Failed to create order: ${orderError.message}`);
+      }
+      order = created;
     }
 
     // Notify the carrier that their bid was accepted
