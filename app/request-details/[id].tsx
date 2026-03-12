@@ -30,9 +30,9 @@ import { LazyImage } from '../../components/LazyImage';
 import Avatar from '../../components/Avatar';
 import { VerifiedBadge } from '../../components/VerifiedBadge';
 import { SkeletonLoader } from '../../components/SkeletonLoader';
-import { EmptyState } from '../../components/EmptyState';
-import EmptyBidsIllustration from '../../assets/empty-bids.svg';
 import { ScreenHeader } from '../../components/ScreenHeader';
+import { BidComparisonTable } from '../../components/BidComparisonTable';
+import type { Bid as UseBid } from '../../hooks/useBids';
 import {
   trackBidSubmitted,
   trackBidAccepted,
@@ -94,6 +94,7 @@ interface Bid {
   message: string;
   status: string;
   created_at: unknown;
+  expires_at: string;
   carrier_id: string;
   counter_price?: number | null;
   counter_note?: string | null;
@@ -369,7 +370,7 @@ export default function RequestDetailsScreen() {
     try {
       const { data: bidsRows, error: bidsError } = await supabase
         .from('bids')
-        .select('id, price, note, status, created_at, carrier_id, counter_price, counter_note, countered_at')
+        .select('id, price, note, status, created_at, expires_at, carrier_id, counter_price, counter_note, countered_at')
         .eq('request_id', id as string)
         .order('created_at', { ascending: false });
 
@@ -498,6 +499,7 @@ export default function RequestDetailsScreen() {
         message: row.note || '',
         status: row.status || 'pending',
         created_at: row.created_at,
+        expires_at: row.expires_at ?? new Date(Date.now() + 48 * 3600 * 1000).toISOString(),
         carrier_id: row.carrier_id,
         counter_price: row.counter_price ?? null,
         counter_note: row.counter_note ?? null,
@@ -1317,27 +1319,62 @@ export default function RequestDetailsScreen() {
         );
 
       case 'bids':
-        if (bids.length === 0) {
-          // Only show the empty state to the customer (owner of the request).
-          // The carrier sees the bid form instead; nothing here for them.
-          if (!isCustomer) return null;
+        // Customer: full comparison table with sorting, counter-offer modal, accept flow
+        if (isCustomer) {
+          const tableBids: UseBid[] = bids.map(b => ({
+            id: b.id,
+            request_id: id as string,
+            carrier_id: b.carrier_id,
+            price: b.price,
+            note: b.message ?? null,
+            currency: 'NOK',
+            estimated_days: null,
+            status: b.status as UseBid['status'],
+            expires_at: b.expires_at,
+            counter_price: b.counter_price ?? null,
+            counter_note: b.counter_note ?? null,
+            countered_at: b.countered_at ?? null,
+            created_at: b.created_at as string,
+            updated_at: b.created_at as string,
+            carrier: b.users
+              ? {
+                  id: b.carrier_id,
+                  full_name: b.users.full_name ?? '',
+                  rating: b.users.rating ?? 0,
+                  is_verified: b.users.is_verified ?? false,
+                }
+              : undefined,
+          }));
           return (
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>{t('bids') || 'Bud'}</Text>
-              <EmptyState
-                icon="cash-outline"
-                title={t('noBidsYet')}
-                description={t('noBidsDescription')}
-                illustration={EmptyBidsIllustration}
-              />
-            </View>
+            <BidComparisonTable
+              bids={tableBids}
+              requestStatus={request?.status ?? ''}
+              onBidAccepted={(orderId) => {
+                fetchBids();
+                fetchRequest();
+                triggerHapticFeedback.success();
+                setShowSuccessAnimation(true);
+                setTimeout(() => {
+                  setShowSuccessAnimation(false);
+                  Alert.alert(t('bidAccepted'), t('bidAcceptedNextStep'), [
+                    {
+                      text: t('proceedToPayment'),
+                      onPress: () => router.push(`/payment/${orderId}` as never),
+                    },
+                  ]);
+                }, 800);
+              }}
+            />
           );
         }
+
+        // Carrier: show only their own bid(s) with counter-offer banner
+        if (bids.filter(b => b.carrier_id === user?.uid).length === 0) return null;
         return (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Bud ({bids.length})</Text>
+            <Text style={styles.sectionTitle}>Bud ({bids.filter(b => b.carrier_id === user?.uid).length})</Text>
 
-            {bids.map(bid => (
+            {bids.filter(b => b.carrier_id === user?.uid).map(bid => (
               <View key={bid.id} style={styles.bidCard}>
                 <View style={styles.bidHeader}>
                   <Avatar photoURL={bid.users?.avatar_url} size={40} />
