@@ -919,7 +919,9 @@
   "sendCounter": "Send Counter",
   "counterSent": "Counter offer sent",
   "counterPending": "Counter sent: {{price}} NOK",
-  "acceptCounter": "Accept",
-  "declineCounter": "Decline",
-  "counterOfferReceived": "Counter offer: {{price}} NOK"
+  "acceptCounter": "Accept Counter Offer",
+  "acceptCounterConfirm": "Accept this counter offer and update your bid price?",
+  "declineCounter": "Decline Counter Offer",
+  "declineCounterConfirm": "Decline this counter offer? Your original bid price will remain.",
+  "counterOfferReceived": "Counter offer received"
 }

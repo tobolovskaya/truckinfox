@@ -20,7 +20,7 @@ GRANT USAGE ON SCHEMA cron TO postgres;
 -- ---------------------------------------------------------------------------
 -- Helper: schedule or reschedule a job (idempotent)
 -- ---------------------------------------------------------------------------
-DO $$
+DO $do$
 BEGIN
 
   -- 1. expire-stale-bids: every hour at :00
@@ -52,10 +52,7 @@ BEGIN
   PERFORM cron.schedule(
     'cleanup-old-tracking',
     '0 2 * * *',
-    $$
-      DELETE FROM public.tracking
-      WHERE recorded_at < NOW() - INTERVAL '30 days'
-    $$
+    'DELETE FROM public.tracking WHERE recorded_at < NOW() - INTERVAL ''30 days'''
   );
 
   -- 4. cleanup-old-notifications: daily at 04:00 UTC
@@ -66,15 +63,11 @@ BEGIN
   PERFORM cron.schedule(
     'cleanup-old-notifications',
     '0 4 * * *',
-    $$
-      DELETE FROM public.notifications
-      WHERE read = true
-        AND created_at < NOW() - INTERVAL '90 days'
-    $$
+    'DELETE FROM public.notifications WHERE read = true AND created_at < NOW() - INTERVAL ''90 days'''
   );
 
 END;
-$$;
+$do$;
 
 -- ---------------------------------------------------------------------------
 -- Verify: list all registered jobs (shows up in migration output)

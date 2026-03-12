@@ -919,7 +919,9 @@
   "sendCounter": "Send motbud",
   "counterSent": "Motbud sendt",
   "counterPending": "Motbud sendt: {{price}} NOK",
-  "acceptCounter": "Godta",
-  "declineCounter": "Avvis",
-  "counterOfferReceived": "Motbud: {{price}} NOK"
+  "acceptCounter": "Godta motbud",
+  "acceptCounterConfirm": "Godta dette motbudet og oppdater budprisen din?",
+  "declineCounter": "Avvis motbud",
+  "declineCounterConfirm": "Avvis dette motbudet? Din opprinnelige budpris beholdes.",
+  "counterOfferReceived": "Motbud mottatt"
 }
