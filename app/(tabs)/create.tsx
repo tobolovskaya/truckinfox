@@ -2029,11 +2029,6 @@ const styles = StyleSheet.create({
     color: colors.success,
     fontWeight: '600',
   },
-    shadowOpacity: 0.06,
-    shadowRadius: 4,
-    elevation: 2,
-    marginTop: spacing.xs,
-  },
   summaryPriceCard: {
     borderWidth: 1,
     borderColor: colors.border.light,
