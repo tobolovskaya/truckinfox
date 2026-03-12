@@ -157,6 +157,9 @@ export type Database = {
       bids: {
         Row: {
           carrier_id: string
+          counter_note: string | null
+          counter_price: number | null
+          countered_at: string | null
           created_at: string
           currency: string
           estimated_days: number | null
@@ -170,6 +173,9 @@ export type Database = {
         }
         Insert: {
           carrier_id: string
+          counter_note?: string | null
+          counter_price?: number | null
+          countered_at?: string | null
           created_at?: string
           currency?: string
           estimated_days?: number | null
@@ -183,6 +189,9 @@ export type Database = {
         }
         Update: {
           carrier_id?: string
+          counter_note?: string | null
+          counter_price?: number | null
+          countered_at?: string | null
           created_at?: string
           currency?: string
           estimated_days?: number | null

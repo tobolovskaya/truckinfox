@@ -909,5 +909,17 @@
   "bidExpired": "Expired",
   "carrierNote": "Note",
   "sortByPrice": "Lowest price",
-  "sortByRating": "Top rated"
+  "sortByRating": "Top rated",
+  "counterOffer": "Counter",
+  "counterOfferTitle": "Send Counter Offer",
+  "counterOfferHint": "Propose a different price to the carrier",
+  "counterPrice": "Your price (NOK)",
+  "counterNote": "Message (optional)",
+  "counterNotePlaceholder": "E.g. this is my budget for this route",
+  "sendCounter": "Send Counter",
+  "counterSent": "Counter offer sent",
+  "counterPending": "Counter sent: {{price}} NOK",
+  "acceptCounter": "Accept",
+  "declineCounter": "Decline",
+  "counterOfferReceived": "Counter offer: {{price}} NOK"
 }

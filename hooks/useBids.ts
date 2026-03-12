@@ -10,8 +10,11 @@ export interface Bid {
   note: string | null;
   currency: string;
   estimated_days: number | null;
-  status: 'pending' | 'accepted' | 'rejected' | 'withdrawn' | 'expired';
+  status: 'pending' | 'accepted' | 'rejected' | 'withdrawn' | 'expired' | 'countered';
   expires_at: string;
+  counter_price: number | null;
+  counter_note: string | null;
+  countered_at: string | null;
   created_at: string;
   updated_at: string;
   carrier?: {
@@ -43,6 +46,75 @@ export async function placeBid(
 
   if (error) return { data: null, error: new Error(error.message) };
   return { data: data as Bid, error: null };
+}
+
+/**
+ * Customer sends a counter-offer on a pending bid.
+ * Sets status → 'countered', stores counter_price and optional note.
+ */
+export async function counterBid(
+  bidId: string,
+  counterPrice: number,
+  counterNote?: string
+): Promise<{ error: Error | null }> {
+  const { error } = await supabase
+    .from('bids')
+    .update({
+      status: 'countered',
+      counter_price: counterPrice,
+      counter_note: counterNote ?? null,
+      countered_at: new Date().toISOString(),
+    })
+    .eq('id', bidId)
+    .eq('status', 'pending');
+
+  return { error: error ? new Error(error.message) : null };
+}
+
+/**
+ * Carrier accepts the customer's counter-offer.
+ * Applies counter_price → price, resets status back to 'pending' so the customer can accept.
+ */
+export async function acceptCounter(
+  bidId: string,
+  counterPrice: number
+): Promise<{ error: Error | null }> {
+  const { error } = await supabase
+    .from('bids')
+    .update({
+      status: 'pending',
+      price: counterPrice,
+      counter_price: null,
+      counter_note: null,
+      countered_at: null,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', bidId)
+    .eq('status', 'countered');
+
+  return { error: error ? new Error(error.message) : null };
+}
+
+/**
+ * Carrier declines the counter-offer.
+ * Reverts status to 'pending' — original price stands.
+ */
+export async function declineCounter(
+  bidId: string
+): Promise<{ error: Error | null }> {
+  const { error } = await supabase
+    .from('bids')
+    .update({
+      status: 'pending',
+      counter_price: null,
+      counter_note: null,
+      countered_at: null,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', bidId)
+    .eq('status', 'countered');
+
+  return { error: error ? new Error(error.message) : null };
 }
 
 /** Withdraw a bid (only carrier's own bid) */

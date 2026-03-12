@@ -7,10 +7,15 @@ import {
   Alert,
   StyleSheet,
   ActivityIndicator,
+  TextInput,
+  Modal,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
-import { type Bid, acceptBid } from '../hooks/useBids';
+import type { TFunction } from 'i18next';
+import { type Bid, acceptBid, counterBid } from '../hooks/useBids';
 import { colors, spacing, fontSize, borderRadius } from '../lib/sharedStyles';
 
 type SortKey = 'price' | 'rating';
@@ -21,7 +26,7 @@ type Props = {
   onBidAccepted: (orderId: string) => void;
 };
 
-function formatExpiry(expiresAt: string, t: (key: string, opts?: object) => string): string {
+function formatExpiry(expiresAt: string, t: TFunction): string {
   const ms = new Date(expiresAt).getTime() - Date.now();
   if (ms <= 0) return t('bidExpired');
   const hours = Math.floor(ms / 3_600_000);
@@ -46,15 +51,120 @@ function StarRating({ rating }: { rating: number }) {
   );
 }
 
+// ─── Counter-offer modal ──────────────────────────────────────────────────────
+
+type CounterModalProps = {
+  bid: Bid | null;
+  onClose: () => void;
+  onSent: () => void;
+};
+
+function CounterOfferModal({ bid, onClose, onSent }: CounterModalProps) {
+  const { t } = useTranslation();
+  const [priceText, setPriceText] = useState('');
+  const [note, setNote] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+
+  if (!bid) return null;
+
+  const handleSend = async () => {
+    const price = Number(priceText.replace(/[^\d.]/g, ''));
+    if (!price || price <= 0) {
+      Alert.alert(t('error'), t('invalidBidAmount'));
+      return;
+    }
+    setSubmitting(true);
+    const { error } = await counterBid(bid.id, price, note.trim() || undefined);
+    setSubmitting(false);
+    if (error) {
+      Alert.alert(t('error'), error.message);
+      return;
+    }
+    onSent();
+    onClose();
+  };
+
+  return (
+    <Modal visible transparent animationType="slide" onRequestClose={onClose}>
+      <KeyboardAvoidingView
+        style={styles.modalOverlay}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      >
+        <View style={styles.modalSheet}>
+          {/* Handle */}
+          <View style={styles.modalHandle} />
+
+          <Text style={styles.modalTitle}>{t('counterOfferTitle')}</Text>
+          <Text style={styles.modalHint}>{t('counterOfferHint')}</Text>
+
+          {/* Carrier original price context */}
+          <View style={styles.originalPriceRow}>
+            <Text style={styles.originalPriceLabel}>
+              {bid.carrier?.full_name ?? t('carrier')}
+            </Text>
+            <Text style={styles.originalPrice}>
+              {bid.price.toLocaleString('nb-NO')} NOK
+            </Text>
+          </View>
+
+          <View style={styles.modalDivider} />
+
+          <Text style={styles.inputLabel}>{t('counterPrice')}</Text>
+          <TextInput
+            style={styles.input}
+            value={priceText}
+            onChangeText={setPriceText}
+            keyboardType="numeric"
+            placeholder="e.g. 3500"
+            placeholderTextColor="#9CA3AF"
+            returnKeyType="done"
+          />
+
+          <Text style={styles.inputLabel}>{t('counterNote')}</Text>
+          <TextInput
+            style={[styles.input, styles.inputMultiline]}
+            value={note}
+            onChangeText={setNote}
+            placeholder={t('counterNotePlaceholder')}
+            placeholderTextColor="#9CA3AF"
+            multiline
+            numberOfLines={3}
+          />
+
+          <View style={styles.modalActions}>
+            <TouchableOpacity style={styles.cancelBtn} onPress={onClose}>
+              <Text style={styles.cancelBtnText}>{t('cancel')}</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.sendBtn, submitting && styles.acceptBtnLoading]}
+              onPress={handleSend}
+              disabled={submitting}
+            >
+              {submitting
+                ? <ActivityIndicator size="small" color="#fff" />
+                : <Text style={styles.sendBtnText}>{t('sendCounter')}</Text>
+              }
+            </TouchableOpacity>
+          </View>
+        </View>
+      </KeyboardAvoidingView>
+    </Modal>
+  );
+}
+
+// ─── Main component ───────────────────────────────────────────────────────────
+
 export function BidComparisonTable({ bids, requestStatus, onBidAccepted }: Props) {
   const { t } = useTranslation();
   const [sort, setSort] = useState<SortKey>('price');
   const [accepting, setAccepting] = useState<string | null>(null);
+  const [counterTarget, setCounterTarget] = useState<Bid | null>(null);
 
   const canAccept = ['open', 'bidding'].includes(requestStatus);
 
+  // Show both pending and countered bids in the list
   const activeBids = useMemo(
-    () => bids.filter(b => b.status === 'pending'),
+    () => bids.filter(b => b.status === 'pending' || b.status === 'countered'),
     [bids]
   );
 
@@ -65,7 +175,9 @@ export function BidComparisonTable({ bids, requestStatus, onBidAccepted }: Props
   }, [activeBids, sort]);
 
   const lowestPrice = useMemo(
-    () => (sorted.length ? sorted[0].price : null),
+    () => (sorted.filter(b => b.status === 'pending').length
+      ? sorted.filter(b => b.status === 'pending')[0].price
+      : null),
     [sorted]
   );
 
@@ -106,6 +218,13 @@ export function BidComparisonTable({ bids, requestStatus, onBidAccepted }: Props
 
   return (
     <View>
+      {/* Counter-offer modal */}
+      <CounterOfferModal
+        bid={counterTarget}
+        onClose={() => setCounterTarget(null)}
+        onSent={() => setCounterTarget(null)}
+      />
+
       {/* Header */}
       <View style={styles.header}>
         <Text style={styles.headerTitle}>
@@ -135,7 +254,8 @@ export function BidComparisonTable({ bids, requestStatus, onBidAccepted }: Props
       {/* Bid cards */}
       <ScrollView scrollEnabled={false}>
         {sorted.map((bid, index) => {
-          const isBest = sort === 'price' && bid.price === lowestPrice && index === 0;
+          const isCountered = bid.status === 'countered';
+          const isBest = !isCountered && sort === 'price' && bid.price === lowestPrice && index === 0;
           const isExpired = new Date(bid.expires_at).getTime() < Date.now();
           const isAccepting = accepting === bid.id;
           const initials = (bid.carrier?.full_name ?? '?')
@@ -148,12 +268,27 @@ export function BidComparisonTable({ bids, requestStatus, onBidAccepted }: Props
           return (
             <View
               key={bid.id}
-              style={[styles.card, isBest && styles.cardBest, isExpired && styles.cardExpired]}
+              style={[
+                styles.card,
+                isBest && styles.cardBest,
+                isCountered && styles.cardCountered,
+                isExpired && styles.cardExpired,
+              ]}
             >
               {isBest && (
                 <View style={styles.bestBadge}>
                   <Ionicons name="trophy" size={11} color="#fff" />
                   <Text style={styles.bestBadgeText}>{t('bestValue')}</Text>
+                </View>
+              )}
+
+              {/* Counter-offer banner */}
+              {isCountered && (
+                <View style={styles.counterBanner}>
+                  <Ionicons name="swap-horizontal" size={13} color="#7C3AED" />
+                  <Text style={styles.counterBannerText}>
+                    {t('counterPending', { price: bid.counter_price?.toLocaleString('nb-NO') })}
+                  </Text>
                 </View>
               )}
 
@@ -179,14 +314,14 @@ export function BidComparisonTable({ bids, requestStatus, onBidAccepted }: Props
                 </View>
 
                 <View style={styles.priceBlock}>
-                  <Text style={[styles.price, isBest && styles.priceBest]}>
+                  <Text style={[styles.price, isBest && styles.priceBest, isCountered && styles.priceCountered]}>
                     {bid.price.toLocaleString('nb-NO')}
                   </Text>
                   <Text style={styles.priceCurrency}>{bid.currency} NOK</Text>
                 </View>
               </View>
 
-              {/* Meta row: estimated days + expiry */}
+              {/* Meta row */}
               <View style={styles.metaRow}>
                 {bid.estimated_days != null && (
                   <View style={styles.metaChip}>
@@ -208,7 +343,7 @@ export function BidComparisonTable({ bids, requestStatus, onBidAccepted }: Props
                 </View>
               </View>
 
-              {/* Note */}
+              {/* Carrier note */}
               {!!bid.note && (
                 <View style={styles.noteBlock}>
                   <Text style={styles.noteLabel}>{t('carrierNote')}</Text>
@@ -216,23 +351,45 @@ export function BidComparisonTable({ bids, requestStatus, onBidAccepted }: Props
                 </View>
               )}
 
-              {/* Accept button */}
-              {canAccept && !isExpired && (
-                <TouchableOpacity
-                  style={[styles.acceptBtn, isBest && styles.acceptBtnBest, isAccepting && styles.acceptBtnLoading]}
-                  onPress={() => handleAccept(bid)}
-                  disabled={accepting !== null}
-                  activeOpacity={0.8}
-                >
-                  {isAccepting ? (
-                    <ActivityIndicator size="small" color="#fff" />
-                  ) : (
-                    <>
-                      <Ionicons name="checkmark-circle" size={16} color="#fff" />
-                      <Text style={styles.acceptBtnText}>{t('acceptBid')}</Text>
-                    </>
-                  )}
-                </TouchableOpacity>
+              {/* Action buttons */}
+              {canAccept && !isExpired && !isCountered && (
+                <View style={styles.actionRow}>
+                  {/* Counter button */}
+                  <TouchableOpacity
+                    style={styles.counterBtn}
+                    onPress={() => setCounterTarget(bid)}
+                    disabled={accepting !== null}
+                    activeOpacity={0.8}
+                  >
+                    <Ionicons name="swap-horizontal" size={15} color="#7C3AED" />
+                    <Text style={styles.counterBtnText}>{t('counterOffer')}</Text>
+                  </TouchableOpacity>
+
+                  {/* Accept button */}
+                  <TouchableOpacity
+                    style={[styles.acceptBtn, isBest && styles.acceptBtnBest, isAccepting && styles.acceptBtnLoading]}
+                    onPress={() => handleAccept(bid)}
+                    disabled={accepting !== null}
+                    activeOpacity={0.8}
+                  >
+                    {isAccepting ? (
+                      <ActivityIndicator size="small" color="#fff" />
+                    ) : (
+                      <>
+                        <Ionicons name="checkmark-circle" size={15} color="#fff" />
+                        <Text style={styles.acceptBtnText}>{t('acceptBid')}</Text>
+                      </>
+                    )}
+                  </TouchableOpacity>
+                </View>
+              )}
+
+              {/* Waiting for carrier to respond to counter */}
+              {isCountered && (
+                <View style={styles.awaitingRow}>
+                  <ActivityIndicator size="small" color="#7C3AED" />
+                  <Text style={styles.awaitingText}>{t('counterSent')}</Text>
+                </View>
               )}
             </View>
           );
@@ -318,6 +475,11 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     elevation: 3,
   },
+  cardCountered: {
+    borderColor: '#7C3AED',
+    borderWidth: 1.5,
+    backgroundColor: '#FAFAF8',
+  },
   cardExpired: {
     opacity: 0.55,
   },
@@ -335,6 +497,20 @@ const styles = StyleSheet.create({
     fontSize: fontSize.xs,
     fontWeight: '700',
     color: '#fff',
+  },
+  counterBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: '#EDE9FE',
+    borderRadius: borderRadius.sm,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 6,
+  },
+  counterBannerText: {
+    fontSize: fontSize.sm,
+    color: '#7C3AED',
+    fontWeight: '600',
   },
   cardTop: {
     flexDirection: 'row',
@@ -396,6 +572,9 @@ const styles = StyleSheet.create({
   priceBest: {
     color: colors.primary,
   },
+  priceCountered: {
+    color: '#7C3AED',
+  },
   priceCurrency: {
     fontSize: fontSize.xs,
     color: '#9CA3AF',
@@ -443,7 +622,29 @@ const styles = StyleSheet.create({
     color: '#374151',
     lineHeight: 19,
   },
+  actionRow: {
+    flexDirection: 'row',
+    gap: spacing.xs,
+  },
+  counterBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 5,
+    borderWidth: 1.5,
+    borderColor: '#7C3AED',
+    borderRadius: borderRadius.md,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
+    backgroundColor: '#F5F3FF',
+  },
+  counterBtnText: {
+    fontSize: fontSize.sm,
+    fontWeight: '700',
+    color: '#7C3AED',
+  },
   acceptBtn: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
@@ -459,6 +660,122 @@ const styles = StyleSheet.create({
     opacity: 0.7,
   },
   acceptBtnText: {
+    fontSize: fontSize.md,
+    fontWeight: '700',
+    color: '#fff',
+  },
+  awaitingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    justifyContent: 'center',
+    paddingVertical: spacing.xs,
+  },
+  awaitingText: {
+    fontSize: fontSize.sm,
+    color: '#7C3AED',
+    fontWeight: '500',
+  },
+  // ── Modal ──
+  modalOverlay: {
+    flex: 1,
+    justifyContent: 'flex-end',
+    backgroundColor: 'rgba(0,0,0,0.45)',
+  },
+  modalSheet: {
+    backgroundColor: '#fff',
+    borderTopLeftRadius: borderRadius.xl,
+    borderTopRightRadius: borderRadius.xl,
+    padding: spacing.lg,
+    paddingBottom: spacing.xxl,
+    gap: spacing.sm,
+  },
+  modalHandle: {
+    width: 40,
+    height: 4,
+    borderRadius: borderRadius.full,
+    backgroundColor: '#E5E7EB',
+    alignSelf: 'center',
+    marginBottom: spacing.xs,
+  },
+  modalTitle: {
+    fontSize: fontSize.xl,
+    fontWeight: '700',
+    color: '#111827',
+  },
+  modalHint: {
+    fontSize: fontSize.sm,
+    color: '#6B7280',
+  },
+  originalPriceRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: '#F9FAFB',
+    borderRadius: borderRadius.sm,
+    padding: spacing.sm,
+  },
+  originalPriceLabel: {
+    fontSize: fontSize.sm,
+    color: '#6B7280',
+  },
+  originalPrice: {
+    fontSize: fontSize.md,
+    fontWeight: '700',
+    color: '#374151',
+  },
+  modalDivider: {
+    height: 1,
+    backgroundColor: '#F3F4F6',
+  },
+  inputLabel: {
+    fontSize: fontSize.sm,
+    fontWeight: '600',
+    color: '#374151',
+    marginBottom: -spacing.xxs,
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    borderRadius: borderRadius.md,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    fontSize: fontSize.md,
+    color: '#111827',
+    backgroundColor: '#F9FAFB',
+  },
+  inputMultiline: {
+    minHeight: 72,
+    textAlignVertical: 'top',
+  },
+  modalActions: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+    marginTop: spacing.xs,
+  },
+  cancelBtn: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1.5,
+    borderColor: '#E5E7EB',
+    borderRadius: borderRadius.md,
+    paddingVertical: spacing.sm,
+  },
+  cancelBtnText: {
+    fontSize: fontSize.md,
+    fontWeight: '600',
+    color: '#6B7280',
+  },
+  sendBtn: {
+    flex: 2,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#7C3AED',
+    borderRadius: borderRadius.md,
+    paddingVertical: spacing.sm,
+  },
+  sendBtnText: {
     fontSize: fontSize.md,
     fontWeight: '700',
     color: '#fff',

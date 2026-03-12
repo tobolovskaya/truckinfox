@@ -51,7 +51,7 @@ import {
 } from '../../utils/automotiveParsing';
 import MapView, { Marker, Polyline } from 'react-native-maps';
 import { TOUCH_TARGET } from '../../constants/touchTargets';
-import { acceptBid as acceptBidEdgeFn } from '../../hooks/useBids';
+import { acceptBid as acceptBidEdgeFn, acceptCounter, declineCounter } from '../../hooks/useBids';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -95,6 +95,9 @@ interface Bid {
   status: string;
   created_at: unknown;
   carrier_id: string;
+  counter_price?: number | null;
+  counter_note?: string | null;
+  countered_at?: string | null;
   users?: {
     full_name: string;
     user_type: string;
@@ -366,7 +369,7 @@ export default function RequestDetailsScreen() {
     try {
       const { data: bidsRows, error: bidsError } = await supabase
         .from('bids')
-        .select('id, price, note, status, created_at, carrier_id')
+        .select('id, price, note, status, created_at, carrier_id, counter_price, counter_note, countered_at')
         .eq('request_id', id as string)
         .order('created_at', { ascending: false });
 
@@ -496,6 +499,9 @@ export default function RequestDetailsScreen() {
         status: row.status || 'pending',
         created_at: row.created_at,
         carrier_id: row.carrier_id,
+        counter_price: row.counter_price ?? null,
+        counter_note: row.counter_note ?? null,
+        countered_at: row.countered_at ?? null,
         users: row.carrier_id
           ? (() => {
             const carrier = carrierById.get(row.carrier_id);
@@ -1428,6 +1434,63 @@ export default function RequestDetailsScreen() {
                     </TouchableOpacity>
                   )}
                 </View>
+
+                {/* Carrier: counter-offer received banner */}
+                {bid.carrier_id === user?.uid && bid.status === 'countered' && bid.counter_price != null && (
+                  <View style={styles.counterBanner}>
+                    <Ionicons name="swap-horizontal-outline" size={16} color="#7C3AED" />
+                    <Text style={styles.counterBannerText}>
+                      {t('counterOfferReceived')}: {formatNokAmount(bid.counter_price)}
+                    </Text>
+                    {bid.counter_note ? (
+                      <Text style={styles.counterBannerNote}>{bid.counter_note}</Text>
+                    ) : null}
+                    <View style={styles.counterActions}>
+                      <TouchableOpacity
+                        style={styles.counterAcceptButton}
+                        onPress={() =>
+                          Alert.alert(t('acceptCounter'), t('acceptCounterConfirm'), [
+                            { text: t('cancel'), style: 'cancel' },
+                            {
+                              text: t('confirm'),
+                              onPress: async () => {
+                                const { error } = await acceptCounter(bid.id, bid.counter_price!);
+                                if (error) {
+                                  toast.show(error.message, 'error');
+                                } else {
+                                  fetchBids();
+                                }
+                              },
+                            },
+                          ])
+                        }
+                      >
+                        <Text style={styles.counterAcceptText}>{t('acceptCounter')}</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        style={styles.counterDeclineButton}
+                        onPress={() =>
+                          Alert.alert(t('declineCounter'), t('declineCounterConfirm'), [
+                            { text: t('cancel'), style: 'cancel' },
+                            {
+                              text: t('confirm'),
+                              onPress: async () => {
+                                const { error } = await declineCounter(bid.id);
+                                if (error) {
+                                  toast.show(error.message, 'error');
+                                } else {
+                                  fetchBids();
+                                }
+                              },
+                            },
+                          ])
+                        }
+                      >
+                        <Text style={styles.counterDeclineText}>{t('declineCounter')}</Text>
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                )}
               </View>
             ))}
           </View>
@@ -2212,5 +2275,54 @@ const styles = StyleSheet.create({
   divider: {
     height: 1,
     backgroundColor: colors.border.default,
+  },
+  counterBanner: {
+    marginTop: spacing.sm,
+    padding: spacing.sm,
+    borderRadius: borderRadius.md,
+    backgroundColor: '#F5F3FF',
+    borderWidth: 1,
+    borderColor: '#7C3AED',
+    gap: spacing.xs,
+  },
+  counterBannerText: {
+    fontSize: fontSize.sm,
+    fontWeight: '600' as const,
+    color: '#7C3AED',
+  },
+  counterBannerNote: {
+    fontSize: fontSize.sm,
+    color: colors.text.secondary,
+    fontStyle: 'italic' as const,
+  },
+  counterActions: {
+    flexDirection: 'row' as const,
+    gap: spacing.sm,
+    marginTop: spacing.xs,
+  },
+  counterAcceptButton: {
+    flex: 1,
+    paddingVertical: spacing.xs,
+    borderRadius: borderRadius.sm,
+    backgroundColor: '#7C3AED',
+    alignItems: 'center' as const,
+  },
+  counterAcceptText: {
+    fontSize: fontSize.sm,
+    fontWeight: '600' as const,
+    color: '#FFFFFF',
+  },
+  counterDeclineButton: {
+    flex: 1,
+    paddingVertical: spacing.xs,
+    borderRadius: borderRadius.sm,
+    borderWidth: 1,
+    borderColor: '#7C3AED',
+    alignItems: 'center' as const,
+  },
+  counterDeclineText: {
+    fontSize: fontSize.sm,
+    fontWeight: '600' as const,
+    color: '#7C3AED',
   },
 });

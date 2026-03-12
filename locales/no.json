@@ -909,5 +909,17 @@
   "bidExpired": "Utløpt",
   "carrierNote": "Merknad",
   "sortByPrice": "Laveste pris",
-  "sortByRating": "Beste vurdering"
+  "sortByRating": "Beste vurdering",
+  "counterOffer": "Motbud",
+  "counterOfferTitle": "Send motbud",
+  "counterOfferHint": "Foreslå en annen pris til transportøren",
+  "counterPrice": "Din pris (NOK)",
+  "counterNote": "Melding (valgfri)",
+  "counterNotePlaceholder": "F.eks. dette er mitt budsjett for denne ruten",
+  "sendCounter": "Send motbud",
+  "counterSent": "Motbud sendt",
+  "counterPending": "Motbud sendt: {{price}} NOK",
+  "acceptCounter": "Godta",
+  "declineCounter": "Avvis",
+  "counterOfferReceived": "Motbud: {{price}} NOK"
 }
