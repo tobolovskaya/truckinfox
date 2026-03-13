@@ -422,7 +422,7 @@ export default function OrderStatusScreen() {
 
       Alert.alert(t('deliveryConfirmed'), t('deliveryProofSubmitted'), [
         {
-          text: 'OK',
+          text: t('ok'),
           onPress: () => router.replace('/(tabs)/orders'),
         },
       ]);

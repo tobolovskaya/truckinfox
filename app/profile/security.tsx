@@ -194,7 +194,7 @@ export default function SecurityScreen() {
       const result = await deleteAccount();
       if (result.success) {
         Alert.alert(t('accountDeleted'), '', [
-          { text: 'OK', onPress: () => router.replace('/(auth)/login') },
+          { text: t('ok'), onPress: () => router.replace('/(auth)/login') },
         ]);
       } else {
         setDeleteStep('idle');

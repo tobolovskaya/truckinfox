@@ -105,10 +105,10 @@ export default function RegisterScreen() {
               'Denne e-posten er allerede registrert eller venter på bekreftelse. Logg inn etter at e-posten er bekreftet.',
             [
               {
-                text: 'Logg inn',
+                text: t('signIn'),
                 onPress: () => router.push('/(auth)/login'),
               },
-              { text: 'OK', style: 'cancel' },
+              { text: t('ok'), style: 'cancel' },
             ]
           );
           return;
@@ -126,10 +126,10 @@ export default function RegisterScreen() {
               'For mange registreringsforsøk akkurat nå. Vent litt og prøv igjen, eller logg inn hvis kontoen allerede finnes.',
             [
               {
-                text: 'Logg inn',
+                text: t('signIn'),
                 onPress: () => router.push('/(auth)/login'),
               },
-              { text: 'OK', style: 'cancel' },
+              { text: t('ok'), style: 'cancel' },
             ]
           );
           return;
