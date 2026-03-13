@@ -188,9 +188,11 @@ export default function CreateRequestScreen() {
           if (hoursSince < DRAFT_EXPIRY_HOURS) {
             setFormData({
               ...parsed,
-              pickup_date: parsed.pickup_date ? new Date(parsed.pickup_date) : new Date(),
+              pickup_date: parsed.pickup_date
+                ? new Date(Math.max(normalizeDateOnly(new Date(parsed.pickup_date)).getTime(), normalizeDateOnly(new Date()).getTime()))
+                : new Date(),
               delivery_date: parsed.delivery_date
-                ? new Date(parsed.delivery_date)
+                ? new Date(Math.max(normalizeDateOnly(new Date(parsed.delivery_date)).getTime(), normalizeDateOnly(new Date()).getTime() + MS_PER_DAY))
                 : new Date(Date.now() + MS_PER_DAY),
             });
             setImages(parsed.images || []);
@@ -394,6 +396,8 @@ export default function CreateRequestScreen() {
       cargo_type: formData.cargo_type,
       weight: formData.weight,
       price: formData.price,
+      pickup_date: formData.pickup_date,
+      delivery_date: formData.delivery_date,
     });
 
     // Check for validation errors

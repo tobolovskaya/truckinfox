@@ -265,6 +265,8 @@ export function validateRequestData(data: {
   cargo_type?: string;
   weight?: number | string;
   price?: number | string;
+  pickup_date?: Date | string;
+  delivery_date?: Date | string;
 }): string[] {
   const errors: string[] = [];
 
@@ -328,6 +330,33 @@ export function validateRequestData(data: {
     }
   }
 
+  // Date validation
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  if (data.pickup_date) {
+    const pickup = new Date(data.pickup_date);
+    pickup.setHours(0, 0, 0, 0);
+    if (pickup.getTime() < today.getTime()) {
+      errors.push('Pickup date cannot be in the past');
+    }
+  }
+
+  if (data.delivery_date) {
+    const delivery = new Date(data.delivery_date);
+    delivery.setHours(0, 0, 0, 0);
+    if (delivery.getTime() < today.getTime()) {
+      errors.push('Delivery date cannot be in the past');
+    }
+    if (data.pickup_date) {
+      const pickup = new Date(data.pickup_date);
+      pickup.setHours(0, 0, 0, 0);
+      if (delivery.getTime() < pickup.getTime()) {
+        errors.push('Delivery date cannot be before pickup date');
+      }
+    }
+  }
+
   return errors;
 }
 
@@ -366,6 +395,8 @@ export async function validateBeforeCreation(
     cargo_type?: string;
     weight?: number | string;
     price?: number | string;
+    pickup_date?: Date | string;
+    delivery_date?: Date | string;
   }
 ): Promise<DeduplicationReport> {
   // Check data quality first (fast, synchronous)
