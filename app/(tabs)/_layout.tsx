@@ -115,12 +115,29 @@ export default function TabLayout() {
         }}
       />
 
-      {/* Profile — badge shows unread notification count */}
+      {/* Notifications */}
+      <Tabs.Screen
+        name="notifications"
+        options={{
+          title: t('notifications'),
+          tabBarBadge: unreadCount > 0 ? (unreadCount > 99 ? '99+' : unreadCount) : undefined,
+          tabBarIcon: ({ color, focused }: { color: string; focused: boolean }) => (
+            <View style={focused ? styles.activeIconWrap : undefined}>
+              <Ionicons
+                name={focused ? 'notifications' : 'notifications-outline'}
+                size={24}
+                color={color}
+              />
+            </View>
+          ),
+        }}
+      />
+
+      {/* Profile */}
       <Tabs.Screen
         name="profile"
         options={{
           title: t('profile'),
-          tabBarBadge: unreadCount > 0 ? (unreadCount > 99 ? '99+' : unreadCount) : undefined,
           tabBarIcon: ({ color, focused }: { color: string; focused: boolean }) => (
             <View style={focused ? styles.activeIconWrap : undefined}>
               <Ionicons
@@ -132,9 +149,6 @@ export default function TabLayout() {
           ),
         }}
       />
-
-      {/* Hidden screens — accessible via header buttons */}
-      <Tabs.Screen name="notifications" options={{ href: null }} />
       <Tabs.Screen name="map" options={{ href: null }} />
     </Tabs>
   );
