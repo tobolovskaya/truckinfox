@@ -49,7 +49,7 @@ export async function checkDuplicateRequest(
       .gt('created_at', oneHourAgo);
 
     if (error) {
-      return 'Failed to check for duplicates. Please try again.';
+      return 'failedToCheckDuplicates';
     }
 
     if (data && data.length > 0) {
@@ -63,14 +63,14 @@ export async function checkDuplicateRequest(
         // Strict exact matching
         if (!fuzzy) {
           if (existingFromRaw === fromAddress && existingToRaw === toAddress) {
-            return 'You already have a similar request. Please check your active requests first.';
+            return 'duplicateRequestError';
           }
           continue;
         }
 
         // Normalized exact match
         if (existingFrom === normalizedFrom && existingTo === normalizedTo) {
-          return 'You already have a similar request. Please check your active requests first.';
+          return 'duplicateRequestError';
         }
 
         // Similarity match for near-identical addresses
@@ -78,7 +78,7 @@ export async function checkDuplicateRequest(
         const sameDirectionToSimilarity = calculateSimilarity(normalizedTo, existingTo);
 
         if (sameDirectionFromSimilarity > 0.8 && sameDirectionToSimilarity > 0.8) {
-          return 'You already have a similar request. Please check your active requests first.';
+          return 'duplicateRequestError';
         }
 
         // Reverse direction with high similarity
@@ -86,7 +86,7 @@ export async function checkDuplicateRequest(
         const reverseToSimilarity = calculateSimilarity(normalizedTo, existingFrom);
 
         if (reverseFromSimilarity > 0.8 && reverseToSimilarity > 0.8) {
-          return 'You recently created a similar request in the opposite direction.';
+          return 'reverseDirectionDuplicate';
         }
       }
     }
@@ -94,7 +94,7 @@ export async function checkDuplicateRequest(
     return null;
   } catch (error) {
     console.error('Error checking duplicates:', error);
-    return 'Failed to validate request. Please try again.';
+    return 'failedToValidate';
   }
 }
 
@@ -226,14 +226,13 @@ export async function checkRequestRateLimit(
       .gt('created_at', windowStart);
 
     if (error) {
-      return 'Failed to check rate limit. Please try again.';
+      return 'failedToCheckRateLimit';
     }
 
     const requestCount = data?.length ?? 0;
 
     if (requestCount >= maxRequests) {
-      const cooldownMinutes = Math.ceil(timeWindowMs / 60000);
-      return `Rate limit exceeded. You can create up to ${maxRequests} requests per ${cooldownMinutes} minutes. Please wait before creating another.`;
+      return 'rateLimitExceeded';
     }
 
     return null;
@@ -272,26 +271,26 @@ export function validateRequestData(data: {
 
   // Title validation
   if (!data.title || data.title.trim().length < 5) {
-    errors.push('Title must be at least 5 characters');
+    errors.push('titleMinLength');
   }
-  if (!data.title || data.title.trim().length > 200) {
-    errors.push('Title cannot exceed 200 characters');
+  if (data.title && data.title.trim().length > 200) {
+    errors.push('titleMaxLength');
   }
 
   // Description validation
   if (!data.description || data.description.trim().length < 10) {
-    errors.push('Description must be at least 10 characters');
+    errors.push('descriptionMinLength');
   }
-  if (!data.description || data.description.trim().length > 2000) {
-    errors.push('Description cannot exceed 2000 characters');
+  if (data.description && data.description.trim().length > 2000) {
+    errors.push('descriptionMaxLength');
   }
 
   // Address validation
   if (!data.from_address || data.from_address.trim().length < 2) {
-    errors.push('Pickup location is required');
+    errors.push('fromAddressRequired');
   }
   if (!data.to_address || data.to_address.trim().length < 2) {
-    errors.push('Delivery location is required');
+    errors.push('toAddressRequired');
   }
 
   // Check for identical addresses
@@ -300,22 +299,22 @@ export function validateRequestData(data: {
     data.to_address &&
     normalizeAddress(data.from_address) === normalizeAddress(data.to_address)
   ) {
-    errors.push('Pickup and delivery locations must be different');
+    errors.push('sameAddressError');
   }
 
   // Cargo type validation
   if (!data.cargo_type) {
-    errors.push('Cargo type is required');
+    errors.push('cargoTypeRequired');
   }
 
   // Weight validation (if provided)
   if (data.weight !== undefined && data.weight !== null && data.weight !== '') {
     const weight = Number(data.weight);
     if (Number.isNaN(weight) || weight <= 0) {
-      errors.push('Weight must be a positive number');
+      errors.push('weightMustBePositive');
     }
     if (weight > 100000) {
-      errors.push('Weight cannot exceed 100,000 kg');
+      errors.push('weightMaxExceeded');
     }
   }
 
@@ -323,10 +322,10 @@ export function validateRequestData(data: {
   if (data.price !== undefined && data.price !== null && data.price !== '') {
     const price = Number(data.price);
     if (Number.isNaN(price) || price < 0) {
-      errors.push('Price must be a valid number');
+      errors.push('priceMustBeNumber');
     }
     if (price > 1000000) {
-      errors.push('Price cannot exceed 1,000,000 NOK');
+      errors.push('priceMaxExceeded');
     }
   }
 
@@ -338,7 +337,7 @@ export function validateRequestData(data: {
     const pickup = new Date(data.pickup_date);
     pickup.setHours(0, 0, 0, 0);
     if (pickup.getTime() < today.getTime()) {
-      errors.push('Pickup date cannot be in the past');
+      errors.push('pickupDateInPast');
     }
   }
 
@@ -346,13 +345,13 @@ export function validateRequestData(data: {
     const delivery = new Date(data.delivery_date);
     delivery.setHours(0, 0, 0, 0);
     if (delivery.getTime() < today.getTime()) {
-      errors.push('Delivery date cannot be in the past');
+      errors.push('deliveryDateInPast');
     }
     if (data.pickup_date) {
       const pickup = new Date(data.pickup_date);
       pickup.setHours(0, 0, 0, 0);
       if (delivery.getTime() < pickup.getTime()) {
-        errors.push('Delivery date cannot be before pickup date');
+        errors.push('deliveryDateMustBeAfterPickup');
       }
     }
   }

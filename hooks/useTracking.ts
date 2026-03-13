@@ -17,8 +17,11 @@ export interface TrackingPoint {
   created_at: string;
 }
 
-const TRACKING_INTERVAL_MS = 5000; // 5 seconds
+const ACTIVE_INTERVAL_MS = 5000;  // 5 s when moving
+const IDLE_INTERVAL_MS = 30000;   // 30 s when stationary
 const BATCH_SIZE = 10;
+const STATIONARY_THRESHOLD_KMH = 2; // below this speed → stationary
+const STATIONARY_SAMPLES = 3;       // consecutive slow samples before switching to idle
 
 /** Hook for carrier: start/stop GPS tracking and batch-insert location points */
 export function useCarrierTracking(orderId: string | undefined, truckId: string | undefined) {
@@ -28,6 +31,8 @@ export function useCarrierTracking(orderId: string | undefined, truckId: string 
   const locationSubscription = useRef<Location.LocationSubscription | null>(null);
   const pendingPoints = useRef<Omit<TrackingPoint, 'id' | 'created_at'>[]>([]);
   const flushTimer = useRef<ReturnType<typeof setInterval> | null>(null);
+  const stationaryCount = useRef(0);
+  const currentIntervalMs = useRef(ACTIVE_INTERVAL_MS);
 
   const requestPermission = useCallback(async (): Promise<boolean> => {
     const { status } = await Location.requestForegroundPermissionsAsync();
@@ -53,19 +58,38 @@ export function useCarrierTracking(orderId: string | undefined, truckId: string 
     }
   }, [orderId]);
 
-  const startTracking = useCallback(async () => {
+  /** Restart watchPositionAsync with the given interval (called on mode change). */
+  const startWatching = useCallback(async (intervalMs: number) => {
     if (!orderId || !truckId) return;
-
-    const permitted = hasPermission ?? await requestPermission();
-    if (!permitted) return;
-
+    if (locationSubscription.current) {
+      locationSubscription.current.remove();
+      locationSubscription.current = null;
+    }
     locationSubscription.current = await Location.watchPositionAsync(
       {
         accuracy: Location.Accuracy.High,
-        timeInterval: TRACKING_INTERVAL_MS,
-        distanceInterval: 10,
+        timeInterval: intervalMs,
+        distanceInterval: intervalMs === ACTIVE_INTERVAL_MS ? 10 : 50,
       },
       location => {
+        const speedKmh = location.coords.speed != null ? location.coords.speed * 3.6 : null;
+
+        // Adaptive interval: count consecutive stationary samples
+        if (speedKmh !== null && speedKmh < STATIONARY_THRESHOLD_KMH) {
+          stationaryCount.current += 1;
+        } else {
+          stationaryCount.current = 0;
+        }
+
+        const shouldBeIdle = stationaryCount.current >= STATIONARY_SAMPLES;
+        const targetInterval = shouldBeIdle ? IDLE_INTERVAL_MS : ACTIVE_INTERVAL_MS;
+
+        if (targetInterval !== currentIntervalMs.current) {
+          currentIntervalMs.current = targetInterval;
+          // Restart subscription with new interval asynchronously
+          startWatching(targetInterval).catch(() => {});
+        }
+
         const point: Omit<TrackingPoint, 'id' | 'created_at'> = {
           truck_id: truckId,
           request_id: orderId,
@@ -74,18 +98,29 @@ export function useCarrierTracking(orderId: string | undefined, truckId: string 
           accuracy_m: location.coords.accuracy,
           altitude_m: location.coords.altitude,
           heading_deg: location.coords.heading,
-          speed_kmh: location.coords.speed != null ? location.coords.speed * 3.6 : null,
+          speed_kmh: speedKmh,
           country_code: '',
           recorded_at: new Date(location.timestamp).toISOString(),
         };
         pendingPoints.current.push(point);
       }
     );
+  }, [orderId, truckId, flushPoints]);
 
-    flushTimer.current = setInterval(flushPoints, TRACKING_INTERVAL_MS * 2);
+  const startTracking = useCallback(async () => {
+    if (!orderId || !truckId) return;
+
+    const permitted = hasPermission ?? await requestPermission();
+    if (!permitted) return;
+
+    stationaryCount.current = 0;
+    currentIntervalMs.current = ACTIVE_INTERVAL_MS;
+    await startWatching(ACTIVE_INTERVAL_MS);
+
+    flushTimer.current = setInterval(flushPoints, ACTIVE_INTERVAL_MS * 2);
     setIsTracking(true);
     setError(null);
-  }, [orderId, truckId, hasPermission, requestPermission, flushPoints]);
+  }, [orderId, truckId, hasPermission, requestPermission, flushPoints, startWatching]);
 
   const stopTracking = useCallback(async () => {
     if (locationSubscription.current) {

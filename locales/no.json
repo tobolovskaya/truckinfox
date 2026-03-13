@@ -949,5 +949,15 @@
   "notifDisputeOpenedBody": "Det er åpnet en tvist for denne ordren.",
   "notifOrderCancelledBody": "Ordren er avbestilt av kunden.",
   "pickupDateInPast": "Hentingsdato kan ikke være i fortiden",
-  "deliveryDateInPast": "Leveringsdato kan ikke være i fortiden"
+  "deliveryDateInPast": "Leveringsdato kan ikke være i fortiden",
+  "titleMaxLength": "Tittel kan ikke overstige 200 tegn",
+  "descriptionMaxLength": "Beskrivelse kan ikke overstige 2000 tegn",
+  "sameAddressError": "Hentings- og leveringssted må være forskjellige",
+  "weightMaxExceeded": "Vekt kan ikke overstige 100 000 kg",
+  "duplicateRequestError": "Du har allerede en lignende forespørsel. Sjekk dine aktive forespørsler.",
+  "reverseDirectionDuplicate": "Du opprettet nylig en lignende forespørsel i motsatt retning.",
+  "failedToCheckDuplicates": "Klarte ikke å sjekke duplikater. Prøv igjen.",
+  "failedToValidate": "Klarte ikke å validere forespørselen. Prøv igjen.",
+  "failedToCheckRateLimit": "Klarte ikke å sjekke hastighetsbegrensning. Prøv igjen.",
+  "rateLimitExceeded": "Du oppretter forespørsler for raskt. Vent litt før du oppretter en ny."
 }

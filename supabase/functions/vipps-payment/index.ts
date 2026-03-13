@@ -51,7 +51,9 @@ Deno.serve(async (request: Request) => {
     }
 
     const idempotencyKey = request.headers.get('Idempotency-Key') || 'none';
-    const useMockMode = (Deno.env.get('VIPPS_MOCK_MODE') || 'true').toLowerCase() !== 'false';
+    // Default is FALSE — mock mode must be explicitly opted into via VIPPS_MOCK_MODE=true.
+    // This prevents silent mock payments in production if the env var is not set.
+    const useMockMode = (Deno.env.get('VIPPS_MOCK_MODE') || 'false').toLowerCase() === 'true';
 
     if (useMockMode) {
       return json(200, {

@@ -404,7 +404,7 @@ export default function CreateRequestScreen() {
     if (validationReport.validationErrors && validationReport.validationErrors.length > 0) {
       Alert.alert(
         t('validationError') || 'Validation Error',
-        validationReport.validationErrors.join('\n'),
+        validationReport.validationErrors.map(k => t(k)).join('\n'),
         [{ text: t('ok') || 'OK', style: 'default' }]
       );
       return false;
@@ -415,7 +415,7 @@ export default function CreateRequestScreen() {
       return new Promise(resolve => {
         Alert.alert(
           t('duplicateRequestTitle') || 'Duplicate Request',
-          validationReport.error || 'You already have a similar request',
+          validationReport.error ? t(validationReport.error) : t('duplicateRequestError'),
           [
             { text: t('no') || 'No', style: 'cancel', onPress: () => resolve(false) },
             { text: t('yes') || 'Yes', onPress: () => resolve(true) },
@@ -428,7 +428,7 @@ export default function CreateRequestScreen() {
     if (validationReport.rateLimited) {
       Alert.alert(
         t('rateLimitTitle') || 'Rate Limited',
-        validationReport.error || 'You are creating requests too quickly. Please wait.',
+        validationReport.error ? t(validationReport.error) : t('rateLimitExceeded'),
         [{ text: t('ok') || 'OK', style: 'default' }]
       );
       return false;

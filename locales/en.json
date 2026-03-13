@@ -949,5 +949,15 @@
   "notifDisputeOpenedBody": "A dispute has been opened for this order.",
   "notifOrderCancelledBody": "The order has been cancelled by the customer.",
   "pickupDateInPast": "Pickup date cannot be in the past",
-  "deliveryDateInPast": "Delivery date cannot be in the past"
+  "deliveryDateInPast": "Delivery date cannot be in the past",
+  "titleMaxLength": "Title cannot exceed 200 characters",
+  "descriptionMaxLength": "Description cannot exceed 2000 characters",
+  "sameAddressError": "Pickup and delivery locations must be different",
+  "weightMaxExceeded": "Weight cannot exceed 100,000 kg",
+  "duplicateRequestError": "You already have a similar request. Please check your active requests first.",
+  "reverseDirectionDuplicate": "You recently created a similar request in the opposite direction.",
+  "failedToCheckDuplicates": "Failed to check for duplicates. Please try again.",
+  "failedToValidate": "Failed to validate request. Please try again.",
+  "failedToCheckRateLimit": "Failed to check rate limit. Please try again.",
+  "rateLimitExceeded": "You are creating requests too quickly. Please wait before creating another."
 }
