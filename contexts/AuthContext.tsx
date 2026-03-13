@@ -228,6 +228,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const initializeSession = async () => {
       const { data, error } = await supabase.auth.getSession();
+      clearTimeout(authTimeout);
       if (error) {
         console.error('Supabase getSession error:', error);
       }
@@ -243,6 +244,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
+      clearTimeout(authTimeout);
       setUser(session?.user ? mapSupabaseUser(session.user) : null);
       setLoading(false);
     });

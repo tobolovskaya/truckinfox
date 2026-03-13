@@ -1,6 +1,6 @@
 import { supabase } from '../lib/supabase';
 
-const CARGO_SIGNED_URL_EXPIRY_SECONDS = 60 * 60 * 24;
+const CARGO_SIGNED_URL_EXPIRY_SECONDS = 60 * 60 * 24 * 365; // 1 year
 
 const isHttpUrl = (value: string): boolean => /^https?:\/\//i.test(value);
 

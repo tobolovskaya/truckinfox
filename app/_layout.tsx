@@ -4,7 +4,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { LogBox, View } from 'react-native';
 import { Stack, useRouter } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
-import Constants from 'expo-constants';
+import Constants, { ExecutionEnvironment } from 'expo-constants';
 import type * as Notifications from 'expo-notifications';
 import { PaperProvider } from 'react-native-paper';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
@@ -28,7 +28,7 @@ SplashScreen.preventAutoHideAsync().catch(() => {});
 // 2.3: Warn developers if the EAS project ID is still the placeholder
 if (__DEV__) {
   const easProjectId = Constants.expoConfig?.extra?.eas?.projectId as string | undefined;
-  if (easProjectId === 'your-eas-project-id-replace-before-deployment' || !easProjectId) {
+  if (easProjectId === 'your-eas-project-id-replace-before-deployment') {
     console.warn(
       '[TruckinFox] EAS Project ID is not set. Replace "your-eas-project-id-replace-before-deployment" ' +
       'in app.json with your real EAS project ID before submitting a build.'
@@ -128,7 +128,7 @@ export default function RootLayout() {
   }, []);
 
   useEffect(() => {
-    const isExpoGo = Constants.appOwnership === 'expo';
+    const isExpoGo = Constants.executionEnvironment === ExecutionEnvironment.StoreClient;
     if (isExpoGo) {
       return;
     }

@@ -50,7 +50,8 @@ Deno.serve(async (request: Request) => {
       });
     }
 
-    const idempotencyKey = request.headers.get('Idempotency-Key') || 'none';
+    // Use escrowPaymentId as fallback so each unique payment attempt has a stable idempotency key.
+    const idempotencyKey = request.headers.get('Idempotency-Key') || escrowPaymentId;
     // Default is FALSE — mock mode must be explicitly opted into via VIPPS_MOCK_MODE=true.
     // This prevents silent mock payments in production if the env var is not set.
     const useMockMode = (Deno.env.get('VIPPS_MOCK_MODE') || 'false').toLowerCase() === 'true';
@@ -70,21 +71,90 @@ Deno.serve(async (request: Request) => {
       });
     }
 
-    return json(501, {
-      error:
-        'Real Vipps integration is not configured in this deployment. Set required Vipps secrets and implement provider API call.',
-      details: {
-        required_env: [
-          'VIPPS_CLIENT_ID',
-          'VIPPS_CLIENT_SECRET',
-          'VIPPS_SUBSCRIPTION_KEY',
-          'VIPPS_MERCHANT_SERIAL_NUMBER',
-          'VIPPS_SYSTEM_NAME',
-          'VIPPS_SYSTEM_VERSION',
-          'VIPPS_PLUGIN_NAME',
-          'VIPPS_PLUGIN_VERSION',
-        ],
+    // ── Real Vipps ePayment API ───────────────────────────────────────────────
+    const clientId             = Deno.env.get('VIPPS_CLIENT_ID')             ?? '';
+    const clientSecret         = Deno.env.get('VIPPS_CLIENT_SECRET')         ?? '';
+    const subscriptionKey      = Deno.env.get('VIPPS_SUBSCRIPTION_KEY')      ?? '';
+    const merchantSerialNumber = Deno.env.get('VIPPS_MERCHANT_SERIAL_NUMBER') ?? '';
+    const systemName           = Deno.env.get('VIPPS_SYSTEM_NAME')           ?? 'TruckinFox';
+    const systemVersion        = Deno.env.get('VIPPS_SYSTEM_VERSION')        ?? '1.0.0';
+    const pluginName           = Deno.env.get('VIPPS_PLUGIN_NAME')           ?? 'truckinfox-supabase';
+    const pluginVersion        = Deno.env.get('VIPPS_PLUGIN_VERSION')        ?? '1.0.0';
+    // Use apitest.vipps.no for staging; api.vipps.no for production.
+    const apiBase              = Deno.env.get('VIPPS_API_BASE_URL')          ?? 'https://api.vipps.no';
+    const returnUrl            = Deno.env.get('VIPPS_RETURN_URL')            ?? 'truckinfox://payment-complete';
+
+    if (!clientId || !clientSecret || !subscriptionKey || !merchantSerialNumber) {
+      return json(503, {
+        error: 'Vipps credentials are not configured. Set VIPPS_CLIENT_ID, VIPPS_CLIENT_SECRET, VIPPS_SUBSCRIPTION_KEY and VIPPS_MERCHANT_SERIAL_NUMBER in EAS environment variables.',
+      });
+    }
+
+    // Step 1 — obtain access token
+    const commonHeaders = {
+      'Ocp-Apim-Subscription-Key': subscriptionKey,
+      'Merchant-Serial-Number': merchantSerialNumber,
+      'Vipps-System-Name': systemName,
+      'Vipps-System-Version': systemVersion,
+      'Vipps-System-Plugin-Name': pluginName,
+      'Vipps-System-Plugin-Version': pluginVersion,
+    };
+
+    const tokenRes = await fetch(`${apiBase}/accesstoken/get`, {
+      method: 'POST',
+      headers: {
+        ...commonHeaders,
+        'Content-Type': 'application/json',
+        'client_id': clientId,
+        'client_secret': clientSecret,
       },
+    });
+
+    if (!tokenRes.ok) {
+      const tokenErr = await tokenRes.text();
+      throw new Error(`Vipps token request failed (${tokenRes.status}): ${tokenErr}`);
+    }
+
+    const { access_token: accessToken } = await tokenRes.json() as { access_token: string };
+
+    // Step 2 — create payment (amount in øre = NOK × 100)
+    const amountInOre = Math.round(amount * 100);
+    const paymentRes = await fetch(`${apiBase}/epayment/v1/payments`, {
+      method: 'POST',
+      headers: {
+        ...commonHeaders,
+        'Authorization': `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+        'Idempotency-Key': idempotencyKey,
+      },
+      body: JSON.stringify({
+        amount: { currency: 'NOK', value: amountInOre },
+        paymentMethod: { type: 'WALLET' },
+        customer: { phoneNumber: customerPhone },
+        // reference must be unique per merchant; use orderId (max 50 chars, alphanumeric + dash/underscore)
+        reference: orderId.replace(/[^a-zA-Z0-9_-]/g, '-').slice(0, 50),
+        userFlow: 'PUSH_MESSAGE',
+        returnUrl: `${returnUrl}/${orderId}`,
+        paymentDescription: payload.description || `TruckinFox payment for order ${orderId}`,
+      }),
+    });
+
+    if (!paymentRes.ok) {
+      const paymentErr = await paymentRes.text();
+      throw new Error(`Vipps payment creation failed (${paymentRes.status}): ${paymentErr}`);
+    }
+
+    const paymentData = await paymentRes.json() as { reference: string; redirectUrl?: string };
+
+    return json(200, {
+      ok: true,
+      mode: 'live',
+      provider: 'vipps',
+      escrow_payment_id: escrowPaymentId,
+      order_id: orderId,
+      provider_order_id: paymentData.reference,
+      payment_url: paymentData.redirectUrl ?? null,
+      vipps_url: paymentData.redirectUrl ?? null,
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown server error';
