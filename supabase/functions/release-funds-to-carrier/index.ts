@@ -107,6 +107,7 @@ Deno.serve(async (req: Request) => {
       type: 'payment_success',
       title: 'Payment Released',
       body: `Payment of ${order.carrier_amount} NOK has been released to your account.`,
+      data: { title_key: 'notifPaymentReleasedTitle', body_key: 'notifFundsReleasedBody', amount: order.carrier_amount },
       related_id: orderId,
       related_type: 'order',
       read: false,

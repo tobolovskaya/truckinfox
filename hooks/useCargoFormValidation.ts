@@ -185,8 +185,22 @@ export function useCargoFormValidation(formData: FormData) {
 
     if (!validateDimensions()) return false;
 
+    const today = normalizeDateOnly(new Date());
     const pickupDate = normalizeDateOnly(formData.pickup_date);
     const deliveryDate = normalizeDateOnly(formData.delivery_date);
+
+    if (pickupDate.getTime() < today.getTime()) {
+      toast.error(t('pickupDateInPast'));
+      triggerHapticFeedback.error();
+      return false;
+    }
+
+    if (deliveryDate.getTime() < today.getTime()) {
+      toast.error(t('deliveryDateInPast'));
+      triggerHapticFeedback.error();
+      return false;
+    }
+
     if (deliveryDate.getTime() < pickupDate.getTime()) {
       toast.error(t('deliveryDateMustBeAfterPickup'));
       triggerHapticFeedback.error();

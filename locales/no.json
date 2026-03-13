@@ -938,5 +938,16 @@
   "notifPaymentReleasedTitle": "Betaling frigjort",
   "notifPaymentReleasedBody": "Betaling på {{amount}} NOK frigjort etter 3-dagers autobekreftelse.",
   "notifBidExpiredTitle": "Bud utløpt",
-  "notifBidExpiredBody": "Budet ditt ble ikke akseptert innen 48 timer og har utløpt."
+  "notifBidExpiredBody": "Budet ditt ble ikke akseptert innen 48 timer og har utløpt.",
+  "notifBidAcceptedTitle": "Bud akseptert",
+  "notifBidAcceptedBody": "Budet ditt på {{amount}} NOK er akseptert!",
+  "notifFundsReleasedBody": "Betaling på {{amount}} NOK er frigjort til din konto.",
+  "notifOrderUpdateTitle": "Ordreoppdatering",
+  "notifCarrierStartedBody": "Transportøren har startet leveringen.",
+  "notifCargoDeliveredBody": "Lasten din er levert. Vennligst bekreft mottak.",
+  "notifDeliveryConfirmedBody": "Kunden har bekreftet leveringen. Betalingen din vil bli frigjort.",
+  "notifDisputeOpenedBody": "Det er åpnet en tvist for denne ordren.",
+  "notifOrderCancelledBody": "Ordren er avbestilt av kunden.",
+  "pickupDateInPast": "Hentingsdato kan ikke være i fortiden",
+  "deliveryDateInPast": "Leveringsdato kan ikke være i fortiden"
 }

@@ -173,7 +173,9 @@ export default function OrdersScreen() {
     return key ? t(key) : status;
   };
 
-  const renderOrderItem = ({ item }: { item: Order }) => (
+  const renderOrderItem = ({ item }: { item: Order }) => {
+    const isCustomerOfOrder = item.customer_id === user?.uid;
+    return (
     <View style={styles.cardContainer}>
       <TouchableOpacity
         style={styles.orderCardInner}
@@ -193,8 +195,15 @@ export default function OrdersScreen() {
             <Text style={styles.orderTitle} numberOfLines={1}>
               {item.cargo_title || t('order')} (#{item.id.slice(0, 8)})
             </Text>
-            <View style={[styles.statusBadge, { backgroundColor: getStatusColor(item.status) }]}>
-              <Text style={styles.statusBadgeText}>{getStatusLabel(item.status)}</Text>
+            <View style={styles.badgeRow}>
+              <View style={[styles.roleBadge, isCustomerOfOrder ? styles.roleBadgeCustomer : styles.roleBadgeCarrier]}>
+                <Text style={[styles.roleBadgeText, isCustomerOfOrder ? styles.roleBadgeTextCustomer : styles.roleBadgeTextCarrier]}>
+                  {isCustomerOfOrder ? t('customer') : t('carrier')}
+                </Text>
+              </View>
+              <View style={[styles.statusBadge, { backgroundColor: getStatusColor(item.status) }]}>
+                <Text style={styles.statusBadgeText}>{getStatusLabel(item.status)}</Text>
+              </View>
             </View>
           </View>
 
@@ -219,6 +228,7 @@ export default function OrdersScreen() {
       </TouchableOpacity>
     </View>
   );
+  };
 
   const TABS: { key: TabKey; label: string }[] = [
     { key: 'active', label: t('active') },
@@ -425,5 +435,31 @@ const createStyles = (colors: ReturnType<typeof useAppThemeStyles>['colors']) =>
       fontSize: fontSize.sm,
       fontWeight: fontWeight.semibold,
       color: colors.text.primary,
+    },
+    badgeRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.xs,
+    },
+    roleBadge: {
+      borderRadius: 5,
+      paddingHorizontal: spacing.xs,
+      paddingVertical: 3,
+    },
+    roleBadgeCustomer: {
+      backgroundColor: 'rgba(59,130,246,0.12)',
+    },
+    roleBadgeCarrier: {
+      backgroundColor: 'rgba(16,185,129,0.12)',
+    },
+    roleBadgeText: {
+      fontSize: 10,
+      fontWeight: fontWeight.semibold,
+    },
+    roleBadgeTextCustomer: {
+      color: colors.primary || '#3B82F6',
+    },
+    roleBadgeTextCarrier: {
+      color: colors.success || '#10B981',
     },
   });

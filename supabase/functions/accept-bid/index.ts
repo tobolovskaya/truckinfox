@@ -197,6 +197,7 @@ Deno.serve(async (req: Request) => {
       type: 'bid_accepted',
       title: 'Bid Accepted',
       body: `Your bid of ${bid.price} NOK has been accepted!`,
+      data: { title_key: 'notifBidAcceptedTitle', body_key: 'notifBidAcceptedBody', amount: bid.price },
       related_id: order.id,
       related_type: 'order',
       read: false,

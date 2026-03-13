@@ -183,41 +183,7 @@ export default function ReviewScreen() {
         throw insertError;
       }
 
-      // Update user rating
-      // Fetch all reviews for the reviewed user to calculate average
-      const { data: reviewsRows, error: reviewsError } = await supabase
-        .from('reviews')
-        .select('rating')
-        .eq('reviewed_id', reviewedId);
-
-      if (reviewsError) {
-        throw reviewsError;
-      }
-
-      // Calculate average rating
-      const totalRating = (reviewsRows || []).reduce(
-        (sum, row) => sum + Number(row.rating || 0),
-        0
-      );
-      const reviewsCount = reviewsRows?.length || 0;
-      const avgRating = reviewsCount > 0 ? totalRating / reviewsCount : 0;
-
-      // Update user document with new rating
-      const { error: updateRatingError } = await supabase
-        .from('profiles')
-        .update({
-          rating: Number(avgRating.toFixed(2)), // Round to 2 decimal places
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', reviewedId);
-
-      if (updateRatingError) {
-        throw updateRatingError;
-      }
-
-      console.log(
-        `Updated rating for user ${reviewedId}: ${avgRating.toFixed(2)} (${reviewsCount} reviews)`
-      );
+      // Rating average is maintained by the DB trigger trg_sync_profile_rating — no client-side computation needed.
 
       // 📊 Track review submission
       trackReviewSubmitted({

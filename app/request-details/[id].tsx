@@ -807,6 +807,17 @@ export default function RequestDetailsScreen() {
         }
       }
 
+      // Best-effort: delete storage images for this request
+      try {
+        const { data: files } = await supabase.storage.from('cargo').list(requestId);
+        if (files && files.length > 0) {
+          const paths = files.map(f => `${requestId}/${f.name}`);
+          await supabase.storage.from('cargo').remove(paths);
+        }
+      } catch (storageErr) {
+        console.warn('Could not clean up cargo images:', storageErr);
+      }
+
       // Delete the cargo request
       const { error: deleteRequestError } = await supabase
         .from('cargo_requests')

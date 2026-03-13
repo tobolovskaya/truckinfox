@@ -938,5 +938,16 @@
   "notifPaymentReleasedTitle": "Payment Released",
   "notifPaymentReleasedBody": "Payment of {{amount}} NOK released after 3-day auto-confirmation.",
   "notifBidExpiredTitle": "Bid Expired",
-  "notifBidExpiredBody": "Your bid was not accepted within 48 hours and has expired."
+  "notifBidExpiredBody": "Your bid was not accepted within 48 hours and has expired.",
+  "notifBidAcceptedTitle": "Bid Accepted",
+  "notifBidAcceptedBody": "Your bid of {{amount}} NOK has been accepted!",
+  "notifFundsReleasedBody": "Payment of {{amount}} NOK has been released to your account.",
+  "notifOrderUpdateTitle": "Order Update",
+  "notifCarrierStartedBody": "The carrier has started the delivery.",
+  "notifCargoDeliveredBody": "Your cargo has been delivered. Please confirm receipt.",
+  "notifDeliveryConfirmedBody": "The customer has confirmed delivery. Your payment will be released.",
+  "notifDisputeOpenedBody": "A dispute has been opened for this order.",
+  "notifOrderCancelledBody": "The order has been cancelled by the customer.",
+  "pickupDateInPast": "Pickup date cannot be in the past",
+  "deliveryDateInPast": "Delivery date cannot be in the past"
 }
