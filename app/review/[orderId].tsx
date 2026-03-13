@@ -153,7 +153,7 @@ export default function ReviewScreen() {
 
   const submitReview = async () => {
     if (rating === 0) {
-      Alert.alert(t('error'), 'Please select a rating');
+      Alert.alert(t('error'), t('selectRating'));
       return;
     }
 
