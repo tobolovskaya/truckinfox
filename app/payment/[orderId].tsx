@@ -120,9 +120,15 @@ const normalizeOrderAmounts = (
 
 export default function PaymentScreen() {
   const { orderId } = useLocalSearchParams();
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const { t, i18n } = useTranslation();
   const router = useRouter();
+
+  useEffect(() => {
+    if (!authLoading && !user) {
+      router.replace('/(auth)/login');
+    }
+  }, [user, authLoading, router]);
 
   const [order, setOrder] = useState<Order | null>(null);
   const [loading, setLoading] = useState(true);

@@ -76,7 +76,7 @@ type IoniconName = ComponentProps<typeof Ionicons>['name'];
 
 export default function OrderStatusScreen() {
   const { orderId } = useLocalSearchParams();
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const { t, i18n } = useTranslation();
   const router = useRouter();
 
@@ -84,6 +84,12 @@ export default function OrderStatusScreen() {
   const [loading, setLoading] = useState(true);
   const [confirming, setConfirming] = useState(false);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+
+  useEffect(() => {
+    if (!authLoading && !user) {
+      router.replace('/(auth)/login');
+    }
+  }, [user, authLoading, router]);
 
   // Delivery Proof State
   const [deliveryPhotos, setDeliveryPhotos] = useState<string[]>([]);

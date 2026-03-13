@@ -3,7 +3,8 @@ import { trackDeliveryProofSubmitted } from './analytics';
 import { compressImageForUpload } from './imageCompression';
 import { File as ExpoFile } from 'expo-file-system';
 
-const STORAGE_SIGNED_URL_EXPIRY_SECONDS = 60 * 60 * 24 * 365;
+/** Short-lived URL for display/download — evidence object in Storage is permanent */
+const DISPLAY_URL_EXPIRY_SECONDS = 60 * 60; // 1 hour
 
 const base64ToUint8Array = (base64: string): Uint8Array => {
   const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
@@ -41,13 +42,14 @@ function getErrorMessage(error: unknown, fallback: string): string {
 }
 
 export interface DeliveryProofData {
-  photos: string[]; // Array of photo URLs
-  signature: string; // Signature data URL or uploaded URL
+  photos: string[]; // Array of fresh signed URLs (1-hour expiry)
+  signature: string; // Fresh signed URL (1-hour expiry)
   delivery_time: unknown;
 }
 
 /**
- * Upload a single image to Firebase Storage
+ * Upload a single delivery-proof image and return its storage path.
+ * The path is permanent — callers regenerate signed URLs on demand.
  */
 export const uploadImage = async (
   uri: string,
@@ -79,17 +81,8 @@ export const uploadImage = async (
       throw uploadError;
     }
 
-    const { data: signedData, error: signedUrlError } = await supabase.storage
-      .from('cargo')
-      .createSignedUrl(filePath, STORAGE_SIGNED_URL_EXPIRY_SECONDS);
-
-    if (signedUrlError || !signedData?.signedUrl) {
-      throw signedUrlError || new Error('Failed to create signed URL for uploaded image');
-    }
-
-    const downloadURL = signedData.signedUrl;
-
-    return downloadURL;
+    // Return the storage path — not a signed URL — so it never expires in the DB.
+    return filePath;
   } catch (error) {
     console.error('Error uploading image:', error);
     throw new Error('Failed to upload image');
@@ -111,20 +104,20 @@ export const uploadDeliveryProof = async (
     const photoUploadPromises = photos.map((photoUri, index) =>
       uploadImage(photoUri, orderId, 'photo', index)
     );
-    const uploadedPhotoURLs = await Promise.all(photoUploadPromises);
-    console.log('✅ Photos uploaded:', uploadedPhotoURLs);
+    const uploadedPhotoPaths = await Promise.all(photoUploadPromises);
+    console.log('✅ Photos uploaded:', uploadedPhotoPaths);
 
     // Upload signature to Storage
-    const uploadedSignatureURL = await uploadImage(signature, orderId, 'signature');
-    console.log('✅ Signature uploaded:', uploadedSignatureURL);
+    const uploadedSignaturePath = await uploadImage(signature, orderId, 'signature');
+    console.log('✅ Signature uploaded:', uploadedSignaturePath);
 
     const nowIso = new Date().toISOString();
     const { error: updateError } = await supabase
       .from('orders')
       .update({
         status: 'delivered',
-        delivery_photos: uploadedPhotoURLs,
-        delivery_signature_url: uploadedSignatureURL,
+        delivery_photos: uploadedPhotoPaths,
+        delivery_signature_url: uploadedSignaturePath,
         delivered_at: nowIso,
         updated_at: nowIso,
       })
@@ -139,7 +132,7 @@ export const uploadDeliveryProof = async (
     // Track delivery proof submitted
     trackDeliveryProofSubmitted({
       order_id: orderId,
-      photo_count: uploadedPhotoURLs.length,
+      photo_count: uploadedPhotoPaths.length,
       has_signature: true,
     });
 
@@ -187,9 +180,22 @@ export const getDeliveryProof = async (orderId: string): Promise<DeliveryProofDa
       return null;
     }
 
+    // Regenerate short-lived signed URLs from permanent storage paths.
+    const photoPaths: string[] = orderData.delivery_photos || [];
+    const signedPhotoResults = await Promise.all(
+      photoPaths.map(path =>
+        supabase.storage.from('cargo').createSignedUrl(path, DISPLAY_URL_EXPIRY_SECONDS)
+      )
+    );
+    const photoUrls = signedPhotoResults.map(r => r.data?.signedUrl ?? '').filter(Boolean);
+
+    const { data: sigData } = await supabase.storage
+      .from('cargo')
+      .createSignedUrl(orderData.delivery_signature_url, DISPLAY_URL_EXPIRY_SECONDS);
+
     return {
-      photos: orderData.delivery_photos || [],
-      signature: orderData.delivery_signature_url || '',
+      photos: photoUrls,
+      signature: sigData?.signedUrl ?? '',
       delivery_time: orderData.delivered_at,
     };
   } catch (error) {

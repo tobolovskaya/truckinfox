@@ -115,10 +115,16 @@ interface Bid {
 
 export default function RequestDetailsScreen() {
   const { id } = useLocalSearchParams();
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const { t, i18n } = useTranslation();
   const toast = useToast();
   const router = useRouter();
+
+  useEffect(() => {
+    if (!authLoading && !user) {
+      router.replace('/(auth)/login');
+    }
+  }, [user, authLoading, router]);
 
   const [request, setRequest] = useState<CargoRequest | null>(null);
   const [bids, setBids] = useState<Bid[]>([]);
