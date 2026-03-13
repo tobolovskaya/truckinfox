@@ -582,11 +582,6 @@ export default function PaymentScreen() {
           await updateEscrowStatus(latestEscrow.id, 'paid');
         }
 
-        await supabase
-        .from('orders')
-        .update({ status: 'paid', updated_at: new Date().toISOString() })
-        .eq('id', order.id);
-
       await updateOrderPaymentStatus('paid');
 
         // Track payment completed
