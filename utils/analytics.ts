@@ -6,14 +6,14 @@ type AnalyticsParams = Record<string, unknown>;
  * @param params - Event parameters
  */
 export const logEvent = (eventName: string, params?: AnalyticsParams) => {
-  try {
+  // TODO: Replace with a real analytics provider (PostHog, Segment, Mixpanel, etc.)
+  // Integration point: call provider SDK here, e.g. posthog.capture(eventName, params)
+  if (__DEV__) {
     if (params === undefined) {
       console.log(`📊 Analytics: ${eventName}`);
-      return;
+    } else {
+      console.log(`📊 Analytics: ${eventName}`, params);
     }
-    console.log(`📊 Analytics: ${eventName}`, params);
-  } catch (error) {
-    console.error('Error logging analytics event:', error);
   }
 };
 

@@ -1,5 +1,9 @@
+// TODO: Replace with a real analytics provider (PostHog, Segment, Mixpanel, etc.)
+// Integration point: call provider SDK here, e.g. posthog.capture(eventName, params)
 const logFirebaseEvent = (eventName: string, params?: Record<string, string | number>) => {
-  console.log(`📊 Analytics event: ${eventName}`, params);
+  if (__DEV__) {
+    console.log(`📊 Analytics event: ${eventName}`, params);
+  }
 };
 
 export const logEvent = {
