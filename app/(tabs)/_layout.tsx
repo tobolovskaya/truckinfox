@@ -4,11 +4,13 @@ import { Ionicons } from '@expo/vector-icons';
 import { View, StyleSheet, Platform } from 'react-native';
 import { colors } from '../../lib/sharedStyles';
 import { useTranslation } from 'react-i18next';
+import { useUnreadCount } from '../../hooks/useNotifications';
 
 const TAB_BAR_HEIGHT = Platform.OS === 'ios' ? 82 : 68;
 
 export default function TabLayout() {
   const { t } = useTranslation();
+  const { unreadCount } = useUnreadCount();
 
   return (
     <Tabs
@@ -113,11 +115,12 @@ export default function TabLayout() {
         }}
       />
 
-      {/* Profile */}
+      {/* Profile — badge shows unread notification count */}
       <Tabs.Screen
         name="profile"
         options={{
           title: t('profile'),
+          tabBarBadge: unreadCount > 0 ? (unreadCount > 99 ? '99+' : unreadCount) : undefined,
           tabBarIcon: ({ color, focused }: { color: string; focused: boolean }) => (
             <View style={focused ? styles.activeIconWrap : undefined}>
               <Ionicons
