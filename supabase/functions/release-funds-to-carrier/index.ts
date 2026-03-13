@@ -57,8 +57,8 @@ Deno.serve(async (req: Request) => {
       });
     }
 
-    // Only the customer can trigger fund release
-    if (order.customer_id !== user.id) {
+    // Only the carrier who owns the order can trigger fund release
+    if (order.carrier_id !== user.id) {
       return new Response(JSON.stringify({ error: 'Forbidden' }), {
         status: 403,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },

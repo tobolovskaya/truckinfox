@@ -143,25 +143,23 @@ export const uploadDeliveryProof = async (
       has_signature: true,
     });
 
-    // Trigger Cloud Function to release funds to carrier
-    try {
-      const { data: result, error: invokeError } = await supabase.functions.invoke(
-        'release-funds-to-carrier',
-        {
-          body: { orderId },
-        }
-      );
-
-      if (invokeError) {
-        throw invokeError;
+    // Trigger Edge Function to release funds to carrier
+    const { data: { session } } = await supabase.auth.getSession();
+    const { data: result, error: invokeError } = await supabase.functions.invoke(
+      'release-funds-to-carrier',
+      {
+        body: { orderId },
+        headers: session?.access_token
+          ? { Authorization: `Bearer ${session.access_token}` }
+          : undefined,
       }
+    );
 
-      console.log('✅ Funds release triggered:', result);
-    } catch (fundsError: unknown) {
-      console.error('⚠️ Error releasing funds:', fundsError);
-      // Don't throw - delivery proof is still recorded
-      // Admin can manually process the payout
+    if (invokeError) {
+      throw new Error(`Failed to release funds: ${invokeError.message}`);
     }
+
+    console.log('✅ Funds release triggered:', result);
 
     console.log('✅ Delivery proof uploaded successfully');
   } catch (error: unknown) {
