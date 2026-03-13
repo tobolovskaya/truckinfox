@@ -195,8 +195,8 @@ Deno.serve(async (req: Request) => {
     await supabaseAdmin.from('notifications').insert({
       user_id: bid.carrier_id,
       type: 'bid_accepted',
-      title: 'Bid Accepted',
-      body: `Your bid of ${bid.price} NOK has been accepted!`,
+      title: 'notifBidAcceptedTitle',
+      body: 'notifBidAcceptedBody',
       data: { title_key: 'notifBidAcceptedTitle', body_key: 'notifBidAcceptedBody', amount: bid.price },
       related_id: order.id,
       related_type: 'order',

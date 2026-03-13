@@ -158,24 +158,24 @@ Deno.serve(async (req: Request) => {
       notification = {
         user_id: order.customer_id,
         type: 'order_status_change',
-        title: 'Order Update',
-        body: 'The carrier has started the delivery.',
+        title: 'notifOrderUpdateTitle',
+        body: 'notifCarrierStartedBody',
         data: { order_id: orderId, status: newStatus, title_key: 'notifOrderUpdateTitle', body_key: 'notifCarrierStartedBody' },
       };
     } else if (transition === 'in_progress->delivered') {
       notification = {
         user_id: order.customer_id,
         type: 'order_status_change',
-        title: 'Order Update',
-        body: 'Your cargo has been delivered. Please confirm receipt.',
+        title: 'notifOrderUpdateTitle',
+        body: 'notifCargoDeliveredBody',
         data: { order_id: orderId, status: newStatus, title_key: 'notifOrderUpdateTitle', body_key: 'notifCargoDeliveredBody' },
       };
     } else if (newStatus === 'completed') {
       notification = {
         user_id: order.carrier_id,
         type: 'order_status_change',
-        title: 'Order Update',
-        body: 'The customer has confirmed delivery. Your payment will be released.',
+        title: 'notifOrderUpdateTitle',
+        body: 'notifDeliveryConfirmedBody',
         data: { order_id: orderId, status: newStatus, title_key: 'notifOrderUpdateTitle', body_key: 'notifDeliveryConfirmedBody' },
       };
     } else if (newStatus === 'disputed') {
@@ -184,16 +184,16 @@ Deno.serve(async (req: Request) => {
       notification = {
         user_id: notifyUserId,
         type: 'order_status_change',
-        title: 'Order Update',
-        body: 'A dispute has been opened for this order.',
+        title: 'notifOrderUpdateTitle',
+        body: 'notifDisputeOpenedBody',
         data: { order_id: orderId, status: newStatus, title_key: 'notifOrderUpdateTitle', body_key: 'notifDisputeOpenedBody' },
       };
     } else if (transition === 'pending_payment->cancelled') {
       notification = {
         user_id: order.carrier_id,
         type: 'order_status_change',
-        title: 'Order Update',
-        body: 'The order has been cancelled by the customer.',
+        title: 'notifOrderUpdateTitle',
+        body: 'notifOrderCancelledBody',
         data: { order_id: orderId, status: newStatus, title_key: 'notifOrderUpdateTitle', body_key: 'notifOrderCancelledBody' },
       };
     }

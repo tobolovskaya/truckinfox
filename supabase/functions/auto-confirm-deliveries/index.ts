@@ -58,8 +58,8 @@ Deno.serve(async (req: Request) => {
     {
       user_id: order.customer_id,
       type: 'order_status_change',
-      title: 'Delivery Auto-Confirmed',
-      body: 'Your delivery was automatically confirmed after 3 days. Contact support if you have concerns.',
+      title: 'notifAutoConfirmTitle',
+      body: 'notifAutoConfirmBody',
       data: {
         order_id: order.id,
         status: 'completed',
@@ -71,8 +71,8 @@ Deno.serve(async (req: Request) => {
     {
       user_id: order.carrier_id,
       type: 'payment_success',
-      title: 'Payment Released',
-      body: `Payment of ${order.carrier_amount} NOK released after 3-day auto-confirmation.`,
+      title: 'notifPaymentReleasedTitle',
+      body: 'notifPaymentReleasedBody',
       data: {
         order_id: order.id,
         status: 'completed',

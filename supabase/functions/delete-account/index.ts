@@ -59,7 +59,7 @@ Deno.serve(async (req: Request) => {
       { table: 'user_favorites', column: 'user_id' },
       { table: 'notifications', column: 'user_id' },
       { table: 'reviews', column: 'reviewer_id' },
-      { table: 'reviews', column: 'reviewee_id' },
+      { table: 'reviews', column: 'reviewed_id' },
       { table: 'messages', column: 'sender_id' },
     ];
 

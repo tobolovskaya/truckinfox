@@ -105,8 +105,8 @@ Deno.serve(async (req: Request) => {
     await supabaseAdmin.from('notifications').insert({
       user_id: order.carrier_id,
       type: 'payment_success',
-      title: 'Payment Released',
-      body: `Payment of ${order.carrier_amount} NOK has been released to your account.`,
+      title: 'notifPaymentReleasedTitle',
+      body: 'notifFundsReleasedBody',
       data: { title_key: 'notifPaymentReleasedTitle', body_key: 'notifFundsReleasedBody', amount: order.carrier_amount },
       related_id: orderId,
       related_type: 'order',
