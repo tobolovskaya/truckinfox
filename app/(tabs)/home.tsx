@@ -681,11 +681,9 @@ export default function HomeScreen() {
         data={listLoading ? skeletonItems : listRequests}
         keyExtractor={(item, index) => ('id' in item ? item.id : `request-${index}`)}
         numColumns={isSingleColumnLayout ? 1 : 2}
-        columnWrapperStyle={isSingleColumnLayout ? undefined : { gap: gridGap }}
         contentContainerStyle={{
-          paddingHorizontal: horizontalPadding,
+          paddingHorizontal: horizontalPadding - gridGap / 2,
           paddingBottom: spacing.xl,
-          rowGap: gridGap,
         }}
         showsVerticalScrollIndicator={false}
         refreshControl={
@@ -737,28 +735,30 @@ export default function HomeScreen() {
             />
           ) : null
         }
-        renderItem={({ item, index }) =>
-          listLoading ? (
-            <SkeletonLoader
-              variant="card"
-              count={1}
-              layout="grid"
-              cardWidth={cardWidth}
-              cardGap={gridGap}
-              variantSeed={index + skeletonVariantSeed}
-              compact={true}
-            />
-          ) : (
-            <RequestCard
-              request={item}
-              onPress={() => handleOpenRequest(item.id)}
-              currentUserId={user?.uid}
-              showFavorite={false}
-              compact
-              cardStyle={{ width: cardWidth }}
-            />
-          )
-        }
+        renderItem={({ item, index }) => (
+          <View style={{ flex: 1, paddingHorizontal: gridGap / 2, paddingBottom: gridGap }}>
+            {listLoading ? (
+              <SkeletonLoader
+                variant="card"
+                count={1}
+                layout="grid"
+                cardWidth={cardWidth}
+                cardGap={gridGap}
+                variantSeed={index + skeletonVariantSeed}
+                compact={true}
+              />
+            ) : (
+              <RequestCard
+                request={item}
+                onPress={() => handleOpenRequest(item.id)}
+                currentUserId={user?.uid}
+                showFavorite={false}
+                compact
+                cardStyle={{ flex: 1 }}
+              />
+            )}
+          </View>
+        )}
       />
 
       {/* Filter Sheet Modal */}

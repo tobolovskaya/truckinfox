@@ -26,6 +26,8 @@ const ALLOWED_TRANSITIONS: {
   { from: 'paid', to: 'in_progress', role: 'carrier' },
   // Carrier marks delivery done
   { from: 'in_progress', to: 'delivered', role: 'carrier' },
+  // Customer confirms delivery → order completed
+  { from: 'delivered', to: 'completed', role: 'customer' },
   // Either party can open a dispute while active
   { from: 'paid', to: 'disputed', role: 'both' },
   { from: 'in_progress', to: 'disputed', role: 'both' },
@@ -166,6 +168,14 @@ Deno.serve(async (req: Request) => {
         type: 'order_status_change',
         title: 'Order Update',
         body: 'Your cargo has been delivered. Please confirm receipt.',
+        data: { order_id: orderId, status: newStatus },
+      };
+    } else if (newStatus === 'completed') {
+      notification = {
+        user_id: order.carrier_id,
+        type: 'order_status_change',
+        title: 'Order Update',
+        body: 'The customer has confirmed delivery. Your payment will be released.',
         data: { order_id: orderId, status: newStatus },
       };
     } else if (newStatus === 'disputed') {

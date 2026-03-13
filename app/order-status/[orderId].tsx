@@ -448,25 +448,21 @@ export default function OrderStatusScreen() {
   const processDeliveryConfirmation = async () => {
     setConfirming(true);
     try {
-      // Update order status to delivered
-      const { error } = await supabase
-        .from('orders')
-        .update({
-          status: 'delivered',
-          delivered_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', orderIdString as string);
+      // Advance order to 'completed' via Edge Function (RLS blocks direct customer writes)
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData?.session?.access_token;
+      if (!token) throw new Error('Not authenticated');
 
-      if (error) {
-        throw error;
-      }
+      const { error: statusError } = await supabase.functions.invoke('update-order-status', {
+        body: { orderId: orderIdString, newStatus: 'completed' },
+        headers: { Authorization: `Bearer ${token}` },
+      });
 
-      // Release funds to carrier using Cloud Function
-      // This ensures secure and validated fund release
+      if (statusError) throw statusError;
+
+      // Release funds to carrier
       try {
         const result = await releaseFundsToCarrier(orderIdString as string);
-        console.log('Funds release result:', result);
 
         Alert.alert(
           t('deliveryConfirmed'),
@@ -620,8 +616,8 @@ export default function OrderStatusScreen() {
     order?.status != null &&
     !['cancelled', 'canceled'].includes(order.status);
   const canStartTransport = isCarrier && order?.status === 'paid';
-  const canTrackDelivery = order?.status === 'in_progress';
-  const canConfirmDelivery = isCustomer && order?.status === 'in_progress';
+  const canTrackDelivery = order?.status === 'in_progress' || order?.status === 'delivered';
+  const canConfirmDelivery = isCustomer && order?.status === 'delivered';
   const canSubmitProof = isCarrier && order?.status === 'in_progress';
   const paymentStatus = normalizeStatus(order?.payment_status);
   const canOpenPayment =

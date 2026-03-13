@@ -34,23 +34,8 @@ export async function submitReview(
 
   if (insertError) return { error: new Error(insertError.message) };
 
-  // Recompute the reviewee's average rating from all their reviews
-  const { data: allReviews } = await supabase
-    .from('reviews')
-    .select('rating')
-    .eq('reviewed_id', revieweeId);
-
-  if (allReviews && allReviews.length > 0) {
-    const avg = allReviews.reduce((sum, r) => sum + r.rating, 0) / allReviews.length;
-
-    await supabase
-      .from('profiles')
-      .update({
-        rating: Math.round(avg * 10) / 10,
-        updated_at: new Date().toISOString(),
-      })
-      .eq('id', revieweeId);
-  }
+  // profiles.rating and rating_count are maintained by the DB trigger
+  // trg_sync_profile_rating — no client-side computation needed.
 
   return { error: null };
 }
