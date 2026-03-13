@@ -199,7 +199,7 @@ export default function ReviewScreen() {
         });
       }
 
-      Alert.alert(t('success'), 'Review submitted successfully!', [
+      Alert.alert(t('success'), t('reviewSubmitted'), [
         {
           text: t('ok'),
           onPress: () => router.back(),
