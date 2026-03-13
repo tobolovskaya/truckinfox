@@ -1,4 +1,5 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useEffect } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -34,48 +35,42 @@ export interface Conversation {
 
 /** Hook: messages for a conversation with realtime subscription */
 export function useConversation(chatId: string | null) {
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
+  const queryClient = useQueryClient();
 
-  const loadMessages = useCallback(async () => {
-    if (!chatId) {
-      setLoading(false);
-      return;
-    }
-
-    const { data, error: fetchError } = await supabase
-      .from('messages')
-      .select('id, chat_id, content, sender_id, receiver_id, sender_type, created_at, delivered_at, read_at')
-      .eq('chat_id', chatId)
-      .order('created_at', { ascending: true });
-
-    if (fetchError) {
-      setError(new Error(fetchError.message));
-    } else {
-      setMessages((data || []) as ChatMessage[]);
-    }
-    setLoading(false);
-  }, [chatId]);
+  const query = useQuery({
+    queryKey: ['messages', chatId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('messages')
+        .select('id, chat_id, content, sender_id, receiver_id, sender_type, created_at, delivered_at, read_at')
+        .eq('chat_id', chatId!)
+        .order('created_at', { ascending: true });
+      if (error) throw new Error(error.message);
+      return (data || []) as ChatMessage[];
+    },
+    enabled: Boolean(chatId),
+    staleTime: 15_000,
+  });
 
   useEffect(() => {
-    loadMessages();
-
     if (!chatId) return;
-
     const channel = supabase
       .channel(`messages:${chatId}`)
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'messages', filter: `chat_id=eq.${chatId}` },
-        () => { loadMessages(); }
+        () => { queryClient.invalidateQueries({ queryKey: ['messages', chatId] }); }
       )
       .subscribe();
-
     return () => { channel.unsubscribe(); };
-  }, [chatId, loadMessages]);
+  }, [chatId, queryClient]);
 
-  return { messages, loading, error, refetch: loadMessages };
+  return {
+    messages: query.data ?? [],
+    loading: query.isLoading,
+    error: query.error as Error | null,
+    refetch: query.refetch,
+  };
 }
 
 /** Send a message in a conversation */
@@ -117,37 +112,27 @@ export async function markAsRead(chatId: string, receiverId: string): Promise<{ 
 /** Hook: all conversations for the current user with unread counts */
 export function useConversationList() {
   const { user } = useAuth();
-  const [conversations, setConversations] = useState<Conversation[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
+  const uid = user?.uid;
+  const queryClient = useQueryClient();
 
-  const loadConversations = useCallback(async () => {
-    if (!user?.uid) {
-      setLoading(false);
-      return;
-    }
+  const query = useQuery({
+    queryKey: ['conversations', uid],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('chats')
+        .select('*')
+        .or(`user_a_id.eq.${uid},user_b_id.eq.${uid}`)
+        .order('updated_at', { ascending: false });
+      if (error) throw new Error(error.message);
 
-    setLoading(true);
-    const { data, error: fetchError } = await supabase
-      .from('chats')
-      .select('*')
-      .or(`user_a_id.eq.${user.uid},user_b_id.eq.${user.uid}`)
-      .order('updated_at', { ascending: false });
+      const chats = (data || []) as Conversation[];
+      const otherUserIds = chats.map(c =>
+        c.user_a_id === uid ? c.user_b_id : c.user_a_id
+      );
+      const uniqueIds = [...new Set(otherUserIds)];
 
-    if (fetchError) {
-      setError(new Error(fetchError.message));
-      setLoading(false);
-      return;
-    }
+      if (uniqueIds.length === 0) return chats;
 
-    // Fetch other user profiles
-    const chats = (data || []) as Conversation[];
-    const otherUserIds = chats.map(c =>
-      c.user_a_id === user.uid ? c.user_b_id : c.user_a_id
-    );
-    const uniqueIds = [...new Set(otherUserIds)];
-
-    if (uniqueIds.length > 0) {
       const { data: profiles } = await supabase
         .from('profiles')
         .select('id, full_name, user_type, rating')
@@ -155,33 +140,34 @@ export function useConversationList() {
 
       const profileMap = new Map((profiles || []).map(p => [p.id, p]));
 
-      const enriched = chats.map(c => ({
+      return chats.map(c => ({
         ...c,
-        other_user: profileMap.get(c.user_a_id === user.uid ? c.user_b_id : c.user_a_id) as Conversation['other_user'],
+        other_user: profileMap.get(
+          c.user_a_id === uid ? c.user_b_id : c.user_a_id
+        ) as Conversation['other_user'],
       }));
-      setConversations(enriched);
-    } else {
-      setConversations(chats);
-    }
-    setLoading(false);
-  }, [user?.uid]);
+    },
+    enabled: Boolean(uid),
+    staleTime: 15_000,
+  });
 
   useEffect(() => {
-    loadConversations();
-
-    if (!user?.uid) return;
-
+    if (!uid) return;
     const channel = supabase
-      .channel(`chats:${user.uid}`)
+      .channel(`chats:${uid}`)
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'chats' },
-        () => { loadConversations(); }
+        () => { queryClient.invalidateQueries({ queryKey: ['conversations', uid] }); }
       )
       .subscribe();
-
     return () => { channel.unsubscribe(); };
-  }, [user?.uid, loadConversations]);
+  }, [uid, queryClient]);
 
-  return { conversations, loading, error, refetch: loadConversations };
+  return {
+    conversations: query.data ?? [],
+    loading: query.isLoading,
+    error: query.error as Error | null,
+    refetch: query.refetch,
+  };
 }

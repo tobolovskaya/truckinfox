@@ -34,7 +34,7 @@ export interface Notification {
   body_key?: string;
 }
 
-type NotificationRow = {
+export type NotificationRow = {
   id: string;
   user_id: string;
   type: Notification['type'];
@@ -48,7 +48,7 @@ type NotificationRow = {
   data: Record<string, unknown> | null;
 };
 
-function mapNotificationRow(row: NotificationRow): Notification {
+export function mapNotificationRow(row: NotificationRow): Notification {
   const data = row.data || {};
 
   return {

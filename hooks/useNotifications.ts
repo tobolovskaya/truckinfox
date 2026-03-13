@@ -1,16 +1,12 @@
-/**
- * React hook for managing notifications
- *
- * Provides real-time notifications and unread count for the current user.
- */
-
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { supabase } from '../lib/supabase';
 import {
-  subscribeToNotifications,
-  subscribeToUnreadCount,
   markNotificationAsRead,
   markAllNotificationsAsRead,
+  mapNotificationRow,
   type Notification,
+  type NotificationRow,
 } from '../utils/notifications';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -21,146 +17,101 @@ interface UseNotificationsResult {
   error: Error | null;
   markAsRead: (_notificationId: string) => Promise<void>;
   markAllAsRead: () => Promise<void>;
-  refresh: () => void;
+  refetch: () => void;
 }
 
-/**
- * Hook to manage user notifications with real-time updates
- *
- * @param maxNotifications - Maximum number of notifications to retrieve
- * @returns Notifications state and actions
- *
- * @example
- * function NotificationsScreen() {
- *   const { notifications, unreadCount, markAsRead } = useNotifications();
- *
- *   return (
- *     <View>
- *       <Text>Unread: {unreadCount}</Text>
- *       {notifications.map(notif => (
- *         <TouchableOpacity
- *           key={notif.id}
- *           onPress={() => markAsRead(notif.id)}
- *         >
- *           <Text>{notif.title}</Text>
- *         </TouchableOpacity>
- *       ))}
- *     </View>
- *   );
- * }
- */
+/** Hook to manage user notifications with real-time updates */
 export function useNotifications(maxNotifications: number = 50): UseNotificationsResult {
   const { user } = useAuth();
-  const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [unreadCount, setUnreadCount] = useState(0);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
-  const [refreshKey, setRefreshKey] = useState(0);
+  const uid = user?.uid;
+  const queryClient = useQueryClient();
+
+  const query = useQuery({
+    queryKey: ['notifications', uid, maxNotifications],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('notifications')
+        .select('*')
+        .eq('user_id', uid!)
+        .order('created_at', { ascending: false })
+        .limit(maxNotifications);
+      if (error) throw error;
+      return (data || []).map(row => mapNotificationRow(row as NotificationRow));
+    },
+    enabled: Boolean(uid),
+    staleTime: 30_000,
+  });
 
   useEffect(() => {
-    if (!user?.uid) {
-      setNotifications([]);
-      setUnreadCount(0);
-      setLoading(false);
-      return;
-    }
+    if (!uid) return;
+    const channel = supabase
+      .channel(`notifications:${uid}`)
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'notifications', filter: `user_id=eq.${uid}` },
+        () => { queryClient.invalidateQueries({ queryKey: ['notifications', uid] }); }
+      )
+      .subscribe();
+    return () => { channel.unsubscribe(); };
+  }, [uid, queryClient]);
 
-    setLoading(true);
-    setError(null);
-
-    // Subscribe to notifications
-    const unsubscribeNotifications = subscribeToNotifications(
-      user.uid,
-      newNotifications => {
-        setNotifications(newNotifications);
-        setLoading(false);
-      },
-      maxNotifications
-    );
-
-    // Subscribe to unread count
-    const unsubscribeUnreadCount = subscribeToUnreadCount(user.uid, count => {
-      setUnreadCount(count);
-    });
-
-    // Cleanup subscriptions
-    return () => {
-      unsubscribeNotifications();
-      unsubscribeUnreadCount();
-    };
-  }, [user?.uid, maxNotifications, refreshKey]);
+  const notifications = query.data ?? [];
+  const unreadCount = notifications.filter(n => !n.read).length;
 
   const handleMarkAsRead = async (notificationId: string) => {
-    try {
-      await markNotificationAsRead(notificationId);
-    } catch (err) {
-      console.error('Error marking notification as read:', err);
-      setError(err as Error);
-    }
+    await markNotificationAsRead(notificationId);
+    queryClient.invalidateQueries({ queryKey: ['notifications', uid] });
   };
 
   const handleMarkAllAsRead = async () => {
-    try {
-      await markAllNotificationsAsRead();
-    } catch (err) {
-      console.error('Error marking all notifications as read:', err);
-      setError(err as Error);
-    }
-  };
-
-  const refresh = () => {
-    setRefreshKey(prev => prev + 1);
+    await markAllNotificationsAsRead();
+    queryClient.invalidateQueries({ queryKey: ['notifications', uid] });
   };
 
   return {
     notifications,
     unreadCount,
-    loading,
-    error,
+    loading: query.isLoading,
+    error: query.error as Error | null,
     markAsRead: handleMarkAsRead,
     markAllAsRead: handleMarkAllAsRead,
-    refresh,
+    refetch: query.refetch,
   };
 }
 
-/**
- * Hook to only track unread count (lighter weight than full notifications)
- *
- * @returns Unread count and loading state
- *
- * @example
- * function TabBar() {
- *   const { unreadCount } = useUnreadCount();
- *
- *   return (
- *     <Tab.Screen
- *       name="Notifications"
- *       options={{ tabBarBadge: unreadCount > 0 ? unreadCount : undefined }}
- *     />
- *   );
- * }
- */
+/** Hook to only track unread count (lighter weight than full notifications) */
 export function useUnreadCount(): { unreadCount: number; loading: boolean } {
   const { user } = useAuth();
-  const [unreadCount, setUnreadCount] = useState(0);
-  const [loading, setLoading] = useState(true);
+  const uid = user?.uid;
+  const queryClient = useQueryClient();
+
+  const query = useQuery({
+    queryKey: ['notifications', 'unread-count', uid],
+    queryFn: async () => {
+      const { count, error } = await supabase
+        .from('notifications')
+        .select('id', { count: 'exact', head: true })
+        .eq('user_id', uid!)
+        .eq('read', false);
+      if (error) throw error;
+      return count ?? 0;
+    },
+    enabled: Boolean(uid),
+    staleTime: 10_000,
+  });
 
   useEffect(() => {
-    if (!user?.uid) {
-      setUnreadCount(0);
-      setLoading(false);
-      return;
-    }
+    if (!uid) return;
+    const channel = supabase
+      .channel(`notifications-unread:${uid}`)
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'notifications', filter: `user_id=eq.${uid}` },
+        () => { queryClient.invalidateQueries({ queryKey: ['notifications', 'unread-count', uid] }); }
+      )
+      .subscribe();
+    return () => { channel.unsubscribe(); };
+  }, [uid, queryClient]);
 
-    setLoading(true);
-
-    const unsubscribe = subscribeToUnreadCount(user.uid, count => {
-      setUnreadCount(count);
-      setLoading(false);
-    });
-
-    return unsubscribe;
-  }, [user?.uid]);
-
-  return { unreadCount, loading };
+  return { unreadCount: query.data ?? 0, loading: query.isLoading };
 }

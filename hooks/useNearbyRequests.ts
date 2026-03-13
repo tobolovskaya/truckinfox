@@ -1,11 +1,10 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import * as Location from 'expo-location';
 import { Alert, Linking, Platform } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { findNearbyCargoRequests } from '../utils/geoSearch';
 import { supabase } from '../lib/supabase';
-
-type NearbyRequest = Awaited<ReturnType<typeof findNearbyCargoRequests>>[number];
 
 export interface LocationPermissionStatus {
   granted: boolean;
@@ -20,31 +19,8 @@ export interface UserLocation {
 }
 
 /**
- * Hook for finding nearby cargo requests with proper permission handling
- *
- * Features:
- * - User-friendly permission flow with explanations
- * - Handles permission denial gracefully
- * - Provides option to open Settings if denied
- * - Loads nearby cargo requests automatically
- * - Proper error handling and loading states
- *
- * @param radiusKm - Search radius in kilometers (default: 50)
- * @param searchType - Search by 'from' (pickup) or 'to' (delivery) location
- * @returns Hook state with requests, loading, location, and permission status
- *
- * @example
- * const { requests, loading, userLocation, permissionDenied, retry } = useNearbyRequests(50);
- *
- * if (permissionDenied) {
- *   return <PermissionDeniedView onRetry={retry} />;
- * }
- *
- * if (loading) {
- *   return <LoadingView />;
- * }
- *
- * return <RequestsList requests={requests} userLocation={userLocation} />;
+ * Hook for finding nearby cargo requests with proper permission handling.
+ * GPS/permission state is local; data fetching uses React Query.
  */
 export function useNearbyRequests(
   radiusKm: number = 50,
@@ -52,121 +28,35 @@ export function useNearbyRequests(
   countryCode?: string
 ) {
   const { t } = useTranslation();
-  const [requests, setRequests] = useState<NearbyRequest[]>([]);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
+  const [gpsLoading, setGpsLoading] = useState(true);
   const [userLocation, setUserLocation] = useState<UserLocation | null>(null);
   const [permissionDenied, setPermissionDenied] = useState(false);
   const [permissionStatus, setPermissionStatus] = useState<LocationPermissionStatus | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [gpsError, setGpsError] = useState<string | null>(null);
   const normalizedCountryCode = countryCode?.toUpperCase();
 
-  /**
-   * Request location permission with user-friendly explanation
-   */
-  const requestLocationPermission = async (): Promise<boolean> => {
-    try {
-      // 1. Check existing permission status
-      const { status: existingStatus, canAskAgain } =
-        await Location.getForegroundPermissionsAsync();
+  const queryKey = [
+    'nearbyRequests', radiusKm, searchType, normalizedCountryCode,
+    userLocation?.latitude, userLocation?.longitude,
+  ] as const;
 
-      console.log('📍 Current location permission:', existingStatus);
+  const query = useQuery({
+    queryKey,
+    queryFn: () => findNearbyCargoRequests(
+      userLocation!.latitude,
+      userLocation!.longitude,
+      radiusKm,
+      searchType,
+      normalizedCountryCode
+    ),
+    enabled: Boolean(userLocation),
+    staleTime: 60_000,
+  });
 
-      // If already granted, proceed
-      if (existingStatus === Location.PermissionStatus.GRANTED) {
-        setPermissionStatus({
-          granted: true,
-          canAskAgain,
-          status: existingStatus,
-        });
-        return true;
-      }
-
-      // If permission was denied and we can't ask again, show settings option
-      if (!canAskAgain) {
-        console.log('⚠️ Cannot ask for permission again, showing settings option');
-        setPermissionDenied(true);
-        setPermissionStatus({
-          granted: false,
-          canAskAgain: false,
-          status: existingStatus,
-        });
-
-        showSettingsAlert();
-        return false;
-      }
-
-      // 2. Show explanation before requesting permission
-      return new Promise(resolve => {
-        Alert.alert(
-          t('locationRequired'),
-          t('locationPermissionMessage'),
-          [
-            {
-              text: t('cancel'),
-              style: 'cancel',
-              onPress: () => {
-                console.log('❌ User cancelled permission request');
-                setPermissionDenied(true);
-                setPermissionStatus({
-                  granted: false,
-                  canAskAgain: true,
-                  status: existingStatus,
-                });
-                setLoading(false);
-                resolve(false);
-              },
-            },
-            {
-              text: t('allowLocation'),
-              onPress: async () => {
-                // 3. Request permission
-                const { status, canAskAgain: canAskAgainAfter } =
-                  await Location.requestForegroundPermissionsAsync();
-
-                console.log('📍 Permission response:', status);
-
-                const granted = status === Location.PermissionStatus.GRANTED;
-
-                setPermissionStatus({
-                  granted,
-                  canAskAgain: canAskAgainAfter,
-                  status,
-                });
-
-                if (!granted) {
-                  setPermissionDenied(true);
-                  setLoading(false);
-
-                  // If user denied, show settings option
-                  if (!canAskAgainAfter) {
-                    showSettingsAlert();
-                  }
-                }
-
-                resolve(granted);
-              },
-            },
-          ],
-          { cancelable: false }
-        );
-      });
-    } catch (error) {
-      console.error('Error requesting location permission:', error);
-      setError('Failed to request location permission');
-      setLoading(false);
-      return false;
-    }
-  };
-
-  /**
-   * Show alert with option to open Settings
-   */
   const showSettingsAlert = () => {
     Alert.alert(t('permissionRequired'), t('enableLocationInSettings'), [
-      {
-        text: t('cancel'),
-        style: 'cancel',
-      },
+      { text: t('cancel'), style: 'cancel' },
       {
         text: t('openSettings'),
         onPress: () => {
@@ -180,206 +70,151 @@ export function useNearbyRequests(
     ]);
   };
 
-  /**
-   * Get user's current location
-   */
+  const requestLocationPermission = async (): Promise<boolean> => {
+    try {
+      const { status: existingStatus, canAskAgain } =
+        await Location.getForegroundPermissionsAsync();
+
+      if (existingStatus === Location.PermissionStatus.GRANTED) {
+        setPermissionStatus({ granted: true, canAskAgain, status: existingStatus });
+        return true;
+      }
+
+      if (!canAskAgain) {
+        setPermissionDenied(true);
+        setPermissionStatus({ granted: false, canAskAgain: false, status: existingStatus });
+        showSettingsAlert();
+        return false;
+      }
+
+      return new Promise(resolve => {
+        Alert.alert(
+          t('locationRequired'),
+          t('locationPermissionMessage'),
+          [
+            {
+              text: t('cancel'),
+              style: 'cancel',
+              onPress: () => {
+                setPermissionDenied(true);
+                setPermissionStatus({ granted: false, canAskAgain: true, status: existingStatus });
+                setGpsLoading(false);
+                resolve(false);
+              },
+            },
+            {
+              text: t('allowLocation'),
+              onPress: async () => {
+                const { status, canAskAgain: canAskAgainAfter } =
+                  await Location.requestForegroundPermissionsAsync();
+                const granted = status === Location.PermissionStatus.GRANTED;
+                setPermissionStatus({ granted, canAskAgain: canAskAgainAfter, status });
+                if (!granted) {
+                  setPermissionDenied(true);
+                  setGpsLoading(false);
+                  if (!canAskAgainAfter) showSettingsAlert();
+                }
+                resolve(granted);
+              },
+            },
+          ],
+          { cancelable: false }
+        );
+      });
+    } catch (err) {
+      console.error('Error requesting location permission:', err);
+      setGpsError('Failed to request location permission');
+      setGpsLoading(false);
+      return false;
+    }
+  };
+
   const getUserLocation = async (): Promise<UserLocation | null> => {
     try {
-      console.log('📍 Getting current location...');
-
       const location = await Location.getCurrentPositionAsync({
         accuracy: Location.Accuracy.Balanced,
-        timeInterval: 10000, // Cache for 10 seconds
-        distanceInterval: 50, // Update every 50 meters
+        timeInterval: 10000,
+        distanceInterval: 50,
       });
-
       const userLoc: UserLocation = {
         latitude: location.coords.latitude,
         longitude: location.coords.longitude,
         accuracy: location.coords.accuracy,
       };
-
-      console.log('✅ Location obtained:', userLoc.latitude, userLoc.longitude);
       setUserLocation(userLoc);
-
       return userLoc;
-    } catch (error: unknown) {
-      console.error('Error getting location:', error);
-      const message = error instanceof Error ? error.message : 'Failed to get location';
-      setError(message);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Failed to get location';
+      setGpsError(message);
       return null;
     }
   };
 
-  /**
-   * Fetch nearby cargo requests
-   */
-  const fetchNearbyRequests = useCallback(
-    async (location: UserLocation) => {
-      try {
-        console.log(`🔍 Searching for cargo within ${radiusKm}km...`);
-
-        const nearby = await findNearbyCargoRequests(
-          location.latitude,
-          location.longitude,
-          radiusKm,
-          searchType,
-          normalizedCountryCode
-        );
-
-        console.log(`✅ Found ${nearby.length} nearby cargo requests`);
-        setRequests(nearby);
-      } catch (error: unknown) {
-        console.error('Error fetching nearby requests:', error);
-        const message = error instanceof Error ? error.message : 'Failed to fetch nearby requests';
-        setError(message);
-      }
-    },
-    [normalizedCountryCode, radiusKm, searchType]
-  );
-
-  /**
-   * Main initialization flow
-   */
   const initialize = async () => {
-    setLoading(true);
-    setError(null);
+    setGpsLoading(true);
+    setGpsError(null);
     setPermissionDenied(false);
 
     try {
-      // 1. Request location permission
       const hasPermission = await requestLocationPermission();
+      if (!hasPermission) { setGpsLoading(false); return; }
 
-      if (!hasPermission) {
-        setLoading(false);
-        return;
-      }
-
-      // 2. Get user location
       const location = await getUserLocation();
-
       if (!location) {
-        setError('Could not determine your location');
-        setLoading(false);
+        setGpsError('Could not determine your location');
+        setGpsLoading(false);
         return;
       }
-
-      // 3. Fetch nearby requests
-      await fetchNearbyRequests(location);
-    } catch (error: unknown) {
-      console.error('Initialization error:', error);
-      const message = error instanceof Error ? error.message : 'An error occurred';
-      setError(message);
+      // userLocation is now set — React Query will fire automatically
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'An error occurred';
+      setGpsError(message);
     } finally {
-      setLoading(false);
+      setGpsLoading(false);
     }
   };
 
-  /**
-   * Retry permission request and initialization
-   */
-  const retry = () => {
-    initialize();
-  };
+  const retry = () => { initialize(); };
 
-  /**
-   * Refresh nearby requests using current location
-   */
   const refresh = async () => {
     if (!userLocation) {
       await initialize();
       return;
     }
-
-    setLoading(true);
-    setError(null);
-
-    try {
-      await fetchNearbyRequests(userLocation);
-    } catch (error: unknown) {
-      console.error('Refresh error:', error);
-      const message = error instanceof Error ? error.message : 'Failed to refresh';
-      setError(message);
-    } finally {
-      setLoading(false);
-    }
+    queryClient.invalidateQueries({ queryKey });
   };
 
-  // Initialize on mount
+  // Initialize on mount / when search params change
   useEffect(() => {
     initialize();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [radiusKm, searchType, normalizedCountryCode]);
 
+  // Realtime: invalidate query when cargo_requests table changes
   useEffect(() => {
-    if (!userLocation) {
-      return;
-    }
-
+    if (!userLocation) return;
     const realtimeFilter = normalizedCountryCode
       ? `country_code=eq.${normalizedCountryCode}`
       : undefined;
-
     const channel = supabase
       .channel(`nearby:cargo:${searchType}:${normalizedCountryCode || 'all'}`)
       .on(
         'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'cargo_requests',
-          filter: realtimeFilter,
-        },
-        async () => {
-          await fetchNearbyRequests(userLocation);
-        }
+        { event: '*', schema: 'public', table: 'cargo_requests', filter: realtimeFilter },
+        () => { queryClient.invalidateQueries({ queryKey }); }
       )
       .subscribe();
-
-    return () => {
-      channel.unsubscribe();
-    };
-  }, [fetchNearbyRequests, searchType, normalizedCountryCode, userLocation]);
+    return () => { channel.unsubscribe(); };
+  }, [userLocation, searchType, normalizedCountryCode, queryClient, queryKey]);
 
   return {
-    /**
-     * Array of nearby cargo requests with distance information
-     */
-    requests,
-
-    /**
-     * Loading state
-     */
-    loading,
-
-    /**
-     * User's current location
-     */
+    requests: query.data ?? [],
+    loading: gpsLoading || query.isLoading,
     userLocation,
-
-    /**
-     * Whether location permission was denied
-     */
     permissionDenied,
-
-    /**
-     * Detailed permission status
-     */
     permissionStatus,
-
-    /**
-     * Error message if any
-     */
-    error,
-
-    /**
-     * Retry permission request and load data
-     */
+    error: gpsError ?? (query.error ? (query.error as Error).message : null),
     retry,
-
-    /**
-     * Refresh nearby requests using current location
-     */
     refresh,
   };
 }

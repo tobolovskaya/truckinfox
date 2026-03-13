@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import * as Location from 'expo-location';
 import { supabase } from '../lib/supabase';
 
@@ -147,51 +148,38 @@ export function useCarrierTracking(orderId: string | undefined, truckId: string 
 
 /** Hook for customer: subscribe to realtime tracking updates from carrier */
 export function useCustomerTracking(orderId: string | undefined) {
-  const [trackingPoints, setTrackingPoints] = useState<TrackingPoint[]>([]);
-  const [latestPoint, setLatestPoint] = useState<TrackingPoint | null>(null);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
+
+  const query = useQuery({
+    queryKey: ['tracking', orderId],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('tracking')
+        .select('*')
+        .eq('request_id', orderId!)
+        .order('recorded_at', { ascending: false })
+        .limit(50);
+      return ((data || []) as unknown as TrackingPoint[]).reverse();
+    },
+    enabled: Boolean(orderId),
+    staleTime: 5_000,
+  });
 
   useEffect(() => {
-    if (!orderId) {
-      setLoading(false);
-      return;
-    }
-
-    // Load recent points
-    supabase
-      .from('tracking')
-      .select('*')
-      .eq('request_id', orderId)
-      .order('recorded_at', { ascending: false })
-      .limit(50)
-      .then(({ data }) => {
-        const points = ((data || []) as unknown as TrackingPoint[]).reverse();
-        setTrackingPoints(points);
-        if (points.length > 0) setLatestPoint(points[points.length - 1]);
-        setLoading(false);
-      });
-
-    // Subscribe to new points
+    if (!orderId) return;
     const channel = supabase
       .channel(`tracking:${orderId}`)
       .on(
         'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'tracking',
-          filter: `request_id=eq.${orderId}`,
-        },
-        payload => {
-          const point = payload.new as TrackingPoint;
-          setTrackingPoints(prev => [...prev, point]);
-          setLatestPoint(point);
-        }
+        { event: 'INSERT', schema: 'public', table: 'tracking', filter: `request_id=eq.${orderId}` },
+        () => { queryClient.invalidateQueries({ queryKey: ['tracking', orderId] }); }
       )
       .subscribe();
-
     return () => { channel.unsubscribe(); };
-  }, [orderId]);
+  }, [orderId, queryClient]);
 
-  return { trackingPoints, latestPoint, loading };
+  const trackingPoints = query.data ?? [];
+  const latestPoint = trackingPoints.length > 0 ? trackingPoints[trackingPoints.length - 1] : null;
+
+  return { trackingPoints, latestPoint, loading: query.isLoading };
 }
