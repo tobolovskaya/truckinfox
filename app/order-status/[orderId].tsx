@@ -119,6 +119,7 @@ export default function OrderStatusScreen() {
     const map: Record<string, string> = {
       active: 'active',
       in_transit: 'in_transit',
+      in_progress: 'in_transit',
       delivered: 'delivered',
       completed: 'completed',
       cancelled: 'cancelled',
@@ -133,6 +134,7 @@ export default function OrderStatusScreen() {
     const map: Record<string, string> = {
       active: 'waitingForCarrier',
       in_transit: 'cargoInTransit',
+      in_progress: 'cargoInTransit',
       delivered: 'cargoDelivered',
       completed: 'cargoDelivered',
       cancelled: 'orderCancelled',
@@ -514,19 +516,23 @@ export default function OrderStatusScreen() {
   const processStartTransport = async () => {
     setConfirming(true);
     try {
-      const { error } = await supabase
-        .from('orders')
-        .update({
-          status: 'in_transit',
-          started_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', orderIdString as string)
-        .eq('carrier_id', user?.uid || '');
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData?.session?.access_token;
+      if (!token) throw new Error('Not authenticated');
+
+      const { error } = await supabase.functions.invoke('update-order-status', {
+        body: { orderId: orderIdString, newStatus: 'in_progress' },
+        headers: { Authorization: `Bearer ${token}` },
+      });
 
       if (error) {
         throw error;
       }
+
+      await supabase
+        .from('orders')
+        .update({ started_at: new Date().toISOString(), updated_at: new Date().toISOString() })
+        .eq('id', orderIdString as string);
 
       await fetchRelatedData();
 
@@ -543,6 +549,7 @@ export default function OrderStatusScreen() {
     const colors: { [key: string]: string } = {
       active: '#FFC107', // Warning yellow
       in_transit: '#FF8A65', // Secondary orange
+      in_progress: '#FF8A65',
       delivered: '#4CAF50', // Success green
       completed: '#4CAF50', // Success green
       cancelled: '#F44336', // Error red
@@ -555,6 +562,7 @@ export default function OrderStatusScreen() {
     const icons: Record<string, IoniconName> = {
       active: 'time-outline',
       in_transit: 'car-outline',
+      in_progress: 'car-outline',
       delivered: 'checkmark-circle-outline',
       completed: 'checkmark-circle-outline',
       cancelled: 'close-circle-outline',
@@ -595,10 +603,10 @@ export default function OrderStatusScreen() {
     (isCustomer || isCarrier) &&
     order?.status != null &&
     !['cancelled', 'canceled'].includes(order.status);
-  const canStartTransport = isCarrier && order?.status === 'active';
-  const canTrackDelivery = order?.status === 'in_transit';
-  const canConfirmDelivery = isCustomer && order?.status === 'in_transit';
-  const canSubmitProof = isCarrier && order?.status === 'in_transit';
+  const canStartTransport = isCarrier && order?.status === 'paid';
+  const canTrackDelivery = order?.status === 'in_progress';
+  const canConfirmDelivery = isCustomer && order?.status === 'in_progress';
+  const canSubmitProof = isCarrier && order?.status === 'in_progress';
   const paymentStatus = normalizeStatus(order?.payment_status);
   const canOpenPayment =
     isCustomer &&
