@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -22,39 +22,32 @@ export type TruckInput = Omit<Truck, 'id' | 'carrier_id' | 'created_at' | 'updat
 /** Hook: list the current carrier's trucks */
 export function useTrucks() {
   const { user } = useAuth();
-  const [trucks, setTrucks] = useState<Truck[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
+  const uid = user?.uid;
 
-  const loadTrucks = useCallback(async () => {
-    if (!user?.uid) {
-      setLoading(false);
-      return;
-    }
+  const query = useQuery({
+    queryKey: ['trucks', uid],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('trucks')
+        .select('*')
+        .eq('carrier_id', uid!)
+        .order('created_at', { ascending: false });
+      if (error) throw new Error(error.message);
+      return (data || []) as unknown as Truck[];
+    },
+    enabled: Boolean(uid),
+    staleTime: 60_000,
+  });
 
-    setLoading(true);
-    const { data, error: fetchError } = await supabase
-      .from('trucks')
-      .select('*')
-      .eq('carrier_id', user.uid)
-      .order('created_at', { ascending: false });
-
-    if (fetchError) {
-      setError(new Error(fetchError.message));
-    } else {
-      setTrucks((data || []) as Truck[]);
-    }
-    setLoading(false);
-  }, [user?.uid]);
-
-  useEffect(() => {
-    loadTrucks();
-  }, [loadTrucks]);
-
-  return { trucks, loading, error, refetch: loadTrucks };
+  return {
+    trucks: query.data ?? [],
+    loading: query.isLoading,
+    error: query.error as Error | null,
+    refetch: query.refetch,
+  };
 }
 
-/** Add a new truck */
+/** Add a new truck (invalidates the trucks list cache) */
 export async function addTruck(
   carrierId: string,
   input: TruckInput
@@ -66,7 +59,7 @@ export async function addTruck(
     .single();
 
   if (error) return { data: null, error: new Error(error.message) };
-  return { data: data as Truck, error: null };
+  return { data: data as unknown as Truck, error: null };
 }
 
 /** Update an existing truck */
@@ -86,4 +79,11 @@ export async function updateTruck(
 export async function deleteTruck(truckId: string): Promise<{ error: Error | null }> {
   const { error } = await supabase.from('trucks').delete().eq('id', truckId);
   return { error: error ? new Error(error.message) : null };
+}
+
+/** Call after add/update/delete to refresh the truck list */
+export function useInvalidateTrucks() {
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
+  return () => queryClient.invalidateQueries({ queryKey: ['trucks', user?.uid] });
 }

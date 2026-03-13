@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
 
 interface CurrentUser {
@@ -12,40 +12,24 @@ interface CurrentUser {
 }
 
 export function useCurrentUser(userId?: string) {
-  const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null);
-  const [loading, setLoading] = useState(false);
-
-  const fetchCurrentUser = useCallback(async () => {
-    try {
-      if (!userId) {
-        setCurrentUser(null);
-        return;
-      }
-
-      setLoading(true);
+  const query = useQuery({
+    queryKey: ['profile', userId],
+    queryFn: async () => {
       const { data, error } = await supabase
         .from('profiles')
         .select('full_name, avatar_url, user_type, phone, country_code, is_verified, company_name')
-        .eq('id', userId)
+        .eq('id', userId!)
         .maybeSingle();
-
       if (error) throw error;
-      setCurrentUser(data as CurrentUser | null);
-    } catch (error) {
-      console.error('Error fetching current user:', error);
-      setCurrentUser(null);
-    } finally {
-      setLoading(false);
-    }
-  }, [userId]);
-
-  useEffect(() => {
-    fetchCurrentUser();
-  }, [fetchCurrentUser]);
+      return data as CurrentUser | null;
+    },
+    enabled: Boolean(userId),
+    staleTime: 60_000,
+  });
 
   return {
-    currentUser,
-    loading,
-    refetch: fetchCurrentUser,
+    currentUser: query.data ?? null,
+    loading: query.isLoading,
+    refetch: query.refetch,
   };
 }

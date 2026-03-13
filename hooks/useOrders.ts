@@ -1,4 +1,5 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useEffect } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -27,119 +28,94 @@ export interface Order {
   carrier?: { id: string; full_name: string; rating: number };
 }
 
+const ORDER_SELECT = `
+  *,
+  cargo_request:cargo_requests(title, from_address, to_address, pickup_date, delivery_date),
+  customer:profiles!customer_id(id, full_name, rating),
+  carrier:profiles!carrier_id(id, full_name, rating)
+`.trim();
+
 /** Hook: all orders for the current user (as customer or carrier) */
 export function useMyOrders(role: 'customer' | 'carrier') {
   const { user } = useAuth();
-  const [orders, setOrders] = useState<Order[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
+  const queryClient = useQueryClient();
+  const uid = user?.uid;
+  const column = role === 'customer' ? 'customer_id' : 'carrier_id';
 
-  const loadOrders = useCallback(async () => {
-    if (!user?.uid) {
-      setLoading(false);
-      return;
-    }
-
-    setLoading(true);
-    const column = role === 'customer' ? 'customer_id' : 'carrier_id';
-
-    const { data, error: fetchError } = await supabase
-      .from('orders')
-      .select(
-        `*, cargo_request:cargo_requests(title, from_address, to_address, pickup_date, delivery_date),
-         customer:profiles!customer_id(id, full_name, rating),
-         carrier:profiles!carrier_id(id, full_name, rating)`
-      )
-      .eq(column, user.uid)
-      .order('created_at', { ascending: false });
-
-    if (fetchError) {
-      setError(new Error(fetchError.message));
-    } else {
-      setOrders((data || []) as Order[]);
-    }
-    setLoading(false);
-  }, [user?.uid, role]);
+  const query = useQuery({
+    queryKey: ['orders', 'my', role, uid],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('orders')
+        .select(ORDER_SELECT)
+        .eq(column, uid!)
+        .order('created_at', { ascending: false });
+      if (error) throw new Error(error.message);
+      return (data || []) as unknown as Order[];
+    },
+    enabled: Boolean(uid),
+    staleTime: 30_000,
+  });
 
   useEffect(() => {
-    loadOrders();
-
-    if (!user?.uid) return;
-
-    const column = role === 'customer' ? 'customer_id' : 'carrier_id';
+    if (!uid) return;
     const channel = supabase
-      .channel(`orders:${role}:${user.uid}`)
+      .channel(`orders:${role}:${uid}`)
       .on(
         'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'orders',
-          filter: `${column}=eq.${user.uid}`,
-        },
-        () => { loadOrders(); }
+        { event: '*', schema: 'public', table: 'orders', filter: `${column}=eq.${uid}` },
+        () => { queryClient.invalidateQueries({ queryKey: ['orders', 'my', role, uid] }); }
       )
       .subscribe();
-
     return () => { channel.unsubscribe(); };
-  }, [user?.uid, role, loadOrders]);
+  }, [uid, role, column, queryClient]);
 
-  return { orders, loading, error, refetch: loadOrders };
+  return {
+    orders: query.data ?? [],
+    loading: query.isLoading,
+    error: query.error as Error | null,
+    refetch: query.refetch,
+  };
 }
 
 /** Hook: a single order with realtime status updates */
 export function useOrder(orderId: string | undefined) {
-  const [order, setOrder] = useState<Order | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
+  const queryClient = useQueryClient();
 
-  const loadOrder = useCallback(async () => {
-    if (!orderId) {
-      setLoading(false);
-      return;
-    }
-
-    const { data, error: fetchError } = await supabase
-      .from('orders')
-      .select(
-        `*, cargo_request:cargo_requests(title, from_address, to_address, pickup_date, delivery_date),
-         customer:profiles!customer_id(id, full_name, rating),
-         carrier:profiles!carrier_id(id, full_name, rating)`
-      )
-      .eq('id', orderId)
-      .single();
-
-    if (fetchError) {
-      setError(new Error(fetchError.message));
-    } else {
-      setOrder(data as Order);
-    }
-    setLoading(false);
-  }, [orderId]);
+  const query = useQuery({
+    queryKey: ['orders', orderId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('orders')
+        .select(ORDER_SELECT)
+        .eq('id', orderId!)
+        .single();
+      if (error) throw new Error(error.message);
+      return data as unknown as Order;
+    },
+    enabled: Boolean(orderId),
+    staleTime: 15_000,
+  });
 
   useEffect(() => {
-    loadOrder();
-
     if (!orderId) return;
-
     const channel = supabase
       .channel(`order:${orderId}`)
       .on(
         'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'orders',
-          filter: `id=eq.${orderId}`,
-        },
-        () => { loadOrder(); }
+        { event: 'UPDATE', schema: 'public', table: 'orders', filter: `id=eq.${orderId}` },
+        () => { queryClient.invalidateQueries({ queryKey: ['orders', orderId] }); }
       )
       .subscribe();
-
     return () => { channel.unsubscribe(); };
-  }, [orderId, loadOrder]);
+  }, [orderId, queryClient]);
 
-  return { order, loading, error, refetch: loadOrder };
+  return {
+    order: query.data ?? null,
+    loading: query.isLoading,
+    error: query.error as Error | null,
+    refetch: query.refetch,
+  };
 }
 
 /** Update an order's status via Edge Function (enforces role-based transition rules). */

@@ -34,25 +34,7 @@
         "NSPhotoLibraryUsageDescription": "TruckinFox needs access to your photo library to upload cargo images.",
         "NSPhotoLibraryAddUsageDescription": "TruckinFox needs permission to save cargo photos to your library.",
         "ITSAppUsesNonExemptEncryption": false,
-        "LSApplicationQueriesSchemes": ["vipps", "vipps-mt"],
-        "NSPrivacyAccessedAPITypes": [
-          {
-            "NSPrivacyAccessedAPIType": "NSPrivacyAccessedAPICategoryUserDefaults",
-            "NSPrivacyAccessedAPITypeReasons": ["CA92.1"]
-          },
-          {
-            "NSPrivacyAccessedAPIType": "NSPrivacyAccessedAPICategorySystemBootTime",
-            "NSPrivacyAccessedAPITypeReasons": ["35F9.1"]
-          },
-          {
-            "NSPrivacyAccessedAPIType": "NSPrivacyAccessedAPICategoryDiskSpace",
-            "NSPrivacyAccessedAPITypeReasons": ["85F4.1"]
-          },
-          {
-            "NSPrivacyAccessedAPIType": "NSPrivacyAccessedAPICategoryFileTimestamp",
-            "NSPrivacyAccessedAPITypeReasons": ["C617.1"]
-          }
-        ]
+        "LSApplicationQueriesSchemes": ["vipps", "vipps-mt"]
       }
     },
     "android": {
@@ -119,6 +101,7 @@
       ],
       "expo-localization",
       "@react-native-community/datetimepicker",
+      "./plugins/withPrivacyManifest",
       [
         "expo-image-picker",
         {
@@ -139,7 +122,7 @@
         "projectId": ""
       },
       "privacyPolicyUrl": "https://truckinfox.no/privacy",
-      "appStoreId": "REPLACE_WITH_APPLE_APP_STORE_ID"
+      "appStoreId": ""
     }
   }
 }

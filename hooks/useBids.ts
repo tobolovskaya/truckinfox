@@ -1,4 +1,5 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useEffect } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -45,7 +46,7 @@ export async function placeBid(
     .single();
 
   if (error) return { data: null, error: new Error(error.message) };
-  return { data: data as Bid, error: null };
+  return { data: data as unknown as Bid, error: null };
 }
 
 /**
@@ -141,96 +142,74 @@ export async function acceptBid(
   });
 
   if (error) return { orderId: null, error: new Error(error.message) };
-
   if (data?.error) return { orderId: null, error: new Error(data.error) };
-
   return { orderId: (data?.orderId as string) ?? null, error: null };
 }
 
 /** Hook: carrier's own bid history */
 export function useMyBids() {
   const { user } = useAuth();
-  const [bids, setBids] = useState<Bid[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
+  const uid = user?.uid;
 
-  const fetch = useCallback(async () => {
-    if (!user?.uid) {
-      setLoading(false);
-      return;
-    }
+  const query = useQuery({
+    queryKey: ['bids', 'my', uid],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('bids')
+        .select('*, cargo_requests(title, from_address, to_address)')
+        .eq('carrier_id', uid!)
+        .order('created_at', { ascending: false });
+      if (error) throw new Error(error.message);
+      return (data || []) as unknown as Bid[];
+    },
+    enabled: Boolean(uid),
+    staleTime: 30_000,
+  });
 
-    setLoading(true);
-    const { data, error: fetchError } = await supabase
-      .from('bids')
-      .select('*, cargo_requests(title, from_address, to_address)')
-      .eq('carrier_id', user.uid)
-      .order('created_at', { ascending: false });
-
-    if (fetchError) {
-      setError(new Error(fetchError.message));
-    } else {
-      setBids((data || []) as Bid[]);
-    }
-    setLoading(false);
-  }, [user?.uid]);
-
-  useEffect(() => {
-    fetch();
-  }, [fetch]);
-
-  return { bids, loading, error, refetch: fetch };
+  return {
+    bids: query.data ?? [],
+    loading: query.isLoading,
+    error: query.error as Error | null,
+    refetch: query.refetch,
+  };
 }
 
 /** Hook: all bids for a specific cargo request, with realtime updates */
 export function useBidsForRequest(requestId: string | undefined) {
-  const [bids, setBids] = useState<Bid[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
+  const queryClient = useQueryClient();
 
-  const loadBids = useCallback(async () => {
-    if (!requestId) {
-      setLoading(false);
-      return;
-    }
-
-    const { data, error: fetchError } = await supabase
-      .from('bids')
-      .select(
-        '*, carrier:profiles!carrier_id(id, full_name, rating, is_verified)'
-      )
-      .eq('request_id', requestId)
-      .order('created_at', { ascending: false });
-
-    if (fetchError) {
-      setError(new Error(fetchError.message));
-    } else {
-      setBids((data || []) as Bid[]);
-    }
-    setLoading(false);
-  }, [requestId]);
+  const query = useQuery({
+    queryKey: ['bids', 'request', requestId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('bids')
+        .select('*, carrier:profiles!carrier_id(id, full_name, rating, is_verified)')
+        .eq('request_id', requestId!)
+        .order('created_at', { ascending: false });
+      if (error) throw new Error(error.message);
+      return (data || []) as unknown as Bid[];
+    },
+    enabled: Boolean(requestId),
+    staleTime: 15_000,
+  });
 
   useEffect(() => {
-    loadBids();
-
     if (!requestId) return;
-
     const channel = supabase
       .channel(`bids:${requestId}`)
       .on(
         'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'bids',
-          filter: `request_id=eq.${requestId}`,
-        },
-        () => { loadBids(); }
+        { event: '*', schema: 'public', table: 'bids', filter: `request_id=eq.${requestId}` },
+        () => { queryClient.invalidateQueries({ queryKey: ['bids', 'request', requestId] }); }
       )
       .subscribe();
-
     return () => { channel.unsubscribe(); };
-  }, [requestId, loadBids]);
+  }, [requestId, queryClient]);
 
-  return { bids, loading, error, refetch: loadBids };
+  return {
+    bids: query.data ?? [],
+    loading: query.isLoading,
+    error: query.error as Error | null,
+    refetch: query.refetch,
+  };
 }

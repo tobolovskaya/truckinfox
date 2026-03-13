@@ -1,4 +1,5 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useMemo } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -42,67 +43,59 @@ export async function submitReview(
 
 /** Hook: all reviews for a specific user */
 export function useReviewsForUser(userId: string | undefined) {
-  const [reviews, setReviews] = useState<Review[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
-  const [averageRating, setAverageRating] = useState<number>(0);
+  const query = useQuery({
+    queryKey: ['reviews', userId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('reviews')
+        .select('*, reviewer:profiles!reviewer_id(id, full_name)')
+        .eq('reviewed_id', userId!)
+        .order('created_at', { ascending: false });
+      if (error) throw new Error(error.message);
+      return (data || []) as unknown as Review[];
+    },
+    enabled: Boolean(userId),
+    staleTime: 60_000,
+  });
 
-  const loadReviews = useCallback(async () => {
-    if (!userId) {
-      setLoading(false);
-      return;
-    }
+  const reviews = query.data ?? [];
+  const averageRating = useMemo(() => {
+    if (!reviews.length) return 0;
+    const avg = reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length;
+    return Math.round(avg * 10) / 10;
+  }, [reviews]);
 
-    setLoading(true);
-    const { data, error: fetchError } = await supabase
-      .from('reviews')
-      .select('*, reviewer:profiles!reviewer_id(id, full_name)')
-      .eq('reviewed_id', userId)
-      .order('created_at', { ascending: false });
-
-    if (fetchError) {
-      setError(new Error(fetchError.message));
-    } else {
-      const reviewList = (data || []) as Review[];
-      setReviews(reviewList);
-      if (reviewList.length > 0) {
-        const avg = reviewList.reduce((sum, r) => sum + r.rating, 0) / reviewList.length;
-        setAverageRating(Math.round(avg * 10) / 10);
-      }
-    }
-    setLoading(false);
-  }, [userId]);
-
-  useEffect(() => {
-    loadReviews();
-  }, [loadReviews]);
-
-  return { reviews, loading, error, averageRating, refetch: loadReviews };
+  return {
+    reviews,
+    loading: query.isLoading,
+    error: query.error as Error | null,
+    averageRating,
+    refetch: query.refetch,
+  };
 }
 
 /** Hook: check if current user has reviewed a specific order */
 export function useHasReviewed(orderId: string | undefined) {
   const { user } = useAuth();
-  const [hasReviewed, setHasReviewed] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const uid = user?.uid;
 
-  useEffect(() => {
-    if (!orderId || !user?.uid) {
-      setLoading(false);
-      return;
-    }
+  const query = useQuery({
+    queryKey: ['reviews', 'hasReviewed', orderId, uid],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('reviews')
+        .select('id')
+        .eq('order_id', orderId!)
+        .eq('reviewer_id', uid!)
+        .maybeSingle();
+      return Boolean(data);
+    },
+    enabled: Boolean(orderId) && Boolean(uid),
+    staleTime: 60_000,
+  });
 
-    supabase
-      .from('reviews')
-      .select('id')
-      .eq('order_id', orderId)
-      .eq('reviewer_id', user.uid)
-      .maybeSingle()
-      .then(({ data }) => {
-        setHasReviewed(Boolean(data));
-        setLoading(false);
-      });
-  }, [orderId, user?.uid]);
-
-  return { hasReviewed, loading };
+  return {
+    hasReviewed: query.data ?? false,
+    loading: query.isLoading,
+  };
 }
