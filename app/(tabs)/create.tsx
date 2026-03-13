@@ -809,6 +809,16 @@ export default function CreateRequestScreen() {
     }
   };
 
+  if (user?.user_metadata?.user_type === 'carrier') {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24 }}>
+        <Text style={{ fontSize: 16, color: '#6B7280', textAlign: 'center' }}>
+          {t('carrierCannotCreateRequests')}
+        </Text>
+      </View>
+    );
+  }
+
   return (
     <View style={styles.container}>
       <ScreenHeader

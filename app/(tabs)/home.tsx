@@ -1,7 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
-  FlatList,
   StyleSheet,
   Text,
   TextInput,
@@ -10,6 +9,7 @@ import {
   View,
 } from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
+import { FlashList } from '@shopify/flash-list';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
 import { spacing, fontSize, useAppThemeStyles } from '../../lib/sharedStyles';
@@ -676,7 +676,7 @@ export default function HomeScreen() {
       )}
 
       {/* Requests List */}
-      <FlatList
+      <FlashList
         key={isSingleColumnLayout ? 'single-column' : 'two-column'}
         data={listLoading ? skeletonItems : listRequests}
         keyExtractor={(item, index) => ('id' in item ? item.id : `request-${index}`)}

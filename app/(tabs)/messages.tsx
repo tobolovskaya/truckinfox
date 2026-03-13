@@ -3,11 +3,11 @@ import {
   View,
   Text,
   StyleSheet,
-  FlatList,
   TouchableOpacity,
   TextInput,
   RefreshControl,
 } from 'react-native';
+import { FlashList } from '@shopify/flash-list';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -405,7 +405,7 @@ export default function MessagesScreen() {
         </View>
       )}
 
-      <FlatList
+      <FlashList
         data={filteredConversations}
         keyExtractor={item => item.id}
         renderItem={renderConversation}

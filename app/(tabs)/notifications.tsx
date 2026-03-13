@@ -3,11 +3,11 @@ import {
   View,
   Text,
   StyleSheet,
-  FlatList,
   TouchableOpacity,
   RefreshControl,
   ActivityIndicator,
 } from 'react-native';
+import { FlashList } from '@shopify/flash-list';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
@@ -150,7 +150,7 @@ export default function NotificationsScreen() {
           ]}
         />
       ) : (
-        <FlatList
+        <FlashList
           data={notifications}
           renderItem={renderNotification}
           keyExtractor={item => item.id}

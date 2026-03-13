@@ -87,6 +87,7 @@
   "profile": "Profile",
   "applyFilters": "Apply filters",
   "createCargoRequest": "Create cargo request",
+  "carrierCannotCreateRequests": "Carriers cannot create cargo requests. Switch to a customer account to post shipments.",
   "fillFormBelow": "Fill in the form below",
   "filterAndSort": "Filter & Sort",
   "highestPrice": "Highest price",
