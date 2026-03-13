@@ -117,6 +117,8 @@ export default function OrderStatusScreen() {
   const getOrderStatusLabel = (status: string) => {
     const normalized = normalizeStatus(status);
     const map: Record<string, string> = {
+      pending_payment: 'pending_payment',
+      paid: 'paid',
       active: 'active',
       in_transit: 'in_transit',
       in_progress: 'in_transit',
@@ -124,6 +126,8 @@ export default function OrderStatusScreen() {
       completed: 'completed',
       cancelled: 'cancelled',
       canceled: 'cancelled',
+      disputed: 'disputed',
+      refunded: 'refunded',
       pending: 'pending',
     };
     return t(map[normalized] || normalized);
@@ -132,6 +136,8 @@ export default function OrderStatusScreen() {
   const getStatusSubtitle = (status: string) => {
     const normalized = normalizeStatus(status);
     const map: Record<string, string> = {
+      pending_payment: 'awaitingPayment',
+      paid: 'waitingForCarrier',
       active: 'waitingForCarrier',
       in_transit: 'cargoInTransit',
       in_progress: 'cargoInTransit',
@@ -139,6 +145,8 @@ export default function OrderStatusScreen() {
       completed: 'cargoDelivered',
       cancelled: 'orderCancelled',
       canceled: 'orderCancelled',
+      disputed: 'orderDisputed',
+      refunded: 'orderRefunded',
     };
 
     const key = map[normalized];
@@ -547,19 +555,25 @@ export default function OrderStatusScreen() {
 
   const getStatusColor = (status: string) => {
     const colors: { [key: string]: string } = {
-      active: '#FFC107', // Warning yellow
+      pending_payment: '#9CA3AF', // Grey
+      paid: '#FFC107', // Warning yellow
+      active: '#FFC107',
       in_transit: '#FF8A65', // Secondary orange
       in_progress: '#FF8A65',
       delivered: '#4CAF50', // Success green
-      completed: '#4CAF50', // Success green
+      completed: '#4CAF50',
       cancelled: '#F44336', // Error red
-      canceled: '#F44336', // Error red
+      canceled: '#F44336',
+      disputed: '#EF4444', // Red
+      refunded: '#6B7280', // Grey
     };
     return colors[normalizeStatus(status)] || '#616161'; // Text secondary
   };
 
   const getStatusIcon = (status: string): IoniconName => {
     const icons: Record<string, IoniconName> = {
+      pending_payment: 'card-outline',
+      paid: 'time-outline',
       active: 'time-outline',
       in_transit: 'car-outline',
       in_progress: 'car-outline',
@@ -567,6 +581,8 @@ export default function OrderStatusScreen() {
       completed: 'checkmark-circle-outline',
       cancelled: 'close-circle-outline',
       canceled: 'close-circle-outline',
+      disputed: 'alert-circle-outline',
+      refunded: 'refresh-circle-outline',
     };
     return icons[normalizeStatus(status)] || 'help-circle-outline';
   };

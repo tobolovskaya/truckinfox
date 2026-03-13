@@ -6,7 +6,7 @@ export interface Review {
   id: string;
   order_id: string;
   reviewer_id: string;
-  reviewee_id: string;
+  reviewed_id: string;
   rating: number;
   comment: string;
   created_at: string;
@@ -27,31 +27,26 @@ export async function submitReview(
   const { error: insertError } = await supabase.from('reviews').insert({
     order_id: orderId,
     reviewer_id: reviewerId,
-    reviewee_id: revieweeId,
+    reviewed_id: revieweeId,
     rating,
     comment,
   });
 
   if (insertError) return { error: new Error(insertError.message) };
 
-  // Update the reviewee's profile rating_avg and rating_count
-  const { data: existing } = await supabase
-    .from('profiles')
-    .select('rating, rating_count')
-    .eq('id', revieweeId)
-    .single();
+  // Recompute the reviewee's average rating from all their reviews
+  const { data: allReviews } = await supabase
+    .from('reviews')
+    .select('rating')
+    .eq('reviewed_id', revieweeId);
 
-  if (existing) {
-    const oldCount = existing.rating_count || 0;
-    const oldAvg = existing.rating || 0;
-    const newCount = oldCount + 1;
-    const newAvg = (oldAvg * oldCount + rating) / newCount;
+  if (allReviews && allReviews.length > 0) {
+    const avg = allReviews.reduce((sum, r) => sum + r.rating, 0) / allReviews.length;
 
     await supabase
       .from('profiles')
       .update({
-        rating: Math.round(newAvg * 10) / 10,
-        rating_count: newCount,
+        rating: Math.round(avg * 10) / 10,
         updated_at: new Date().toISOString(),
       })
       .eq('id', revieweeId);
@@ -77,7 +72,7 @@ export function useReviewsForUser(userId: string | undefined) {
     const { data, error: fetchError } = await supabase
       .from('reviews')
       .select('*, reviewer:profiles!reviewer_id(id, full_name)')
-      .eq('reviewee_id', userId)
+      .eq('reviewed_id', userId)
       .order('created_at', { ascending: false });
 
     if (fetchError) {
