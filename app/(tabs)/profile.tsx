@@ -150,6 +150,24 @@ export default function ProfileScreen() {
               </TouchableOpacity>
             )
           )}
+
+          {/* Rating */}
+          {currentUser?.rating !== undefined && currentUser.rating !== null && currentUser.rating > 0 && (
+            <View style={styles.ratingRow}>
+              {[1, 2, 3, 4, 5].map(star => (
+                <Ionicons
+                  key={star}
+                  name={star <= Math.round(currentUser.rating!) ? 'star' : 'star-outline'}
+                  size={16}
+                  color="#FFC107"
+                />
+              ))}
+              <Text style={styles.ratingText}>
+                {currentUser.rating.toFixed(1)}
+                {currentUser.rating_count ? ` (${currentUser.rating_count})` : ''}
+              </Text>
+            </View>
+          )}
         </View>
 
         {/* Menu Items */}
@@ -256,6 +274,18 @@ const styles = StyleSheet.create({
     fontSize: fontSize.xs,
     color: colors.text.tertiary,
     paddingBottom: spacing.xl,
+  },
+  ratingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    marginTop: spacing.xs,
+  },
+  ratingText: {
+    fontSize: fontSize.sm,
+    color: colors.text.secondary,
+    fontWeight: fontWeight.medium,
+    marginLeft: spacing.xs,
   },
   verifiedBadge: {
     flexDirection: 'row',

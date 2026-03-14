@@ -591,6 +591,19 @@ export default function HomeScreen() {
           onFilterPress={() => setIsFilterSheetVisible(true)}
         />
 
+        <HomeActiveFilters
+          sortBy={sortBy}
+          selectedCargoType={selectedCargoType}
+          priceMin={priceMin}
+          priceMax={priceMax}
+          priceType={priceType}
+          weightMin={weightMin}
+          weightMax={weightMax}
+          pickupDateFrom={pickupDateFrom}
+          pickupDateTo={pickupDateTo}
+          onReset={handleResetFilters}
+        />
+
         {/* Route mode */}
         <View style={styles.routeModeSection}>
           <TouchableOpacity
