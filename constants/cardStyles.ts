@@ -83,8 +83,8 @@ export const CARGO_TYPE_COLORS = {
     text: '#FB8C00', // Medium orange
   },
   automotive: {
-    background: '#F9FAFB', // Very light gray
-    text: '#6B7280', // Medium gray
+    background: '#F0F4FF',
+    text: '#3B5BDB',
   },
   boats: {
     background: '#E0F2FE', // Very light sky blue
@@ -103,8 +103,8 @@ export const CARGO_TYPE_COLORS = {
     text: '#06B6D4', // Medium cyan
   },
   other: {
-    background: '#F9FAFB', // Very light gray
-    text: '#6B7280', // Medium gray
+    background: '#F3F0FF',
+    text: '#7048E8',
   },
 };
 

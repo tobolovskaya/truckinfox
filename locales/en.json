@@ -88,6 +88,8 @@
   "applyFilters": "Apply filters",
   "createCargoRequest": "Create cargo request",
   "carrierCannotCreateRequests": "Carriers cannot create cargo requests. Switch to a customer account to post shipments.",
+  "carrierCannotCreateTitle": "You are a carrier",
+  "browseRequests": "Browse requests",
   "fillFormBelow": "Fill in the form below",
   "filterAndSort": "Filter & Sort",
   "highestPrice": "Highest price",

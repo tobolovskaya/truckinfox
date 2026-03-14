@@ -817,10 +817,44 @@ export default function CreateRequestScreen() {
 
   if (user?.user_metadata?.user_type === 'carrier') {
     return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24 }}>
-        <Text style={{ fontSize: 16, color: '#6B7280', textAlign: 'center' }}>
-          {t('carrierCannotCreateRequests')}
-        </Text>
+      <View style={styles.container}>
+        <ScreenHeader
+          title={t('createCargoRequest') || 'Opprett forespørsel'}
+          showBackButton={false}
+          showBrandMark
+          notificationAction={{
+            onPress: () => router.push('/(tabs)/notifications'),
+            unreadCount,
+          }}
+        />
+        <View style={styles.carrierEmptyWrap}>
+          <View style={styles.carrierEmptyIcon}>
+            <Ionicons name="briefcase-outline" size={48} color={colors.primary} />
+          </View>
+          <Text style={styles.carrierEmptyTitle}>
+            {t('carrierCannotCreateTitle') || 'Ти перевізник'}
+          </Text>
+          <Text style={styles.carrierEmptyDesc}>
+            {t('carrierCannotCreateRequests')}
+          </Text>
+          <TouchableOpacity
+            style={styles.carrierEmptyButton}
+            onPress={() => router.push('/(tabs)/home')}
+          >
+            <Ionicons name="search-outline" size={18} color={colors.white} />
+            <Text style={styles.carrierEmptyButtonText}>
+              {t('browseRequests') || 'Переглянути запити'}
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.carrierEmptyButtonSecondary}
+            onPress={() => router.push('/(tabs)/orders')}
+          >
+            <Text style={styles.carrierEmptyButtonSecondaryText}>
+              {t('myOrders') || 'Мої замовлення'}
+            </Text>
+          </TouchableOpacity>
+        </View>
       </View>
     );
   }
@@ -2094,5 +2128,55 @@ const styles = StyleSheet.create({
     fontSize: fontSize.xs,
     color: colors.text.tertiary,
     marginTop: spacing.xxxs,
+  },
+  carrierEmptyWrap: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: spacing.xl,
+    gap: spacing.md,
+  },
+  carrierEmptyIcon: {
+    width: 96,
+    height: 96,
+    borderRadius: 48,
+    backgroundColor: colors.primaryLight,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: spacing.sm,
+  },
+  carrierEmptyTitle: {
+    fontSize: fontSize.xl,
+    fontWeight: fontWeight.bold,
+    color: colors.text.primary,
+    textAlign: 'center',
+  },
+  carrierEmptyDesc: {
+    fontSize: fontSize.md,
+    color: colors.text.secondary,
+    textAlign: 'center',
+    lineHeight: 22,
+  },
+  carrierEmptyButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    backgroundColor: colors.primary,
+    borderRadius: borderRadius.lg,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.xl,
+    marginTop: spacing.sm,
+  },
+  carrierEmptyButtonText: {
+    color: colors.white,
+    fontWeight: fontWeight.semibold,
+    fontSize: fontSize.md,
+  },
+  carrierEmptyButtonSecondary: {
+    paddingVertical: spacing.sm,
+  },
+  carrierEmptyButtonSecondaryText: {
+    color: colors.text.secondary,
+    fontSize: fontSize.sm,
   },
 });

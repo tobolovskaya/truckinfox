@@ -129,7 +129,7 @@ export const RequestCard: React.FC<RequestCardProps> = ({
                 ]}
               >
                 <View style={[styles.placeholderIconWrap, { backgroundColor: cargoColors.text + '18' }]}>
-                  <Ionicons name={cargoIcon} size={compact ? 28 : 36} color={cargoColors.text} />
+                  <Ionicons name={cargoIcon} size={compact ? 32 : 44} color={cargoColors.text} />
                 </View>
               </View>
             }
@@ -143,7 +143,7 @@ export const RequestCard: React.FC<RequestCardProps> = ({
             ]}
           >
             <View style={[styles.placeholderIconWrap, { backgroundColor: cargoColors.text + '18' }]}>
-              <Ionicons name={cargoIcon} size={compact ? 28 : 36} color={cargoColors.text} />
+              <Ionicons name={cargoIcon} size={compact ? 32 : 44} color={cargoColors.text} />
             </View>
           </View>
         )}
@@ -284,9 +284,9 @@ const styles = StyleSheet.create({
     height: REQUEST_CARD_IMAGE_HEIGHT + 12,
   },
   placeholderIconWrap: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
+    width: 72,
+    height: 72,
+    borderRadius: 36,
     alignItems: 'center',
     justifyContent: 'center',
   },

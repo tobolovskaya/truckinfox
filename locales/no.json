@@ -577,6 +577,8 @@
   "save": "Lagre",
   "createCargoRequest": "Opprett lastforespørsel",
   "carrierCannotCreateRequests": "Transportører kan ikke opprette lastforespørsler. Bytt til en kundekonto for å legge ut forsendelser.",
+  "carrierCannotCreateTitle": "Du er transportør",
+  "browseRequests": "Se forespørsler",
   "fillFormBelow": "Fyll ut informasjonen nedenfor for å opprette en ny forespørsel",
   "skip": "Hopp over",
   "next": "Neste",
