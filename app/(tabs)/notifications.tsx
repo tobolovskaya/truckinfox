@@ -133,6 +133,11 @@ export default function NotificationsScreen() {
       <ScreenHeader
         title={t('notifications') || 'Notifications'}
         onBackPress={() => router.back()}
+        rightAction={unreadCount > 0 ? {
+          icon: 'checkmark-done-outline',
+          onPress: markAllAsRead,
+          label: t('markAllAsRead'),
+        } : undefined}
       />
       {notifications.length === 0 ? (
         <EmptyState

@@ -4,7 +4,9 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
+  TextInput,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { FlashList } from '@shopify/flash-list';
 import { useRouter } from 'expo-router';
 import { useUnreadCount } from '../../hooks/useNotifications';
@@ -59,6 +61,7 @@ export default function OrdersScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [activeTab, setActiveTab] = useState<TabKey>('active');
+  const [searchQuery, setSearchQuery] = useState('');
 
   const locale = i18n.language.startsWith('no') ? 'nb-NO' : 'en-US';
 
@@ -142,10 +145,18 @@ export default function OrdersScreen() {
     [orders]
   );
 
-  const filteredOrders = useMemo(
-    () => orders.filter(o => TAB_STATUSES[activeTab].includes(o.status.toLowerCase())),
-    [orders, activeTab]
-  );
+  const filteredOrders = useMemo(() => {
+    let result = orders.filter(o => TAB_STATUSES[activeTab].includes(o.status.toLowerCase()));
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      result = result.filter(o =>
+        o.cargo_title?.toLowerCase().includes(q) ||
+        o.cargo_from_address?.toLowerCase().includes(q) ||
+        o.cargo_to_address?.toLowerCase().includes(q)
+      );
+    }
+    return result;
+  }, [orders, activeTab, searchQuery]);
 
   const getStatusColor = (status: string) => {
     const s = status.toLowerCase();
@@ -272,6 +283,24 @@ export default function OrdersScreen() {
         ))}
       </View>
 
+      {/* Search */}
+      <View style={styles.searchContainer}>
+        <Ionicons name="search" size={18} color={colors.text.secondary} />
+        <TextInput
+          style={styles.searchInput}
+          value={searchQuery}
+          onChangeText={setSearchQuery}
+          placeholder={t('searchOrders')}
+          placeholderTextColor={colors.text.secondary}
+          returnKeyType="search"
+        />
+        {searchQuery ? (
+          <TouchableOpacity onPress={() => setSearchQuery('')}>
+            <Ionicons name="close-circle" size={18} color={colors.text.secondary} />
+          </TouchableOpacity>
+        ) : null}
+      </View>
+
       {loading ? (
         <View style={styles.skeletonContainer}>
           <SkeletonLoader variant="card" count={3} />
@@ -374,6 +403,26 @@ const createStyles = (colors: ReturnType<typeof useAppThemeStyles>['colors']) =>
     },
     tabBadgeTextActive: {
       color: '#fff',
+    },
+    searchContainer: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.sm,
+      marginHorizontal: spacing.md,
+      marginBottom: spacing.sm,
+      marginTop: spacing.sm,
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.sm,
+      backgroundColor: colors.background,
+      borderRadius: 8,
+      borderWidth: 1,
+      borderColor: colors.border.default,
+    },
+    searchInput: {
+      flex: 1,
+      fontSize: fontSize.md,
+      color: colors.text.primary,
+      padding: 0,
     },
     listContainer: {
       padding: spacing.md,
