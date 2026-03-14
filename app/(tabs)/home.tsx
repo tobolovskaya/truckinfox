@@ -906,13 +906,14 @@ const createStyles = (colors: ReturnType<typeof useAppThemeStyles>['colors']) =>
       backgroundColor: colors.background,
       padding: spacing.sm,
       gap: spacing.sm,
+      overflow: 'hidden',
     },
     routeFieldRow: {
       flexDirection: 'row',
       gap: spacing.sm,
     },
     routeAddressInput: {
-      flex: 1,
+      alignSelf: 'stretch',
     },
     routeFieldInput: {
       flex: 1,
