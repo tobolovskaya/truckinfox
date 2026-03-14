@@ -9,6 +9,8 @@ interface CurrentUser {
   country_code?: string;
   is_verified?: boolean;
   company_name?: string | null;
+  rating?: number | null;
+  rating_count?: number | null;
 }
 
 export function useCurrentUser(userId?: string) {
@@ -17,7 +19,7 @@ export function useCurrentUser(userId?: string) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('profiles')
-        .select('full_name, avatar_url, user_type, phone, country_code, is_verified, company_name')
+        .select('full_name, avatar_url, user_type, phone, country_code, is_verified, company_name, rating, rating_count')
         .eq('id', userId!)
         .maybeSingle();
       if (error) throw error;

@@ -379,6 +379,7 @@ export default function MessagesScreen() {
         showBackButton={false}
         showBrandMark
         brandMarkMaxTitleLength={14}
+        notificationAction={{ onPress: () => router.push('/(tabs)/notifications'), unreadCount }}
       />
 
       {conversations.length > 0 && (

@@ -112,6 +112,7 @@ export default function ProfileScreen() {
         showBackButton={false}
         showBrandMark
         brandMarkMaxTitleLength={16}
+        notificationAction={{ onPress: () => router.push('/(tabs)/notifications'), unreadCount }}
       />
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>

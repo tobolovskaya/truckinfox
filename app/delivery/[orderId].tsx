@@ -1,7 +1,8 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useAuth } from '../../contexts/AuthContext';
 import { useTranslation } from 'react-i18next';
 import MapView, { Marker, Polyline } from 'react-native-maps';
 import { supabase } from '../../lib/supabase';
@@ -39,7 +40,15 @@ const DEFAULT_REGION = {
 
 export default function DeliveryTrackingScreen() {
   const { t } = useTranslation();
+  const router = useRouter();
+  const { user, loading: authLoading } = useAuth();
   const { orderId } = useLocalSearchParams<{ orderId?: string | string[] }>();
+
+  useEffect(() => {
+    if (!authLoading && !user) {
+      router.replace('/(auth)/login');
+    }
+  }, [user, authLoading, router]);
   const orderIdString = Array.isArray(orderId) ? orderId[0] : orderId;
   const mapRef = useRef<MapView | null>(null);
 
