@@ -27,6 +27,7 @@ import * as DocumentPicker from 'expo-document-picker';
 import { generateChatId } from '../../../utils/chatManagement';
 import { theme } from '../../../theme/theme';
 import { ScreenHeader } from '../../../components/ScreenHeader';
+import { useUnreadCount } from '../../../hooks/useNotifications';
 import { SkeletonLoader } from '../../../components/SkeletonLoader';
 import {
   spacing,
@@ -91,6 +92,7 @@ export default function ChatScreen() {
   const userId = extractUuid(typeof params.userId === 'string' ? params.userId : undefined);
   const { user } = useAuth();
   const { t } = useTranslation();
+  const { unreadCount } = useUnreadCount();
   const router = useRouter();
   const { colors } = useAppThemeStyles();
   const styles = useMemo(() => createStyles(colors), [colors]);
@@ -816,6 +818,7 @@ export default function ChatScreen() {
             </View>
           </View>
         }
+        notificationAction={{ onPress: () => router.push('/(tabs)/notifications'), unreadCount }}
         rightAction={{
           icon: 'information-circle',
           onPress: () => {},

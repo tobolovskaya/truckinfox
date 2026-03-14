@@ -15,6 +15,7 @@ import { useTranslation } from 'react-i18next';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
 import { ScreenHeader } from '../../components/ScreenHeader';
+import { useUnreadCount } from '../../hooks/useNotifications';
 import {
   colors,
   spacing,
@@ -95,6 +96,7 @@ export default function TruckFormScreen() {
   const router = useRouter();
   const { user } = useAuth();
   const { t } = useTranslation();
+  const { unreadCount } = useUnreadCount();
 
   const [loading, setLoading] = useState(!isNew);
   const [saving, setSaving] = useState(false);
@@ -210,7 +212,7 @@ export default function TruckFormScreen() {
   if (loading) {
     return (
       <View style={styles.container}>
-        <ScreenHeader title={t('truckDetails')} />
+        <ScreenHeader title={t('truckDetails')} notificationAction={{ onPress: () => router.push('/(tabs)/notifications'), unreadCount }} />
         <View style={styles.center}>
           <ActivityIndicator color={colors.primary} />
         </View>
@@ -222,6 +224,7 @@ export default function TruckFormScreen() {
     <View style={styles.container}>
       <ScreenHeader
         title={isNew ? t('newTruck') : t('editTruck')}
+        notificationAction={{ onPress: () => router.push('/(tabs)/notifications'), unreadCount }}
         rightAction={
           !isNew
             ? {

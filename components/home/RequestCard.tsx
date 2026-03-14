@@ -190,6 +190,12 @@ export const RequestCard: React.FC<RequestCardProps> = ({
             <Text style={[styles.metaText, compact && styles.metaTextCompact]} numberOfLines={1}>
               {dateText}
             </Text>
+            {typeof request.weight === 'number' && request.weight > 0 && (
+              <View style={styles.weightBadge}>
+                <Ionicons name="barbell-outline" size={11} color={colors.text.secondary} />
+                <Text style={styles.weightBadgeText}>{request.weight} kg</Text>
+              </View>
+            )}
           </View>
           <View style={[styles.footerActions, compact && styles.footerActionsCompact]}>
             {bidCount > 0 && (
@@ -409,6 +415,22 @@ const styles = StyleSheet.create({
   metaTextCompact: {
     fontSize: fontSize.sm,
     lineHeight: 18,
+  },
+  weightBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xxxs,
+    backgroundColor: colors.background,
+    borderRadius: borderRadius.full,
+    paddingHorizontal: spacing.xs,
+    paddingVertical: spacing.xxxs,
+    borderWidth: 1,
+    borderColor: colors.border.light,
+  },
+  weightBadgeText: {
+    fontSize: fontSize.xs,
+    color: colors.text.secondary,
+    fontWeight: fontWeight.medium,
   },
   distanceBadge: {
     flexDirection: 'row',

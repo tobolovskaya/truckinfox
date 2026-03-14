@@ -23,6 +23,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { File as ExpoFile } from 'expo-file-system';
 import AddressInput from '../../components/AddressInput';
 import { ScreenHeader } from '../../components/ScreenHeader';
+import { useUnreadCount } from '../../hooks/useNotifications';
 import { calculateDistance } from '../../utils/googlePlaces';
 import { compressImageForUpload } from '../../utils/imageCompression';
 import { normalizeCargoImageInputs, resolveCargoImageUrls } from '../../utils/cargoImages';
@@ -252,6 +253,7 @@ export default function EditRequestScreen() {
   const { id } = useLocalSearchParams();
   const { user } = useAuth();
   const { t, i18n } = useTranslation();
+  const { unreadCount } = useUnreadCount();
   const toast = useToast();
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -1006,6 +1008,7 @@ export default function EditRequestScreen() {
           },
           label: saving ? 'Saving request' : t('save'),
         }}
+        notificationAction={{ onPress: () => router.push('/(tabs)/notifications'), unreadCount }}
       />
 
       <KeyboardAwareFlatList
