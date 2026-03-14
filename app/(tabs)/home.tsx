@@ -95,6 +95,13 @@ export default function HomeScreen() {
   const [sortBy, setSortBy] = useState<SortOption>('newest');
   const [isFilterSheetVisible, setIsFilterSheetVisible] = useState(false);
   const [selectedCargoType, setSelectedCargoType] = useState('');
+  const [priceMin, setPriceMin] = useState('');
+  const [priceMax, setPriceMax] = useState('');
+  const [priceType, setPriceType] = useState('');
+  const [weightMin, setWeightMin] = useState('');
+  const [weightMax, setWeightMax] = useState('');
+  const [pickupDateFrom, setPickupDateFrom] = useState('');
+  const [pickupDateTo, setPickupDateTo] = useState('');
   const [isSearching, setIsSearching] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [myActiveRequestsCount, setMyActiveRequestsCount] = useState(0);
@@ -130,11 +137,15 @@ export default function HomeScreen() {
     () => ({
       city: '',
       cargo_type: activeTab === 'all' ? selectedCargoType : '',
-      price_min: '',
-      price_max: '',
-      price_type: '',
+      price_min: priceMin,
+      price_max: priceMax,
+      price_type: priceType,
+      weight_min: weightMin,
+      weight_max: weightMax,
+      pickup_date_from: pickupDateFrom,
+      pickup_date_to: pickupDateTo,
     }),
-    [activeTab, selectedCargoType]
+    [activeTab, selectedCargoType, priceMin, priceMax, priceType, weightMin, weightMax, pickupDateFrom, pickupDateTo]
   );
 
   const { requests, loading, refreshing, refresh, fetchMoreRequests, hasMore, loadingMore } =
@@ -338,6 +349,13 @@ export default function HomeScreen() {
   const handleResetFilters = () => {
     setSortBy('newest');
     setSelectedCargoType('');
+    setPriceMin('');
+    setPriceMax('');
+    setPriceType('');
+    setWeightMin('');
+    setWeightMax('');
+    setPickupDateFrom('');
+    setPickupDateTo('');
   };
 
   const handleOnboardingComplete = async () => {
@@ -559,14 +577,36 @@ export default function HomeScreen() {
           searchQuery={searchQuery}
           onSearchChange={setSearchQuery}
           isSearching={isSearching}
-          hasActiveFilters={sortBy !== 'newest' || !!selectedCargoType}
+          hasActiveFilters={
+            sortBy !== 'newest' ||
+            !!selectedCargoType ||
+            !!priceMin ||
+            !!priceMax ||
+            !!priceType ||
+            !!weightMin ||
+            !!weightMax ||
+            !!pickupDateFrom ||
+            !!pickupDateTo
+          }
           onFilterPress={() => setIsFilterSheetVisible(true)}
         />
 
+        {/* Route mode */}
         <View style={styles.routeModeSection}>
           <TouchableOpacity
             style={[styles.routeModeToggle, routeModeEnabled && styles.routeModeToggleActive]}
-            onPress={() => setRouteModeEnabled(previous => !previous)}
+            onPress={() => {
+              setRouteModeEnabled(prev => !prev);
+              if (routeModeEnabled) {
+                setRouteFrom('');
+                setRouteTo('');
+                setRouteFromCoords(null);
+                setRouteToCoords(null);
+                setRouteResults([]);
+                setRouteSearched(false);
+                setRouteError('');
+              }
+            }}
             accessibilityRole="button"
             accessibilityLabel={t('routeMode')}
           >
@@ -587,40 +627,30 @@ export default function HomeScreen() {
             />
           </TouchableOpacity>
 
-          {routeModeEnabled ? (
+          {routeModeEnabled && (
             <View style={styles.routeControlsWrap}>
-              <View style={styles.routeFieldRow}>
-                <AddressInput
-                  placeholder={t('routeFromPlaceholder')}
-                  value={routeFrom}
-                  onChangeText={text => {
-                    setRouteFrom(text);
-                    setRouteFromCoords(null);
-                    setRouteError('');
-                  }}
-                  onAddressSelect={(address, coordinates) => {
-                    setRouteFrom(address);
-                    setRouteFromCoords(coordinates ?? null);
-                    setRouteError('');
-                  }}
-                  style={styles.routeAddressInput}
-                />
-                <AddressInput
-                  placeholder={t('routeToPlaceholder')}
-                  value={routeTo}
-                  onChangeText={text => {
-                    setRouteTo(text);
-                    setRouteToCoords(null);
-                    setRouteError('');
-                  }}
-                  onAddressSelect={(address, coordinates) => {
-                    setRouteTo(address);
-                    setRouteToCoords(coordinates ?? null);
-                    setRouteError('');
-                  }}
-                  style={styles.routeAddressInput}
-                />
-              </View>
+              <AddressInput
+                placeholder={t('routeFromPlaceholder')}
+                value={routeFrom}
+                onChangeText={text => { setRouteFrom(text); setRouteFromCoords(null); setRouteError(''); }}
+                onAddressSelect={(address, coordinates) => {
+                  setRouteFrom(address);
+                  setRouteFromCoords(coordinates ?? null);
+                  setRouteError('');
+                }}
+                style={styles.routeAddressInput}
+              />
+              <AddressInput
+                placeholder={t('routeToPlaceholder')}
+                value={routeTo}
+                onChangeText={text => { setRouteTo(text); setRouteToCoords(null); setRouteError(''); }}
+                onAddressSelect={(address, coordinates) => {
+                  setRouteTo(address);
+                  setRouteToCoords(coordinates ?? null);
+                  setRouteError('');
+                }}
+                style={styles.routeAddressInput}
+              />
 
               <View style={styles.routeActionsRow}>
                 <View style={styles.routeRadiusWrap}>
@@ -634,25 +664,32 @@ export default function HomeScreen() {
                     placeholderTextColor={colors.text.secondary}
                   />
                 </View>
-
                 <TouchableOpacity
-                  style={styles.routeSearchButton}
+                  style={[styles.routeSearchButton, (!routeFrom.trim() || !routeTo.trim()) && styles.routeSearchButtonDisabled]}
                   onPress={handleRouteSearch}
-                  disabled={routeLoading}
+                  disabled={routeLoading || !routeFrom.trim() || !routeTo.trim()}
                   accessibilityRole="button"
-                  accessibilityLabel={t('routeSearch')}
                 >
                   {routeLoading ? (
                     <ActivityIndicator size="small" color={colors.white} />
                   ) : (
-                    <Text style={styles.routeSearchButtonText}>{t('routeSearch')}</Text>
+                    <>
+                      <Ionicons name="search-outline" size={16} color={colors.white} />
+                      <Text style={styles.routeSearchButtonText}>{t('routeSearch')}</Text>
+                    </>
                   )}
                 </TouchableOpacity>
               </View>
 
-              {routeError ? <Text style={styles.routeErrorText}>{routeError}</Text> : null}
+              {routeError ? (
+                <Text style={styles.routeErrorText}>{routeError}</Text>
+              ) : null}
+
+              {routeSearched && !routeLoading && routeResults.length === 0 && !routeError ? (
+                <Text style={styles.routeNoResults}>{t('routeNoMatches')}</Text>
+              ) : null}
             </View>
-          ) : null}
+          )}
         </View>
 
       </View>
@@ -772,6 +809,20 @@ export default function HomeScreen() {
         onCargoTypeChange={setSelectedCargoType}
         onReset={handleResetFilters}
         cargoTypes={cargoTypes}
+        priceMin={priceMin}
+        priceMax={priceMax}
+        priceType={priceType}
+        weightMin={weightMin}
+        weightMax={weightMax}
+        pickupDateFrom={pickupDateFrom}
+        pickupDateTo={pickupDateTo}
+        onPriceMinChange={setPriceMin}
+        onPriceMaxChange={setPriceMax}
+        onPriceTypeChange={setPriceType}
+        onWeightMinChange={setWeightMin}
+        onWeightMaxChange={setWeightMax}
+        onPickupDateFromChange={setPickupDateFrom}
+        onPickupDateToChange={setPickupDateTo}
       />
 
       <Onboarding
@@ -884,6 +935,8 @@ const createStyles = (colors: ReturnType<typeof useAppThemeStyles>['colors']) =>
       backgroundColor: colors.primary,
       alignItems: 'center',
       justifyContent: 'center',
+      flexDirection: 'row',
+      gap: spacing.xs,
       paddingHorizontal: spacing.md,
     },
     routeSearchButtonText: {
@@ -891,10 +944,19 @@ const createStyles = (colors: ReturnType<typeof useAppThemeStyles>['colors']) =>
       fontSize: fontSize.sm,
       fontWeight: '700' as const,
     },
+    routeSearchButtonDisabled: {
+      opacity: 0.5,
+    },
     routeErrorText: {
       fontSize: fontSize.xs,
       color: colors.error,
       fontWeight: '600' as const,
+    },
+    routeNoResults: {
+      fontSize: fontSize.xs,
+      color: colors.text.secondary,
+      textAlign: 'center' as const,
+      paddingVertical: spacing.xs,
     },
     footerLoader: {
       paddingVertical: spacing.lg,

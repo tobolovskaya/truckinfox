@@ -149,6 +149,20 @@ const applyClientSideFilters = (
       const max = parseFloat(filters.price_max);
       filtered = filtered.filter(request => toNumber(request.price) <= max);
     }
+    if (filters.weight_min && !Number.isNaN(parseFloat(filters.weight_min))) {
+      const min = parseFloat(filters.weight_min);
+      filtered = filtered.filter(request => (request.weight_kg ?? 0) >= min);
+    }
+    if (filters.weight_max && !Number.isNaN(parseFloat(filters.weight_max))) {
+      const max = parseFloat(filters.weight_max);
+      filtered = filtered.filter(request => (request.weight_kg ?? 0) <= max);
+    }
+    if (filters.pickup_date_from) {
+      filtered = filtered.filter(request => request.pickup_date >= filters.pickup_date_from);
+    }
+    if (filters.pickup_date_to) {
+      filtered = filtered.filter(request => request.pickup_date <= filters.pickup_date_to);
+    }
   }
 
   if (filters.city && activeTab !== 'my') {
@@ -341,6 +355,18 @@ const fetchCargoRequestsPage = async (
     }
     if (options.filters.price_max && !Number.isNaN(parseFloat(options.filters.price_max))) {
       requestQuery = requestQuery.lte('price', parseFloat(options.filters.price_max));
+    }
+    if (options.filters.weight_min && !Number.isNaN(parseFloat(options.filters.weight_min))) {
+      requestQuery = requestQuery.gte('weight_kg', parseFloat(options.filters.weight_min));
+    }
+    if (options.filters.weight_max && !Number.isNaN(parseFloat(options.filters.weight_max))) {
+      requestQuery = requestQuery.lte('weight_kg', parseFloat(options.filters.weight_max));
+    }
+    if (options.filters.pickup_date_from) {
+      requestQuery = requestQuery.gte('pickup_date', options.filters.pickup_date_from);
+    }
+    if (options.filters.pickup_date_to) {
+      requestQuery = requestQuery.lte('pickup_date', options.filters.pickup_date_to);
     }
   }
 
