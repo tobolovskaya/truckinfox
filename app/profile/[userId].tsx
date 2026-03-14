@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, Image } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -8,6 +8,7 @@ import { ScreenHeader } from '../../components/ScreenHeader';
 import { VerifiedBadge } from '../../components/VerifiedBadge';
 import { SkeletonLoader } from '../../components/SkeletonLoader';
 import { supabase } from '../../lib/supabase';
+import { useAuth } from '../../contexts/AuthContext';
 import { theme } from '../../theme/theme';
 import {
   colors,
@@ -53,6 +54,7 @@ export default function UserProfileScreen() {
   const { t } = useTranslation();
   const router = useRouter();
 
+  const { user } = useAuth();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [reviews, setReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState(true);
@@ -187,6 +189,35 @@ export default function UserProfileScreen() {
     }
   };
 
+  const handleSendMessage = async () => {
+    if (!user?.uid || !userId || typeof userId !== 'string') return;
+
+    // Find any existing chat between the two users
+    const { data: existingChat } = await supabase
+      .from('chats')
+      .select('id, request_id')
+      .or(
+        `and(user1_id.eq.${user.uid},user2_id.eq.${userId}),and(user1_id.eq.${userId},user2_id.eq.${user.uid})`
+      )
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (existingChat?.request_id) {
+      router.push({
+        pathname: '/chat/[requestId]/[userId]',
+        params: { requestId: existingChat.request_id, userId },
+      });
+      return;
+    }
+
+    Alert.alert(
+      t('noExistingChat'),
+      t('noExistingChatDesc'),
+      [{ text: t('ok'), style: 'cancel' }]
+    );
+  };
+
   const renderStars = (rating: number, size: number = 16) => {
     return (
       <View style={styles.starsContainer}>
@@ -275,6 +306,18 @@ export default function UserProfileScreen() {
               ({profile.total_reviews} {t('reviews')})
             </Text>
           </View>
+
+          {user && user.uid !== userId && (
+            <TouchableOpacity
+              style={styles.messageButton}
+              onPress={handleSendMessage}
+              accessibilityRole="button"
+              accessibilityLabel={t('sendMessage')}
+            >
+              <Ionicons name="chatbubble-outline" size={18} color="#fff" />
+              <Text style={styles.messageButtonText}>{t('sendMessage')}</Text>
+            </TouchableOpacity>
+          )}
         </View>
 
         {/* Reviews Section */}
@@ -512,6 +555,21 @@ const styles = StyleSheet.create({
     fontSize: fontSize.sm,
     color: colors.text.secondary,
     lineHeight: 20,
+  },
+  messageButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    marginTop: spacing.lg,
+    backgroundColor: colors.primary,
+    paddingHorizontal: spacing.xl,
+    paddingVertical: spacing.sm,
+    borderRadius: borderRadius.full,
+  },
+  messageButtonText: {
+    fontSize: fontSize.md,
+    fontWeight: fontWeight.semibold,
+    color: colors.white,
   },
   footer: {
     alignItems: 'center',
