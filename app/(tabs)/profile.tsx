@@ -9,11 +9,13 @@ import { useCurrentUser } from '../../hooks/useCurrentUser';
 import Avatar from '../../components/Avatar';
 import { ScreenHeader } from '../../components/ScreenHeader';
 import { SkeletonLoader } from '../../components/SkeletonLoader';
+import { useUnreadCount } from '../../hooks/useNotifications';
 
 type IoniconName = React.ComponentProps<typeof Ionicons>['name'];
 
 export default function ProfileScreen() {
   const router = useRouter();
+  const { unreadCount } = useUnreadCount();
   const { user, signOut } = useAuth();
   const { currentUser, loading } = useCurrentUser(user?.uid);
   const { t } = useTranslation();
@@ -93,6 +95,7 @@ export default function ProfileScreen() {
           showBackButton={false}
           showBrandMark
           brandMarkMaxTitleLength={16}
+          notificationAction={{ onPress: () => router.push('/(tabs)/notifications'), unreadCount }}
         />
         <View style={styles.skeletonContainer}>
           <SkeletonLoader variant="stats" count={1} />

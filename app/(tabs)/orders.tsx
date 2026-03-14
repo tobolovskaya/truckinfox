@@ -7,6 +7,7 @@ import {
 } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
 import { useRouter } from 'expo-router';
+import { useUnreadCount } from '../../hooks/useNotifications';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '../../lib/supabase';
@@ -48,6 +49,7 @@ const formatOrderDate = (value: string | null | undefined, locale: string): stri
 
 export default function OrdersScreen() {
   const router = useRouter();
+  const { unreadCount } = useUnreadCount();
   const { colors } = useAppThemeStyles();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const { t, i18n } = useTranslation();
@@ -243,6 +245,7 @@ export default function OrdersScreen() {
         showBackButton={false}
         showBrandMark={true}
         brandMarkMaxTitleLength={18}
+        notificationAction={{ onPress: () => router.push('/(tabs)/notifications'), unreadCount }}
       />
 
       {/* Tab bar */}

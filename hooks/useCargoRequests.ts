@@ -40,6 +40,10 @@ export interface FilterState {
   price_min: string;
   price_max: string;
   price_type: string;
+  weight_min: string;
+  weight_max: string;
+  pickup_date_from: string;
+  pickup_date_to: string;
 }
 
 export type SortOption = 'newest' | 'oldest' | 'priceLowToHigh' | 'priceHighToLow' | 'date';

@@ -35,6 +35,11 @@ interface ScreenHeaderProps {
     onPress: () => void;
     label?: string;
   };
+  /** Іконка дзвіночка з бейджем для переходу до нотифікацій */
+  notificationAction?: {
+    onPress: () => void;
+    unreadCount?: number;
+  };
   /** Custom background color */
   backgroundColor?: string;
   /** Show border at bottom */
@@ -71,6 +76,7 @@ export function ScreenHeader({
   onBackPress,
   rightAction,
   secondaryRightAction,
+  notificationAction,
   backgroundColor,
   showBorder = true,
   customCenter,
@@ -140,6 +146,24 @@ export function ScreenHeader({
 
         {/* Right: Action Buttons */}
         <View style={styles.rightSection}>
+          {notificationAction && (
+            <TouchableOpacity
+              style={styles.actionButton}
+              onPress={() => handleRightAction(notificationAction.onPress)}
+              accessibilityRole="button"
+              accessibilityLabel="Notifications"
+            >
+              <Ionicons name="notifications-outline" size={24} color={colors.text.primary} />
+              {!!notificationAction.unreadCount && notificationAction.unreadCount > 0 && (
+                <View style={styles.badge}>
+                  <Text style={styles.badgeText}>
+                    {notificationAction.unreadCount > 99 ? '99+' : notificationAction.unreadCount}
+                  </Text>
+                </View>
+              )}
+            </TouchableOpacity>
+          )}
+
           {secondaryRightAction && (
             <TouchableOpacity
               style={styles.actionButton}
@@ -170,7 +194,7 @@ export function ScreenHeader({
           )}
 
           {/* Placeholder for alignment when no right actions */}
-          {!rightAction && !secondaryRightAction && <View style={styles.placeholder} />}
+          {!rightAction && !secondaryRightAction && !notificationAction && <View style={styles.placeholder} />}
         </View>
       </View>
     </View>

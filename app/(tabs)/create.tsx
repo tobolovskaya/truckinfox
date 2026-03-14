@@ -23,6 +23,7 @@ import { trackCargoCreated } from '../../utils/analytics';
 import { sanitizeInput, sanitizeNumber } from '../../utils/sanitization';
 import { colors, spacing, fontSize, fontWeight, borderRadius } from '../../lib/sharedStyles';
 import { useRouter } from 'expo-router';
+import { useUnreadCount } from '../../hooks/useNotifications';
 import { triggerHapticFeedback } from '../../utils/haptics';
 import { SuccessAnimation } from '../../components/SuccessAnimation';
 import { StandardBottomSheet } from '../../components/StandardBottomSheet';
@@ -97,6 +98,7 @@ export default function CreateRequestScreen() {
   const { t } = useTranslation();
   const toast = useToast();
   const router = useRouter();
+  const { unreadCount } = useUnreadCount();
   const { width } = useWindowDimensions();
   const isSmallScreen = width < 360;
   const insets = useSafeAreaInsets();
@@ -829,6 +831,7 @@ export default function CreateRequestScreen() {
         title={t('createCargoRequest') || 'Opprett lastforespørsel'}
         showBackButton={false}
         showBrandMark={true}
+        notificationAction={{ onPress: () => router.push('/(tabs)/notifications'), unreadCount }}
       />
 
       <KeyboardAwareFlatList

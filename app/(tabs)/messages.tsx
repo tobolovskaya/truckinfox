@@ -11,6 +11,7 @@ import { FlashList } from '@shopify/flash-list';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import { useUnreadCount } from '../../hooks/useNotifications';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTranslation } from 'react-i18next';
 import { supabase } from '../../lib/supabase';
@@ -86,6 +87,7 @@ export default function MessagesScreen() {
   const { user } = useAuth();
   const { t, i18n } = useTranslation();
   const router = useRouter();
+  const { unreadCount } = useUnreadCount();
   const { colors } = useAppThemeStyles();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const dateLocale = useMemo(() => (i18n.language.startsWith('no') ? nb : enUS), [i18n.language]);
@@ -363,6 +365,7 @@ export default function MessagesScreen() {
           showBackButton={false}
           showBrandMark
           brandMarkMaxTitleLength={14}
+          notificationAction={{ onPress: () => router.push('/(tabs)/notifications'), unreadCount }}
         />
         <SkeletonLoader variant="list" count={8} />
       </SafeAreaView>
