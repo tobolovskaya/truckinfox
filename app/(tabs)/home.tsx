@@ -588,6 +588,14 @@ export default function HomeScreen() {
             !!pickupDateFrom ||
             !!pickupDateTo
           }
+          activeFilterCount={[
+            sortBy !== 'newest',
+            !!selectedCargoType,
+            !!priceMin || !!priceMax,
+            !!priceType,
+            !!weightMin || !!weightMax,
+            !!pickupDateFrom || !!pickupDateTo,
+          ].filter(Boolean).length}
           onFilterPress={() => setIsFilterSheetVisible(true)}
         />
 

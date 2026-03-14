@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, spacing, fontSize } from '../../lib/sharedStyles';
 import { useTranslation } from 'react-i18next';
@@ -10,6 +10,7 @@ interface HomeSearchBarProps {
   onSearchChange: (_query: string) => void;
   isSearching?: boolean;
   hasActiveFilters: boolean;
+  activeFilterCount?: number;
   onFilterPress: () => void;
 }
 
@@ -18,6 +19,7 @@ export const HomeSearchBar: React.FC<HomeSearchBarProps> = ({
   onSearchChange,
   isSearching = false,
   hasActiveFilters,
+  activeFilterCount = 0,
   onFilterPress,
 }) => {
   const { t } = useTranslation();
@@ -47,6 +49,13 @@ export const HomeSearchBar: React.FC<HomeSearchBarProps> = ({
           size={20}
           color={hasActiveFilters ? colors.white : colors.text.primary}
         />
+        {activeFilterCount > 0 && (
+          <View style={styles.badge}>
+            <Text style={styles.badgeText}>
+              {activeFilterCount > 9 ? '9+' : activeFilterCount}
+            </Text>
+          </View>
+        )}
       </TouchableOpacity>
     </View>
   );
@@ -89,9 +98,30 @@ const styles = StyleSheet.create({
     borderColor: colors.border.default,
     justifyContent: 'center',
     alignItems: 'center',
+    position: 'relative',
   },
   filterButtonActive: {
     backgroundColor: colors.primary,
     borderColor: colors.primary,
+  },
+  badge: {
+    position: 'absolute',
+    top: 4,
+    right: 4,
+    minWidth: 16,
+    height: 16,
+    borderRadius: 8,
+    backgroundColor: colors.white,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 3,
+    borderWidth: 1,
+    borderColor: colors.primary,
+  },
+  badgeText: {
+    fontSize: 9,
+    fontWeight: '700',
+    color: colors.primary,
+    includeFontPadding: false,
   },
 });

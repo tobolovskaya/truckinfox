@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef } from 'react';
 import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import MapView, { Marker } from 'react-native-maps';
 import { colors, spacing, fontSize, fontWeight } from '../../lib/sharedStyles';
 import { ScreenHeader } from '../../components/ScreenHeader';
@@ -35,6 +36,8 @@ export default function MapScreen() {
   const fitDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastFitKeyRef = useRef<string>('');
 
+  const { t } = useTranslation();
+
   const filters = useMemo(
     () => ({
       city: '',
@@ -42,6 +45,10 @@ export default function MapScreen() {
       price_min: '',
       price_max: '',
       price_type: '',
+      weight_min: '',
+      weight_max: '',
+      pickup_date_from: '',
+      pickup_date_to: '',
     }),
     []
   );
@@ -168,7 +175,7 @@ export default function MapScreen() {
 
   return (
     <View style={styles.container}>
-      <ScreenHeader title="Map" />
+      <ScreenHeader title={t('map')} />
 
       {loading ? (
         <View style={styles.stateContainer}>
@@ -176,10 +183,8 @@ export default function MapScreen() {
         </View>
       ) : markerItems.length === 0 ? (
         <View style={styles.stateContainer}>
-          <Text style={styles.emptyTitle}>No requests with coordinates</Text>
-          <Text style={styles.emptyText}>
-            Open requests will appear here when location data is available.
-          </Text>
+          <Text style={styles.emptyTitle}>{t('mapNoRequests')}</Text>
+          <Text style={styles.emptyText}>{t('mapEmptyDesc')}</Text>
         </View>
       ) : useClustering ? (
         <MapSuperCluster

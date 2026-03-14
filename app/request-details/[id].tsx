@@ -130,6 +130,7 @@ export default function RequestDetailsScreen() {
   const [bids, setBids] = useState<Bid[]>([]);
   const [loading, setLoading] = useState(true);
   const [bidAmount, setBidAmount] = useState('');
+  const [bidNote, setBidNote] = useState('');
   const [submittingBid, setSubmittingBid] = useState(false);
   const [acceptingBid, setAcceptingBid] = useState<string | null>(null);
   const [showSuccessAnimation, setShowSuccessAnimation] = useState(false);
@@ -561,7 +562,7 @@ export default function RequestDetailsScreen() {
         request_id: id as string,
         carrier_id: user.uid,
         price: amount,
-        note: null,
+        note: bidNote.trim() || null,
         status: 'pending',
         created_at: new Date().toISOString(),
       });
@@ -1315,6 +1316,21 @@ export default function RequestDetailsScreen() {
                 />
               </View>
 
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>{t('bidNote')}</Text>
+                <TextInput
+                  style={[styles.input, styles.inputMultiline]}
+                  value={bidNote}
+                  onChangeText={setBidNote}
+                  placeholder={t('bidNotePlaceholder')}
+                  placeholderTextColor={colors.text.tertiary}
+                  multiline
+                  numberOfLines={3}
+                  maxLength={300}
+                  returnKeyType="default"
+                />
+              </View>
+
               <TouchableOpacity
                 style={[styles.submitButton, submittingBid && styles.submitButtonDisabled]}
                 onPress={submitBid}
@@ -2034,6 +2050,10 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.sm,
     fontSize: fontSize.md,
     color: colors.text.primary,
+  },
+  inputMultiline: {
+    minHeight: 80,
+    textAlignVertical: 'top' as const,
   },
   textArea: {
     height: 80,
